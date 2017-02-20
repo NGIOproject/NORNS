@@ -4,7 +4,6 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include "norn.h"
 
 #define SOCKET_NAME "dloom_socket" 
 

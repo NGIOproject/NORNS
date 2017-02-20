@@ -12,7 +12,7 @@
 #include <fstream>
 #include <stdio.h>
 #include <fcntl.h>
-#include "CTPL-master/ctpl.h" 
+#include "ctpl.h" 
 #include <tbb/tbb.h>
 
 #define SOCKET_NAME "dloom_socket"    
