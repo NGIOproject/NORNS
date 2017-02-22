@@ -1,3 +1,5 @@
+#!/bin/bash
+#
 # Copyright (C) 2017 Barcelona Supercomputing Center
 #                    Centro Nacional de Supercomputacion
 #
@@ -21,17 +23,27 @@
 # along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-bin_PROGRAMS = app
+#############################################################################
+### WARNING: For internal use only, should not be distributed in any      ###
+###          released packages                                            ###
+#############################################################################
 
-app_SOURCES = \
-	app.c
+declare -a FILES
 
-app_CFLAGS = \
-	-std=c99 -Wall -Wextra
+FILES=(
+    "bootstrap.sh"
+    "configure.ac"
+    "Makefile.am"
+    "examples/Makefile.am"
+    "examples/app.c"
+    "include/libnorn.h"
+    "lib/Makefile.am"
+    "lib/norn.c"
+    "src/dloom.cpp"
+)
 
-app_CPPFLAGS = \
-	-I$(top_srcdir)/include
-
-app_LDADD = \
-	$(top_builddir)/lib/libnorn.la
-
+for f in "${FILES[@]}";
+do
+    copyright-header --guess-extension --license-file LICENSE_HEADER \
+        --add-path "$f" --output-dir .
+done
