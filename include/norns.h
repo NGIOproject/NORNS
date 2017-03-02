@@ -31,15 +31,18 @@ __BEGIN_DECLS
 
 /* I/O task descriptor */
 struct norns_iotd {
-    int ni_tid;   /* task identifier */
-    int ni_ibid;  /* input backend identifier */
-    int ni_obid;  /* output backend identifier */
-    int ni_type;  /* type of task */
+    int ni_tid;           /* task identifier */
+    int ni_ibid;          /* source backend identifier */
+    const char* ni_ipath; /* path to data source */
+    int ni_obid;          /* destination backend identifier */
+    const char* ni_opath; /* path to data destination */
+    int ni_type;          /* operation to be performed */
 };
 
-/*   */
+/* Task types */
 enum {
-    NORNS
+    NORNS_COPY,
+    NORNS_MOVE
 };
 
 void norns_init() __THROW __nonnull ((1));
@@ -52,6 +55,9 @@ ssize_t norns_cancel(struct norns_iotd* iotdp) __THROW __nonnull((1));
 
 /* Retrieve return status associated with iotdp */
 ssize_t norns_return(struct norns_iotd* iotdp) __THROW __nonnull((1));
+
+/* Retrieve current status associated with iotdp */
+ssize_t norns_progress(struct norns_iotd* iotdp) __THROW __nonnull((1));
 
 /* Retrieve error status associated with iotdp */
 int norns_error(struct norns_iotd* iotdp) __THROW __nonnull((1));

@@ -21,12 +21,15 @@
  * along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include<stdio.h>
-#include<sys/un.h>
-#include<sys/socket.h>
+#include <stdio.h>
+#include <sys/un.h>
+#include <sys/socket.h>
 #include <sys/types.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <unistd.h>
+
+#include <norns.h>
 
 #define SOCKET_NAME "dloom_socket" 
 
@@ -63,3 +66,35 @@ void norns_init(){
         perror("writing on stream socket");
     close(sock);
 }
+
+/* Enqueue an asynchronous I/O task */
+int norns_transfer(struct norns_iotd *iotdp) {
+    (void) iotdp;
+    return 0;
+}
+
+/* Try to cancel an asynchronous I/O task associated with iotdp */
+ssize_t norns_cancel(struct norns_iotd *iotdp) { 
+    (void) iotdp;
+    return 0;
+}
+
+/* Retrieve return status associated with iotdp */
+ssize_t norns_return(struct norns_iotd *iotdp) {
+    (void) iotdp;
+    return 0;
+}
+
+/* Retrieve current status associated with iotdp */
+ssize_t norns_progress(struct norns_iotd *iotdp) {
+    (void) iotdp;
+    return 0;
+}
+
+/* Retrieve error status associated with iotdp */
+int norns_error(struct norns_iotd *iotdp) {
+    (void) iotdp;
+    return 0;
+}
+
+
