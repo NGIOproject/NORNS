@@ -36,9 +36,9 @@ FILES=(
     "Makefile.am"
     "examples/Makefile.am"
     "examples/app.c"
-    "include/libnorn.h"
+    "include/norns.h"
     "lib/Makefile.am"
-    "lib/norn.c"
+    "lib/norns.c"
     "src/dloom.cpp"
 )
 

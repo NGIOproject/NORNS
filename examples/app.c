@@ -21,12 +21,12 @@
  * along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <libnorn.h>
+#include <norns.h>
 #include <stdio.h>
 
 
 int main() {
    printf("Hello, World! I'm the app \n");
-   initialize();
+   norns_init();
    return 0;
 }

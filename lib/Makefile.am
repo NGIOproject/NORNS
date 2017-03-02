@@ -21,17 +21,17 @@
 # along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-lib_LTLIBRARIES = libnorn.la
+lib_LTLIBRARIES = libnorns.la
 
-include_HEADERS = $(top_srcdir)/include/libnorn.h
+include_HEADERS = $(top_srcdir)/include/norns.h
 
 AM_CPPFLAGS = -I$(top_srcdir)/include
 
-libnorn_la_SOURCES = 	\
-	norn.c				\
-	$(top_srcdir)/include/libnorn.h
+libnorns_la_SOURCES = 	\
+	norns.c				\
+	$(top_srcdir)/include/norns.h
 
-libnorn_la_CFLAGS = \
+libnorns_la_CFLAGS = \
 	-Wall -Wextra
 
-libnorn_la_LDFLAGS = -version-info 0:1:0
+libnorns_la_LDFLAGS = -version-info 0:1:0

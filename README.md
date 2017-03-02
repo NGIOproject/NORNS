@@ -1,2 +1,2 @@
-Data Scheduler
-==============
+Norns Data Scheduler
+====================

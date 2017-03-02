@@ -33,5 +33,5 @@ app_CPPFLAGS = \
 	-I$(top_srcdir)/include
 
 app_LDADD = \
-	$(top_builddir)/lib/libnorn.la
+	$(top_builddir)/lib/libnorns.la
 

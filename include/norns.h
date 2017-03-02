@@ -21,45 +21,41 @@
  * along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include<stdio.h>
-#include<sys/un.h>
-#include<sys/socket.h>
+#ifndef __NORNS_LIB_H__
+#define __NORNS_LIB_H__ 1
+
+#include <features.h>
 #include <sys/types.h>
-#include <stdlib.h>
-#include <stdint.h>
 
-#define SOCKET_NAME "dloom_socket" 
+__BEGIN_DECLS
 
-struct task{
-	pid_t pid;
-	uint64_t taskId;
-	const char *filePath;
+/* I/O task descriptor */
+struct norns_iotd {
+    int ni_tid;   /* task identifier */
+    int ni_ibid;  /* input backend identifier */
+    int ni_obid;  /* output backend identifier */
+    int ni_type;  /* type of task */
 };
 
-void initialize(){
-	int sock;
-	struct sockaddr_un server;
-	char buff[1024] = "hola";
-	struct task t;
-	t.pid = 3;
-	t.taskId = 4;
+/*   */
+enum {
+    NORNS
+};
 
-	sock = socket(AF_UNIX, SOCK_STREAM, 0);
-	if (sock < 0) {
-		perror("opening stream socket");
-		exit(1);
-	}
+void norns_init() __THROW __nonnull ((1));
 
-	server.sun_family = AF_UNIX;
-	strcpy(server.sun_path, SOCKET_NAME);
+/* Enqueue an asynchronous I/O task */
+int norns_transfer(struct norns_iotd* iotdp) __THROW __nonnull((1));
 
-	if (connect(sock, (struct sockaddr *) &server, sizeof(struct sockaddr_un)) < 0) {
-        if (close(sock) < 0)
-        	exit(1);
-        perror("connecting stream socket");
-        exit(1);
-    }
-    if (write(sock, &t, sizeof(t)) < 0)
-        perror("writing on stream socket");
-    close(sock);
-}
+/* Try to cancel an asynchronous I/O task associated with iotdp */
+ssize_t norns_cancel(struct norns_iotd* iotdp) __THROW __nonnull((1));
+
+/* Retrieve return status associated with iotdp */
+ssize_t norns_return(struct norns_iotd* iotdp) __THROW __nonnull((1));
+
+/* Retrieve error status associated with iotdp */
+int norns_error(struct norns_iotd* iotdp) __THROW __nonnull((1));
+
+__END_DECLS
+
+#endif /* __NORNS_LIB_H__ */
