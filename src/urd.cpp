@@ -40,7 +40,7 @@
 
 #include "ctpl.h" 
 
-#define SOCKET_NAME "dloom_socket"    
+#define SOCKET_NAME "urd_socket"    
 
 extern "C" {
 	struct foo {
@@ -99,28 +99,28 @@ void daemon_basic_initialization() {
 	/* Change the file mode mask */
 	umask(0);
 	
-	/* Check if dloom already exists:
-	 * 1. Make sure folder exists /var/run/dloom
-	 * 2. Check if file dloom.txt exists
+	/* Check if urd already exists:
+	 * 1. Make sure folder exists /var/run/urd
+	 * 2. Check if file urd.txt exists
 	 */
 
 	struct stat sb;
-	if (stat("/var/run/dloom", &sb) == 0 && S_ISDIR(sb.st_mode)){
+	if (stat("/var/run/urd", &sb) == 0 && S_ISDIR(sb.st_mode)){
 	    std::cout << "directory already existed" << std::endl;
 	} else {
 		/* Directory does not exist */
-		if(mkdir("/var/run/dloom", 0700)== -1){
-			std::cout << "[dloom][base_initialization] Error mkdir. Check privilages under /var/run/*" << std::endl;
+		if(mkdir("/var/run/urd", 0700)== -1){
+			std::cout << "[urd][base_initialization] Error mkdir. Check privilages under /var/run/*" << std::endl;
 		}
 	}
 	
-	if (access("/var/run/dloom/dloom.txt", F_OK) != -1) {
-		/* An instance of dloom already exists. */
-		perror("An instance of dloom already exists. Exiting");
+	if (access("/var/run/urd/urd.txt", F_OK) != -1) {
+		/* An instance of urd already exists. */
+		perror("An instance of urd already exists. Exiting");
 		exit(1);
 	} else {
-		/* First instance of dloom, create dloom.txt so no other instance may be initialized */
-		std::ofstream outfile("/var/run/dloom/dloom.txt");
+		/* First instance of urd, create urd.txt so no other instance may be initialized */
+		std::ofstream outfile("/var/run/urd/urd.txt");
 		outfile << pid << std::endl;		
 	}
 

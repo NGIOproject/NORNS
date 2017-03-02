@@ -27,14 +27,14 @@ SUBDIRS = lib examples
 
 DIST_SUBDIRS = lib examples
 
-bin_PROGRAMS = src/dloom
+bin_PROGRAMS = src/urd
 
-src_dloom_SOURCES = \
-	src/dloom.cpp
+src_urd_SOURCES = \
+	src/urd.cpp
 
-src_dloom_CXXFLAGS = 			\
+src_urd_CXXFLAGS = 				\
 	@TBB_CFLAGS@ 				\
 	-std=gnu++11 -Wall -Wextra
 
-src_dloom_LDFLAGS = \
+src_urd_LDFLAGS = \
 	@TBB_LIBS@

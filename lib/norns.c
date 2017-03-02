@@ -31,7 +31,7 @@
 
 #include <norns.h>
 
-#define SOCKET_NAME "dloom_socket" 
+#define SOCKET_NAME "urd_socket" 
 
 struct task{
 	pid_t pid;

@@ -39,7 +39,7 @@ FILES=(
     "include/norns.h"
     "lib/Makefile.am"
     "lib/norns.c"
-    "src/dloom.cpp"
+    "src/urd.cpp"
 )
 
 for f in "${FILES[@]}";
