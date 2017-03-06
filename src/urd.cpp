@@ -22,6 +22,7 @@
 // along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <stdio.h>
 #include <iostream>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -31,16 +32,22 @@
 #include <cstdlib>
 #include <exception>
 #include <dirent.h>
-#include <iostream>
 #include <fstream>
-#include <stdio.h>
 #include <fcntl.h>
 #include <list>
 #include <tbb/tbb.h>
+#include <signal.h>
 
 #include "ctpl.h" 
 
+<<<<<<< HEAD:src/urd.cpp
 #define SOCKET_NAME "urd_socket"    
+=======
+#define RUNNING_DIR "/tmp"  
+#define SOCKET_FILE "/tmp/dloom.socket"  
+#define DAEMON_LOCK_FILE "/tmp/dloom.lock"
+#define LOG_FILE "tmp/dloom.log"
+>>>>>>> bf32803ae612688c523f8fbbbd39d631a095a700:src/dloom.cpp
 
 extern "C" {
 	struct foo {
@@ -71,31 +78,60 @@ enum job_type{
 tbb::concurrent_queue<task> jobs_priority_1;
 tbb::concurrent_hash_map<pid_t, std::list<task_finished>> tasks_finished_map;
 
-void daemon_basic_initialization() {
+void log_message(const char filename[], const char message[]){
+	FILE *logfile;
+	logfile=fopen(filename,"a");
+	if(!logfile) return;
+	fprintf(logfile,"%s\n",message);
+	fclose(logfile);
+}
+
+void signal_handler(int sig){
+	switch(sig) {
+	case SIGHUP: 
+		log_message(LOG_FILE, "Hangup signal catched");
+		break;
+	case SIGTERM:
+		log_message(LOG_FILE,"terminate signal catched");
+		exit(0);
+		break;
+	}	
+}
+
+void daemonize() {
 	/*
-	 * --- daemon basic initalization ---
-	 * 1. Fork off praent process
-	 * 2. Exit parent
-	 * 3. Change file mode mask
-	 * 4. Check if daemon already exists
-	 * 5. Create new SID for the child process
-	 * 6. Change current working directory
-	 * 7. Close out standart file descriptor
+	 * --- Daemonize structure ---
+	 *	Check if this is already a daemon
+	 *  Fork off praent process
+	 *	Obtain new process group
+	 *	Close all descriptors
+	 *	Handle standard IO
+	 *  Change file mode mask
+	 *	Change the current working directory
+	 *  Check if daemon already exists
+	 *	Manage signals
 	 */
+
 	pid_t pid, sid;
+
+	/* Check if this is already a daemon */ 
+	if (getpid() == 1) return;
 	
 	/* Fork off the parent process */
 	pid = fork();
+
+	/* Fork error */
 	if (pid < 0) {
-		throw std::exception();
+		perror("Fork");
+		exit(1);
 	}
 
-	/* If we got a good PID, then
-	   we can exit the parent process. */
+	/* Parent exits */
 	if (pid > 0) {
 		return;
 	}
 
+<<<<<<< HEAD:src/urd.cpp
 	/* Change the file mode mask */
 	umask(0);
 	
@@ -125,22 +161,68 @@ void daemon_basic_initialization() {
 	}
 
 	/* Create a new SID for the child process */
+=======
+	/* Obtain new process group */
+>>>>>>> bf32803ae612688c523f8fbbbd39d631a095a700:src/dloom.cpp
 	sid = setsid();
 	if (sid < 0) {
 		/* Log failure */
 		throw std::exception();
 	}
 
+	/* Close all descriptors */
+	int i;
+	for(i=getdtablesize(); i>=0; --i){
+		if(close(i)<0){
+			perror("Close descritpors");
+			exit(1);
+		}	
+	} 
+
+	/* Handle standard IO */
+
+	i=open("/dev/null", O_RDWR); /* open stdin */
+	dup(i); /* stdout */
+	dup(i); /* stderr */
+
+	/* Change the file mode mask */
+	umask(027); /* file creation mode to 750 */
+
 	/* Change the current working directory */
-	if ((chdir("/")) < 0) {
-		/* Log failure */
-		throw std::exception();
+	if ((chdir(RUNNING_DIR)) < 0) {
+		perror("Chdir");
+		exit(1);
+	}
+	
+	/* Check if daemon already exists:
+	 * First instance of the daemon will lock the file so that other
+	 * instances understand that an instnace is already running. 
+	 */
+
+	int lfp;
+	lfp=open(DAEMON_LOCK_FILE, O_RDWR|O_CREAT, 0640);
+	if(lfp<0){
+		perror("Can not open daemon lock file");
+		exit(1);
+	} 
+	if(lockf(lfp, F_TLOCK, 0)<0){
+		perror("Another instance of this daemon already running");
+		exit(1);
 	}
 
-	/* Close out the standard file descriptors */
-	close(STDIN_FILENO);
-	close(STDOUT_FILENO);
-	close(STDERR_FILENO);
+	/* record pid in lockfile */
+	char str[10];
+	sprintf(str, "%d\n", getpid());
+	write(lfp, str, strlen(str));
+
+	/* Manage signals */
+	signal(SIGCHLD,SIG_IGN); /* ignore child */
+	signal(SIGTSTP,SIG_IGN); /* ignore tty signals */
+	signal(SIGTTOU,SIG_IGN);
+	signal(SIGTTIN,SIG_IGN);
+	signal(SIGHUP,signal_handler); /* catch hangup signal */
+	signal(SIGTERM,signal_handler); /* catch kill signal */
+
 }
 
 void comm_thread(int id){
@@ -309,19 +391,19 @@ void push_jobs(ctpl::thread_pool &p){
 
 }
 
+void infinite_loop() {
+	/*
+	 *	Create thread pool
+	 *	Set number of threads
+	 *	Start infinite loop
+	 */
 
-
-
-
-void daemon_specific_initialization() {
-	/* set number of threads */
 	ctpl::thread_pool p(3);
 	p.push(comm_thread);
-	/* push_jobs may be done by this thread */
 	push_jobs(p);
 }
 
 int main() {
-	daemon_basic_initialization();
-	daemon_specific_initialization();   
+	daemonize();
+	infinite_loop();   
 }
