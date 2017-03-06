@@ -47,6 +47,8 @@ AX_CHECK_COMPILE_FLAG([-std=c++11], [CXXFLAGS+=" -std=c++11"], [
 
 # check that Intel's TBB
 PKG_CHECK_MODULES([TBB], [tbb])
+# check libev
+PKG_CHECK_MODULES([LIBEV], [libev])
 
 # Checks for header files.
 

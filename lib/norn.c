@@ -21,14 +21,26 @@
  * along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include<stdio.h>
-#include<sys/un.h>
-#include<sys/socket.h>
+#include <stdio.h>
+#include <sys/un.h>
+#include <sys/socket.h>
 #include <sys/types.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <ev.h>
+#include <sys/fcntl.h>
+#include <unistd.h>
+#include <errno.h>
 
-#define SOCKET_NAME "dloom_socket" 
+#define SOCKET_NAME "/tmp/dloom.socket" 
+
+/* Global variables */
+int sock;
+char buff[1024] = "hola";
+
+/* Function declaration */
+
+void init();
 
 struct task{
 	pid_t pid;
@@ -36,10 +48,14 @@ struct task{
 	const char *filePath;
 };
 
-void initialize(){
-	int sock;
+
+void init(){
+	/*
+	 * 
+	 */
+
+	
 	struct sockaddr_un server;
-	char buff[1024] = "hola";
 	struct task t;
 	t.pid = 3;
 	t.taskId = 4;
@@ -59,7 +75,20 @@ void initialize(){
         perror("connecting stream socket");
         exit(1);
     }
-    if (write(sock, &t, sizeof(t)) < 0)
+
+}
+
+void finit(){
+	/*
+	 * 
+	 */
+	close(sock);
+}
+
+void push_job(){
+	/*
+	 * 
+	 */
+	if (write(sock, &buff, sizeof(buff)) < 0)
         perror("writing on stream socket");
-    close(sock);
 }

@@ -34,7 +34,9 @@ src_dloom_SOURCES = \
 
 src_dloom_CXXFLAGS = 			\
 	@TBB_CFLAGS@ 				\
+	@LIBEV_CFLAGS@				\
 	-std=gnu++11 -Wall -Wextra
 
 src_dloom_LDFLAGS = \
-	@TBB_LIBS@
+	@TBB_LIBS@		\
+	@LIBEV_LIBS@

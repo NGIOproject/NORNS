@@ -27,6 +27,8 @@
 
 int main() {
    printf("Hello, World! I'm the app \n");
-   initialize();
+   init();
+   push_job();
+   finit();
    return 0;
 }
