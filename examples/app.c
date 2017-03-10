@@ -21,14 +21,13 @@
  * along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <libnorn.h>
 #include <stdio.h>
-
+#include <libnorn.h>
 
 int main() {
-   printf("Hello, World! I'm the app \n");
-   init();
-   push_job();
-   finit();
-   return 0;
+    printf("Hello, World! I'm the app \n");
+    if( push_job() < 0 ){
+    	printf("Error with push job \n");
+    }
+    return 0;
 }

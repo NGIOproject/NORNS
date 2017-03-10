@@ -28,7 +28,9 @@
 extern "C" {
 #endif
 
-void initialize();
+void init(void);
+void finit(void);
+int push_job();
 
 #ifdef __cplusplus
 }; // extern "C"

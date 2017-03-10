@@ -32,15 +32,18 @@
 #include <unistd.h>
 #include <errno.h>
 
-#define SOCKET_NAME "/tmp/dloom.socket" 
+const char* SOCKET_FILE = "/tmp/dloom.socket";
 
 /* Global variables */
 int sock;
-char buff[1024] = "hola";
+char buff[10] = "hola";
 
 /* Function declaration */
 
-void init();
+/* Specify init and finit function as constructor and destructor */
+
+__attribute__((constructor)) static void init(void);
+__attribute__((destructor)) static void finit(void); 
 
 struct task{
 	pid_t pid;
@@ -49,46 +52,57 @@ struct task{
 };
 
 
-void init(){
+void init(void){
 	/*
 	 * 
-	 */
-
-	
+	 */	
+	printf("Executing this when the library is loaded\n");
 	struct sockaddr_un server;
-	struct task t;
-	t.pid = 3;
-	t.taskId = 4;
 
 	sock = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (sock < 0) {
 		perror("opening stream socket");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	server.sun_family = AF_UNIX;
-	strcpy(server.sun_path, SOCKET_NAME);
+	strncpy(server.sun_path, SOCKET_FILE, sizeof(server.sun_path));
+	/*if (strncpy(server.sun_path, SOCKET_FILE, sizeof(server.sun_path)) < 0){
+		perror("strncpy");
+		exit(EXIT_FAILURE);
+	}*/
 
 	if (connect(sock, (struct sockaddr *) &server, sizeof(struct sockaddr_un)) < 0) {
-        if (close(sock) < 0)
-        	exit(1);
+        if (close(sock) < 0){
+        	exit(EXIT_FAILURE);
+        }
         perror("connecting stream socket");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
 }
 
-void finit(){
+void finit(void){
 	/*
 	 * 
 	 */
+	printf("Executing this when the library is unloaded\n");
 	close(sock);
 }
 
-void push_job(){
+int push_job(){
 	/*
-	 * 
+	 * return -1 on error
 	 */
-	if (write(sock, &buff, sizeof(buff)) < 0)
+	
+	struct task t;
+	t.pid = 1234;
+	t.taskId = 4321;
+	t.filePath = "/tmp/something";
+
+	if (write(sock, &t, sizeof(t)) < 0){
         perror("writing on stream socket");
+        return -1;
+	}
+	return 0;
 }
