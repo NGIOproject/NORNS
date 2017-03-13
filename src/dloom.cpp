@@ -271,11 +271,17 @@ int set_non_block(int fd){
 
 int unix_socket_init(sockaddr_un* socket_un, const char* sock_path){
 	int fd;
-	if (unlink(sock_path) < 0){
-		log_message(LOG_FILE, "unlink socket failed");
-		perror("unlink socket");
-		exit(EXIT_FAILURE);		 
-	}
+
+    struct stat stbuf;
+
+    /* if socket exists from a previous run, remove it */
+    if (stat(sock_path, &stbuf) == 0) {
+        if (unlink(sock_path) < 0){
+            log_message(LOG_FILE, "unlink socket failed");
+            perror("unlink socket");
+            exit(EXIT_FAILURE);		 
+        }
+    }
 
 	/* Setup unix socket listener */
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);	
