@@ -57,10 +57,7 @@ void __norns_init(){
 
 	server.sun_family = AF_UNIX;
 	strncpy(server.sun_path, SOCKET_FILE, sizeof(server.sun_path));
-	/*if (strncpy(server.sun_path, SOCKET_FILE, sizeof(server.sun_path)) < 0){
-		perror("strncpy");
-		exit(EXIT_FAILURE);
-	}*/
+	server.sun_path[sizeof(server.sun_path)-1] = '\0';
 
 	if (connect(sock, (struct sockaddr *) &server, sizeof(struct sockaddr_un)) < 0) {
         if (close(sock) < 0){
