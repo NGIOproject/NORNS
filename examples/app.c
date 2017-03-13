@@ -26,7 +26,9 @@
 
 
 int main() {
-   printf("Hello, World! I'm the app \n");
-   norns_init();
-   return 0;
+    printf("Hello, World! I'm the app \n");
+    if( push_job() < 0 ){
+    	printf("Error with push job \n");
+    }
+    return 0;
 }

@@ -45,7 +45,7 @@ enum {
     NORNS_MOVE
 };
 
-void norns_init() __THROW __nonnull ((1));
+void norns_init() __THROW;
 
 /* Enqueue an asynchronous I/O task */
 int norns_transfer(struct norns_iotd* iotdp) __THROW __nonnull((1));

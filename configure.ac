@@ -47,6 +47,15 @@ AX_CHECK_COMPILE_FLAG([-std=c++11], [CXXFLAGS+=" -std=c++11"], [
 
 # check that Intel's TBB
 PKG_CHECK_MODULES([TBB], [tbb])
+# check libev
+PKG_CHECK_MODULES([LIBEV], [libev],
+                  [], # action if found
+                  [AC_SEARCH_LIBS([ev_version_major], [ev], [], [
+                       AC_MSG_ERROR([Unable to find the libev library])
+                   ])
+                  ])
+
+
 
 # Checks for header files.
 
