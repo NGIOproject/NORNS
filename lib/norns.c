@@ -77,7 +77,7 @@ void __norns_finit(void){
 	close(sock);
 }
 
-int push_job(){
+int norns_transfer(struct norns_iotd* iotdp) {
 	/*
 	 * return -1 on error
 	 */
@@ -90,4 +90,6 @@ int push_job(){
         perror("writing on stream socket");
     }
     close(sock);
+
+    return 0;
 }

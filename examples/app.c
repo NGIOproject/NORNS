@@ -27,8 +27,14 @@
 
 int main() {
     printf("Hello, World! I'm the app \n");
-    if( push_job() < 0 ){
+
+    struct norns_iotd iotd = {
+        .ni_tid = 0,
+    };
+
+    if(norns_transfer(&iotd) != 0) {
     	printf("Error with push job \n");
     }
+
     return 0;
 }
