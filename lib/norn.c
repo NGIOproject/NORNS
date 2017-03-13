@@ -45,10 +45,15 @@ char buff[10] = "hola";
 __attribute__((constructor)) static void init(void);
 __attribute__((destructor)) static void finit(void); 
 
-struct task{
-	pid_t pid;
-	uint64_t taskId;
-	const char *filePath;
+
+/* I/O task descriptor */
+struct norns_iotd {
+    int ni_tid;           /* task identifier */
+    int ni_ibid;          /* source backend identifier */
+    const char* ni_ipath; /* path to data source */
+    int ni_obid;          /* destination backend identifier */
+    const char* ni_opath; /* path to data destination */
+    int ni_type;          /* operation to be performed */
 };
 
 
@@ -95,10 +100,9 @@ int push_job(){
 	 * return -1 on error
 	 */
 	
-	struct task t;
-	t.pid = 1234;
-	t.taskId = 4321;
-	t.filePath = "/tmp/something";
+	struct norns_iotd t;
+	t.ni_tid = 1234;
+	t.ni_ibid = 4321;
 
 	if (write(sock, &t, sizeof(t)) < 0){
         perror("writing on stream socket");

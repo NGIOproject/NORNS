@@ -55,10 +55,13 @@ const int MAX_CLIENTS_SUPPORTED = 20;
 ev_periodic every_few_seconds;
 
 extern "C" {
-	struct foo {
-		pid_t pid;
-		uint64_t taskId;
-		const char* filePath;
+	struct norns_iotd {
+	    int ni_tid;           /* task identifier */
+	    int ni_ibid;          /* source backend identifier */
+	    const char* ni_ipath; /* path to data source */
+	    int ni_obid;          /* destination backend identifier */
+	    const char* ni_opath; /* path to data destination */
+	    int ni_type;          /* operation to be performed */
 	};
 }
 
@@ -321,7 +324,7 @@ static void read_cb(struct ev_loop *loop, struct ev_io *watcher, int revents){
 	(void)revents;
 	(void)loop;
 
-	foo t;
+	norns_iotd t;
 	ssize_t read;
 
 	if(EV_ERROR & revents)
@@ -347,10 +350,11 @@ static void read_cb(struct ev_loop *loop, struct ev_io *watcher, int revents){
     	return;
     } else {
     	log_message(LOG_FILE, "we have received this message: ");
-    	log_message(LOG_FILE, (std::to_string(t.taskId)).c_str());
+    	log_message(LOG_FILE, (std::to_string(t.ni_tid)).c_str());
     }
-
+    
 }
+
 
 inline static sock_ev_client client_new(int fd){
 	sock_ev_client client;
