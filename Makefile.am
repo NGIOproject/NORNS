@@ -29,8 +29,11 @@ DIST_SUBDIRS = lib examples
 
 bin_PROGRAMS = src/urd
 
-src_urd_SOURCES = \
-	src/urd.cpp
+src_urd_SOURCES = 			\
+	src/main.cpp			\
+	src/ipc-listener.hpp	\
+	src/urd.cpp				\
+	src/urd.hpp
 
 src_urd_CXXFLAGS = 				\
 	@TBB_CFLAGS@ 				\
@@ -41,5 +44,9 @@ src_urd_CPPFLAGS = 				\
 	-I$(top_srcdir)/include
 
 src_urd_LDFLAGS = \
-	@TBB_LIBS@
-	@LIBEV_LIBS@
+	@TBB_LIBS@	  \
+	@LIBEV_LIBS@  \
+	-pthread
+
+src_urd_LDADD = 	\
+	-lboost_system

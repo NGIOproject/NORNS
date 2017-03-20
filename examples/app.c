@@ -21,20 +21,37 @@
  * along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <norns.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+
+
+#include <norns.h>
+
+void print_iotd(struct norns_iotd* iotdp){
+    fprintf(stdout, "iotd -> struct nornds_iotd {\n");
+    fprintf(stdout, "  ni_tid = %d;\n", iotdp->ni_tid);
+    fprintf(stdout, "};\n");
+}
 
 
 int main() {
-    printf("Hello, World! I'm the app \n");
-
     struct norns_iotd iotd = {
         .ni_tid = 0,
     };
 
+    fprintf(stdout, "calling norns_transfer(&iotd)\n");
+    print_iotd(&iotd);
+
     if(norns_transfer(&iotd) != 0) {
-    	printf("Error with push job \n");
+    	fprintf(stderr, "norns_transfer error: %s \n", strerror(errno));
+    	exit(EXIT_FAILURE);
     }
+
+    fprintf(stdout, "norns_transfer() succeeded!\n");
+    fprintf(stdout, "output from submission:\n");
+    print_iotd(&iotd);
 
     return 0;
 }

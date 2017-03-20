@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include <norns.h>
 
@@ -47,6 +48,7 @@ __attribute__((destructor)) static void __norns_finit(void);
 
 void __norns_init(){
 
+#if 0
 	struct sockaddr_un server;
 
 	sock = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -66,7 +68,29 @@ void __norns_init(){
         perror("connecting stream socket");
         exit(EXIT_FAILURE);
     }
+#endif
 
+}
+
+static int connect_to_daemon(void){
+
+	struct sockaddr_un server;
+
+	int sfd = socket(AF_UNIX, SOCK_STREAM, 0);
+
+	if (sfd < 0) {
+	    return -1;
+	}
+
+	server.sun_family = AF_UNIX;
+	strncpy(server.sun_path, SOCKET_FILE, sizeof(server.sun_path));
+	server.sun_path[sizeof(server.sun_path)-1] = '\0';
+
+	if (connect(sfd, (struct sockaddr *) &server, sizeof(struct sockaddr_un)) < 0) {
+	    return -1;
+    }
+
+    return sfd;
 }
 
 void __norns_finit(void){
@@ -78,18 +102,49 @@ void __norns_finit(void){
 }
 
 int norns_transfer(struct norns_iotd* iotdp) {
-	/*
-	 * return -1 on error
-	 */
-	
-	struct norns_iotd t;
-	t.ni_tid = 1234;
-	t.ni_ibid = 4321;
+    struct norns_iotd* iotd_copy = (struct norns_iotd*) 
+        malloc(sizeof(*iotd_copy));
 
-	if (write(sock, &t, sizeof(t)) < 0){
+    if(iotd_copy == NULL){
+        errno = ENOMEM;
+        return -1;
+    }
+
+    memcpy(iotd_copy, iotdp, sizeof(*iotd_copy));
+
+    int sfd = connect_to_daemon();
+
+    if(sfd == -1){
+        // errno should have been correctly set by connect_to_daemon()
+        return -1;
+    }
+	
+	// connection established, send the request descriptor to the daemon and 
+	// wait for a response
+	if (write(sfd, iotd_copy, sizeof(*iotd_copy)) < 0){
         perror("writing on stream socket");
     }
-    close(sock);
+
+    struct norns_iotd response;
+
+    size_t nbytes = 0;
+
+    while(nbytes < sizeof(response)){
+        ssize_t n = 0; 
+        
+        if((n = read(sfd, ((void*)&response)+n, sizeof(response))) == -1 ){
+            return -1;
+        }
+
+        nbytes += n;
+    }
+
+    // copy data from response to user-provided structure
+    memcpy(iotdp, &response, sizeof(response));
+
+    free(iotd_copy);
+
+    close(sfd);
 
     return 0;
 }

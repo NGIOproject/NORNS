@@ -45,22 +45,41 @@ enum {
     NORNS_MOVE
 };
 
+
+/* I/O task status descriptor */
+struct norns_iotst {
+    int ni_status;  /* current status */
+};
+
+/* Status codes */
+enum {
+    NORNS_WAITING,
+    NORNS_INPROGRESS,
+    NORNS_COMPLETE
+};
+
+
 void norns_init() __THROW;
 
+int norns_getconf() __THROW;
+
 /* Enqueue an asynchronous I/O task */
-int norns_transfer(struct norns_iotd* iotdp) __THROW __nonnull((1));
+int norns_transfer(struct norns_iotd* iotdp) __THROW;
 
 /* Try to cancel an asynchronous I/O task associated with iotdp */
-ssize_t norns_cancel(struct norns_iotd* iotdp) __THROW __nonnull((1));
+ssize_t norns_cancel(struct norns_iotd* iotdp) __THROW;
 
 /* Retrieve return status associated with iotdp */
-ssize_t norns_return(struct norns_iotd* iotdp) __THROW __nonnull((1));
+ssize_t norns_return(struct norns_iotd* iotdp) __THROW;
 
 /* Retrieve current status associated with iotdp */
-ssize_t norns_progress(struct norns_iotd* iotdp) __THROW __nonnull((1));
+ssize_t norns_progress(struct norns_iotd* iotdp, struct norns_iotst* statp) __THROW;
+
+/* Retrieve status associated with all current tasks */
+ssize_t norns_progress_all(struct norns_iotst** statp) __THROW;
 
 /* Retrieve error status associated with iotdp */
-int norns_error(struct norns_iotd* iotdp) __THROW __nonnull((1));
+int norns_error(struct norns_iotd* iotdp) __THROW;
 
 __END_DECLS
 

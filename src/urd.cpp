@@ -42,10 +42,16 @@
 #include <vector>
 #include <ctime>
 
+#include <boost/asio.hpp>
+#include <functional>
+
 #include <norns.h>
 
+#include "ipc-listener.hpp"
 #include "ctpl.h" 
+#include "urd.hpp"
 
+#if 0 
 const char* RUNNING_DIR = "/tmp";
 const char* SOCKET_FILE = "/tmp/urd.socket";  
 const char* DAEMON_LOCK_FILE = "/tmp/urd.lock";
@@ -74,25 +80,7 @@ enum job_type{
 	CHECK_ALL_TASKS
 };
 
-struct sock_ev_client;
 
-struct sock_ev_serv {
-	ev_io io;
-	int fd;
-	struct sockaddr_un socket;
-	int socket_len;
-	int max_clients;
-	int current_clients;
-};
-
-struct sock_ev_client {
-	ev_io io;
-	int fd;
-	int index;
-	struct sock_ev_serv *server;
-};
-
-sock_ev_serv server;
 tbb::concurrent_queue<task> jobs_priority_1;
 tbb::concurrent_hash_map<pid_t, std::list<task_finished>> tasks_finished_map;
 
@@ -297,7 +285,7 @@ int unix_socket_init(sockaddr_un* socket_un, const char* sock_path){
 }
 
 
-int server_init(sock_ev_serv *serv, const char *sock_path){
+int urd::server_init(sock_ev_serv *serv, const char *sock_path){
 	log_message(LOG_FILE, "initializing server...");
 	serv->max_clients = MAX_CLIENTS_SUPPORTED;
 	serv->fd = unix_socket_init(&serv->socket, sock_path);
@@ -314,7 +302,7 @@ int server_init(sock_ev_serv *serv, const char *sock_path){
 }
 
 
-static void read_cb(struct ev_loop *loop, struct ev_io *watcher, int revents){
+/*static*/ void urd::read_cb(struct ev_loop *loop, struct ev_io *watcher, int revents){
 	/* to-do: receive data */
 	/* A client has become readable */
 	log_message(LOG_FILE, "Inside read_cb");
@@ -353,7 +341,8 @@ static void read_cb(struct ev_loop *loop, struct ev_io *watcher, int revents){
 }
 
 
-inline static sock_ev_client client_new(int fd){
+/*inline static*/ urd::sock_ev_client urd::client_new(int fd){
+    //FIXME BUG: returning reference from local variable
 	sock_ev_client client;
 	client.fd = fd;
 	set_non_block(client.fd);
@@ -362,7 +351,7 @@ inline static sock_ev_client client_new(int fd){
 	return client;
 }
 
-static void accept_cb(struct ev_loop *loop, struct ev_io *watcher, int revents){
+/*static*/ void urd::accept_cb(struct ev_loop *loop, struct ev_io *watcher, int revents){
 	/*
 	 * Callback for accepting clients.
 	 */
@@ -398,8 +387,10 @@ static void accept_cb(struct ev_loop *loop, struct ev_io *watcher, int revents){
 	ev_io_init(w_client, read_cb, client_sd, EV_READ);
 	ev_io_start(loop, w_client);
 }
+#endif
 
-void communication_thread(int id){
+#if 0
+void urd::communication_thread(int id){
 	(void)id;
 	
 	/* loop is set to default. If different config is needed we need to change this. */
@@ -423,7 +414,9 @@ void communication_thread(int id){
 	close(server.fd);
 	exit(EXIT_SUCCESS);
 }
+#endif
 
+#if 0
 void push_jobs(ctpl::thread_pool &p){
 	/*
 	 * 1. If p.n_idle > 0 (probably sleep between checks)
@@ -452,20 +445,40 @@ void push_jobs(ctpl::thread_pool &p){
 	}*/
 
 }
+#endif
 
-void infinite_loop() {
+void urd::new_task_handler(struct norns_iotd* iotdp){
+
+    /* create a task descriptor & modify original with the task's assigned ID */
+    //std::unique_ptr<urd::task> task(new urd::task(iotdp)); 
+    //iotdp->ni_tid = task->m_task_id;
+
+    m_workers.push(urd::task(iotdp));
+
+    /* the ipc_listener will automatically reply to the client when we exit the handler */
+}
+
+urd::urd() 
+    : m_ipc_listener(urd::SOCKET_FILE,
+                 std::bind(&urd::new_task_handler, this, std::placeholders::_1)),
+      m_workers(N_THREADS_IN_POOL){
+
+}
+
+
+void urd::run() {
+
+    //daemonize();
+    m_ipc_listener.run();
 	/*
 	 *	Create thread pool
 	 *	Set number of threads
 	 *	Start infinite loop
 	 */
 
-	ctpl::thread_pool p(N_THREADS_IN_POOL);
-	p.push(communication_thread);
-	push_jobs(p);
-}
-
-int main() {
-	daemonize();
-	infinite_loop();   
+	//ctpl::thread_pool p(N_THREADS_IN_POOL);
+	//p.push(communication_thread);
+	//push_jobs(p);
+	
+	//m_workers.push(urd::communication_thread);
 }
