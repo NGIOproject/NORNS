@@ -29,14 +29,15 @@
 #include <sys/un.h>
 #include <ev.h>
 
-#include "ctpl.h"
-
 #include "ipc-listener.hpp"
+#include "logger.hpp"
+#include "ctpl.h"
 
 class urd {
 
 public:
     /* constants */
+    static constexpr const char* name = "urd";
     static constexpr const char* RUNNING_DIR = "/tmp";
     static constexpr const char* SOCKET_FILE = "/tmp/urd.socket";  
     static constexpr const char* DAEMON_LOCK_FILE = "/tmp/urd.lock";
@@ -45,27 +46,12 @@ public:
     static const int N_THREADS_IN_POOL = 3;
     static const int MAX_CLIENTS_SUPPORTED = 20;
 
-    struct sock_ev_serv {
-        ev_io io;
-        int fd;
-        struct sockaddr_un socket;
-        int socket_len;
-        int max_clients;
-        int current_clients;
-    };
-
-    struct sock_ev_client {
-        ev_io io;
-        int fd;
-        int index;
-        struct sock_ev_serv *server;
-    };
-
+    /* sample task (to be removed) */
     struct task {
         task(struct norns_iotd* iotdp){
         }
 
-        void operator()(int id) const{
+        void operator()(int /* id */) const {
             std::cout << "Hello from a task!\n";
         }
 
@@ -77,29 +63,29 @@ public:
 
 
 public:
-    urd();
     void run();
 
     
 
 private:
-    void new_task_handler(struct norns_iotd*);
+    void daemonize();
+    void new_request_handler(struct norns_iotd*);
 
     void log_message(const char filename[], const char message[]);
-    void signal_handler(int sig);
+//    void signal_handler(int sig);
     int set_non_block(int fd);
-    int unix_socket_init(sockaddr_un* socket_un, const char* sock_path);
-    int server_init(sock_ev_serv *serv, const char *sock_path);
+    //int unix_socket_init(sockaddr_un* socket_un, const char* sock_path);
+    //int server_init(sock_ev_serv *serv, const char *sock_path);
 
     void communication_thread(int id);
     void read_cb(struct ev_loop *loop, struct ev_io *watcher, int revents);
-    sock_ev_client client_new(int fd);
     static void accept_cb(struct ev_loop *loop, struct ev_io *watcher, int revents);
 
 private:
 
-    ipc_listener<struct norns_iotd> m_ipc_listener;
-    ctpl::thread_pool m_workers;
+    std::shared_ptr<logger>                          m_logger;
+    std::shared_ptr<ctpl::thread_pool>               m_workers;
+    std::shared_ptr<ipc_listener<struct norns_iotd>> m_ipc_listener;
 
 };
 

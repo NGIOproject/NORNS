@@ -45,10 +45,13 @@
 #include <boost/asio.hpp>
 #include <functional>
 
+
+
 #include <norns.h>
 
 #include "ipc-listener.hpp"
 #include "ctpl.h" 
+#include "logger.hpp"
 #include "urd.hpp"
 
 #if 0 
@@ -83,44 +86,25 @@ enum job_type{
 
 tbb::concurrent_queue<task> jobs_priority_1;
 tbb::concurrent_hash_map<pid_t, std::list<task_finished>> tasks_finished_map;
-
-void log_message(const char filename[], const char message[]){
-	/*
-	 * In a future log messages will not be redirected to a file but to the syslog.
-	 * We can use fprintf, systemd will redirect to syslog automatically.  
-	 */
-	time_t now = time(0);
-	char* dt = ctime(&now);
-	FILE *logfile;
-	logfile=fopen(filename, "a+");
-	if(logfile == NULL){
-		return;
-	}
-	if (0 > fprintf(logfile,"%s -- %s", message, dt)){
-		perror("log_message, fprintf");
-	}
-	if( 0 != fclose(logfile)){
-		perror("log_message, fclose");
-	}
-}
+#endif
 
 void signal_handler(int sig){
 	switch(sig) {
 		case SIGHUP: 
-			log_message(LOG_FILE, "Hangup signal catched");
+			//log_message(LOG_FILE, "Hangup signal catched");
 			break;
 		case SIGTERM:
-			log_message(LOG_FILE, "Terminate signal catched");
-			log_message(LOG_FILE, "Shutting down urd");
+			//log_message(LOG_FILE, "Terminate signal catched");
+			//log_message(LOG_FILE, "Shutting down urd");
 			exit(EXIT_SUCCESS);
 			break;
 		default:
-			log_message(LOG_FILE, "Unknown signal received");
+			//log_message(LOG_FILE, "Unknown signal received");
 			break;
 		}	
 }
 
-void daemonize() {
+void urd::daemonize() {
 	/*
 	 * --- Daemonize structure ---
 	 *	Check if this is already a daemon
@@ -134,10 +118,6 @@ void daemonize() {
 	 *	Manage signals
 	 */
 
-	log_message(LOG_FILE, "***************************");
-	log_message(LOG_FILE, "** Starting urd daemon **");
-	log_message(LOG_FILE, "***************************");
-
 	pid_t pid, sid;
 
 	/* Check if this is already a daemon */ 
@@ -150,7 +130,7 @@ void daemonize() {
 
 	/* Fork error */
 	if (pid < 0) {
-		log_message(LOG_FILE, "[daemonize] fork failed.");
+		m_logger->error("[daemonize] fork failed.");
 		perror("Fork");
 		exit(EXIT_FAILURE);
 	}
@@ -164,7 +144,7 @@ void daemonize() {
 	sid = setsid();
 	if (sid < 0) {
 		/* Log failure */
-		log_message(LOG_FILE, "[daemonize] setsid failed.");
+		m_logger->error("[daemonize] setsid failed.");
 		perror("Setsid");
 		exit(EXIT_FAILURE);
 	}
@@ -179,12 +159,12 @@ void daemonize() {
 
 	i=open("/dev/null", O_RDWR); /* open stdin */
 	if(-1 == dup(i)){ /* stdout */
-		log_message(LOG_FILE, "[daemonize] dup[1] failed.");
+		m_logger->error("[daemonize] dup[1] failed.");
 		perror("dup");
 		exit(EXIT_FAILURE);
 	}
 	if(-1 == dup(i)){ /* stderr */
-		log_message(LOG_FILE, "[daemonize] dup[2] failed.");
+		m_logger->error("[daemonize] dup[2] failed.");
 		perror("dup");
 		exit(EXIT_FAILURE);
 	}
@@ -194,7 +174,7 @@ void daemonize() {
 
 	/* Change the current working directory */
 	if ((chdir(RUNNING_DIR)) < 0) {
-		log_message(LOG_FILE, "[daemonize] chdir failed.");
+		m_logger->error("[daemonize] chdir failed.");
 		perror("Chdir");
 		exit(EXIT_FAILURE);
 	}
@@ -207,12 +187,12 @@ void daemonize() {
 	int lfp;
 	lfp=open(DAEMON_LOCK_FILE, O_RDWR|O_CREAT, 0640);
 	if(lfp<0){
-		log_message(LOG_FILE, "[daemonize] can not open daemon lock file");
+		m_logger->error("[daemonize] can not open daemon lock file");
 		perror("Can not open daemon lock file");
 		exit(EXIT_FAILURE);
 	} 
 	if(lockf(lfp, F_TLOCK, 0)<0){
-		log_message(LOG_FILE, "[daemonize] another instance of this daemon already running");
+		m_logger->error("[daemonize] another instance of this daemon already running");
 		perror("Another instance of this daemon already running");
 		exit(EXIT_FAILURE);
 	}
@@ -222,24 +202,25 @@ void daemonize() {
 	size_t err_snprintf;
 	err_snprintf = snprintf(str, sizeof(str), "%d\n", getpid());
 	if(err_snprintf >= sizeof(str)){
-		log_message(LOG_FILE, "[daemonize] snprintf failed");
+		m_logger->error("[daemonize] snprintf failed");
 	}
 	size_t err_write;
 	err_write = write(lfp, str, strnlen(str, sizeof(str)));
 	if(err_write != strnlen(str, sizeof(str))){
-		log_message(LOG_FILE, "[daemonize] write failed");
+		m_logger->error("[daemonize] write failed");
 	}
 
 	/* Manage signals */
-	signal(SIGCHLD,SIG_IGN); /* ignore child */
-	signal(SIGTSTP,SIG_IGN); /* ignore tty signals */
-	signal(SIGTTOU,SIG_IGN);
-	signal(SIGTTIN,SIG_IGN);
-	signal(SIGHUP,signal_handler); /* catch hangup signal */
-	signal(SIGTERM,signal_handler); /* catch kill signal */
+	signal(SIGCHLD, SIG_IGN); /* ignore child */
+	signal(SIGTSTP, SIG_IGN); /* ignore tty signals */
+	signal(SIGTTOU, SIG_IGN);
+	signal(SIGTTIN, SIG_IGN);
+	signal(SIGHUP, signal_handler); /* catch hangup signal */
+	signal(SIGTERM, signal_handler); /* catch kill signal */
 
 }
 
+#if 0
 int set_non_block(int fd){
 	/* Add O_NONBLOCK to the file descriptor */
 	int flags;
@@ -447,29 +428,44 @@ void push_jobs(ctpl::thread_pool &p){
 }
 #endif
 
-void urd::new_task_handler(struct norns_iotd* iotdp){
+void urd::new_request_handler(struct norns_iotd* iotdp){
 
     /* create a task descriptor & modify original with the task's assigned ID */
     //std::unique_ptr<urd::task> task(new urd::task(iotdp)); 
     //iotdp->ni_tid = task->m_task_id;
 
-    m_workers.push(urd::task(iotdp));
+    m_workers->push(urd::task(iotdp));
 
     /* the ipc_listener will automatically reply to the client when we exit the handler */
 }
 
-urd::urd() 
-    : m_ipc_listener(urd::SOCKET_FILE,
-                 std::bind(&urd::new_task_handler, this, std::placeholders::_1)),
-      m_workers(N_THREADS_IN_POOL){
-
-}
 
 
 void urd::run() {
 
+    // initialize logging facilities
+    m_logger = std::shared_ptr<logger>(new logger(urd::name, "stdout"));
+
+	m_logger->info("***************************");
+	m_logger->info("** Starting Urd daemon   **");
+	m_logger->info("***************************");
+
     //daemonize();
-    m_ipc_listener.run();
+    
+    // create worker pool
+    m_workers = std::shared_ptr<ctpl::thread_pool>(new ctpl::thread_pool(urd::N_THREADS_IN_POOL));
+    m_logger->info("  Creating workers...");
+
+    // create (but not start) the IPC listening mechanism
+    m_logger->info("  Creating request listener...");
+    m_ipc_listener = std::shared_ptr<ipc_listener<struct norns_iotd>>(
+        new ipc_listener<struct norns_iotd>(urd::SOCKET_FILE,
+                std::bind(&urd::new_request_handler, this, std::placeholders::_1)));
+
+    m_logger->info("Urd started successfully!");
+
+    m_logger->info("Awaiting incoming requests...");
+    m_ipc_listener->run();
 	/*
 	 *	Create thread pool
 	 *	Set number of threads

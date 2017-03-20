@@ -37,15 +37,19 @@ src_urd_SOURCES = 			\
 
 src_urd_CXXFLAGS = 				\
 	@TBB_CFLAGS@ 				\
-	@LIBEV_CFLAGS@				\
 	-std=gnu++11 -Wall -Wextra
 
 src_urd_CPPFLAGS = 				\
-	-I$(top_srcdir)/include
+	@BOOST_CPPFLAGS@			\
+	-I$(top_srcdir)/include		\
+	-I$(top_srcdir)/src
 
-src_urd_LDFLAGS = \
-	@TBB_LIBS@	  \
-	@LIBEV_LIBS@  \
+
+src_urd_LDFLAGS = 		\
+	@TBB_LIBS@	  		\
+	@BOOST_LDFLAGS@		\
+    @BOOST_SYSTEM_LIB@	\
+    @BOOST_ASIO_LIB@	\
 	-pthread
 
 src_urd_LDADD = 	\
