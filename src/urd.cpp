@@ -37,7 +37,6 @@
 #include <list>
 #include <tbb/tbb.h>
 #include <signal.h>
-#include <ev.h>
 #include <string.h>
 #include <vector>
 #include <ctime>
