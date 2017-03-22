@@ -96,6 +96,10 @@ public:
         m_ios.run();
     }
 
+    void stop() {
+        m_ios.stop();
+    }
+
 private:
     void start_accept(){
         /* start an asynchronous accept: the call to async_accept returns immediately, 

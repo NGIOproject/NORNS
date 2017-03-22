@@ -36,18 +36,19 @@ public:
     logger(const std::string& ident, const std::string& type) {
 
         try {
-            spdlog::set_async_mode(queue_size);
+//            spdlog::set_async_mode(queue_size);
 
             if(type == "stdout") {
                 m_internal_logger = spdlog::stdout_logger_mt(ident);
             }
 #ifdef SPDLOG_ENABLE_SYSLOG 
             else if(type == "syslog") {
-                m_internal_logger = spd::syslog_logger("syslog", "ident", LOG_PID);
+                m_internal_logger = spdlog::syslog_logger("syslog", ident, LOG_PID);
             }
 #endif
             else {
                 // FIXME: add custom exceptions here!
+                std::cerr << "Unknown logger type: '" << type << "'\n";
                 abort();
             }
 

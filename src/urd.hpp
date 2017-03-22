@@ -30,6 +30,7 @@
 #include <ev.h>
 
 #include "settings.hpp"
+#include "signal-listener.hpp"
 #include "ipc-listener.hpp"
 #include "logger.hpp"
 #include "ctpl.h"
@@ -37,16 +38,6 @@
 class urd {
 
 public:
-    /* constants */
-//    static constexpr const char* name = "urd";
-//    static constexpr const char* RUNNING_DIR = "/tmp";
-//    static constexpr const char* SOCKET_FILE = "/tmp/urd.socket";  
-//    static constexpr const char* DAEMON_LOCK_FILE = "/tmp/urd.lock";
-//    static constexpr const char* LOG_FILE = "/tmp/urd.log";
-//    static const int WAKEUP_PERIODIC_TIME = 5;
-//    static const int N_THREADS_IN_POOL = 3;
-//    static const int MAX_CLIENTS_SUPPORTED = 20;
-
     /* sample task (to be removed) */
     struct task {
         task(struct norns_iotd* /*iotdp*/){
@@ -65,25 +56,14 @@ public:
     void set_configuration(const config_settings& settings);
     void run();
 
-    
-
 private:
     void daemonize();
     void new_request_handler(struct norns_iotd*);
-
-    void log_message(const char filename[], const char message[]);
-//    void signal_handler(int sig);
-    int set_non_block(int fd);
-    //int unix_socket_init(sockaddr_un* socket_un, const char* sock_path);
-    //int server_init(sock_ev_serv *serv, const char *sock_path);
-
-    void communication_thread(int id);
-    void read_cb(struct ev_loop *loop, struct ev_io *watcher, int revents);
-    static void accept_cb(struct ev_loop *loop, struct ev_io *watcher, int revents);
+    void signal_handler(int);
 
 private:
-
     std::shared_ptr<logger>                          m_logger;
+    std::shared_ptr<signal_listener>                 m_signal_listener;
     std::shared_ptr<config_settings>                 m_settings;
     std::shared_ptr<ctpl::thread_pool>               m_workers;
     std::shared_ptr<ipc_listener<struct norns_iotd>> m_ipc_listener;

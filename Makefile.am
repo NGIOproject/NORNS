@@ -42,6 +42,7 @@ src_urd_CXXFLAGS = 				\
 	-std=gnu++11 -Wall -Wextra
 
 src_urd_CPPFLAGS = 				\
+	-DSPDLOG_ENABLE_SYSLOG		\
 	@BOOST_CPPFLAGS@			\
 	-I$(top_srcdir)/include		\
 	-I$(top_srcdir)/src
