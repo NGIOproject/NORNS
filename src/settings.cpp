@@ -27,6 +27,8 @@
 #include <boost/property_tree/json_parser.hpp>
 #include "settings.hpp"
 
+namespace bpt = boost::property_tree;
+
 static uint64_t parse_size(const std::string& str);
 
 void config_settings::load(const std::string& filename) {
@@ -34,6 +36,28 @@ void config_settings::load(const std::string& filename) {
     bpt::ptree pt;
 
     bpt::read_json(filename, pt);
+
+    m_progname = defaults::progname;
+
+    m_running_dir = pt.get<std::string>("settings.running_dir", "");
+
+    if(m_running_dir == ""){
+        m_running_dir = defaults::running_dir;
+    }
+
+    m_ipc_sockfile = defaults::ipc_sockfile;
+    
+    m_daemon_pidfile = pt.get<std::string>("settings.pidfile", "");
+
+    if(m_daemon_pidfile == ""){
+        m_daemon_pidfile = defaults::daemon_pidfile;
+    }
+
+    m_workers_in_pool = pt.get<int32_t>("settings.workers", 0);
+
+    if(m_workers_in_pool == 0){
+        m_workers_in_pool = defaults::workers_in_pool;
+    }
 
     m_storage_path = pt.get<std::string>("settings.storage.path", "");
 
@@ -157,5 +181,4 @@ uint64_t parse_size(const std::string& str){
     double value = std::stod(number_str);
 
     return std::round(value*factor);
-
 }

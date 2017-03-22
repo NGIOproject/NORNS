@@ -25,12 +25,17 @@
 #ifndef __SETTINGS_HPP__
 #define __SETTINGS_HPP__
 
+#include <thread>
 #include <list>
-#include <boost/foreach.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
 
-namespace bpt = boost::property_tree;
+namespace defaults {
+    static constexpr const char* progname = "urd";
+    static const bool            daemonize = true;
+    static constexpr const char* running_dir = "/tmp";
+    static constexpr const char* ipc_sockfile = "/tmp/urd.socket";  
+    static constexpr const char* daemon_pidfile = "/tmp/urd.pid";
+    static const uint32_t workers_in_pool = std::thread::hardware_concurrency();
+} // namespace defaults
 
 struct config_settings {
 
@@ -48,10 +53,15 @@ struct config_settings {
 
     void load(const std::string& filename);
 
+    std::string        m_progname;
+    bool               m_daemonize;
+    std::string        m_running_dir;
+    std::string        m_ipc_sockfile;
+    std::string        m_daemon_pidfile;
+    uint32_t           m_workers_in_pool;
     std::string        m_storage_path;     /* path to internal storage */
     uint64_t           m_storage_capacity; /* internal storage's max capacity */
     std::list<backend> m_backends;         /* list of backend descriptions */
 };
-
 
 #endif /* __SETTINGS_HPP__ */

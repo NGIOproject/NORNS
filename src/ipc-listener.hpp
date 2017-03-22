@@ -85,7 +85,7 @@ class ipc_listener {
     };
 
 public:
-    ipc_listener(const char* socket_file, callback_t callback) 
+    ipc_listener(const std::string& socket_file, callback_t callback) 
         : m_acceptor(m_ios, ba::local::stream_protocol::endpoint(socket_file)),
           m_socket(m_ios),
           m_callback(callback) {

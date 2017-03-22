@@ -32,7 +32,7 @@ namespace bpo = boost::program_options;
 
 int main(int argc, char* argv[]){
     
-    bool run_in_foreground = true;
+    bool run_in_foreground = !defaults::daemonize;
 
     // declare a group of options that will be allowed only on the command line
     bpo::options_description generic("Allowed options");
@@ -56,18 +56,11 @@ int main(int argc, char* argv[]){
 
     settings.load("norns.json");
 
-//    if (vm.count("f")) {
-//        std::cout << "Compression level was set to " << vm["foreground"].as<bool>() << ".\n";
-        std::cout << "Compression level was set to " << run_in_foreground << ".\n";
-//    } else {
-//        std::cout << "Compression level was not set.\n";
-//    }
+    settings.m_daemonize = !run_in_foreground;
 
-    exit(0);
+    urd daemon;
+    daemon.set_configuration(settings);
+    daemon.run();
 
-
-
-    ::unlink(urd::SOCKET_FILE);
-
-    urd().run();
+    exit(EXIT_SUCCESS);
 }

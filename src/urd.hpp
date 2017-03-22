@@ -29,6 +29,7 @@
 #include <sys/un.h>
 #include <ev.h>
 
+#include "settings.hpp"
 #include "ipc-listener.hpp"
 #include "logger.hpp"
 #include "ctpl.h"
@@ -37,18 +38,18 @@ class urd {
 
 public:
     /* constants */
-    static constexpr const char* name = "urd";
-    static constexpr const char* RUNNING_DIR = "/tmp";
-    static constexpr const char* SOCKET_FILE = "/tmp/urd.socket";  
-    static constexpr const char* DAEMON_LOCK_FILE = "/tmp/urd.lock";
-    static constexpr const char* LOG_FILE = "/tmp/urd.log";
-    static const int WAKEUP_PERIODIC_TIME = 5;
-    static const int N_THREADS_IN_POOL = 3;
-    static const int MAX_CLIENTS_SUPPORTED = 20;
+//    static constexpr const char* name = "urd";
+//    static constexpr const char* RUNNING_DIR = "/tmp";
+//    static constexpr const char* SOCKET_FILE = "/tmp/urd.socket";  
+//    static constexpr const char* DAEMON_LOCK_FILE = "/tmp/urd.lock";
+//    static constexpr const char* LOG_FILE = "/tmp/urd.log";
+//    static const int WAKEUP_PERIODIC_TIME = 5;
+//    static const int N_THREADS_IN_POOL = 3;
+//    static const int MAX_CLIENTS_SUPPORTED = 20;
 
     /* sample task (to be removed) */
     struct task {
-        task(struct norns_iotd* iotdp){
+        task(struct norns_iotd* /*iotdp*/){
         }
 
         void operator()(int /* id */) const {
@@ -60,9 +61,8 @@ public:
         const char* m_path;
     };
 
-
-
 public:
+    void set_configuration(const config_settings& settings);
     void run();
 
     
@@ -84,6 +84,7 @@ private:
 private:
 
     std::shared_ptr<logger>                          m_logger;
+    std::shared_ptr<config_settings>                 m_settings;
     std::shared_ptr<ctpl::thread_pool>               m_workers;
     std::shared_ptr<ipc_listener<struct norns_iotd>> m_ipc_listener;
 

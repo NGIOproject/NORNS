@@ -172,7 +172,7 @@ void urd::daemonize() {
 	umask(027); /* file creation mode to 750 */
 
 	/* Change the current working directory */
-	if ((chdir(RUNNING_DIR)) < 0) {
+	if ((chdir(m_settings->m_running_dir.c_str())) < 0) {
 		m_logger->error("[daemonize] chdir failed.");
 		perror("Chdir");
 		exit(EXIT_FAILURE);
@@ -184,8 +184,8 @@ void urd::daemonize() {
 	 */
 
 	int lfp;
-	lfp=open(DAEMON_LOCK_FILE, O_RDWR|O_CREAT, 0640);
-	if(lfp<0){
+	lfp = open(m_settings->m_daemon_pidfile.c_str(), O_RDWR|O_CREAT, 0640);
+	if(lfp < 0){
 		m_logger->error("[daemonize] can not open daemon lock file");
 		perror("Can not open daemon lock file");
 		exit(EXIT_FAILURE);
@@ -439,31 +439,43 @@ void urd::new_request_handler(struct norns_iotd* iotdp){
 }
 
 
+void urd::set_configuration(const config_settings& settings) {
+    m_settings = std::make_shared<config_settings>(settings);
+}
 
 void urd::run() {
 
     // initialize logging facilities
-    m_logger = std::shared_ptr<logger>(new logger(urd::name, "stdout"));
+    m_logger = std::shared_ptr<logger>(new logger(m_settings->m_progname, "stdout"));
 
-	m_logger->info("***************************");
-	m_logger->info("** Starting Urd daemon   **");
-	m_logger->info("***************************");
+	m_logger->info("===========================");
+	m_logger->info("== Starting Urd daemon   ==");
+	m_logger->info("===========================");
+
+	m_logger->info("");
+	m_logger->info("* Settings:");
+	m_logger->info("    daemonize?: {}", m_settings->m_daemonize);
+	m_logger->info("    running directory: {}", m_settings->m_running_dir);
+	m_logger->info("    pidfile: {}", m_settings->m_daemon_pidfile);
+	m_logger->info("    workers: {}", m_settings->m_workers_in_pool);
+	m_logger->info("    internal storage: {}", m_settings->m_storage_path);
+	m_logger->info("    internal storage capacity: {}", m_settings->m_storage_capacity);
 
     //daemonize();
     
     // create worker pool
-    m_workers = std::shared_ptr<ctpl::thread_pool>(new ctpl::thread_pool(urd::N_THREADS_IN_POOL));
-    m_logger->info("  Creating workers...");
+    m_workers = std::shared_ptr<ctpl::thread_pool>(new ctpl::thread_pool(m_settings->m_workers_in_pool));
+    m_logger->info("* Creating workers...");
 
     // create (but not start) the IPC listening mechanism
-    m_logger->info("  Creating request listener...");
+    m_logger->info("* Creating request listener...");
+    ::unlink(m_settings->m_ipc_sockfile.c_str());
     m_ipc_listener = std::shared_ptr<ipc_listener<struct norns_iotd>>(
-        new ipc_listener<struct norns_iotd>(urd::SOCKET_FILE,
+        new ipc_listener<struct norns_iotd>(m_settings->m_ipc_sockfile,
                 std::bind(&urd::new_request_handler, this, std::placeholders::_1)));
 
-    m_logger->info("Urd started successfully!");
-
-    m_logger->info("Awaiting incoming requests...");
+    m_logger->info("Urd daemon successfully started!");
+    m_logger->info("Awaiting requests...");
     m_ipc_listener->run();
 	/*
 	 *	Create thread pool

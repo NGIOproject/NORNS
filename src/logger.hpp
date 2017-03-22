@@ -67,28 +67,53 @@ public:
     }
 
     template <typename... Args>
-    void info(const char* fmt, const Args&... args) {
+    inline void info(const char* fmt, const Args&... args) {
         m_internal_logger->info(fmt, args...);
     }
 
     template <typename... Args>
-    void debug(const char* fmt, const Args&... args) {
+    inline void debug(const char* fmt, const Args&... args) {
         m_internal_logger->debug(fmt, args...);
     }
 
     template <typename... Args>
-    void warn(const char* fmt, const Args&... args) {
+    inline void warn(const char* fmt, const Args&... args) {
         m_internal_logger->warn(fmt, args...);
     }
 
     template <typename... Args>
-    void error(const char* fmt, const Args&... args) {
+    inline void error(const char* fmt, const Args&... args) {
         m_internal_logger->error(fmt, args...);
     }
 
     template <typename... Args>
-    void critical(const char* fmt, const Args&... args) {
+    inline void critical(const char* fmt, const Args&... args) {
         m_internal_logger->critical(fmt, args...);
+    }
+
+    template <typename T>
+    inline void info(const T& msg) {
+        m_internal_logger->info(msg);
+    }
+
+    template <typename T>
+    inline void debug(const T& msg) {
+        m_internal_logger->debug(msg);
+    }
+
+    template <typename T>
+    inline void warn(const T& msg) {
+        m_internal_logger->warn(msg);
+    }
+
+    template <typename T>
+    inline void error(const T& msg) {
+        m_internal_logger->error(msg);
+    }
+
+    template <typename T>
+    inline void critical(const T& msg) {
+        m_internal_logger->critical(msg);
     }
 
 private:
