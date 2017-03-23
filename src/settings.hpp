@@ -27,6 +27,7 @@
 
 #include <thread>
 #include <list>
+#include <boost/property_tree/ptree.hpp>
 
 namespace defaults {
     static constexpr const char* progname = "urd";
@@ -37,18 +38,25 @@ namespace defaults {
     static const uint32_t workers_in_pool = std::thread::hardware_concurrency();
 } // namespace defaults
 
+namespace bpt = boost::property_tree;
+
 struct config_settings {
 
     struct backend {
 
-        backend(const std::string& name, const std::string& path, const uint64_t capacity)
+        backend(const std::string& name, const std::string& type, const std::string& description, 
+                const uint64_t capacity, const bpt::ptree& options)
             : m_name(name),
-              m_path(path),
-              m_capacity(capacity){ }
+              m_type(type),
+              m_description(description),
+              m_capacity(capacity),
+              m_options(options) { }
 
         const std::string m_name;
-        const std::string m_path;
+        const std::string m_type;
+        const std::string m_description;
         const uint64_t    m_capacity;
+        const bpt::ptree  m_options;
     };
 
     void load(const std::string& filename);

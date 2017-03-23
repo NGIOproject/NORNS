@@ -36,10 +36,14 @@ public:
     logger(const std::string& ident, const std::string& type) {
 
         try {
-//            spdlog::set_async_mode(queue_size);
 
             if(type == "stdout") {
+                spdlog::set_async_mode(queue_size);
                 m_internal_logger = spdlog::stdout_logger_mt(ident);
+            }
+            else if(type == "stdout color") {
+                spdlog::set_async_mode(queue_size);
+                m_internal_logger = spdlog::stdout_color_mt(ident);
             }
 #ifdef SPDLOG_ENABLE_SYSLOG 
             else if(type == "syslog") {
@@ -65,6 +69,11 @@ public:
             std::cerr << "spdlog initialization failed!: " << ex.what() << std::endl;
             abort();
         }
+    }
+
+    ~logger(){
+        std::cerr << "XXXXXXXXXX called!\n";
+        spdlog::drop_all();
     }
 
     template <typename... Args>

@@ -31,11 +31,19 @@ bin_PROGRAMS = src/urd
 
 src_urd_SOURCES = 			\
 	src/ipc-listener.hpp	\
+	src/backends.cpp        \
+	src/backends.hpp        \
+	src/nvml-dax.cpp        \
+	src/nvml-dax.hpp        \
 	src/main.cpp			\
+	src/posix-fs.cpp		\
+	src/posix-fs.hpp		\
 	src/settings.cpp		\
 	src/settings.hpp		\
 	src/urd.cpp				\
-	src/urd.hpp
+	src/urd.hpp				\
+	src/utils.cpp			\
+	src/utils.hpp
 
 src_urd_CXXFLAGS = 				\
 	@TBB_CFLAGS@ 				\

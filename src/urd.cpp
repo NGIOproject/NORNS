@@ -48,6 +48,7 @@
 
 #include "ipc-listener.hpp"
 #include "signal-listener.hpp"
+#include "backends.hpp"
 #include "ctpl.h" 
 #include "logger.hpp"
 #include "urd.hpp"
@@ -248,6 +249,7 @@ void urd::signal_handler(int signum){
 
             m_ipc_listener->stop();
             ::unlink(m_settings->m_daemon_pidfile.c_str());
+            m_logger.reset();
             break;
 
         case SIGHUP:
@@ -262,7 +264,7 @@ void urd::run() {
     if(m_settings->m_daemonize) {
         m_logger = std::shared_ptr<logger>(new logger(m_settings->m_progname, "syslog"));
     } else{
-        m_logger = std::shared_ptr<logger>(new logger(m_settings->m_progname, "stdout"));
+        m_logger = std::shared_ptr<logger>(new logger(m_settings->m_progname, "stdout color"));
     }
 
 	m_logger->info("===========================");
@@ -280,6 +282,22 @@ void urd::run() {
 
     if(m_settings->m_daemonize) {
         daemonize();
+    }
+
+    // instantiate configured backends
+    m_logger->info("* Creating storage backend handlers...");
+    for(const auto& bend : m_settings->m_backends){
+        try {
+
+            auto b = storage::backend_factory::get_instance().create(bend.m_type, bend.m_options);
+            m_backends.push_back(b);
+
+            m_logger->info("    Registered backend '{}' (type: {})", bend.m_name, bend.m_type);  
+            m_logger->info("      [ capacity: {} bytes ]", b->get_capacity());
+
+        } catch(std::invalid_argument ex) {
+            m_logger->warn(" Ignoring definition of backend '{}' (type: unknown)", bend.m_name);
+        }
     }
 
     // signal handlers must be installed AFTER daemonizing

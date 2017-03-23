@@ -30,6 +30,7 @@
 #include <ev.h>
 
 #include "settings.hpp"
+#include "backends.hpp"
 #include "signal-listener.hpp"
 #include "ipc-listener.hpp"
 #include "logger.hpp"
@@ -67,6 +68,7 @@ private:
     std::shared_ptr<config_settings>                 m_settings;
     std::shared_ptr<ctpl::thread_pool>               m_workers;
     std::shared_ptr<ipc_listener<struct norns_iotd>> m_ipc_listener;
+    std::list<std::shared_ptr<storage::backend>>     m_backends;
 
 };
 

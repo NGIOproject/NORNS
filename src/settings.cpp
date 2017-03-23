@@ -25,11 +25,11 @@
 #include <boost/foreach.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+
+#include "utils.hpp"
 #include "settings.hpp"
 
 namespace bpt = boost::property_tree;
-
-static uint64_t parse_size(const std::string& str);
 
 void config_settings::load(const std::string& filename) {
 
@@ -74,7 +74,7 @@ void config_settings::load(const std::string& filename) {
     }
 
     try {
-        m_storage_capacity = parse_size(capacity_str);
+        m_storage_capacity = utils::parse_size(capacity_str);
     } catch(std::invalid_argument ex) {
         std::cerr << "Unable to parse storage.capacity parameter '" << capacity_str << "': " << ex.what() << "\n";
         exit(EXIT_FAILURE);
@@ -82,103 +82,49 @@ void config_settings::load(const std::string& filename) {
 
     /* parse storage backends */
     BOOST_FOREACH(bpt::ptree::value_type& bend, pt.get_child("backends")){
+
         // bend.first == ""
-        const auto& name = bend.second.get<std::string>("name", "");
+        // make a copy of the ptree so that we can modify it
+        bpt::ptree options(bend.second);
+
+        const auto& name = options.get<std::string>("name", "");
 
         if(name == ""){
-            std::cerr << "Missing 'name' in backend description";
+            std::cerr << "Missing 'name' in backend definition\n";
             exit(EXIT_FAILURE);
         }
 
-        const auto& path = bend.second.get<std::string>("path", "");
+        const auto& type = options.get<std::string>("type", "");
 
-        if(path == ""){
-            std::cerr << "Missing 'path' in backend description";
+        if(type == ""){
+            std::cerr << "Missing 'type' in backend definition\n";
             exit(EXIT_FAILURE);
         }
 
-        const auto& capacity_str = bend.second.get<std::string>("capacity", "");
+        const auto& desc = options.get<std::string>("description", "");
+
+        if(desc == ""){
+            std::cerr << "Missing 'description' in backend definition\n";
+            exit(EXIT_FAILURE);
+        }
+
+        const auto& capacity_str = options.get<std::string>("capacity", "");
 
         if(capacity_str == ""){
-            std::cerr << "Missing 'capacity' in backend description";
+            std::cerr << "Missing 'capacity' in backend definition\n";
             exit(EXIT_FAILURE);
         }
 
         uint64_t capacity;
 
         try {
-            capacity = parse_size(capacity_str);
+            capacity = utils::parse_size(capacity_str);
         } catch(std::invalid_argument ex) {
             std::cerr << "Error parsing backend 'capacity' parameter: '" << capacity_str << "': " << ex.what() << "\n";
             exit(EXIT_FAILURE);
         }
 
-        m_backends.emplace_back(name, path, capacity);
+        m_backends.emplace_back(name, type, desc, capacity, options);
     }
 }
 
-uint64_t parse_size(const std::string& str){
-
-    const uint64_t B_FACTOR = 1;
-    const uint64_t KB_FACTOR = 1e3;
-    const uint64_t KiB_FACTOR = (1 << 10);
-    const uint64_t MB_FACTOR = 1e6;
-    const uint64_t MiB_FACTOR = (1 << 20);
-    const uint64_t GB_FACTOR = 1e9;
-    const uint64_t GiB_FACTOR = (1 << 30);
-
-    std::pair<std::string, uint64_t> conversions[] = {
-        {"GiB", GiB_FACTOR},
-        {"GB",  GB_FACTOR},
-        {"G",   GB_FACTOR},
-        {"MiB", MiB_FACTOR},
-        {"MB",  MB_FACTOR},
-        {"M",   MB_FACTOR},
-        {"KiB", KiB_FACTOR},
-        {"KB",  KB_FACTOR},
-        {"K",   KB_FACTOR},
-        {"B",   B_FACTOR},
-    };
-
-    std::string scopy(str);
-
-    /* remove whitespaces from the string */
-    scopy.erase(std::remove_if(scopy.begin(), scopy.end(), 
-                                [](char ch){
-                                    return std::isspace<char>(ch, std::locale::classic()); 
-                                }), 
-                scopy.end() );
-
-    /* determine the units */
-    std::size_t pos = std::string::npos;
-    uint64_t factor = B_FACTOR;
-
-    for(const auto& c: conversions){
-        const std::string& suffix = c.first;
-
-        if((pos = scopy.find(suffix)) != std::string::npos){
-            /* check that the candidate is using the suffix EXACTLY 
-             * to prevent accepting something like "GBfoo" as a valid Gigabyte unit */
-            if(suffix != scopy.substr(pos)){
-                pos = std::string::npos;
-                continue;
-            }
-
-            factor = c.second;
-            break;
-        }
-    }
-
-    /* this works as expected because if pos == std::string::npos, the standard
-     * states that all characters until the end of the string should be included.*/
-    std::string number_str = scopy.substr(0, pos);
-
-    /* check if it's a valid number */
-    if(number_str == "" || !std::all_of(number_str.begin(), number_str.end(), ::isdigit)){
-        throw std::invalid_argument("Not a number");
-    }
-
-    double value = std::stod(number_str);
-
-    return std::round(value*factor);
-}
