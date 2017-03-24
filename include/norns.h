@@ -26,17 +26,23 @@
 
 #include <features.h>
 #include <sys/types.h>
+#include <stdint.h>
 
 __BEGIN_DECLS
 
 /* I/O task descriptor */
 struct norns_iotd {
-    int ni_tid;           /* task identifier */
-    int ni_ibid;          /* source backend identifier */
-    const char* ni_ipath; /* path to data source */
-    int ni_obid;          /* destination backend identifier */
-    const char* ni_opath; /* path to data destination */
-    int ni_type;          /* operation to be performed */
+    uint32_t    ni_tid;     /* task identifier */
+    uint32_t    ni_sbid;    /* source backend identifier */
+    const char* ni_spath;   /* path to data source */
+    uint32_t    ni_dbid;    /* destination backend identifier */
+    const char* ni_dpath;   /* path to data destination */
+    uint32_t    ni_type;    /* operation to be performed */
+
+    /* Internal members. */
+    pid_t       __pid;      /* pid of the process that made the request */
+    uint32_t    __jobid;    /* job id of the process that made the request (XXX Slurm dependent)*/
+                        
 };
 
 /* Task types */
@@ -66,17 +72,17 @@ int norns_getconf() __THROW;
 /* Enqueue an asynchronous I/O task */
 int norns_transfer(struct norns_iotd* iotdp) __THROW;
 
+/* wait for the completion of the task associated to iotdp */
+int norns_wait(struct norns_iotd* iotdp) __THROW;
+
 /* Try to cancel an asynchronous I/O task associated with iotdp */
 ssize_t norns_cancel(struct norns_iotd* iotdp) __THROW;
 
 /* Retrieve return status associated with iotdp */
-ssize_t norns_return(struct norns_iotd* iotdp) __THROW;
+ssize_t norns_return(struct norns_iotd* iotdp, struct norns_iotst* statp) __THROW;
 
-/* Retrieve current status associated with iotdp */
+/* Retrieve current status associated with iotdp (if iotdp is NULL, retrieve status for all running tasks) */
 ssize_t norns_progress(struct norns_iotd* iotdp, struct norns_iotst* statp) __THROW;
-
-/* Retrieve status associated with all current tasks */
-ssize_t norns_progress_all(struct norns_iotst** statp) __THROW;
 
 /* Retrieve error status associated with iotdp */
 int norns_error(struct norns_iotd* iotdp) __THROW;

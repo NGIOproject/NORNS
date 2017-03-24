@@ -47,29 +47,6 @@ __attribute__((destructor)) static void __norns_finit(void);
 
 
 void __norns_init(){
-
-#if 0
-	struct sockaddr_un server;
-
-	sock = socket(AF_UNIX, SOCK_STREAM, 0);
-	if (sock < 0) {
-		perror("opening stream socket");
-		exit(EXIT_FAILURE);
-	}
-
-	server.sun_family = AF_UNIX;
-	strncpy(server.sun_path, SOCKET_FILE, sizeof(server.sun_path));
-	server.sun_path[sizeof(server.sun_path)-1] = '\0';
-
-	if (connect(sock, (struct sockaddr *) &server, sizeof(struct sockaddr_un)) < 0) {
-        if (close(sock) < 0){
-        	exit(EXIT_FAILURE);
-        }
-        perror("connecting stream socket");
-        exit(EXIT_FAILURE);
-    }
-#endif
-
 }
 
 static int connect_to_daemon(void){
@@ -97,8 +74,6 @@ void __norns_finit(void){
 	/*
 	 * 
 	 */
-	printf("Executing this when the library is unloaded\n");
-	close(sock);
 }
 
 int norns_transfer(struct norns_iotd* iotdp) {
@@ -111,6 +86,10 @@ int norns_transfer(struct norns_iotd* iotdp) {
     }
 
     memcpy(iotd_copy, iotdp, sizeof(*iotd_copy));
+
+    // capture important process information
+    iotd_copy->__pid = getpid();
+    iotd_copy->__jobid = 0;
 
     int sfd = connect_to_daemon();
 

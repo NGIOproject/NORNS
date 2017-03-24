@@ -22,39 +22,30 @@
 // along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef __URD_HPP__
-#define __URD_HPP__
+#ifndef __IO_TASK_HPP__
+#define __IO_TASK_HPP__
 
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <ev.h>
+namespace io {
 
-#include "settings.hpp"
-#include "backends.hpp"
-#include "signal-listener.hpp"
-#include "ipc-listener.hpp"
-#include "logger.hpp"
-#include "ctpl.h"
+struct task {
 
-class urd {
+    using backend_ptr = std::shared_ptr<storage::backend>;
 
-public:
-    void set_configuration(const config_settings& settings);
-    void run();
+    task(struct norns_iotd* /*iotdp*/) {
+    }
 
-private:
-    void daemonize();
-    void new_request_handler(struct norns_iotd*);
-    void signal_handler(int);
+    void operator()(int /* thread_id */) const {
+        std::cout << "Hello from a task!\n";
+    }
 
-private:
-    std::shared_ptr<logger>                          m_logger;
-    std::shared_ptr<signal_listener>                 m_signal_listener;
-    std::shared_ptr<config_settings>                 m_settings;
-    std::shared_ptr<ctpl::thread_pool>               m_workers;
-    std::shared_ptr<ipc_listener<struct norns_iotd>> m_ipc_listener;
-    std::list<std::shared_ptr<storage::backend>>     m_backends;
+    uint64_t    m_id;
+    pid_t       m_pid;
+    uint32_t    m_jobid;
+    backend_ptr m_source;
+    backend_ptr m_destination;
 
 };
 
-#endif /* __URD_HPP__ */
+} // namespace io
+
+#endif // __IO_TASK_HPP__

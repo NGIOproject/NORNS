@@ -51,6 +51,7 @@
 #include "backends.hpp"
 #include "ctpl.h" 
 #include "logger.hpp"
+#include "io-task.hpp"
 #include "urd.hpp"
 
 #if 0 
@@ -230,7 +231,7 @@ void urd::new_request_handler(struct norns_iotd* iotdp){
     //std::unique_ptr<urd::task> task(new urd::task(iotdp)); 
     //iotdp->ni_tid = task->m_task_id;
 
-    m_workers->push(urd::task(iotdp));
+    m_workers->push(std::move(io::task(iotdp)));
 
     /* the ipc_listener will automatically reply to the client when we exit the handler */
 }
