@@ -49,10 +49,21 @@ AX_CHECK_COMPILE_FLAG([-std=c++11], [CXXFLAGS+=" -std=c++11"], [
 # check for pkg-config
 PKG_PROG_PKG_CONFIG
 
+if test -z "$PKG_CONFIG";
+then
+    AC_MSG_ERROR([Could not find pkg-config.
+ * You may not have pkg-config installed
+    - In Ubuntu/Debian: apt-get install pkg-config
+    - In RHEL/Fedora: yum install pkgconfig
+    - In SuSE: zypper install pkg-config
+    - Install from sources at http://www.freedesktop.org/wiki/Software/pkg-config/
+ * If it is installed but not in the PATH then you may want to set the PKG_CONFIG variable])
+fi
+
 # check for some BOOST libraries
 AX_BOOST_BASE([1.53],, [
     AC_MSG_ERROR([
-        The Norns Data Scheduler needs BOOST >= 1.53, but it was not found in your system
+        This software requires BOOST >= 1.53, but it was not found in your system
     ])
 ])
 AX_BOOST_SYSTEM
@@ -61,10 +72,13 @@ AX_BOOST_ASIO
 AX_BOOST_PROGRAM_OPTIONS
 
 
-# check that Intel's TBB
-PKG_CHECK_MODULES([TBB], [tbb])
-
-
+# check that Intel's TBB is available. some distros don't include
+PKG_CHECK_MODULES([TBB], [tbb],
+                  [],
+AC_MSG_ERROR([This software requires the development files of Intel TBB.
+ * In Ubuntu/Debian: apt-get install libtbb-dev
+ * In RHEL/CentOS: yum install tbb-devel])
+)
 
 # Checks for header files.
 
