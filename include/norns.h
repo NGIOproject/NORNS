@@ -30,14 +30,41 @@
 
 __BEGIN_DECLS
 
+typedef uint32_t jobid_t;
+
+/* Process credentials */
+struct norns_cred {
+    // TODO: to be completed, but at least...
+    pid_t cr_pid;    /* PID of the process */
+    gid_t cr_gid;    /* GID of the process */
+};
+
+/* Batch job descriptor */
+struct norns_job {
+    const char** jb_hosts;  /* NULL-terminated array of hostnames participating in the job */
+    size_t       jb_nhosts; /* number of hostnames in the list */
+};
+
+/* Data resource descriptor  */
+struct norns_resource {
+    const char* r_hostname;     /* hostname */
+    const char* r_path;         /* path to "data" (i.e. file or directory) */
+    uint32_t    r_type;         /* type of resource */
+};
+
+
 /* I/O task descriptor */
 struct norns_iotd {
-    uint32_t    ni_tid;     /* task identifier */
-    uint32_t    ni_sbid;    /* source backend identifier */
-    const char* ni_spath;   /* path to data source */
-    uint32_t    ni_dbid;    /* destination backend identifier */
-    const char* ni_dpath;   /* path to data destination */
-    uint32_t    ni_type;    /* operation to be performed */
+    uint32_t            ni_tid;     /* task identifier */
+//    uint32_t            ni_sbid;    /* source backend identifier */
+//    const char*         ni_spath;   /* path to data source */
+//    uint32_t            ni_dbid;    /* destination backend identifier */
+//    const char*         ni_dpath;   /* path to data destination */
+
+    struct norns_resource ni_src;   /* data source */
+    struct norns_resource ni_dst;   /* data destination */
+    uint32_t            ni_type;    /* operation to be performed */
+    struct norns_cred*  ni_auth;   /* process credentials (NULL if unprivileged) */
 
     /* Internal members. */
     pid_t       __pid;      /* pid of the process that made the request */
@@ -46,10 +73,17 @@ struct norns_iotd {
 };
 
 /* Task types */
-enum {
-    NORNS_COPY,
-    NORNS_MOVE
-};
+//enum {
+//    NORNS_COPY   = 00000000,
+//    NORNS_MOVE   = 00000001,
+//    NORNS_LOCAL  = 00000010,
+//    NORNS_REMOTE = 00000020
+//};
+
+#define NORNS_COPY      00000000
+#define NORNS_MOVE      00000001
+#define NORNS_LOCAL     00000010
+#define NORNS_REMOTE    00000020
 
 
 /* I/O task status descriptor */
@@ -65,9 +99,13 @@ enum {
 };
 
 
-void norns_init() __THROW;
+//void norns_init() __THROW;
 
-int norns_getconf() __THROW;
+//int norns_getconf() __THROW;
+
+/**************************************************************************/
+/* Client API                                                             */
+/**************************************************************************/
 
 /* Enqueue an asynchronous I/O task */
 int norns_transfer(struct norns_iotd* iotdp) __THROW;
@@ -86,6 +124,25 @@ ssize_t norns_progress(struct norns_iotd* iotdp, struct norns_iotst* statp) __TH
 
 /* Retrieve error status associated with iotdp */
 int norns_error(struct norns_iotd* iotdp) __THROW;
+
+
+/**************************************************************************/
+/* Administrative API                                                     */
+/* (only authenticated processes will be able to successfully call these) */
+/**************************************************************************/
+
+/* Send a command to the daemon (e.g. stop accepting new tasks) */
+int norns_command(struct norns_cred* auth);
+
+/* Register and describe a batch job */
+int norns_register_job(struct norns_cred* auth, struct norns_job* job_desc);
+
+/* Update the description of an existing batch job */
+int norns_update_job(struct norns_cred* auth, struct norns_job* job_desc);
+
+/* Remove the description of a batch job */
+int norns_remove_job(struct norns_cred* auth, struct norns_job* job_desc);
+
 
 __END_DECLS
 
