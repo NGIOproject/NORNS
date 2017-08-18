@@ -45,7 +45,7 @@ int main() {
     print_iotd(&iotd);
 
     if(norns_transfer(&iotd) != 0) {
-    	fprintf(stderr, "norns_transfer error: %s \n", strerror(errno));
+    	fprintf(stderr, "norns_transfer() error: %s \n", strerror(errno));
     	exit(EXIT_FAILURE);
     }
 

@@ -23,6 +23,7 @@
 //
 
 #include <unistd.h>
+#include <sys/types.h>
 #include <boost/program_options.hpp>
 
 #include "settings.hpp"
@@ -52,9 +53,15 @@ int main(int argc, char* argv[]){
         exit(EXIT_SUCCESS);
     }
 
+    struct stat stbuf;
+    if(stat(defaults::config_file, &stbuf) != 0) {
+        std::cerr << "Missing configuration file '" << defaults::config_file << "'\n";
+        exit(EXIT_FAILURE);
+    }
+
     config_settings settings;
 
-    settings.load("norns.json");
+    settings.load(defaults::config_file);
 
     settings.m_daemonize = !run_in_foreground;
 

@@ -29,14 +29,7 @@
 #include <list>
 #include <boost/property_tree/ptree.hpp>
 
-namespace defaults {
-    static constexpr const char* progname = "urd";
-    static const bool            daemonize = true;
-    static constexpr const char* running_dir = "/tmp";
-    static constexpr const char* ipc_sockfile = "/tmp/urd.socket";  
-    static constexpr const char* daemon_pidfile = "/tmp/urd.pid";
-    static const uint32_t workers_in_pool = std::thread::hardware_concurrency();
-} // namespace defaults
+#include "defaults.hpp"
 
 namespace bpt = boost::property_tree;
 

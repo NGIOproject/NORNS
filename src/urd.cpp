@@ -184,6 +184,8 @@ void urd::daemonize() {
 		m_logger->error("[daemonize] write failed");
 	}
 
+	close(lfp);
+
 	/* Manage signals */
 	signal(SIGCHLD, SIG_IGN); /* ignore child */
 	signal(SIGTSTP, SIG_IGN); /* ignore tty signals */
@@ -315,9 +317,16 @@ void urd::run() {
     // create (but not start) the IPC listening mechanism
     m_logger->info("* Creating request listener...");
     ::unlink(m_settings->m_ipc_sockfile.c_str());
+
+	// temporarily change the umask so that the socket file can be accessed by anyone
+	mode_t old_mask = umask(0111);
+
     m_ipc_listener = std::shared_ptr<ipc_listener<struct norns_iotd>>(
         new ipc_listener<struct norns_iotd>(m_settings->m_ipc_sockfile,
                 std::bind(&urd::new_request_handler, this, std::placeholders::_1)));
+
+    // restore the umask
+	umask(old_mask);
 
     m_logger->info("Urd daemon successfully started!");
     m_logger->info("Awaiting requests...");

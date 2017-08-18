@@ -1,0 +1,13 @@
+[Unit]
+Description=Norns Data Scheduler
+After=network.target munge.service slurmd.service
+ConditionPathExists=@sysconfdir@/norns.conf
+
+[Service]
+Type=forking
+ExecStart=@bindir@/urd
+ExecReload=/bin/kill -HUP $MAINPID
+PIDFile=/tmp/urd.pid
+
+[Install]
+WantedBy=multi-user.target

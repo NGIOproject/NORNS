@@ -88,6 +88,7 @@ AC_CHECK_HEADER_STDBOOL
 # Checks for library functions.
 AC_CONFIG_FILES([
         Makefile
+        etc/Makefile
         lib/Makefile
         examples/Makefile])
 AC_OUTPUT
