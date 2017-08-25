@@ -32,9 +32,11 @@
 #include "settings.hpp"
 #include "backends.hpp"
 #include "signal-listener.hpp"
+#include "message.hpp"
 #include "ipc-listener.hpp"
 #include "logger.hpp"
 #include "ctpl.h"
+#include "requests.hpp"
 
 class urd {
 
@@ -44,7 +46,9 @@ public:
 
 private:
     void daemonize();
-    void new_request_handler(struct norns_iotd*);
+    //void new_request_handler(struct norns_iotd*);
+    void new_request_handler(message* msg);
+    void request_handler(std::shared_ptr<urd_request> request);
     void signal_handler(int);
 
 private:
@@ -52,7 +56,8 @@ private:
     std::shared_ptr<signal_listener>                 m_signal_listener;
     std::shared_ptr<config_settings>                 m_settings;
     std::shared_ptr<ctpl::thread_pool>               m_workers;
-    std::shared_ptr<ipc_listener<struct norns_iotd>> m_ipc_listener;
+    //std::shared_ptr<ipc_listener<struct norns_iotd>> m_ipc_listener;
+    std::shared_ptr<ipc_listener<message, urd_request>> m_ipc_listener;
     std::list<std::shared_ptr<storage::backend>>     m_backends;
 
 };

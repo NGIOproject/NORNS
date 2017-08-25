@@ -80,6 +80,20 @@ AC_MSG_ERROR([This software requires the development files of Intel TBB.
  * In RHEL/CentOS: yum install tbb-devel])
 )
 
+# check for protobuf-c
+PKG_CHECK_MODULES([PROTOBUF_C], [libprotobuf-c >= 1.0.0])
+
+AC_CHECK_PROG([PROTOC_C], [protoc-c], [protoc-c])
+AS_IF([test "x${PROTOC_C}" == "x"],
+          [AC_MSG_ERROR([ProtoBuf C compiler "protoc-c" not found.])])
+
+# check for protobuf
+PKG_CHECK_MODULES([PROTOBUF], [protobuf >= 2.5.0])
+
+AC_CHECK_PROG([PROTOC], [protoc], [protoc])
+AS_IF([test "x${PROTOC}" == "x"],
+          [AC_MSG_ERROR([ProtoBuf compiler "protoc" not found.])])
+
 # Checks for header files.
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -90,5 +104,7 @@ AC_CONFIG_FILES([
         Makefile
         etc/Makefile
         lib/Makefile
-        examples/Makefile])
+        examples/Makefile
+        src/Makefile
+])
 AC_OUTPUT

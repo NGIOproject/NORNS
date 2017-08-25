@@ -27,8 +27,16 @@
 #include <features.h>
 #include <sys/types.h>
 #include <stdint.h>
+#include <assert.h>
 
 __BEGIN_DECLS
+
+/* Error codes */
+#define NORNS_SUCCESS           0
+#define NORNS_EBADPARAMS        -1
+#define NORNS_ENOMEM            -2
+#define NORNS_ECONNFAILED       -3
+#define NORNS_ERPCSENDFAILED    -4
 
 typedef uint32_t jobid_t;
 
@@ -37,12 +45,6 @@ struct norns_cred {
     // TODO: to be completed, but at least...
     pid_t cr_pid;    /* PID of the process */
     gid_t cr_gid;    /* GID of the process */
-};
-
-/* Batch job descriptor */
-struct norns_job {
-    const char** jb_hosts;  /* NULL-terminated array of hostnames participating in the job */
-    size_t       jb_nhosts; /* number of hostnames in the list */
 };
 
 /* Data resource descriptor  */
@@ -56,10 +58,6 @@ struct norns_resource {
 /* I/O task descriptor */
 struct norns_iotd {
     uint32_t            ni_tid;     /* task identifier */
-//    uint32_t            ni_sbid;    /* source backend identifier */
-//    const char*         ni_spath;   /* path to data source */
-//    uint32_t            ni_dbid;    /* destination backend identifier */
-//    const char*         ni_dpath;   /* path to data destination */
 
     struct norns_resource ni_src;   /* data source */
     struct norns_resource ni_dst;   /* data destination */
@@ -71,6 +69,12 @@ struct norns_iotd {
     uint32_t    __jobid;    /* job id of the process that made the request (XXX Slurm dependent)*/
                         
 };
+
+/* Storage resource types */
+#define NORNS_NVML      0x1000
+#define NORNS_POSIX     0x1001
+
+
 
 /* Task types */
 //enum {
@@ -131,17 +135,66 @@ int norns_error(struct norns_iotd* iotdp) __THROW;
 /* (only authenticated processes will be able to successfully call these) */
 /**************************************************************************/
 
+#define NORNS_LOCAL_NVML    0x10000000
+#define NORNS_REMOTE_NVML   0x10000001
+#define NORNS_LUSTRE        0x10000002
+
+/* Storage backend descriptor */
+struct norns_backend {
+    int         b_type;
+    const char* b_mount; /* mount point */
+    size_t      b_quota; /* backend capacity (in megabytes) allocated to the job */
+
+};
+
+#define NORNS_ALLOC(size)       \
+({                              \
+    size_t __n = (size);        \
+    void* __p = malloc(__n);    \
+    assert(__p != NULL);        \
+    __p;                        \
+})
+
+#define NORNS_FREE(p)   \
+({                      \
+    free(__p;)          \
+})
+
+#define NORNS_PLIST_ALLOC(type, size)                               \
+({                                                                  \
+    size_t __n = (size);                                            \
+    void** __plist = (void**) malloc(sizeof(type) * (__n + 1));     \
+    memset(__plist, 0, __n + 1);                                    \
+    (type*) __plist;                                                \
+})
+
+#define NORNS_PLIST_FREE(plist)     \
+({                                  \
+    free((plist));                  \
+})
+
+/* Batch job descriptor */
+struct norns_job {
+    uint32_t                jb_jobid; /* desired job ID (for later requests) */
+    const char**            jb_hosts;  /* NULL-terminated list of hostnames participating in the job */
+    size_t                  jb_nhosts; /* entries in hostname list */
+    struct norns_backend**  jb_backends; /* NULL-terminated list of storage backends the job will use */
+    size_t                  jb_nbackends; /* entries in backend list */
+};
+
+
 /* Send a command to the daemon (e.g. stop accepting new tasks) */
 int norns_command(struct norns_cred* auth);
 
 /* Register and describe a batch job */
-int norns_register_job(struct norns_cred* auth, struct norns_job* job_desc);
+int norns_register_job(struct norns_cred* auth, struct norns_job* job);
 
 /* Update the description of an existing batch job */
-int norns_update_job(struct norns_cred* auth, struct norns_job* job_desc);
+int norns_update_job(struct norns_cred* auth, struct norns_job* job);
 
 /* Remove the description of a batch job */
-int norns_remove_job(struct norns_cred* auth, struct norns_job* job_desc);
+int norns_remove_job(struct norns_cred* auth, struct norns_job* job);
+
 
 
 __END_DECLS

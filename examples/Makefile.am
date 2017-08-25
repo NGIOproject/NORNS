@@ -21,13 +21,15 @@
 # along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-bin_PROGRAMS = app
+bin_PROGRAMS = \
+	app \
+	job_registration
 
 app_SOURCES = \
 	app.c
 
 app_CFLAGS = \
-	-std=c99 -Wall -Wextra
+	-std=gnu99 -Wall -Wextra
 
 app_CPPFLAGS = \
 	-I$(top_srcdir)/include
@@ -35,3 +37,15 @@ app_CPPFLAGS = \
 app_LDADD = \
 	$(top_builddir)/lib/libnorns.la
 
+
+job_registration_SOURCES = \
+	job_registration.c
+
+job_registration_CFLAGS = \
+	-std=gnu99 -Wall -Wextra
+
+job_registration_CPPFLAGS = \
+	-I$(top_srcdir)/include
+
+job_registration_LDADD = \
+	$(top_builddir)/lib/libnorns.la

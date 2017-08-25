@@ -29,8 +29,13 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <errno.h>
+#include <string.h>
+#include <assert.h>
+
 
 #include <norns.h>
+#include <norns-rpc.h>
+#include "messages.pb-c.h"
 
 const char* SOCKET_FILE = "/tmp/urd.socket";
 
@@ -102,6 +107,7 @@ int norns_transfer(struct norns_iotd* iotdp) {
 	// wait for a response
 	if (write(sfd, iotd_copy, sizeof(*iotd_copy)) < 0){
         perror("writing on stream socket");
+        return -1;
     }
 
     struct norns_iotd response;
@@ -127,3 +133,146 @@ int norns_transfer(struct norns_iotd* iotdp) {
 
     return 0;
 }
+
+ssize_t send_data(int conn, const void* data, size_t size){
+
+	size_t bsent = 0;	// bytes sent
+	size_t bleft = size;// bytes left to send
+	ssize_t n = 0;
+
+	// send() might not send all the bytes we ask it to,
+	// because the kernel can decide not to send all the
+	// data out in one chunk
+	while(bsent < size) {
+		n = write(conn, data + bsent, bleft);
+
+		if(n == -1) {
+			break;
+		}
+
+        bsent += n;
+        bleft -= n;
+	}
+
+	return (n == -1 ? n : (ssize_t) bsent);
+}
+
+static int send_message(int conn, const void* msg, size_t msg_size) {
+
+    // transform the message size into network order and send it 
+    // before the actual data
+
+    uint64_t prefix = htonll(msg_size);
+    assert(sizeof(prefix) == NORNS_RPC_HEADER_LENGTH); 
+
+	if(send_data(conn, &prefix, sizeof(prefix)) < 0) {
+        return NORNS_ERPCSENDFAILED;
+    }
+
+	if(send_data(conn, msg, msg_size) < 0) {
+        return NORNS_ERPCSENDFAILED;
+    }
+
+    return NORNS_SUCCESS;
+}
+
+/* Register and describe a batch job */
+int norns_register_job(struct norns_cred* auth, struct norns_job* job) {
+
+    (void) auth;
+
+    if(job->jb_nhosts <= 0 || job->jb_nbackends <= 0) {
+        return NORNS_EBADPARAMS;
+    }
+
+    // first of all, build the request body so that 
+    // we can compute the final size
+    Norns__Rpc__Request__Job jobmsg = NORNS__RPC__REQUEST__JOB__INIT;
+    jobmsg.id = job->jb_jobid;
+    jobmsg.n_hosts = job->jb_nhosts; // save number of repeated hosts
+    jobmsg.hosts = malloc(jobmsg.n_hosts*sizeof(char*));
+
+    if(jobmsg.hosts == NULL) {
+        // errno set to ENOMEM
+        return -1;
+    }
+
+    for(size_t i=0; i<job->jb_nhosts; ++i){
+        size_t len = strlen(job->jb_hosts[i]);
+
+        if(job->jb_hosts[i] == NULL){
+            continue;
+        }
+
+        char* str = strndup(job->jb_hosts[i], len);
+
+        if(str == NULL) {
+            // errno set to ENOMEM
+            return -1;
+        }
+
+        jobmsg.hosts[i] = str;
+    }
+
+    jobmsg.n_backends = job->jb_nbackends;
+    jobmsg.backends = 
+        malloc(job->jb_nbackends*sizeof(Norns__Rpc__Request__Job__Backend*));
+    
+    if(jobmsg.backends == NULL){
+        // errno set to ENOMEM
+        return -1;
+    }
+
+    for(size_t i=0; i<job->jb_nbackends; ++i) {
+        fprintf(stdout, "%s\n", job->jb_backends[i]->b_mount);
+
+        jobmsg.backends[i] = malloc(sizeof(Norns__Rpc__Request__Job__Backend));
+
+        if(jobmsg.backends[i] == NULL) {
+            // errno set to ENOMEM
+            return -1;
+        }
+
+        norns__rpc__request__job__backend__init(jobmsg.backends[i]);
+        jobmsg.backends[i]->type = job->jb_backends[i]->b_type;
+        size_t len = strlen(job->jb_backends[i]->b_mount);
+        jobmsg.backends[i]->mount = strndup(job->jb_backends[i]->b_mount, len);
+
+        if(jobmsg.backends[i]->mount == NULL) {
+            // errno set to ENOMEM
+            return -1;
+        }
+
+        jobmsg.backends[i]->quota = job->jb_backends[i]->b_quota;
+    }
+
+    Norns__Rpc__Request req = NORNS__RPC__REQUEST__INIT;
+    req.type = NORNS__RPC__REQUEST__TYPE__REGISTER_JOB;
+    req.job = &jobmsg;
+
+    // fill the buffer
+    size_t req_len = norns__rpc__request__get_packed_size(&req);
+    void* req_buf = malloc(req_len);
+
+    if(req_buf == NULL) {
+        return -1;
+    }
+
+    norns__rpc__request__pack(&req, req_buf);
+
+    int conn = connect_to_daemon();
+
+    if(conn == -1) {
+        return NORNS_ECONNFAILED;
+    }
+
+	// connection established, send the message
+	if(send_message(conn, req_buf, req_len) < 0) {
+	    return NORNS_ERPCSENDFAILED;
+    }
+
+    close(conn);
+
+    return NORNS_SUCCESS;
+}
+

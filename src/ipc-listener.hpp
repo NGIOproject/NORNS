@@ -27,69 +27,111 @@
 
 #include <boost/asio.hpp>
 #include <norns.h>
+#include <norns-rpc.h>
 
 namespace ba = boost::asio;
 
-/* simple lister for an AF_UNIX socket that accepts requests asynchronously and
- * invokes a callback with a fixed-length payload */
-template <typename Payload>
-class ipc_listener {
+template <typename Data>
+using callback_fn = std::function<void(const std::shared_ptr<Data>&)>;
 
-    typedef std::function<void(Payload*)> callback_t;
 
-    /* helper class for managing communication sessions with a client */
-    template <typename T>
-    class session : public std::enable_shared_from_this<session<T>> {
-
-        static const int32_t max_buffer_length = sizeof(T);
-
-    public:
-        session(ba::local::stream_protocol::socket socket, callback_t callback)
-            : m_socket(std::move(socket)),
-              m_callback(callback) {}
-
-        void start(){
-            do_read();
-        }
-
-    private:
-        void do_read(){
-
-            auto self(std::enable_shared_from_this<session<T>>::shared_from_this());
-
-            m_socket.async_read_some(boost::asio::buffer(m_data, max_buffer_length),
-                [this, self](boost::system::error_code ec, std::size_t length){
-                    if(!ec){
-                        T* payload = (T*) &m_data;
-                        m_callback(payload);
-                        do_write(length);
-                    }
-                });
-        }
-
-        void do_write(std::size_t length){
-
-            auto self(std::enable_shared_from_this<session<T>>::shared_from_this());
-
-            ba::async_write(m_socket, boost::asio::buffer(m_data, length),
-                [this, self](boost::system::error_code ec, std::size_t /*length*/){
-                    if(!ec){
-                        do_read();
-                    }
-                });
-        }
-
-        ba::local::stream_protocol::socket m_socket;
-        callback_t                         m_callback;
-        char                               m_data[max_buffer_length];
-    };
+/* helper class for managing communication sessions with a client */
+template <typename Message, typename Data>
+class session : public std::enable_shared_from_this<session<Message, Data>> {
 
 public:
-    ipc_listener(const std::string& socket_file, callback_t callback) 
+    session(ba::local::stream_protocol::socket socket, callback_fn<Data> callback)
+        : m_socket(std::move(socket)),
+          m_callback(callback) {}
+
+    void start(){
+        do_read_request_header();
+    }
+
+private:
+    void do_read_request_header(){
+
+        auto self(std::enable_shared_from_this<session<Message, Data>>::shared_from_this());
+
+        ba::async_read(m_socket,
+                ba::buffer(m_message.buffer(), m_message.max_header_length()),
+                [this, self](boost::system::error_code ec, std::size_t length){
+
+                    std::cout << "XReceived: " << length << "\n";
+
+                    if(!ec && m_message.decode_header(length)) {
+                        //FIXME: check what happens if the caller never
+                        //sends a body... are we leaking?
+                        do_read_request_body();
+                    }
+                });
+    }
+
+    void do_read_request_body() {
+
+        auto self(std::enable_shared_from_this<session<Message, Data>>::shared_from_this());
+
+        std::size_t header_length = m_message.header_length();
+        std::size_t body_length = m_message.body_length();
+
+        if(body_length != 0) {
+
+            std::cout << body_length << "\n";
+
+            std::size_t new_length = header_length + body_length;
+            m_message.buffer().resize(new_length);
+
+            ba::async_read(m_socket,
+                    ba::buffer(&m_message.buffer()[header_length], body_length),
+                    [this, self](boost::system::error_code ec, std::size_t length) {
+
+                        if(!ec) {
+
+                            Data* payload;
+
+                            if(m_message.decode_body(length, payload)) {
+
+                                if(payload != nullptr) {
+                                    m_callback(std::shared_ptr<Data>(payload));
+                    //            do_write_response(length);
+                                }
+                            }
+                        }
+                    });
+        }
+    }
+
+    void do_write_response(std::size_t length){
+
+        //auto self(std::enable_shared_from_this<session<T>>::shared_from_this());
+
+        //ba::async_write(m_socket, boost::asio::buffer(m_data, length),
+        //    [this, self](boost::system::error_code ec, std::size_t /*length*/){
+        //        if(!ec){
+        //            do_read_request_header(); ??
+        //        }
+        //    });
+    }
+
+    ba::local::stream_protocol::socket  m_socket;
+    callback_fn<Data>                   m_callback;
+    Message                             m_message;
+};
+
+
+/* simple lister for an AF_UNIX socket that accepts requests asynchronously and
+ * invokes a callback with a fixed-length payload */
+template <typename Message, typename Data>
+class ipc_listener {
+
+//    using DataPtr = std::shared_ptr<Data>;
+
+public:
+    ipc_listener(const std::string& socket_file, callback_fn<Data> callback) 
         : m_acceptor(m_ios, ba::local::stream_protocol::endpoint(socket_file)),
           m_socket(m_ios),
           m_callback(callback) {
-        start_accept();
+        do_accept();
     }
 
     void run() {
@@ -101,23 +143,23 @@ public:
     }
 
 private:
-    void start_accept(){
+    void do_accept(){
         /* start an asynchronous accept: the call to async_accept returns immediately, 
          * and we use a lambda function as the handler */
         m_acceptor.async_accept(m_socket,
             [this](const boost::system::error_code& ec){
                 if(!ec){
-                    std::make_shared<session<Payload>>(std::move(m_socket), m_callback)->start();
+                    std::make_shared<session<Message, Data>>(std::move(m_socket), m_callback)->start();
                 }
 
-                start_accept();
+                do_accept();
             });
     }
 
-    boost::asio::io_service                 m_ios;
-    ba::local::stream_protocol::acceptor    m_acceptor;
-    ba::local::stream_protocol::socket      m_socket;
-    callback_t                              m_callback;
+    boost::asio::io_service                m_ios;
+    ba::local::stream_protocol::acceptor   m_acceptor;
+    ba::local::stream_protocol::socket     m_socket;
+    callback_fn<Data>                   m_callback;
 };
 
 #endif /* __IPC_LISTENER_HPP__ */

@@ -1,0 +1,43 @@
+package norns.rpc;
+
+message Request {
+
+    // oneof would be better here, but the version of protoc provided by
+    // CentOS 7 does not support it yet
+    enum Type {
+        START_IOTASK = 1;
+        REGISTER_JOB = 2;
+    }
+
+    required Type type = 1;
+
+    // I/O task descriptor
+    message Task {
+    }
+    optional Task task = 2;
+
+    // job descriptor
+    message Job {
+        required uint32 id = 1;
+        repeated string hosts = 2;
+
+        // backend descriptor
+        message Backend {
+            required int32 type = 1;
+            required string mount = 2;
+            required int32 quota = 3;
+        }
+
+        repeated Backend backends = 3;
+
+    //    optional int32 a=3;
+    //    optional int32 b=4;
+    }
+    optional Job job = 3;
+}
+
+message Response {
+    required uint64 id = 1;
+}
+
+

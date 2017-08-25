@@ -80,6 +80,7 @@ void config_settings::load(const std::string& filename) {
         exit(EXIT_FAILURE);
     }
 
+#if 0
     /* parse storage backends */
     BOOST_FOREACH(bpt::ptree::value_type& bend, pt.get_child("backends")){
 
@@ -126,5 +127,6 @@ void config_settings::load(const std::string& filename) {
 
         m_backends.emplace_back(name, type, desc, capacity, options);
     }
+#endif
 }
 

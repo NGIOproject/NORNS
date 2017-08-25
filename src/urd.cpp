@@ -42,11 +42,11 @@
 #include <boost/atomic.hpp>
 #include <functional>
 
-
-
+#include <norns-rpc.h>
 #include <norns.h>
 
 #include "ipc-listener.hpp"
+#include "requests.hpp"
 #include "signal-listener.hpp"
 #include "backends.hpp"
 #include "ctpl.h" 
@@ -227,13 +227,18 @@ void push_jobs(ctpl::thread_pool &p){
 }
 #endif
 
-void urd::new_request_handler(struct norns_iotd* iotdp){
+//void urd::new_request_handler(struct norns_iotd* iotdp){
+void urd::request_handler(std::shared_ptr<urd_request> request){
+
+    std::cout << "Called!\n";
+
+    request->process();
 
     /* create a task descriptor & modify original with the task's assigned ID */
     //std::unique_ptr<urd::task> task(new urd::task(iotdp)); 
     //iotdp->ni_tid = task->m_task_id;
 
-    m_workers->push(std::move(io::task(iotdp)));
+    //m_workers->push(std::move(io::task(iotdp)));
 
     /* the ipc_listener will automatically reply to the client when we exit the handler */
 }
@@ -321,9 +326,14 @@ void urd::run() {
 	// temporarily change the umask so that the socket file can be accessed by anyone
 	mode_t old_mask = umask(0111);
 
-    m_ipc_listener = std::shared_ptr<ipc_listener<struct norns_iotd>>(
-        new ipc_listener<struct norns_iotd>(m_settings->m_ipc_sockfile,
-                std::bind(&urd::new_request_handler, this, std::placeholders::_1)));
+    //m_ipc_listener = std::shared_ptr<ipc_listener<struct norns_iotd>>(
+    //    new ipc_listener<struct norns_iotd>(m_settings->m_ipc_sockfile,
+    //            std::bind(&urd::new_request_handler, this, std::placeholders::_1)));
+
+    m_ipc_listener = std::shared_ptr<ipc_listener<message, urd_request>>(
+        new ipc_listener<message, urd_request>(
+            m_settings->m_ipc_sockfile,
+            std::bind(&urd::request_handler, this, std::placeholders::_1)));
 
     // restore the umask
 	umask(old_mask);
