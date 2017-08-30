@@ -22,37 +22,26 @@
 // along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef __REQUESTS_HPP__
-#define __REQUESTS_HPP__
+#ifndef __RESPONSES_HPP__
+#define __RESPONSES_HPP__
 
 #include <cstdint>
 #include <vector>
 #include <string>
 
-#include "request-base.hpp"
+#include "response-base.hpp"
 
-class job_registration_request : public urd_request {
-
-    struct backend {
-        int32_t     m_type;
-        std::string m_mount;
-        int32_t     m_quota;
-    };
-
-    friend class urd_request;
+class job_registration_response : public urd_response {
 
 public:
-    job_registration_request(uint32_t jobid);
-    uint32_t id() const;
-    std::vector<std::string> hosts() const;
-//    std::vector<backend> backends() const;
+    job_registration_response();
+    job_registration_response(uint32_t error_code);
 
-    void process();
+    void set_error_code(uint32_t error_code);
+    bool store_to_buffer(std::vector<uint8_t>& buffer);
 
 private:
-    uint32_t                    m_jobid;
-    std::vector<std::string>    m_hosts;
-    std::vector<backend>        m_backends;
+    uint32_t                    m_error_code;
 };
 
-#endif /* __REQUEST_HPP__ */
+#endif /* __RESPONSES_HPP__ */

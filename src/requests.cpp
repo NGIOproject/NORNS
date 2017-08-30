@@ -25,10 +25,22 @@
 #include "requests.hpp"
 #include <iostream>
 
-register_job::register_job(uint32_t id) 
- : m_id(id) { }
+job_registration_request::job_registration_request(uint32_t jobid) 
+ : m_jobid(jobid) { }
 
-void register_job::process() {
+uint32_t job_registration_request::id() const {
+    return m_jobid;
+}
 
-    std::cerr << std::dec << "Ho ho! " << m_id << "\n";
+std::vector<std::string> job_registration_request::hosts() const {
+    return m_hosts;
+}
+
+// std::vector<backend> job_registration_request::backends() const {
+//     return m_backends;
+// }
+
+void job_registration_request::process() {
+
+    std::cerr << std::dec << "Ho ho! " << m_jobid << "\n";
 }

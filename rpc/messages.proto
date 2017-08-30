@@ -5,7 +5,7 @@ message Request {
     // oneof would be better here, but the version of protoc provided by
     // CentOS 7 does not support it yet
     enum Type {
-        START_IOTASK = 1;
+        SUBMIT_IOTASK = 1;
         REGISTER_JOB = 2;
     }
 
@@ -29,15 +29,20 @@ message Request {
         }
 
         repeated Backend backends = 3;
-
-    //    optional int32 a=3;
-    //    optional int32 b=4;
     }
     optional Job job = 3;
 }
 
 message Response {
-    required uint64 id = 1;
+    enum Type {
+        SUBMIT_IOTASK = 1;
+        REGISTER_JOB = 2;
+    }
+
+    required Type type = 1;
+
+    // most responses only need to return an error code
+    required uint32 code = 2;
 }
 
 

@@ -71,7 +71,6 @@ int main(int argc, char* argv[]) {
     }
 
     struct norns_job job = {
-        .jb_jobid = 42,
         .jb_hosts = hosts,
         .jb_nhosts = num_hosts,
         .jb_backends = backends,
@@ -81,8 +80,17 @@ int main(int argc, char* argv[]) {
 
     struct norns_cred cred;
 
-    norns_register_job(&cred, &job);
+    int rv;
 
+    // try to register a duplicate jobid
+    for(int i=0; i<2; ++i) {
+        if((rv = norns_register_job(&cred, 42, &job)) != NORNS_SUCCESS) {
+            fprintf(stderr, "norns_register_job failed!\n");
+        }
+        else {
+            fprintf(stdout, "norns_register_job succeded!\n");
+        }
+    }
 
     NORNS_PLIST_FREE(hosts);
     NORNS_PLIST_FREE(backends);

@@ -22,37 +22,19 @@
 // along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef __REQUESTS_HPP__
-#define __REQUESTS_HPP__
+#ifndef __RESPONSE_BASE_HPP__
+#define __RESPONSE_BASE_HPP__
 
-#include <cstdint>
-#include <vector>
-#include <string>
 
-#include "request-base.hpp"
-
-class job_registration_request : public urd_request {
-
-    struct backend {
-        int32_t     m_type;
-        std::string m_mount;
-        int32_t     m_quota;
-    };
-
-    friend class urd_request;
+// abstract base class to transform internal responses to protobuf messages
+// that can be sent back to the client
+class urd_response {
 
 public:
-    job_registration_request(uint32_t jobid);
-    uint32_t id() const;
-    std::vector<std::string> hosts() const;
-//    std::vector<backend> backends() const;
 
-    void process();
+    virtual ~urd_response() { }
 
-private:
-    uint32_t                    m_jobid;
-    std::vector<std::string>    m_hosts;
-    std::vector<backend>        m_backends;
+    virtual bool store_to_buffer(std::vector<uint8_t>& buffer) = 0;
 };
 
-#endif /* __REQUEST_HPP__ */
+#endif /* __RESPONSE_HPP__ */

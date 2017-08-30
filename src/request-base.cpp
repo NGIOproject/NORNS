@@ -27,22 +27,22 @@
 #include "requests.hpp"
 #include <iostream>
 
-urd_request* urd_request::create_from_buffer(const void* buffer, int size) {
+urd_request* urd_request::create_from_buffer(const std::vector<uint8_t>& buffer, int size) {
 
     urd_request* parsed_req = nullptr;
     norns::rpc::Request rpc_req;
 
-    if(rpc_req.ParseFromArray(buffer, size)) {
+    if(rpc_req.ParseFromArray(buffer.data(), size)) {
         switch(rpc_req.type()) {
 
-            case norns::rpc::Request::START_IOTASK:
+            case norns::rpc::Request::SUBMIT_IOTASK:
                 break;
             case norns::rpc::Request::REGISTER_JOB:
 
                 if(rpc_req.has_job()) {
 
                     auto job = rpc_req.job();
-                    auto req_ptr = new register_job(job.id());
+                    auto req_ptr = new job_registration_request(job.id());
 
                     req_ptr->m_hosts.reserve(job.hosts().size());
 

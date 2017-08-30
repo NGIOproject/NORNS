@@ -25,9 +25,8 @@
 #ifndef __URD_HPP__
 #define __URD_HPP__
 
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <ev.h>
+#include <map>
+#include <boost/thread/shared_mutex.hpp>
 
 #include "settings.hpp"
 #include "backends.hpp"
@@ -36,7 +35,10 @@
 #include "ipc-listener.hpp"
 #include "logger.hpp"
 #include "ctpl.h"
-#include "requests.hpp"
+#include "request-base.hpp"
+#include "response-base.hpp"
+#include "job.hpp"
+
 
 class urd {
 
@@ -48,17 +50,24 @@ private:
     void daemonize();
     //void new_request_handler(struct norns_iotd*);
     void new_request_handler(message* msg);
-    void request_handler(std::shared_ptr<urd_request> request);
+    std::shared_ptr<urd_response> request_handler(std::shared_ptr<urd_request> request);
     void signal_handler(int);
 
+    std::shared_ptr<urd_response> register_job(std::shared_ptr<job_registration_request> request);
+
 private:
-    std::shared_ptr<logger>                          m_logger;
-    std::shared_ptr<signal_listener>                 m_signal_listener;
-    std::shared_ptr<config_settings>                 m_settings;
-    std::shared_ptr<ctpl::thread_pool>               m_workers;
-    //std::shared_ptr<ipc_listener<struct norns_iotd>> m_ipc_listener;
-    std::shared_ptr<ipc_listener<message, urd_request>> m_ipc_listener;
-    std::list<std::shared_ptr<storage::backend>>     m_backends;
+    std::shared_ptr<logger>                             m_logger;
+    std::shared_ptr<signal_listener>                    m_signal_listener;
+    std::shared_ptr<config_settings>                    m_settings;
+    std::shared_ptr<ctpl::thread_pool>                  m_workers;
+    std::shared_ptr<ipc_listener<message, urd_request, urd_response>> m_ipc_listener;
+    std::list<std::shared_ptr<storage::backend>>        m_backends;
+
+
+    std::map<uint32_t, std::shared_ptr<job>>    m_jobs;
+    boost::shared_mutex                         m_jobs_mutex;
+
+
 
 };
 

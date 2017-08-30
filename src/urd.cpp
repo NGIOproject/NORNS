@@ -46,11 +46,15 @@
 #include <norns.h>
 
 #include "ipc-listener.hpp"
-#include "requests.hpp"
 #include "signal-listener.hpp"
 #include "backends.hpp"
 #include "ctpl.h" 
 #include "logger.hpp"
+#include "response-base.hpp"
+#include "responses.hpp"
+#include "request-base.hpp"
+#include "requests.hpp"
+#include "job.hpp"
 #include "io-task.hpp"
 #include "urd.hpp"
 
@@ -227,12 +231,16 @@ void push_jobs(ctpl::thread_pool &p){
 }
 #endif
 
-//void urd::new_request_handler(struct norns_iotd* iotdp){
-void urd::request_handler(std::shared_ptr<urd_request> request){
+std::shared_ptr<urd_response> urd::request_handler(std::shared_ptr<urd_request> request) {
 
-    std::cout << "Called!\n";
+    // dispatch the request to the appropriate handler
+    // (yes, this is ugly but sometimes we need to create things into urd,
+    // which we could not do if we leave this context)
+    if(dynamic_cast<job_registration_request*>(request.get()) != nullptr) {
+        return this->register_job(std::dynamic_pointer_cast<job_registration_request>(request));
+    }
 
-    request->process();
+    //request->process();
 
     /* create a task descriptor & modify original with the task's assigned ID */
     //std::unique_ptr<urd::task> task(new urd::task(iotdp)); 
@@ -241,7 +249,35 @@ void urd::request_handler(std::shared_ptr<urd_request> request){
     //m_workers->push(std::move(io::task(iotdp)));
 
     /* the ipc_listener will automatically reply to the client when we exit the handler */
+    return 0;
 }
+
+std::shared_ptr<urd_response> urd::register_job(std::shared_ptr<job_registration_request> request) {
+
+    auto resp = std::make_shared<job_registration_response>();
+
+    m_logger->info("REGISTER_JOB()");
+
+    uint32_t jobid = request->id();
+
+    boost::unique_lock<boost::shared_mutex> lock(m_jobs_mutex);
+
+    if(m_jobs.find(jobid) != m_jobs.end()) {
+        resp->set_error_code(NORNS_EJOBEXISTS);
+        return resp;
+    }
+
+    job j;
+
+    m_jobs.emplace(jobid, std::make_shared<job>(j));
+
+    resp->set_error_code(NORNS_SUCCESS);
+    return resp;
+
+}
+
+
+
 
 
 void urd::set_configuration(const config_settings& settings) {
@@ -293,20 +329,20 @@ void urd::run() {
     }
 
     // instantiate configured backends
-    m_logger->info("* Creating storage backend handlers...");
-    for(const auto& bend : m_settings->m_backends){
-        try {
-
-            auto b = storage::backend_factory::get_instance().create(bend.m_type, bend.m_options);
-            m_backends.push_back(b);
-
-            m_logger->info("    Registered backend '{}' (type: {})", bend.m_name, bend.m_type);  
-            m_logger->info("      [ capacity: {} bytes ]", b->get_capacity());
-
-        } catch(std::invalid_argument ex) {
-            m_logger->warn(" Ignoring definition of backend '{}' (type: unknown)", bend.m_name);
-        }
-    }
+//    m_logger->info("* Creating storage backend handlers...");
+//    for(const auto& bend : m_settings->m_backends){
+//        try {
+//
+//            auto b = storage::backend_factory::get_instance().create(bend.m_type, bend.m_options);
+//            m_backends.push_back(b);
+//
+//            m_logger->info("    Registered backend '{}' (type: {})", bend.m_name, bend.m_type);  
+//            m_logger->info("      [ capacity: {} bytes ]", b->get_capacity());
+//
+//        } catch(std::invalid_argument ex) {
+//            m_logger->warn(" Ignoring definition of backend '{}' (type: unknown)", bend.m_name);
+//        }
+//    }
 
     // signal handlers must be installed AFTER daemonizing
     m_logger->info("* Installing signal handlers...");
@@ -330,8 +366,8 @@ void urd::run() {
     //    new ipc_listener<struct norns_iotd>(m_settings->m_ipc_sockfile,
     //            std::bind(&urd::new_request_handler, this, std::placeholders::_1)));
 
-    m_ipc_listener = std::shared_ptr<ipc_listener<message, urd_request>>(
-        new ipc_listener<message, urd_request>(
+    m_ipc_listener = std::shared_ptr<ipc_listener<message, urd_request, urd_response>>(
+        new ipc_listener<message, urd_request, urd_response>(
             m_settings->m_ipc_sockfile,
             std::bind(&urd::request_handler, this, std::placeholders::_1)));
 

@@ -31,9 +31,12 @@
 class urd_request {
 
 public:
+
+    virtual ~urd_request() { }
     virtual void process() = 0;
 
-    static urd_request* create_from_buffer(const void* data, int size);
+    //static urd_request* create_from_buffer(const void* data, int size);
+    static urd_request* create_from_buffer(const std::vector<uint8_t>& data, int size);
 };
 
 #endif /* __REQUEST_HPP__ */

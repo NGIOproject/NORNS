@@ -134,7 +134,33 @@ int norns_transfer(struct norns_iotd* iotdp) {
     return 0;
 }
 
-ssize_t send_data(int conn, const void* data, size_t size){
+ssize_t recv_data(int conn, void* data, size_t size) {
+
+    size_t brecvd = 0; // bytes received
+    size_t bleft = size; // bytes left to receive
+    ssize_t n = 0;
+
+	while(brecvd < size) {
+		n = read(conn, data + brecvd, bleft);
+
+		fprintf(stdout, "read %zd\n", n);
+
+		if(n == -1 || n == 0) {
+		    if(errno == EINTR) {
+		        continue;
+            }
+			break;
+		}
+
+        brecvd += n;
+        bleft -= n;
+	}
+
+	return (n == -1 ? n : (ssize_t) brecvd);
+}
+
+
+ssize_t send_data(int conn, const void* data, size_t size) {
 
 	size_t bsent = 0;	// bytes sent
 	size_t bleft = size;// bytes left to send
@@ -147,6 +173,9 @@ ssize_t send_data(int conn, const void* data, size_t size){
 		n = write(conn, data + bsent, bleft);
 
 		if(n == -1) {
+		    if(errno == EINTR) {
+		        continue;
+            }
 			break;
 		}
 
@@ -157,29 +186,89 @@ ssize_t send_data(int conn, const void* data, size_t size){
 	return (n == -1 ? n : (ssize_t) bsent);
 }
 
+static void print_hex(void* buffer, size_t bytes) {
+
+    unsigned char* p = (unsigned char*) buffer;
+
+    fprintf(stdout, "<< ");
+
+    for(size_t i = 0; i < bytes; ++i) {
+        fprintf(stdout, "%02x ", (int) p[i]);
+    }
+
+    fprintf(stdout, " >>\n");
+}
+
+
 static int send_message(int conn, const void* msg, size_t msg_size) {
 
     // transform the message size into network order and send it 
     // before the actual data
 
     uint64_t prefix = htonll(msg_size);
+
     assert(sizeof(prefix) == NORNS_RPC_HEADER_LENGTH); 
 
 	if(send_data(conn, &prefix, sizeof(prefix)) < 0) {
-        return NORNS_ERPCSENDFAILED;
+        return -1;
     }
 
 	if(send_data(conn, msg, msg_size) < 0) {
-        return NORNS_ERPCSENDFAILED;
+        return -1;
     }
 
-    return NORNS_SUCCESS;
+    return 0;
+}
+
+static int recv_message(int conn, void** msg, size_t* msg_size) {
+
+    // first of all read the message prefix and decode it 
+    // so that we know how much data to receive
+    uint64_t prefix = 0;
+
+    if(recv_data(conn, &prefix, sizeof(prefix)) < 0) {
+        goto recv_error;
+    }
+
+    print_hex(&prefix, sizeof(prefix));
+
+    size_t expected_size = ntohll(prefix);
+
+    if(expected_size == 0) {
+        goto recv_error;
+    }
+
+    void* buffer = malloc(expected_size);
+
+    if(buffer == NULL) {
+        goto recv_error;
+    }
+
+    if(recv_data(conn, buffer, expected_size) < 0) {
+        free(buffer);
+        goto recv_error;
+    }
+
+    print_hex(buffer, expected_size);
+
+    *msg = buffer;
+    *msg_size = expected_size;
+
+    return 0;
+
+recv_error:
+    *msg = NULL;
+    *msg_size = 0;
+
+    return -1;
 }
 
 /* Register and describe a batch job */
-int norns_register_job(struct norns_cred* auth, struct norns_job* job) {
+int norns_register_job(struct norns_cred* auth, uint32_t jobid, struct norns_job* job) {
 
     (void) auth;
+
+    int rv;
 
     if(job->jb_nhosts <= 0 || job->jb_nbackends <= 0) {
         return NORNS_EBADPARAMS;
@@ -188,7 +277,7 @@ int norns_register_job(struct norns_cred* auth, struct norns_job* job) {
     // first of all, build the request body so that 
     // we can compute the final size
     Norns__Rpc__Request__Job jobmsg = NORNS__RPC__REQUEST__JOB__INIT;
-    jobmsg.id = job->jb_jobid;
+    jobmsg.id = jobid;
     jobmsg.n_hosts = job->jb_nhosts; // save number of repeated hosts
     jobmsg.hosts = malloc(jobmsg.n_hosts*sizeof(char*));
 
@@ -271,8 +360,28 @@ int norns_register_job(struct norns_cred* auth, struct norns_job* job) {
 	    return NORNS_ERPCSENDFAILED;
     }
 
+    // wait for the daemon's response
+    void* resp_buf;
+    size_t resp_len;
+
+    if(recv_message(conn, &resp_buf, &resp_len) < 0) {
+        return NORNS_ERPCRECVFAILED;
+    }
+
     close(conn);
 
-    return NORNS_SUCCESS;
+    Norns__Rpc__Response* resp = 
+        norns__rpc__response__unpack(NULL, resp_len, resp_buf);
+
+    if(resp == NULL) {
+        return NORNS_ERPCRECVFAILED;
+    }
+
+    rv = resp->code;
+
+    free(resp_buf);
+    norns__rpc__response__free_unpacked(resp, NULL);
+
+    return rv;
 }
 

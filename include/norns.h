@@ -37,6 +37,8 @@ __BEGIN_DECLS
 #define NORNS_ENOMEM            -2
 #define NORNS_ECONNFAILED       -3
 #define NORNS_ERPCSENDFAILED    -4
+#define NORNS_ERPCRECVFAILED    -5
+#define NORNS_EJOBEXISTS        -6
 
 typedef uint32_t jobid_t;
 
@@ -175,7 +177,6 @@ struct norns_backend {
 
 /* Batch job descriptor */
 struct norns_job {
-    uint32_t                jb_jobid; /* desired job ID (for later requests) */
     const char**            jb_hosts;  /* NULL-terminated list of hostnames participating in the job */
     size_t                  jb_nhosts; /* entries in hostname list */
     struct norns_backend**  jb_backends; /* NULL-terminated list of storage backends the job will use */
@@ -187,14 +188,19 @@ struct norns_job {
 int norns_command(struct norns_cred* auth);
 
 /* Register and describe a batch job */
-int norns_register_job(struct norns_cred* auth, struct norns_job* job);
+int norns_register_job(struct norns_cred* auth, uint32_t jobid, struct norns_job* job);
 
 /* Update the description of an existing batch job */
-int norns_update_job(struct norns_cred* auth, struct norns_job* job);
+int norns_update_job(struct norns_cred* auth, uint32_t jobid, struct norns_job* job);
 
 /* Remove the description of a batch job */
-int norns_remove_job(struct norns_cred* auth, struct norns_job* job);
+int norns_remove_job(struct norns_cred* auth, uint32_t jobid, struct norns_job* job);
 
+/* Add a process to a registered batch job */
+int norns_add_process(struct norns_cred* auth, uint32_t jobid, pid_t pid);
+
+/* Remove a process from a registered batch job */
+int norns_remove_process(struct norns_cred* auth, uint32_t jobid, pid_t pid);
 
 
 __END_DECLS
