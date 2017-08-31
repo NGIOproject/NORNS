@@ -23,7 +23,9 @@
 //
 
 #include "requests.hpp"
-#include <iostream>
+#include <sstream>
+#include <boost/algorithm/string/join.hpp>
+#include <boost/range/adaptor/transformed.hpp>
 
 job_registration_request::job_registration_request(uint32_t jobid) 
  : m_jobid(jobid) { }
@@ -40,7 +42,24 @@ std::vector<std::string> job_registration_request::hosts() const {
 //     return m_backends;
 // }
 
-void job_registration_request::process() {
+bool job_registration_request::validate() const {
+    return true;
+}
 
-    std::cerr << std::dec << "Ho ho! " << m_jobid << "\n";
+std::string job_registration_request::to_string() const {
+
+    using boost::algorithm::join;
+    using boost::adaptors::transformed;
+
+    std::stringstream ss;
+
+    auto to_string = [](const backend& b) {
+        return b.to_string();
+    };
+
+    ss << "id: " << m_jobid << ", "
+       << "hosts: {" << join(m_hosts, ", ") << "}; "
+       << "backends: {" << join(m_backends | transformed(to_string), ", ");
+
+    return ss.str();
 }

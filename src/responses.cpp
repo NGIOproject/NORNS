@@ -24,7 +24,10 @@
 
 #include "messages.pb.h"
 #include "responses.hpp"
-#include <iostream>
+#include "utils.hpp"
+#include <sstream>
+#include <boost/algorithm/string/join.hpp>
+#include <boost/range/adaptor/transformed.hpp>
 
 job_registration_response::job_registration_response() 
  : m_error_code(0) { }
@@ -50,4 +53,8 @@ bool job_registration_response::store_to_buffer(std::vector<uint8_t>& buffer) {
     buffer.resize(buffer_size);
 
     return rpc_resp.SerializeToArray(&buffer[reserved_size], message_size);
+}
+
+std::string job_registration_response::to_string() const {
+    return utils::error_code_to_string(m_error_code);
 }

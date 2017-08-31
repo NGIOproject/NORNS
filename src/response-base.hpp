@@ -35,6 +35,7 @@ public:
     virtual ~urd_response() { }
 
     virtual bool store_to_buffer(std::vector<uint8_t>& buffer) = 0;
+    virtual std::string to_string() const = 0;
 };
 
 #endif /* __RESPONSE_HPP__ */

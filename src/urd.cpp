@@ -50,9 +50,7 @@
 #include "backends.hpp"
 #include "ctpl.h" 
 #include "logger.hpp"
-#include "response-base.hpp"
 #include "responses.hpp"
-#include "request-base.hpp"
 #include "requests.hpp"
 #include "job.hpp"
 #include "io-task.hpp"
@@ -256,7 +254,7 @@ std::shared_ptr<urd_response> urd::register_job(std::shared_ptr<job_registration
 
     auto resp = std::make_shared<job_registration_response>();
 
-    m_logger->info("REGISTER_JOB()");
+    job j;
 
     uint32_t jobid = request->id();
 
@@ -264,16 +262,16 @@ std::shared_ptr<urd_response> urd::register_job(std::shared_ptr<job_registration
 
     if(m_jobs.find(jobid) != m_jobs.end()) {
         resp->set_error_code(NORNS_EJOBEXISTS);
-        return resp;
+        goto log_and_return;
     }
-
-    job j;
 
     m_jobs.emplace(jobid, std::make_shared<job>(j));
 
     resp->set_error_code(NORNS_SUCCESS);
-    return resp;
 
+log_and_return:
+    m_logger->info("REGISTER_JOB({}) = {}", request->to_string(), resp->to_string());
+    return resp;
 }
 
 
@@ -287,6 +285,10 @@ void urd::set_configuration(const config_settings& settings) {
 void urd::signal_handler(int signum){
 
     switch(signum) {
+
+        case SIGINT:
+            m_logger->info(" A signal(SIGINT) occurred.");
+            break;
 
         case SIGTERM:
             m_logger->info(" A signal(SIGTERM) occurred.");

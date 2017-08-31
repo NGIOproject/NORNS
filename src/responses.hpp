@@ -39,6 +39,7 @@ public:
 
     void set_error_code(uint32_t error_code);
     bool store_to_buffer(std::vector<uint8_t>& buffer);
+    std::string to_string() const;
 
 private:
     uint32_t                    m_error_code;

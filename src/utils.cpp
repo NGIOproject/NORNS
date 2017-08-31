@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <locale>
 #include "utils.hpp"
+#include <norns.h>
 
 
 namespace utils {
@@ -94,6 +95,28 @@ uint64_t parse_size(const std::string& str){
     double value = std::stod(number_str);
 
     return std::round(value*factor);
+}
+
+std::string error_code_to_string(int error_code) {
+
+    switch(error_code) {
+        case NORNS_SUCCESS:
+            return "NORNS_SUCCESS";
+        case NORNS_EBADPARAMS:
+            return "NORNS_EBADPARAMS";
+        case NORNS_ENOMEM:
+            return "NORNS_ENOMEM";
+        case NORNS_ECONNFAILED:
+            return "NORNS_ECONNFAILED";
+        case NORNS_ERPCSENDFAILED:
+            return "NORNS_ERPCSENDFAILED";
+        case NORNS_ERPCRECVFAILED:
+            return "NORNS_ERPCRECVFAILED";
+        case NORNS_EJOBEXISTS:
+            return "NORNS_EJOBEXISTS";
+        default:
+            return "UNKNOWN_ERROR";
+    }
 }
 
 } // namespace utils

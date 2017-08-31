@@ -28,6 +28,7 @@
 #include <cstdint>
 #include <vector>
 #include <string>
+#include <sstream>
 
 #include "request-base.hpp"
 
@@ -37,6 +38,14 @@ class job_registration_request : public urd_request {
         int32_t     m_type;
         std::string m_mount;
         int32_t     m_quota;
+
+        std::string to_string() const {
+            std::stringstream ss;
+
+            ss << "{" << m_type << ", " << m_mount << ", " << m_quota << "}";
+
+            return ss.str();
+        }
     };
 
     friend class urd_request;
@@ -47,7 +56,8 @@ public:
     std::vector<std::string> hosts() const;
 //    std::vector<backend> backends() const;
 
-    void process();
+    bool validate() const;
+    std::string to_string() const;
 
 private:
     uint32_t                    m_jobid;

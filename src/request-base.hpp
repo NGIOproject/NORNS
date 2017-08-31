@@ -33,7 +33,8 @@ class urd_request {
 public:
 
     virtual ~urd_request() { }
-    virtual void process() = 0;
+    virtual bool validate() const = 0;
+    virtual std::string to_string() const = 0;
 
     //static urd_request* create_from_buffer(const void* data, int size);
     static urd_request* create_from_buffer(const std::vector<uint8_t>& data, int size);

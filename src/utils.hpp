@@ -27,6 +27,7 @@
 namespace utils {
 
 uint64_t parse_size(const std::string& str);
+std::string error_code_to_string(int error_code);
 
 } // namespace utils
 
