@@ -97,7 +97,7 @@ uint64_t parse_size(const std::string& str){
     return std::round(value*factor);
 }
 
-std::string error_code_to_string(int error_code) {
+std::string strerror(int error_code) {
 
     switch(error_code) {
         case NORNS_SUCCESS:
