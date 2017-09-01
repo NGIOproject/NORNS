@@ -25,6 +25,7 @@
 #ifndef __REQUEST_BASE_HPP__
 #define __REQUEST_BASE_HPP__
 
+#include <sstream>
 
 // abstract base class to transform protobuf requests to internal 
 // requests that can be served by urd
@@ -36,7 +37,6 @@ public:
     virtual bool validate() const = 0;
     virtual std::string to_string() const = 0;
 
-    //static urd_request* create_from_buffer(const void* data, int size);
     static urd_request* create_from_buffer(const std::vector<uint8_t>& data, int size);
 };
 

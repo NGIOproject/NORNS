@@ -25,31 +25,30 @@
 #ifndef __NVML_DAX_HPP__
 #define __NVML_DAX_HPP__
 
-#include "backends.hpp"
+#include <norns/norns_backends.h>
 
-namespace bpt = boost::property_tree;
+#include "backend-base.hpp"
 
 namespace storage {
 
 class nvml_dax final : public storage::backend {
 public:
-    nvml_dax(const bpt::ptree& options);
+    nvml_dax(const std::string& mount, uint32_t quota);
 
-    const std::string& get_name() const override;
-    const std::string& get_type() const override;
-    const std::string& get_description() const override;
-    uint64_t get_capacity() const override;
+    std::string mount() const override;
+    uint32_t quota() const override;
     void read_data() const override;
     void write_data() const override;
+    std::string to_string() const;
 
 private:
-    std::string m_name;
-    std::string m_type;
-    std::string m_description;
-    uint64_t    m_capacity;
-
+    std::string m_mount;
+    uint32_t    m_quota;
 };
 
+NORNS_REGISTER_BACKEND(NORNS_LOCAL_NVML, nvml_dax);
+
 } // namespace storage
+
 
 #endif // __NVML_DAX_HPP__

@@ -22,65 +22,37 @@
 // along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <sstream>
 #include <boost/foreach.hpp>
-#include "backends.hpp"
+#include "backend-base.hpp"
 #include "utils.hpp"
 #include "posix-fs.hpp"
 
 namespace storage {
 
-REGISTER_BACKEND("posix-fs", posix_fs);
+posix_fs::posix_fs(const std::string& mount, uint32_t quota) 
+    : m_mount(mount), m_quota(quota) { }
 
-posix_fs::posix_fs(const bpt::ptree& options) {
-
-    // parse options
-    for(const auto& kv : options) {
-
-        if(kv.first == "name"){
-            m_name = kv.second.get_value<std::string>();
-        }
-
-        if(kv.first == "type"){
-            m_type = kv.second.get_value<std::string>();
-        }
-
-        if(kv.first == "description"){
-            m_description = kv.second.get_value<std::string>();
-        }
-        
-        if(kv.first == "capacity"){
-            std::string capacity_str = kv.second.get_value<std::string>();
-
-            try {
-                m_capacity = utils::parse_size(capacity_str);
-            } catch(std::invalid_argument ex) {
-                std::cerr << "Error parsing backend 'capacity' parameter: '" << capacity_str << "': " << ex.what() << "\n";
-                exit(EXIT_FAILURE);
-            }
-        }
-    }
+std::string posix_fs::mount() const {
+    return m_mount;
 }
 
-const std::string& posix_fs::get_name() const {
-    return m_name;
-}
-
-const std::string& posix_fs::get_type() const {
-    return m_type;
-}
-
-const std::string& posix_fs::get_description() const {
-    return m_description;
-}
-
-uint64_t posix_fs::get_capacity() const {
-    return m_capacity;
+uint32_t posix_fs::quota() const {
+    return m_quota;
 }
 
 void posix_fs::read_data() const {
 }
 
 void posix_fs::write_data() const {
+}
+
+std::string posix_fs::to_string() const {
+    std::stringstream ss;
+
+    ss << "{NORNS_POSIX, " << m_mount << ", " << m_quota << "}";
+
+    return ss.str();
 }
 
 } // namespace storage

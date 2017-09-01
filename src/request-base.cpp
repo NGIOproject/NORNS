@@ -23,6 +23,7 @@
 //
 
 #include "messages.pb.h"
+#include "backend-base.hpp"
 #include "request-base.hpp"
 #include "requests.hpp"
 #include <iostream>
@@ -38,31 +39,46 @@ urd_request* urd_request::create_from_buffer(const std::vector<uint8_t>& buffer,
             case norns::rpc::Request::SUBMIT_IOTASK:
                 break;
             case norns::rpc::Request::REGISTER_JOB:
+            case norns::rpc::Request::UPDATE_JOB:
 
-                if(rpc_req.has_job()) {
+                if(rpc_req.has_jobid() && rpc_req.has_job()) {
 
+                    auto id = rpc_req.jobid();
                     auto job = rpc_req.job();
-                    auto req_ptr = new job_registration_request(job.id());
+                    urd_request* req_ptr = nullptr;
 
-                    req_ptr->m_hosts.reserve(job.hosts().size());
+                    std::vector<std::string> hosts;
+                    hosts.reserve(job.hosts().size());
 
                     for(const auto& h : job.hosts()) {
-                        req_ptr->m_hosts.push_back(h);
+                        hosts.push_back(h);
                     }
 
-                    req_ptr->m_backends.reserve(job.backends().size());
+                    std::vector<std::shared_ptr<storage::backend>> backends;
+                    backends.reserve(job.backends().size());
+
 
                     for(const auto& b : job.backends()) {
-                        req_ptr->m_backends.push_back({
-                            b.type(),
-                            b.mount(),
-                            b.quota()
-                        });
+                        backends.push_back(storage::backend_factory::create_from(b.type(), b.mount(), b.quota()));
+                    }
+
+                    if(rpc_req.type() == norns::rpc::Request::REGISTER_JOB) {
+                        req_ptr = new job_registration_request(id, hosts, backends);
+                    }
+                    else { // rpc_req.type() == norns::rpc::Request::UPDATE_JOB)
+                        req_ptr = new job_update_request(id, hosts, backends);
                     }
 
                     parsed_req = req_ptr;
                 }
-            break;
+                break;
+            case norns::rpc::Request::UNREGISTER_JOB:
+
+                if(rpc_req.has_jobid()) {
+                    parsed_req = new job_removal_request(rpc_req.jobid());
+                }
+
+                break;
         }
     }
 

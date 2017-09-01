@@ -103,8 +103,9 @@ AC_CHECK_HEADER_STDBOOL
 AC_CONFIG_FILES([
         Makefile
         etc/Makefile
-        lib/Makefile
         examples/Makefile
+        include/Makefile
+        lib/Makefile
         src/Makefile
 ])
 AC_OUTPUT

@@ -41,14 +41,22 @@ int main(int argc, char* argv[]) {
 
     (void) argc;
     (void) argv;
+    struct norns_cred cred;
 
     // create job descriptor from example data
     // 1. fill in hostnames
-    int num_hosts = 3;
-    const char** hosts = NORNS_PLIST_ALLOC(const char*, num_hosts);
+    int num_hosts1 = 3;
+    const char** hosts1 = NORNS_PLIST_ALLOC(const char*, num_hosts1);
 
-    for(int i=0; i<num_hosts; ++i) {
-        hosts[i] = ex_hosts[i];
+    for(int i=0; i<num_hosts1; ++i) {
+        hosts1[i] = ex_hosts[i];
+    }
+
+    int num_hosts2 = 2;
+    const char** hosts2 = NORNS_PLIST_ALLOC(const char*, num_hosts2);
+
+    for(int i=0; i<num_hosts2; ++i) {
+        hosts2[i] = ex_hosts[num_hosts1+i];
     }
 
     // 2. declare which backends the job is authorized to use
@@ -71,28 +79,43 @@ int main(int argc, char* argv[]) {
     }
 
     struct norns_job job = {
-        .jb_hosts = hosts,
-        .jb_nhosts = num_hosts,
+        .jb_hosts = hosts1,
+        .jb_nhosts = num_hosts1,
         .jb_backends = backends,
         .jb_nbackends = num_backends
     };
 
-
-    struct norns_cred cred;
-
     int rv;
 
-    // try to register a duplicate jobid
-    for(int i=0; i<2; ++i) {
-        if((rv = norns_register_job(&cred, 42, &job)) != NORNS_SUCCESS) {
-            fprintf(stderr, "norns_register_job failed!\n");
-        }
-        else {
-            fprintf(stdout, "norns_register_job succeded!\n");
-        }
+    // register a job with ID 42
+    if((rv = norns_register_job(&cred, 42, &job)) != NORNS_SUCCESS) {
+            fprintf(stderr, "ERROR: norns_register_job failed!\n");
+    }
+    else {
+        fprintf(stdout, "norns_register_job succeded!\n");
     }
 
-    NORNS_PLIST_FREE(hosts);
+    // update the job description
+    job.jb_hosts = hosts2;
+    job.jb_nhosts = num_hosts2;
+
+    if((rv = norns_update_job(&cred, 42, &job)) != NORNS_SUCCESS) {
+        fprintf(stderr, "norns_update_job failed!\n");
+    }
+    else {
+        fprintf(stdout, "norns_update_job succeded!\n");
+    }
+
+    // unregister the job
+    if((rv = norns_unregister_job(&cred, 42)) != NORNS_SUCCESS) {
+        fprintf(stderr, "norns_unregister_job failed!\n");
+    }
+    else {
+        fprintf(stdout, "norns_unregister_job succeded!\n");
+    }
+
+    NORNS_PLIST_FREE(hosts1);
+    NORNS_PLIST_FREE(hosts2);
     NORNS_PLIST_FREE(backends);
 
 }

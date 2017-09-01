@@ -21,4 +21,30 @@
  * along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "norns/norns.h"
+
+#if !defined(__NORNS_LIB_H__)
+#error "Never include <norns_error.h> directly; use <norns.h> instead."
+#endif
+
+#ifndef __NORNS_ERROR_H__
+#define __NORNS_ERROR_H__ 1
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/** Error codes */
+#define NORNS_SUCCESS           0
+#define NORNS_EBADPARAMS        -1
+#define NORNS_ENOMEM            -2
+#define NORNS_ECONNFAILED       -3
+#define NORNS_ERPCSENDFAILED    -4
+#define NORNS_ERPCRECVFAILED    -5
+#define NORNS_EJOBEXISTS        -6
+#define NORNS_ENOJOBEXISTS      -7
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __NORNS_ERROR_H__ */

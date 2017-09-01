@@ -28,33 +28,21 @@
 #include <cstdint>
 #include <vector>
 #include <string>
-#include <sstream>
 
+#include "backend-base.hpp"
 #include "request-base.hpp"
+
+using backend_ptr = std::shared_ptr<storage::backend>;
 
 class job_registration_request : public urd_request {
 
-    struct backend {
-        int32_t     m_type;
-        std::string m_mount;
-        int32_t     m_quota;
-
-        std::string to_string() const {
-            std::stringstream ss;
-
-            ss << "{" << m_type << ", " << m_mount << ", " << m_quota << "}";
-
-            return ss.str();
-        }
-    };
-
-    friend class urd_request;
-
 public:
-    job_registration_request(uint32_t jobid);
+    job_registration_request(uint32_t jobid, 
+                             const std::vector<std::string>& hosts, 
+                             const std::vector<backend_ptr>& backends);
     uint32_t id() const;
     std::vector<std::string> hosts() const;
-//    std::vector<backend> backends() const;
+    std::vector<backend_ptr> backends() const;
 
     bool validate() const;
     std::string to_string() const;
@@ -62,7 +50,37 @@ public:
 private:
     uint32_t                    m_jobid;
     std::vector<std::string>    m_hosts;
-    std::vector<backend>        m_backends;
+    std::vector<backend_ptr>    m_backends;
+};
+
+class job_update_request : public urd_request {
+public:
+    job_update_request(uint32_t jobid, 
+                       const std::vector<std::string>& hosts, 
+                       const std::vector<backend_ptr>& backends);
+    uint32_t id() const;
+    std::vector<std::string> hosts() const;
+    std::vector<backend_ptr> backends() const;
+
+    bool validate() const;
+    std::string to_string() const;
+
+private:
+    uint32_t                            m_jobid;
+    std::vector<std::string>            m_hosts;
+    std::vector<backend_ptr>    m_backends;
+};
+
+class job_removal_request : public urd_request {
+public:
+    job_removal_request(uint32_t jobid);
+    uint32_t id() const;
+
+    bool validate() const;
+    std::string to_string() const;
+
+private:
+    uint32_t                    m_jobid;
 };
 
 #endif /* __REQUEST_HPP__ */

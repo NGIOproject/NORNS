@@ -47,7 +47,7 @@
 
 #include "ipc-listener.hpp"
 #include "signal-listener.hpp"
-#include "backends.hpp"
+#include "backend-base.hpp"
 #include "ctpl.h" 
 #include "logger.hpp"
 #include "responses.hpp"
@@ -238,6 +238,16 @@ std::shared_ptr<urd_response> urd::request_handler(std::shared_ptr<urd_request> 
         return this->register_job(std::dynamic_pointer_cast<job_registration_request>(request));
     }
 
+    if(dynamic_cast<job_update_request*>(request.get()) != nullptr) {
+        return this->update_job(std::dynamic_pointer_cast<job_update_request>(request));
+    }
+
+    if(dynamic_cast<job_removal_request*>(request.get()) != nullptr) {
+        return this->remove_job(std::dynamic_pointer_cast<job_removal_request>(request));
+    }
+
+    // XXX return a generic response with BADREQUEST if no match is found
+
     //request->process();
 
     /* create a task descriptor & modify original with the task's assigned ID */
@@ -254,8 +264,6 @@ std::shared_ptr<urd_response> urd::register_job(std::shared_ptr<job_registration
 
     auto resp = std::make_shared<job_registration_response>();
 
-    job j;
-
     uint32_t jobid = request->id();
 
     boost::unique_lock<boost::shared_mutex> lock(m_jobs_mutex);
@@ -265,7 +273,9 @@ std::shared_ptr<urd_response> urd::register_job(std::shared_ptr<job_registration
         goto log_and_return;
     }
 
-    m_jobs.emplace(jobid, std::make_shared<job>(j));
+    m_jobs.emplace(jobid, 
+                std::make_shared<job>(request->id(), 
+                                        request->hosts()));
 
     resp->set_error_code(NORNS_SUCCESS);
 
@@ -274,8 +284,53 @@ log_and_return:
     return resp;
 }
 
+std::shared_ptr<urd_response> urd::update_job(std::shared_ptr<job_update_request> request) {
 
+    auto resp = std::make_shared<job_registration_response>();
 
+    uint32_t jobid = request->id();
+
+    boost::unique_lock<boost::shared_mutex> lock(m_jobs_mutex);
+
+    const auto& it = m_jobs.find(jobid);
+
+    if(it == m_jobs.end()) {
+        resp->set_error_code(NORNS_ENOJOBEXISTS);
+        goto log_and_return;
+    }
+
+    it->second->update(request->hosts());
+
+    resp->set_error_code(NORNS_SUCCESS);
+
+log_and_return:
+    m_logger->info("UPDATE_JOB({}) = {}", request->to_string(), resp->to_string());
+    return resp;
+}
+
+std::shared_ptr<urd_response> urd::remove_job(std::shared_ptr<job_removal_request> request) {
+
+    auto resp = std::make_shared<job_registration_response>();
+
+    uint32_t jobid = request->id();
+
+    boost::unique_lock<boost::shared_mutex> lock(m_jobs_mutex);
+
+    const auto& it = m_jobs.find(jobid);
+
+    if(it == m_jobs.end()) {
+        resp->set_error_code(NORNS_ENOJOBEXISTS);
+        goto log_and_return;
+    }
+
+    m_jobs.erase(it);
+
+    resp->set_error_code(NORNS_SUCCESS);
+
+log_and_return:
+    m_logger->info("UNREGISTER_JOB({}) = {}", request->to_string(), resp->to_string());
+    return resp;
+}
 
 
 void urd::set_configuration(const config_settings& settings) {

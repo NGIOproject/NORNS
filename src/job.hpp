@@ -25,11 +25,28 @@
 #ifndef __JOB_HPP__
 #define __JOB_HPP__
 
-struct job {
+#include <vector>
+#include <map>
 
-    uint32_t                    m_jobid;
-    std::vector<std::string>    m_hosts;
-    //std::vector<backend>        m_backends;
+#include "backend-base.hpp"
+
+class job {
+
+    using backend_ptr = std::shared_ptr<storage::backend>;
+
+public:
+    job(uint32_t jobid, const std::vector<std::string>& hosts)
+        : m_jobid(jobid),
+          m_hosts(hosts) {}
+
+    void update(const std::vector<std::string>& hosts) {
+        m_hosts = hosts;
+    }
+
+private:
+    uint32_t                        m_jobid;
+    std::vector<std::string>        m_hosts;
+    std::map<int32_t, backend_ptr>  m_backends;
 }; 
 
 #endif /* __JOB_HPP__ */

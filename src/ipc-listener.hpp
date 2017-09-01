@@ -45,7 +45,7 @@ public:
           m_callback(callback) {}
 
     ~session() {
-        std::cerr << "session dying\n";
+        //std::cerr << "session dying\n";
     }
 
     void start(){
@@ -91,6 +91,8 @@ private:
 
                                 std::shared_ptr<Output> resp = m_callback(req);
 
+                                assert(resp != nullptr);
+
                                 m_message.clear();
 
 //                                return;
@@ -110,15 +112,15 @@ private:
         buffers.push_back(ba::buffer(m_message.buffer(Message::header)));
         buffers.push_back(ba::buffer(m_message.buffer(Message::body)));
 
-        Message::print_hex(m_message.buffer(Message::header));
-        Message::print_hex(m_message.buffer(Message::body));
+        //Message::print_hex(m_message.buffer(Message::header));
+        //Message::print_hex(m_message.buffer(Message::body));
 
         auto self(std::enable_shared_from_this<session<Message, Input, Output>>::shared_from_this());
 
         ba::async_write(m_socket, buffers,
             [this, self](boost::system::error_code ec, std::size_t /*length*/){
 
-                std::cerr << "Writing done!\n";
+                //std::cerr << "Writing done!\n";
 
                 if(!ec){
                     //do_read_request();

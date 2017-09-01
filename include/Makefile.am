@@ -21,44 +21,14 @@
 # along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-#dist_noinst_DATA = messages.proto
-#
-#EXTRA_DIST = messages.proto
+ACLOCAL_AMFLAGS = -I m4
 
-MOSTLYCLEANFILES = \
-	messages.pb-c.c \
-	messages.pb-c.h
+nornsincludedir=$(includedir)/norns
 
-lib_LTLIBRARIES = \
-	libnorns.la
+nornsinclude_HEADERS = \
+	norns/norns.h \
+	norns/norns_backends.h \
+	norns/norns_error.h
 
 include_HEADERS = \
-	$(top_srcdir)/include/norns.h
-	$(top_srcdir)/include/norns/norns_error.h
-
-AM_CPPFLAGS = \
-	-I$(top_srcdir)/include \
-	-I$(top_srcdir)/rpc
-
-libnorns_la_SOURCES = 	\
-	norns.c				\
-	$(top_srcdir)/include/norns.h \
-	$(top_srcdir)/rpc/norns-rpc.h \
-	messages.pb-c.c \
-	messages.pb-c.h
-
-libnorns_la_CFLAGS = \
-	-Wall -Wextra -std=gnu99
-
-libnorns_la_LDFLAGS = \
-	-version-info 0:1:0
-
-libnorns_la_LIBADD = \
-	@PROTOBUF_C_LIBS@
-
-BUILT_SOURCES = \
-	messages.pb-c.c \
-	messages.pb-c.h
-
-%.pb-c.c %.pb-c.h: $(top_srcdir)/rpc/%.proto
-	$(PROTOC_C) --proto_path=$(top_srcdir)/rpc --c_out=$(builddir) $^
+	norns.h

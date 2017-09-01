@@ -33,8 +33,8 @@ MOSTLYCLEANFILES = \
 urd_SOURCES = \
 	$(top_srcdir)/rpc/norns-rpc.h \
 	ipc-listener.hpp \
-	backends.cpp \
-	backends.hpp \
+	backend-base.cpp \
+	backend-base.hpp \
 	defaults.hpp \
 	nvml-dax.cpp \
 	nvml-dax.hpp \

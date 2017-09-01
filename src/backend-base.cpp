@@ -22,9 +22,7 @@
 // along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "backends.hpp"
-
-namespace bpt = boost::property_tree;
+#include "backend-base.hpp"
 
 namespace storage {
 
@@ -33,17 +31,16 @@ namespace storage {
         return _;
     }
 
-    std::shared_ptr<backend> backend_factory::create(const std::string& backend_type, const bpt::ptree& options) const {
+    std::shared_ptr<backend> backend_factory::create(int32_t type, const std::string& mount, uint32_t quota) const {
 
-        // find backend_type in the registry and call the registered construction method
-        const auto& it = m_registrar.find(backend_type);
+        const auto& it = m_registrar.find(type);
 
         if(it != m_registrar.end()){
-            return std::shared_ptr<backend>(it->second(options));
+            return std::shared_ptr<backend>(it->second(mount, quota));
         }
         else{
             throw std::invalid_argument("Unrecognized backend type!");
         }
-    }
+    };
 
 }

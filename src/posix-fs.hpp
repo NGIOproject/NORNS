@@ -25,30 +25,30 @@
 #ifndef __POSIX_FS_HPP__
 #define __POSIX_FS_HPP__
 
-#include "backends.hpp"
+#include <norns/norns_backends.h>
 
-namespace bpt = boost::property_tree;
+#include "backend-base.hpp"
 
 namespace storage {
 
 class posix_fs final : public storage::backend {
 public:
-    posix_fs(const bpt::ptree& options);
+    posix_fs(const std::string& mount, uint32_t quota);
 
-    const std::string& get_name() const override;
-    const std::string& get_type() const override;
-    const std::string& get_description() const override;
-    uint64_t get_capacity() const override;
+    std::string mount() const override;
+    uint32_t quota() const override;
+
     void read_data() const override;
     void write_data() const override;
 
-private:
-    std::string m_name;
-    std::string m_type;
-    std::string m_description;
-    uint64_t    m_capacity;
+    std::string to_string() const;
 
+private:
+    std::string m_mount;
+    uint32_t    m_quota;
 };
+
+NORNS_REGISTER_BACKEND(NORNS_LUSTRE, posix_fs);
 
 } // namespace storage
 

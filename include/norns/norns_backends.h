@@ -21,4 +21,21 @@
  * along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "norns/norns.h"
+#ifndef __NORNS_BACKENDS_H__
+#define __NORNS_BACKENDS_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Storage resource types */
+#define NORNS_LOCAL_NVML    0x10000000
+#define NORNS_REMOTE_NVML   0x10000001
+#define NORNS_LUSTRE        0x10000002
+
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __NORNS_BACKENDS_H__ */

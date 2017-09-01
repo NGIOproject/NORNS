@@ -29,7 +29,7 @@
 #include <boost/thread/shared_mutex.hpp>
 
 #include "settings.hpp"
-#include "backends.hpp"
+#include "backend-base.hpp"
 #include "signal-listener.hpp"
 #include "message.hpp"
 #include "ipc-listener.hpp"
@@ -54,6 +54,8 @@ private:
     void signal_handler(int);
 
     std::shared_ptr<urd_response> register_job(std::shared_ptr<job_registration_request> request);
+    std::shared_ptr<urd_response> update_job(std::shared_ptr<job_update_request> request);
+    std::shared_ptr<urd_response> remove_job(std::shared_ptr<job_removal_request> request);
 
 private:
     std::shared_ptr<logger>                             m_logger;

@@ -22,65 +22,37 @@
 // along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <sstream>
 #include <boost/foreach.hpp>
-#include "backends.hpp"
+#include "backend-base.hpp"
 #include "utils.hpp"
 #include "nvml-dax.hpp"
 
 namespace storage {
 
-REGISTER_BACKEND("nvml-dax", nvml_dax);
+nvml_dax::nvml_dax(const std::string& mount, uint32_t quota) 
+    : m_mount(mount), m_quota(quota) { }
 
-nvml_dax::nvml_dax(const bpt::ptree& options) {
-
-    // parse options
-    for(const auto& kv : options) {
-
-        if(kv.first == "name"){
-            m_name = kv.second.get_value<std::string>();
-        }
-
-        if(kv.first == "type"){
-            m_type = kv.second.get_value<std::string>();
-        }
-
-        if(kv.first == "description"){
-            m_description = kv.second.get_value<std::string>();
-        }
-        
-        if(kv.first == "capacity"){
-            std::string capacity_str = kv.second.get_value<std::string>();
-
-            try {
-                m_capacity = utils::parse_size(capacity_str);
-            } catch(std::invalid_argument ex) {
-                std::cerr << "Error parsing backend 'capacity' parameter: '" << capacity_str << "': " << ex.what() << "\n";
-                exit(EXIT_FAILURE);
-            }
-        }
-    }
+std::string nvml_dax::mount() const {
+    return m_mount;
 }
 
-const std::string& nvml_dax::get_name() const {
-    return m_name;
-}
-
-const std::string& nvml_dax::get_type() const {
-    return m_type;
-}
-
-const std::string& nvml_dax::get_description() const {
-    return m_description;
-}
-
-uint64_t nvml_dax::get_capacity() const {
-    return m_capacity;
+uint32_t nvml_dax::quota() const {
+    return m_quota;
 }
 
 void nvml_dax::read_data() const {
 }
 
 void nvml_dax::write_data() const {
+}
+
+std::string nvml_dax::to_string() const {
+    std::stringstream ss;
+
+    ss << "{NORNS_NVML, " << m_mount << ", " << m_quota << "}";
+
+    return ss.str();
 }
 
 } // namespace storage

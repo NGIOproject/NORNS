@@ -31,6 +31,7 @@
 #include <errno.h>
 #include <string.h>
 #include <assert.h>
+#include <stdbool.h>
 
 
 #include <norns.h>
@@ -263,27 +264,59 @@ recv_error:
     return -1;
 }
 
-/* Register and describe a batch job */
-int norns_register_job(struct norns_cred* auth, uint32_t jobid, struct norns_job* job) {
 
-    (void) auth;
+static void job_message_free(Norns__Rpc__Request__Job* msg) {
 
-    int rv;
+    assert(msg != NULL);
 
-    if(job->jb_nhosts <= 0 || job->jb_nbackends <= 0) {
-        return NORNS_EBADPARAMS;
+    if(msg->hosts != NULL) {
+        for(size_t i=0; i<msg->n_hosts; ++i) {
+            if(msg->hosts[i] != NULL) {
+                free(msg->hosts[i]);
+            }
+        }
+        free(msg->hosts);
     }
 
-    // first of all, build the request body so that 
-    // we can compute the final size
-    Norns__Rpc__Request__Job jobmsg = NORNS__RPC__REQUEST__JOB__INIT;
-    jobmsg.id = jobid;
-    jobmsg.n_hosts = job->jb_nhosts; // save number of repeated hosts
-    jobmsg.hosts = malloc(jobmsg.n_hosts*sizeof(char*));
+    if(msg->backends != NULL) {
 
-    if(jobmsg.hosts == NULL) {
-        // errno set to ENOMEM
-        return -1;
+        for(size_t i=0; i<msg->n_backends; ++i) {
+            if(msg->backends[i] != NULL) {
+                if(msg->backends[i]->mount != NULL) {
+                    free(msg->backends[i]->mount);
+                }
+                free(msg->backends[i]);
+            }
+        }
+        free(msg->backends);
+    }
+    free(msg);
+}
+
+static int job_message_init(struct norns_job* job, Norns__Rpc__Request__Job** msg) {
+
+    int rv;
+    *msg = NULL;
+
+    assert(job != NULL);
+
+    Norns__Rpc__Request__Job* jobmsg = 
+        (Norns__Rpc__Request__Job*) malloc(sizeof(*jobmsg));
+
+    if(jobmsg == NULL) {
+        rv = NORNS_ENOMEM;
+        goto error_cleanup;
+    }
+
+    norns__rpc__request__job__init(jobmsg);
+
+    // add hosts
+    jobmsg->n_hosts = job->jb_nhosts; // save number of repeated hosts
+    jobmsg->hosts = calloc(jobmsg->n_hosts, sizeof(char*));
+
+    if(jobmsg->hosts == NULL) {
+        rv = NORNS_ENOMEM;
+        goto error_cleanup;
     }
 
     for(size_t i=0; i<job->jb_nhosts; ++i){
@@ -293,95 +326,205 @@ int norns_register_job(struct norns_cred* auth, uint32_t jobid, struct norns_job
             continue;
         }
 
-        char* str = strndup(job->jb_hosts[i], len);
+        jobmsg->hosts[i] = strndup(job->jb_hosts[i], len);
 
-        if(str == NULL) {
-            // errno set to ENOMEM
-            return -1;
+        if(jobmsg->hosts[i] == NULL) {
+            rv = NORNS_ENOMEM;
+            goto error_cleanup;
         }
-
-        jobmsg.hosts[i] = str;
     }
 
-    jobmsg.n_backends = job->jb_nbackends;
-    jobmsg.backends = 
-        malloc(job->jb_nbackends*sizeof(Norns__Rpc__Request__Job__Backend*));
+    // add backends
+    jobmsg->n_backends = job->jb_nbackends;
+    jobmsg->backends = 
+        calloc(job->jb_nbackends, sizeof(Norns__Rpc__Request__Job__Backend*));
     
-    if(jobmsg.backends == NULL){
-        // errno set to ENOMEM
-        return -1;
+    if(jobmsg->backends == NULL){
+        rv = NORNS_ENOMEM;
+        goto error_cleanup;
     }
 
     for(size_t i=0; i<job->jb_nbackends; ++i) {
-        fprintf(stdout, "%s\n", job->jb_backends[i]->b_mount);
+        jobmsg->backends[i] = malloc(sizeof(Norns__Rpc__Request__Job__Backend));
 
-        jobmsg.backends[i] = malloc(sizeof(Norns__Rpc__Request__Job__Backend));
-
-        if(jobmsg.backends[i] == NULL) {
-            // errno set to ENOMEM
-            return -1;
+        if(jobmsg->backends[i] == NULL) {
+            rv = NORNS_ENOMEM;
+            goto error_cleanup;
         }
 
-        norns__rpc__request__job__backend__init(jobmsg.backends[i]);
-        jobmsg.backends[i]->type = job->jb_backends[i]->b_type;
+        norns__rpc__request__job__backend__init(jobmsg->backends[i]);
+        jobmsg->backends[i]->type = job->jb_backends[i]->b_type;
         size_t len = strlen(job->jb_backends[i]->b_mount);
-        jobmsg.backends[i]->mount = strndup(job->jb_backends[i]->b_mount, len);
+        jobmsg->backends[i]->mount = strndup(job->jb_backends[i]->b_mount, len);
 
-        if(jobmsg.backends[i]->mount == NULL) {
-            // errno set to ENOMEM
-            return -1;
+        if(jobmsg->backends[i]->mount == NULL) {
+            rv = NORNS_ENOMEM;
+            goto error_cleanup;
         }
 
-        jobmsg.backends[i]->quota = job->jb_backends[i]->b_quota;
+        jobmsg->backends[i]->quota = job->jb_backends[i]->b_quota;
     }
 
+    *msg = jobmsg;
+    return NORNS_SUCCESS;
+
+error_cleanup:
+    if(jobmsg != NULL) {
+        job_message_free(jobmsg);
+    }
+    return rv;
+}
+
+static int 
+__send_job_request(Norns__Rpc__Request__Type type, struct norns_cred* auth, 
+                   uint32_t jobid, struct norns_job* job) {
+
+    (void) auth;
+
+    int rv;
+    void* req_buf, *resp_buf;
+    size_t req_len, resp_len;
+    int conn = -1;
+    Norns__Rpc__Request__Job* jobmsg = NULL; 
+    Norns__Rpc__Response* resp = NULL;
+    req_buf = resp_buf = NULL;
+    req_len = resp_len = 0;
+
     Norns__Rpc__Request req = NORNS__RPC__REQUEST__INIT;
-    req.type = NORNS__RPC__REQUEST__TYPE__REGISTER_JOB;
-    req.job = &jobmsg;
+    req.type = type;
+    req.has_jobid = true;
+    req.jobid = jobid;
+
+    // this request needs a valid job descriptor
+    if(job != NULL) {
+        if(job->jb_nhosts <= 0 || job->jb_nbackends <= 0) {
+            return NORNS_EBADPARAMS;
+        }
+
+        if((rv = job_message_init(job, &jobmsg)) != NORNS_SUCCESS) {
+            goto cleanup;
+        }
+
+        assert(jobmsg != NULL);
+        req.job = jobmsg;
+    }
 
     // fill the buffer
-    size_t req_len = norns__rpc__request__get_packed_size(&req);
-    void* req_buf = malloc(req_len);
+    req_len = norns__rpc__request__get_packed_size(&req);
+    req_buf = malloc(req_len);
 
     if(req_buf == NULL) {
-        return -1;
+        rv = NORNS_ENOMEM;
+        goto cleanup;
     }
 
     norns__rpc__request__pack(&req, req_buf);
 
-    int conn = connect_to_daemon();
+    conn = connect_to_daemon();
 
     if(conn == -1) {
-        return NORNS_ECONNFAILED;
+        rv = NORNS_ECONNFAILED;
+        goto cleanup;
     }
 
 	// connection established, send the message
 	if(send_message(conn, req_buf, req_len) < 0) {
-	    return NORNS_ERPCSENDFAILED;
+	    rv = NORNS_ERPCSENDFAILED;
+	    goto cleanup;
     }
 
     // wait for the daemon's response
-    void* resp_buf;
-    size_t resp_len;
-
     if(recv_message(conn, &resp_buf, &resp_len) < 0) {
-        return NORNS_ERPCRECVFAILED;
+        rv = NORNS_ERPCRECVFAILED;
+	    goto cleanup;
     }
 
-    close(conn);
-
-    Norns__Rpc__Response* resp = 
-        norns__rpc__response__unpack(NULL, resp_len, resp_buf);
+    resp = norns__rpc__response__unpack(NULL, resp_len, resp_buf);
 
     if(resp == NULL) {
-        return NORNS_ERPCRECVFAILED;
+        rv = NORNS_ERPCRECVFAILED;
+        goto cleanup;
     }
 
     rv = resp->code;
 
-    free(resp_buf);
-    norns__rpc__response__free_unpacked(resp, NULL);
+cleanup:
+    if(jobmsg != NULL) {
+        job_message_free(jobmsg);
+    }
+
+    if(req_buf != NULL) {
+        free(req_buf);
+    }
+
+    if(resp_buf) {
+        free(resp_buf);
+    }
+
+    if(conn != -1) {
+        close(conn);
+    }
+
+    if(resp != NULL) {
+        norns__rpc__response__free_unpacked(resp, NULL);
+    }
 
     return rv;
 }
+
+/* Register and describe a batch job */
+int 
+norns_register_job(struct norns_cred* auth, uint32_t jobid, 
+                   struct norns_job* job) {
+
+    return __send_job_request(NORNS__RPC__REQUEST__TYPE__REGISTER_JOB,
+                              auth, jobid, job);
+
+}
+
+/* Update an existing batch job */
+int 
+norns_update_job(struct norns_cred* auth, uint32_t jobid, 
+                 struct norns_job* job) {
+
+    return __send_job_request(NORNS__RPC__REQUEST__TYPE__UPDATE_JOB,
+                              auth, jobid, job);
+}
+
+
+/* Remove a batch job from the system */
+int norns_unregister_job(struct norns_cred* auth, uint32_t jobid) {
+
+    return __send_job_request(NORNS__RPC__REQUEST__TYPE__UNREGISTER_JOB,
+                              auth, jobid, NULL);
+}
+
+
+/* Add a process to a registered batch job */
+int 
+norns_add_process(struct norns_cred* auth, uint32_t jobid, pid_t pid) {
+
+    (void) auth;
+    (void) jobid;
+    (void) pid;
+
+    fprintf(stdout, "unimplemented\n");
+
+    return 0;
+}
+
+
+/* Remove a process from a registered batch job */
+int 
+norns_remove_process(struct norns_cred* auth, uint32_t jobid, pid_t pid) {
+
+    (void) auth;
+    (void) jobid;
+    (void) pid;
+
+    fprintf(stdout, "unimplemented\n");
+
+    return 0;
+}
+
 

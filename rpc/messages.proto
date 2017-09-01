@@ -7,6 +7,10 @@ message Request {
     enum Type {
         SUBMIT_IOTASK = 1;
         REGISTER_JOB = 2;
+        UPDATE_JOB = 3;
+        UNREGISTER_JOB = 4;
+        ADD_PROCESS = 5;
+        REMOVE_PROCESS = 6;
     }
 
     required Type type = 1;
@@ -18,7 +22,6 @@ message Request {
 
     // job descriptor
     message Job {
-        required uint32 id = 1;
         repeated string hosts = 2;
 
         // backend descriptor
@@ -30,13 +33,19 @@ message Request {
 
         repeated Backend backends = 3;
     }
-    optional Job job = 3;
+
+    optional uint32 jobid = 3;
+    optional Job job = 4;
 }
 
 message Response {
     enum Type {
         SUBMIT_IOTASK = 1;
         REGISTER_JOB = 2;
+        UPDATE_JOB = 3;
+        UNREGISTER_JOB = 4;
+        ADD_PROCESS = 5;
+        REMOVE_PROCESS = 6;
     }
 
     required Type type = 1;

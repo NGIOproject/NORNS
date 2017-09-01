@@ -29,49 +29,55 @@
 #include <unordered_map>
 #include <memory>
 #include <boost/preprocessor/cat.hpp>
-#include <boost/property_tree/ptree.hpp>
-
-namespace bpt = boost::property_tree;
 
 namespace storage {
 
 class backend {
 public:
     virtual ~backend() {};
-    virtual const std::string& get_name() const = 0;
-    virtual const std::string& get_type() const = 0;
-    virtual const std::string& get_description() const = 0;
-    virtual uint64_t get_capacity() const = 0;
+
+    virtual std::string mount() const = 0;
+    virtual uint32_t quota() const = 0;
     virtual void read_data() const = 0;
     virtual void write_data() const = 0;
+
+    virtual std::string to_string() const = 0;
+
 }; // class backend
 
-#define REGISTER_BACKEND(name, T)                                                       \
-    static bool BOOST_PP_CAT(T, __regged) =                                             \
-        storage::backend_factory::get_instance().register_backend<T>(name,              \
-                [](const bpt::ptree& options) {                                         \
-                    return std::shared_ptr<T>(new T(options)); \
+#define NORNS_REGISTER_BACKEND(id, T)                                                 \
+    static bool BOOST_PP_CAT(T, __regged) =                                           \
+        storage::backend_factory::get_instance().register_backend<T>(id,              \
+                [](const std::string& mount, uint32_t quota) {                        \
+                    return std::shared_ptr<T>(new T(mount, quota)); \
                 });
 
 class backend_factory {
 
-    using creatorfn_t = std::function<std::shared_ptr<backend>(const bpt::ptree&)>;
+    using creator_function = std::function<std::shared_ptr<backend>(const std::string&, uint32_t)>;
 
 
 public:
     static backend_factory& get_instance();
-    std::shared_ptr<backend> create(const std::string& name, const bpt::ptree& options) const;
+
+    template <typename ...Args>
+    static std::shared_ptr<backend> create_from(Args&& ...args) {
+        return get_instance().create(std::forward<Args>(args)...);
+    }
 
     template <typename T>
-    bool register_backend(const std::string& name, creatorfn_t fn) {
+    bool register_backend(const int32_t id, creator_function fn) {
 
-        if(m_registrar.find(name) != m_registrar.end()){
+        if(m_registrar.find(id) != m_registrar.end()){
             throw std::invalid_argument("A storage backend with that name already exists!");
         }
 
-        m_registrar.insert({name, fn});
+        m_registrar.insert({id, fn});
         return true;
     }
+
+private:
+    std::shared_ptr<backend> create(int32_t type, const std::string& mount, uint32_t quota) const;
 
 protected:
     backend_factory() {}
@@ -80,7 +86,7 @@ protected:
     ~backend_factory() {}
 
 private:
-    std::unordered_map<std::string, creatorfn_t> m_registrar;
+    std::unordered_map<int32_t, creator_function> m_registrar;
 
 }; // class factory
 
