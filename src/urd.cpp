@@ -277,7 +277,7 @@ std::shared_ptr<urd_response> urd::request_handler(std::shared_ptr<urd_request> 
 
 std::shared_ptr<urd_response> urd::register_job(std::shared_ptr<job_registration_request> request) {
 
-    auto resp = std::make_shared<job_registration_response>();
+    auto resp = std::make_shared<generic_response>();
 
     uint32_t jobid = request->jobid();
 
@@ -301,7 +301,7 @@ log_and_return:
 
 std::shared_ptr<urd_response> urd::update_job(std::shared_ptr<job_update_request> request) {
 
-    auto resp = std::make_shared<job_registration_response>();
+    auto resp = std::make_shared<generic_response>();
 
     uint32_t jobid = request->jobid();
 
@@ -325,7 +325,7 @@ log_and_return:
 
 std::shared_ptr<urd_response> urd::remove_job(std::shared_ptr<job_removal_request> request) {
 
-    auto resp = std::make_shared<job_registration_response>();
+    auto resp = std::make_shared<generic_response>();
 
     uint32_t jobid = request->jobid();
 
