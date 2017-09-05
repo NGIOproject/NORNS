@@ -42,6 +42,7 @@ AM_CPPFLAGS = \
 
 libnorns_la_SOURCES = 	\
 	norns.c				\
+	errors.c            \
 	$(top_srcdir)/include/norns.h \
 	$(top_srcdir)/rpc/norns-rpc.h \
 	messages.pb-c.c \

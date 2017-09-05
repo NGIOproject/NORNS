@@ -22,7 +22,7 @@ message Request {
 
     // job descriptor
     message Job {
-        repeated string hosts = 2;
+        repeated string hosts = 1;
 
         // backend descriptor
         message Backend {
@@ -34,24 +34,20 @@ message Request {
         repeated Backend backends = 3;
     }
 
+    // process descriptor
+    message Process {
+        required int64 pid = 1;
+        required int64 gid = 2;
+    }
+
     optional uint32 jobid = 3;
     optional Job job = 4;
+    optional Process process = 5;
 }
 
 message Response {
-    enum Type {
-        SUBMIT_IOTASK = 1;
-        REGISTER_JOB = 2;
-        UPDATE_JOB = 3;
-        UNREGISTER_JOB = 4;
-        ADD_PROCESS = 5;
-        REMOVE_PROCESS = 6;
-    }
-
-    required Type type = 1;
-
-    // most responses only need to return an error code
-    required uint32 code = 2;
+    // most responses only need to return a status code
+    required uint32 status = 2;
 }
 
 

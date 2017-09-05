@@ -28,11 +28,24 @@
 #include <cstdint>
 #include <vector>
 #include <string>
+#include <sys/types.h>
 
 #include "backend-base.hpp"
 #include "request-base.hpp"
 
 using backend_ptr = std::shared_ptr<storage::backend>;
+
+class bad_request : public urd_request {
+public:
+    bad_request() {}
+    bool validate() const { 
+        return true; 
+    };
+
+    std::string to_string() const {
+        return "BAD_REQUEST";
+    };
+};
 
 class job_registration_request : public urd_request {
 
@@ -40,7 +53,7 @@ public:
     job_registration_request(uint32_t jobid, 
                              const std::vector<std::string>& hosts, 
                              const std::vector<backend_ptr>& backends);
-    uint32_t id() const;
+    uint32_t jobid() const;
     std::vector<std::string> hosts() const;
     std::vector<backend_ptr> backends() const;
 
@@ -58,7 +71,7 @@ public:
     job_update_request(uint32_t jobid, 
                        const std::vector<std::string>& hosts, 
                        const std::vector<backend_ptr>& backends);
-    uint32_t id() const;
+    uint32_t jobid() const;
     std::vector<std::string> hosts() const;
     std::vector<backend_ptr> backends() const;
 
@@ -66,21 +79,55 @@ public:
     std::string to_string() const;
 
 private:
-    uint32_t                            m_jobid;
-    std::vector<std::string>            m_hosts;
+    uint32_t                    m_jobid;
+    std::vector<std::string>    m_hosts;
     std::vector<backend_ptr>    m_backends;
 };
 
 class job_removal_request : public urd_request {
 public:
     job_removal_request(uint32_t jobid);
-    uint32_t id() const;
+    uint32_t jobid() const;
 
     bool validate() const;
     std::string to_string() const;
 
 private:
     uint32_t                    m_jobid;
+};
+
+class process_registration_request : public urd_request {
+public:
+    process_registration_request(uint32_t jobid, pid_t pid, gid_t gid);
+
+    uint32_t jobid() const;
+    pid_t pid() const;
+    gid_t gid() const;
+
+    bool validate() const;
+    std::string to_string() const;
+
+private:
+    uint32_t m_jobid;
+    pid_t m_pid;
+    gid_t m_gid;
+};
+
+class process_deregistration_request : public urd_request {
+public:
+    process_deregistration_request(uint32_t jobid, pid_t pid, gid_t gid);
+
+    uint32_t jobid() const;
+    pid_t pid() const;
+    gid_t gid() const;
+
+    bool validate() const;
+    std::string to_string() const;
+
+private:
+    uint32_t m_jobid;
+    pid_t m_pid;
+    gid_t m_gid;
 };
 
 #endif /* __REQUEST_HPP__ */

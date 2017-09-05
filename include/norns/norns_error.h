@@ -33,15 +33,19 @@
 extern "C" {
 #endif
 
+#define NORNS_ERRMAX 512
+
 /** Error codes */
 #define NORNS_SUCCESS           0
 #define NORNS_EBADPARAMS        -1
-#define NORNS_ENOMEM            -2
-#define NORNS_ECONNFAILED       -3
-#define NORNS_ERPCSENDFAILED    -4
-#define NORNS_ERPCRECVFAILED    -5
-#define NORNS_EJOBEXISTS        -6
-#define NORNS_ENOJOBEXISTS      -7
+#define NORNS_EBADREQUEST       -2
+#define NORNS_ENOMEM            -3
+#define NORNS_ECONNFAILED       -4
+#define NORNS_ERPCSENDFAILED    -5
+#define NORNS_ERPCRECVFAILED    -6
+#define NORNS_EJOBEXISTS        -7
+#define NORNS_ENOSUCHJOB        -8
+#define NORNS_ENOSUCHPROCESS    -9
 
 #ifdef __cplusplus
 }

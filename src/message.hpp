@@ -131,11 +131,8 @@ public:
 
         decoded_req.reset(urd_request::create_from_buffer(m_body, msg_length));
 
-        if(decoded_req.get() != nullptr) {
-            return true;
-        }
-
-        return false;
+        // create_from_buffer always returns a valid request, even if a bad request was received
+        return true;
     }
 
     static void print_hex(const std::vector<uint8_t>& buffer) {

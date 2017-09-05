@@ -72,13 +72,34 @@ urd_request* urd_request::create_from_buffer(const std::vector<uint8_t>& buffer,
                     parsed_req = req_ptr;
                 }
                 break;
-            case norns::rpc::Request::UNREGISTER_JOB:
 
+            case norns::rpc::Request::UNREGISTER_JOB:
                 if(rpc_req.has_jobid()) {
                     parsed_req = new job_removal_request(rpc_req.jobid());
                 }
-
                 break;
+
+            case norns::rpc::Request::ADD_PROCESS:
+            case norns::rpc::Request::REMOVE_PROCESS:
+                if(rpc_req.has_jobid() && rpc_req.has_process()) {
+
+                    auto process = rpc_req.process();
+
+                    urd_request* req_ptr =  nullptr;
+
+                    if(rpc_req.type() == norns::rpc::Request::ADD_PROCESS) {
+                        req_ptr = new process_registration_request(rpc_req.jobid(), process.pid(), process.gid());
+                    }
+                    else { // rpc_req.type() == norns::rpc::Request::REMOVE_PROCESS
+                        req_ptr = new process_deregistration_request(rpc_req.jobid(), process.pid(), process.gid());
+                    }
+
+                    parsed_req = req_ptr;
+                }
+                break;
+
+            default:
+                parsed_req = new bad_request();
         }
     }
 

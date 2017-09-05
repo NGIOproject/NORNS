@@ -35,18 +35,6 @@
 extern "C" {
 #endif
 
-/* Error codes */
-#define NORNS_SUCCESS           0
-#define NORNS_EBADPARAMS        -1
-#define NORNS_ENOMEM            -2
-#define NORNS_ECONNFAILED       -3
-#define NORNS_ERPCSENDFAILED    -4
-#define NORNS_ERPCRECVFAILED    -5
-#define NORNS_EJOBEXISTS        -6
-#define NORNS_ENOJOBEXISTS      -7
-
-typedef uint32_t jobid_t;
-
 /* Process credentials */
 struct norns_cred {
     // TODO: to be completed, but at least...
@@ -189,17 +177,20 @@ int norns_command(struct norns_cred* auth);
 int norns_register_job(struct norns_cred* auth, uint32_t jobid, struct norns_job* job);
 
 /* Update an existing batch job */
+/* XXX: At the moment this invalidates all registered processes for this job */
 int norns_update_job(struct norns_cred* auth, uint32_t jobid, struct norns_job* job);
 
 /* Remove a batch job from the system */
 int norns_unregister_job(struct norns_cred* auth, uint32_t jobid);
 
 /* Add a process to a registered batch job */
-int norns_add_process(struct norns_cred* auth, uint32_t jobid, pid_t pid);
+int norns_add_process(struct norns_cred* auth, uint32_t jobid, pid_t pid, gid_t gid);
 
 /* Remove a process from a registered batch job */
-int norns_remove_process(struct norns_cred* auth, uint32_t jobid, pid_t pid);
+int norns_remove_process(struct norns_cred* auth, uint32_t jobid, pid_t pid, gid_t gid);
 
+
+char* norns_strerror(int errnum);
 
 #ifdef __cplusplus
 }

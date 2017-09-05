@@ -38,7 +38,7 @@ job_registration_request::job_registration_request(uint32_t jobid, const std::ve
    m_backends(backends) { }
 
 
-uint32_t job_registration_request::id() const {
+uint32_t job_registration_request::jobid() const {
     return m_jobid;
 }
 
@@ -65,7 +65,7 @@ std::string job_registration_request::to_string() const {
         return b->to_string();
     };
 
-    ss << "id: " << m_jobid << ", "
+    ss << "jobid: " << m_jobid << ", "
        << "hosts: {" << join(m_hosts, ", ") << "}; "
        << "backends: {" << join(m_backends | transformed(to_string), ", ");
 
@@ -83,7 +83,7 @@ job_update_request::job_update_request(uint32_t jobid, const std::vector<std::st
    m_backends(backends) { }
 
 
-uint32_t job_update_request::id() const {
+uint32_t job_update_request::jobid() const {
     return m_jobid;
 }
 
@@ -110,21 +110,21 @@ std::string job_update_request::to_string() const {
         return b->to_string();
     };
 
-    ss << "id: " << m_jobid << ", "
+    ss << "jobid: " << m_jobid << ", "
        << "hosts: {" << join(m_hosts, ", ") << "}; "
        << "backends: {" << join(m_backends | transformed(to_string), ", ");
 
     return ss.str();
 }
 
-/**********************/
+/***********************/
 /* job_removal_request */
-/**********************/
+/***********************/
 
 job_removal_request::job_removal_request(uint32_t jobid)
  : m_jobid(jobid) { }
 
-uint32_t job_removal_request::id() const {
+uint32_t job_removal_request::jobid() const {
     return m_jobid;
 }
 
@@ -133,8 +133,69 @@ bool job_removal_request::validate() const {
 }
 
 std::string job_removal_request::to_string() const {
+    return "jobid: " + std::to_string(m_jobid);
+}
 
-    return "id: " + std::to_string(m_jobid);
+/********************************/
+/* process_registration_request */
+/********************************/
+
+process_registration_request::process_registration_request(uint32_t jobid, pid_t pid, gid_t gid)
+ : m_jobid(jobid),
+   m_pid(pid),
+   m_gid(gid) {}
+
+uint32_t process_registration_request::jobid() const {
+    return m_jobid;
+}
+
+pid_t process_registration_request::pid() const {
+    return m_pid;
+}
+
+gid_t process_registration_request::gid() const {
+    return m_gid;
+}
+
+bool process_registration_request::validate() const {
+    return true;
+}
+
+std::string process_registration_request::to_string() const {
+    return "jobid: " + std::to_string(m_jobid) + 
+            "pid:" + std::to_string(m_pid) +
+            "gid:" + std::to_string(m_gid);
+}
+
+/**********************************/
+/* process_deregistration_request */
+/**********************************/
+
+process_deregistration_request::process_deregistration_request(uint32_t jobid, pid_t pid, gid_t gid)
+ : m_jobid(jobid),
+   m_pid(pid),
+   m_gid(gid) {}
+
+uint32_t process_deregistration_request::jobid() const {
+    return m_jobid;
+}
+
+pid_t process_deregistration_request::pid() const {
+    return m_pid;
+}
+
+gid_t process_deregistration_request::gid() const {
+    return m_gid;
+}
+
+bool process_deregistration_request::validate() const {
+    return true;
+}
+
+std::string process_deregistration_request::to_string() const {
+    return "jobid: " + std::to_string(m_jobid) + 
+            "pid:" + std::to_string(m_pid) +
+            "gid:" + std::to_string(m_gid);
 }
 
 

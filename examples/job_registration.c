@@ -89,29 +89,28 @@ int main(int argc, char* argv[]) {
 
     // register a job with ID 42
     if((rv = norns_register_job(&cred, 42, &job)) != NORNS_SUCCESS) {
-            fprintf(stderr, "ERROR: norns_register_job failed!\n");
+            fprintf(stderr, "ERROR: norns_register_job failed: %s\n", norns_strerror(rv));
     }
-    else {
-        fprintf(stdout, "norns_register_job succeded!\n");
+
+    // register processes with access to this job
+    for(int i=0; i<1; ++i) {
+        if((rv = norns_add_process(&cred, 42, (pid_t) i, (gid_t) i)) != NORNS_SUCCESS) {
+            fprintf(stderr, "norns_add_process failed: %s\n", norns_strerror(rv));
+        }
     }
+
 
     // update the job description
     job.jb_hosts = hosts2;
     job.jb_nhosts = num_hosts2;
 
     if((rv = norns_update_job(&cred, 42, &job)) != NORNS_SUCCESS) {
-        fprintf(stderr, "norns_update_job failed!\n");
-    }
-    else {
-        fprintf(stdout, "norns_update_job succeded!\n");
+        fprintf(stderr, "norns_update_job failed: %s\n", norns_strerror(rv));
     }
 
     // unregister the job
     if((rv = norns_unregister_job(&cred, 42)) != NORNS_SUCCESS) {
-        fprintf(stderr, "norns_unregister_job failed!\n");
-    }
-    else {
-        fprintf(stdout, "norns_unregister_job succeded!\n");
+        fprintf(stderr, "norns_unregister_job failed: %s\n", norns_strerror(rv));
     }
 
     NORNS_PLIST_FREE(hosts1);

@@ -29,22 +29,50 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 
+generic_response::generic_response() 
+ : m_status(0) {}
+
+generic_response::generic_response(uint32_t status) 
+ : m_status(status) { }
+
+void generic_response::set_status(uint32_t status) {
+    m_status = status;
+}
+
+bool generic_response::store_to_buffer(std::vector<uint8_t>& buffer) {
+
+    norns::rpc::Response rpc_resp;
+
+    rpc_resp.set_status(m_status);
+
+    size_t reserved_size = buffer.size();
+    size_t message_size = rpc_resp.ByteSize();
+    size_t buffer_size = reserved_size + message_size;
+
+    buffer.resize(buffer_size);
+
+    return rpc_resp.SerializeToArray(&buffer[reserved_size], message_size);
+}
+
+std::string generic_response::to_string() const {
+    return utils::strerror(m_status);
+}
+
 job_registration_response::job_registration_response() 
- : m_error_code(0) { }
+ : m_status(0) { }
 
-job_registration_response::job_registration_response(uint32_t error_code) 
- : m_error_code(error_code) { }
+job_registration_response::job_registration_response(uint32_t status) 
+ : m_status(status) { }
 
-void job_registration_response::set_error_code(uint32_t error_code) {
-    m_error_code = error_code;
+void job_registration_response::set_status(uint32_t status) {
+    m_status = status;
 }
 
 bool job_registration_response::store_to_buffer(std::vector<uint8_t>& buffer) {
 
     norns::rpc::Response rpc_resp;
 
-    rpc_resp.set_type(norns::rpc::Response::REGISTER_JOB);
-    rpc_resp.set_code(m_error_code);
+    rpc_resp.set_status(m_status);
 
     size_t reserved_size = buffer.size();
     size_t message_size = rpc_resp.ByteSize();
@@ -56,5 +84,5 @@ bool job_registration_response::store_to_buffer(std::vector<uint8_t>& buffer) {
 }
 
 std::string job_registration_response::to_string() const {
-    return utils::strerror(m_error_code);
+    return utils::strerror(m_status);
 }

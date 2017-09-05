@@ -28,21 +28,38 @@
 #include <cstdint>
 #include <vector>
 #include <string>
+#include <memory>
 
 #include "response-base.hpp"
+#include "request-base.hpp"
+#include "messages.pb.h"
+
+class generic_response : public urd_response {
+public:
+    generic_response();
+    generic_response(uint32_t status);
+
+    void set_status(uint32_t status);
+    bool store_to_buffer(std::vector<uint8_t>& buffer);
+    std::string to_string() const;
+
+private:
+    uint32_t                    m_status;
+};
+
 
 class job_registration_response : public urd_response {
 
 public:
     job_registration_response();
-    job_registration_response(uint32_t error_code);
+    job_registration_response(uint32_t status);
 
-    void set_error_code(uint32_t error_code);
+    void set_status(uint32_t status);
     bool store_to_buffer(std::vector<uint8_t>& buffer);
     std::string to_string() const;
 
 private:
-    uint32_t                    m_error_code;
+    uint32_t                    m_status;
 };
 
 #endif /* __RESPONSES_HPP__ */

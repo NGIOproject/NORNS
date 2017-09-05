@@ -246,6 +246,21 @@ std::shared_ptr<urd_response> urd::request_handler(std::shared_ptr<urd_request> 
         return this->remove_job(std::dynamic_pointer_cast<job_removal_request>(request));
     }
 
+    if(dynamic_cast<process_registration_request*>(request.get()) != nullptr) {
+        return this->add_process(std::dynamic_pointer_cast<process_registration_request>(request));
+    }
+
+    if(dynamic_cast<process_deregistration_request*>(request.get()) != nullptr) {
+        return this->remove_process(std::dynamic_pointer_cast<process_deregistration_request>(request));
+    }
+
+    // bad requests go through here
+    auto resp = std::make_shared<generic_response>();
+    resp->set_status(NORNS_EBADREQUEST);
+
+    m_logger->info("BAD_REQUEST() = {}", resp->to_string());
+    return resp;
+
     // XXX return a generic response with BADREQUEST if no match is found
 
     //request->process();
@@ -264,20 +279,20 @@ std::shared_ptr<urd_response> urd::register_job(std::shared_ptr<job_registration
 
     auto resp = std::make_shared<job_registration_response>();
 
-    uint32_t jobid = request->id();
+    uint32_t jobid = request->jobid();
 
     boost::unique_lock<boost::shared_mutex> lock(m_jobs_mutex);
 
     if(m_jobs.find(jobid) != m_jobs.end()) {
-        resp->set_error_code(NORNS_EJOBEXISTS);
+        resp->set_status(NORNS_EJOBEXISTS);
         goto log_and_return;
     }
 
     m_jobs.emplace(jobid, 
-                std::make_shared<job>(request->id(), 
+                std::make_shared<job>(request->jobid(), 
                                         request->hosts()));
 
-    resp->set_error_code(NORNS_SUCCESS);
+    resp->set_status(NORNS_SUCCESS);
 
 log_and_return:
     m_logger->info("REGISTER_JOB({}) = {}", request->to_string(), resp->to_string());
@@ -288,20 +303,20 @@ std::shared_ptr<urd_response> urd::update_job(std::shared_ptr<job_update_request
 
     auto resp = std::make_shared<job_registration_response>();
 
-    uint32_t jobid = request->id();
+    uint32_t jobid = request->jobid();
 
     boost::unique_lock<boost::shared_mutex> lock(m_jobs_mutex);
 
     const auto& it = m_jobs.find(jobid);
 
     if(it == m_jobs.end()) {
-        resp->set_error_code(NORNS_ENOJOBEXISTS);
+        resp->set_status(NORNS_ENOSUCHJOB);
         goto log_and_return;
     }
 
     it->second->update(request->hosts());
 
-    resp->set_error_code(NORNS_SUCCESS);
+    resp->set_status(NORNS_SUCCESS);
 
 log_and_return:
     m_logger->info("UPDATE_JOB({}) = {}", request->to_string(), resp->to_string());
@@ -312,26 +327,73 @@ std::shared_ptr<urd_response> urd::remove_job(std::shared_ptr<job_removal_reques
 
     auto resp = std::make_shared<job_registration_response>();
 
-    uint32_t jobid = request->id();
+    uint32_t jobid = request->jobid();
 
     boost::unique_lock<boost::shared_mutex> lock(m_jobs_mutex);
 
     const auto& it = m_jobs.find(jobid);
 
     if(it == m_jobs.end()) {
-        resp->set_error_code(NORNS_ENOJOBEXISTS);
+        resp->set_status(NORNS_ENOSUCHJOB);
         goto log_and_return;
     }
 
     m_jobs.erase(it);
 
-    resp->set_error_code(NORNS_SUCCESS);
+    resp->set_status(NORNS_SUCCESS);
 
 log_and_return:
     m_logger->info("UNREGISTER_JOB({}) = {}", request->to_string(), resp->to_string());
     return resp;
 }
 
+std::shared_ptr<urd_response> urd::add_process(std::shared_ptr<process_registration_request> request) {
+
+    auto resp = std::make_shared<generic_response>();
+
+    uint32_t jobid = request->jobid();
+
+    boost::unique_lock<boost::shared_mutex> lock(m_jobs_mutex);
+
+    const auto& it = m_jobs.find(jobid);
+
+    if(it == m_jobs.end()) {
+        resp->set_status(NORNS_ENOSUCHJOB);
+        goto log_and_return;
+    }
+
+    it->second->add_process(request->pid(), request->gid());
+
+    resp->set_status(NORNS_SUCCESS);
+
+log_and_return:
+    m_logger->info("ADD_PROCESS({}) = {}", request->to_string(), resp->to_string());
+    return resp;
+}
+
+std::shared_ptr<urd_response> urd::remove_process(std::shared_ptr<process_deregistration_request> request) {
+
+    auto resp = std::make_shared<generic_response>();
+
+    uint32_t jobid = request->jobid();
+
+    boost::unique_lock<boost::shared_mutex> lock(m_jobs_mutex);
+
+    const auto& it = m_jobs.find(jobid);
+
+    if(it == m_jobs.end()) {
+        resp->set_status(NORNS_ENOSUCHJOB);
+        goto log_and_return;
+    }
+
+    it->second->remove_process(request->pid(), request->gid());
+
+    resp->set_status(NORNS_SUCCESS);
+
+log_and_return:
+    m_logger->info("REMOVE_PROCESS({}) = {}", request->to_string(), resp->to_string());
+    return resp;
+}
 
 void urd::set_configuration(const config_settings& settings) {
     m_settings = std::make_shared<config_settings>(settings);

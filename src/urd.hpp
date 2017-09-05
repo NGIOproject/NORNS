@@ -56,6 +56,8 @@ private:
     std::shared_ptr<urd_response> register_job(std::shared_ptr<job_registration_request> request);
     std::shared_ptr<urd_response> update_job(std::shared_ptr<job_update_request> request);
     std::shared_ptr<urd_response> remove_job(std::shared_ptr<job_removal_request> request);
+    std::shared_ptr<urd_response> add_process(std::shared_ptr<process_registration_request> request);
+    std::shared_ptr<urd_response> remove_process(std::shared_ptr<process_deregistration_request> request);
 
 private:
     std::shared_ptr<logger>                             m_logger;

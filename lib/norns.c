@@ -446,7 +446,7 @@ __send_job_request(Norns__Rpc__Request__Type type, struct norns_cred* auth,
         goto cleanup;
     }
 
-    rv = resp->code;
+    rv = resp->status;
 
 cleanup:
     if(jobmsg != NULL) {
@@ -470,6 +470,95 @@ cleanup:
     }
 
     return rv;
+}
+
+
+static int
+__send_process_request(Norns__Rpc__Request__Type type, struct norns_cred* auth, 
+                       uint32_t jobid, pid_t pid, gid_t gid) {
+
+    (void) auth;
+
+    int rv;
+    void* req_buf, *resp_buf;
+    size_t req_len, resp_len;
+    int conn = -1;
+    Norns__Rpc__Response* resp = NULL;
+    req_buf = resp_buf = NULL;
+    req_len = resp_len = 0;
+
+    Norns__Rpc__Request req = NORNS__RPC__REQUEST__INIT;
+    req.type = type;
+    req.has_jobid = true;
+    req.jobid = jobid;
+
+    Norns__Rpc__Request__Process proc = NORNS__RPC__REQUEST__PROCESS__INIT;
+    proc.pid = pid;
+    proc.gid = gid;
+
+    req.process = &proc;
+
+    //req.has_pid = true;
+    //req.pid = pid;
+
+    // fill the buffer
+    req_len = norns__rpc__request__get_packed_size(&req);
+    req_buf = malloc(req_len);
+
+    if(req_buf == NULL) {
+        rv = NORNS_ENOMEM;
+        goto cleanup;
+    }
+
+    norns__rpc__request__pack(&req, req_buf);
+
+    conn = connect_to_daemon();
+
+    if(conn == -1) {
+        rv = NORNS_ECONNFAILED;
+        goto cleanup;
+    }
+
+	// connection established, send the message
+	if(send_message(conn, req_buf, req_len) < 0) {
+	    rv = NORNS_ERPCSENDFAILED;
+	    goto cleanup;
+    }
+
+    // wait for the daemon's response
+    if(recv_message(conn, &resp_buf, &resp_len) < 0) {
+        rv = NORNS_ERPCRECVFAILED;
+	    goto cleanup;
+    }
+
+    resp = norns__rpc__response__unpack(NULL, resp_len, resp_buf);
+
+    if(resp == NULL) {
+        rv = NORNS_ERPCRECVFAILED;
+        goto cleanup;
+    }
+
+    rv = resp->status;
+
+cleanup:
+    if(req_buf != NULL) {
+        free(req_buf);
+    }
+
+    if(resp_buf) {
+        free(resp_buf);
+    }
+
+    if(conn != -1) {
+        close(conn);
+    }
+
+    if(resp != NULL) {
+        norns__rpc__response__free_unpacked(resp, NULL);
+    }
+
+    return rv;
+    
 }
 
 /* Register and describe a batch job */
@@ -502,29 +591,21 @@ int norns_unregister_job(struct norns_cred* auth, uint32_t jobid) {
 
 /* Add a process to a registered batch job */
 int 
-norns_add_process(struct norns_cred* auth, uint32_t jobid, pid_t pid) {
+norns_add_process(struct norns_cred* auth, uint32_t jobid, pid_t pid, 
+                  gid_t gid) {
 
-    (void) auth;
-    (void) jobid;
-    (void) pid;
-
-    fprintf(stdout, "unimplemented\n");
-
-    return 0;
+    return __send_process_request(NORNS__RPC__REQUEST__TYPE__ADD_PROCESS,
+                                  auth, jobid, pid, gid);
 }
 
 
 /* Remove a process from a registered batch job */
 int 
-norns_remove_process(struct norns_cred* auth, uint32_t jobid, pid_t pid) {
+norns_remove_process(struct norns_cred* auth, uint32_t jobid, pid_t pid, 
+                     gid_t gid) {
 
-    (void) auth;
-    (void) jobid;
-    (void) pid;
-
-    fprintf(stdout, "unimplemented\n");
-
-    return 0;
+    return __send_process_request(NORNS__RPC__REQUEST__TYPE__REMOVE_PROCESS,
+                                  auth, jobid, pid, gid);
 }
 
 

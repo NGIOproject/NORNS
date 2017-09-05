@@ -104,6 +104,8 @@ std::string strerror(int error_code) {
             return "NORNS_SUCCESS";
         case NORNS_EBADPARAMS:
             return "NORNS_EBADPARAMS";
+        case NORNS_EBADREQUEST:
+            return "NORNS_EBADREQUEST";
         case NORNS_ENOMEM:
             return "NORNS_ENOMEM";
         case NORNS_ECONNFAILED:
@@ -114,6 +116,10 @@ std::string strerror(int error_code) {
             return "NORNS_ERPCRECVFAILED";
         case NORNS_EJOBEXISTS:
             return "NORNS_EJOBEXISTS";
+        case NORNS_ENOSUCHJOB:
+            return "NORNS_ENOSUCHJOB";
+        case NORNS_ENOSUCHPROCESS:
+            return "NORNS_ENOSUCHPROCESS";
         default:
             return "UNKNOWN_ERROR";
     }
