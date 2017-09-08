@@ -25,7 +25,9 @@
 #ifndef __REQUEST_BASE_HPP__
 #define __REQUEST_BASE_HPP__
 
-#include <sstream>
+#include <string>
+#include <cstdint>
+#include <vector>
 
 // abstract base class to transform protobuf requests to internal 
 // requests that can be served by urd

@@ -21,35 +21,26 @@
  * along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <unistd.h>
+#include <string.h>
+#include "xmalloc.h"
+#include "xstring.h"
 
-#if !defined(__NORNS_LIB_H__)
-#error "Never include <norns_error.h> directly; use <norns.h> instead."
-#endif
 
-#ifndef __NORNS_ERROR_H__
-#define __NORNS_ERROR_H__ 1
+char*
+xstrdup(const char* str) {
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+    size_t sz;
+    char* res;
 
-#define NORNS_ERRMAX 512
+    if(str == NULL) {
+        return NULL;
+    }
 
-/** Error codes */
-#define NORNS_SUCCESS           0
-#define NORNS_ESNAFU            -1
-#define NORNS_EBADARGS          -2
-#define NORNS_EBADREQUEST       -3
-#define NORNS_ENOMEM            -4
-#define NORNS_ECONNFAILED       -5
-#define NORNS_ERPCSENDFAILED    -6
-#define NORNS_ERPCRECVFAILED    -7
-#define NORNS_EJOBEXISTS        -8
-#define NORNS_ENOSUCHJOB        -9
-#define NORNS_ENOSUCHPROCESS    -10
+    sz = strlen(str) + 1;
+    res = (char*) xmalloc(sz);
+    strncpy(res, str, sz);
+    res[sz] = '\0';
 
-#ifdef __cplusplus
+    return res;
 }
-#endif
-
-#endif /* __NORNS_ERROR_H__ */

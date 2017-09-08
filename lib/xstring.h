@@ -21,35 +21,16 @@
  * along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef __XSTRING_H__
+#define __XSTRING_H__
 
-#if !defined(__NORNS_LIB_H__)
-#error "Never include <norns_error.h> directly; use <norns.h> instead."
-#endif
+#include <sys/types.h>
+#include <stdbool.h>
 
-#ifndef __NORNS_ERROR_H__
-#define __NORNS_ERROR_H__ 1
+#pragma GCC visibility push(hidden)
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+char* xstrdup(const char* str);
 
-#define NORNS_ERRMAX 512
+#pragma GCC visibility pop
 
-/** Error codes */
-#define NORNS_SUCCESS           0
-#define NORNS_ESNAFU            -1
-#define NORNS_EBADARGS          -2
-#define NORNS_EBADREQUEST       -3
-#define NORNS_ENOMEM            -4
-#define NORNS_ECONNFAILED       -5
-#define NORNS_ERPCSENDFAILED    -6
-#define NORNS_ERPCRECVFAILED    -7
-#define NORNS_EJOBEXISTS        -8
-#define NORNS_ENOSUCHJOB        -9
-#define NORNS_ENOSUCHPROCESS    -10
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* __NORNS_ERROR_H__ */
+#endif /* __XSTRING_H__ */

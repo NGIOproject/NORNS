@@ -34,6 +34,9 @@ struct task {
     task(struct norns_iotd* /*iotdp*/) {
     }
 
+    task() {
+    }
+
     void operator()(int /* thread_id */) const {
         std::cout << "Hello from a task!\n";
     }

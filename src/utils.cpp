@@ -102,8 +102,10 @@ std::string strerror(int error_code) {
     switch(error_code) {
         case NORNS_SUCCESS:
             return "NORNS_SUCCESS";
-        case NORNS_EBADPARAMS:
-            return "NORNS_EBADPARAMS";
+        case NORNS_ESNAFU:
+            return "NORNS_ESNAFU";
+        case NORNS_EBADARGS:
+            return "NORNS_EBADARGS";
         case NORNS_EBADREQUEST:
             return "NORNS_EBADREQUEST";
         case NORNS_ENOMEM:

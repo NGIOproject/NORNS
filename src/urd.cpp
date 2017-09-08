@@ -254,6 +254,10 @@ std::shared_ptr<urd_response> urd::request_handler(std::shared_ptr<urd_request> 
         return this->remove_process(std::dynamic_pointer_cast<process_deregistration_request>(request));
     }
 
+    if(dynamic_cast<iotask_request*>(request.get()) != nullptr) {
+        return this->submit_task(std::dynamic_pointer_cast<iotask_request>(request));
+    }
+
     // bad requests go through here
     auto resp = std::make_shared<generic_response>();
     resp->set_status(NORNS_EBADREQUEST);
@@ -392,6 +396,20 @@ std::shared_ptr<urd_response> urd::remove_process(std::shared_ptr<process_deregi
 
 log_and_return:
     m_logger->info("REMOVE_PROCESS({}) = {}", request->to_string(), resp->to_string());
+    return resp;
+}
+
+std::shared_ptr<urd_response> urd::submit_task(std::shared_ptr<iotask_request> request) {
+
+    auto resp = std::make_shared<generic_response>();
+
+    resp->set_status(NORNS_SUCCESS);
+
+    //m_workers->push(std::move(io::task(iotdp)));
+    m_workers->push(io::task());
+
+//log_and_return:
+    m_logger->info("SUBMIT_TASK({}) = {}", request->to_string(), resp->to_string());
     return resp;
 }
 

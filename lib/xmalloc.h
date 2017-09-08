@@ -21,35 +21,26 @@
  * along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef __XMALLOC_H__
+#define __XMALLOC_H__
 
-#if !defined(__NORNS_LIB_H__)
-#error "Never include <norns_error.h> directly; use <norns.h> instead."
-#endif
+#include <sys/types.h>
+#include <stdbool.h>
 
-#ifndef __NORNS_ERROR_H__
-#define __NORNS_ERROR_H__ 1
+#pragma GCC visibility push(hidden)
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#define xmalloc(__sz) \
+    norns_xmalloc(__sz, true)
 
-#define NORNS_ERRMAX 512
+#define xmalloc_nz(__sz) \
+    norns_xmalloc(__sz, false)
 
-/** Error codes */
-#define NORNS_SUCCESS           0
-#define NORNS_ESNAFU            -1
-#define NORNS_EBADARGS          -2
-#define NORNS_EBADREQUEST       -3
-#define NORNS_ENOMEM            -4
-#define NORNS_ECONNFAILED       -5
-#define NORNS_ERPCSENDFAILED    -6
-#define NORNS_ERPCRECVFAILED    -7
-#define NORNS_EJOBEXISTS        -8
-#define NORNS_ENOSUCHJOB        -9
-#define NORNS_ENOSUCHPROCESS    -10
+#define xfree(__p) \
+    norns_xfree((void**)&(__p))
 
-#ifdef __cplusplus
-}
-#endif
+void* norns_xmalloc(size_t, bool);
+void norns_xfree(void**);
 
-#endif /* __NORNS_ERROR_H__ */
+#pragma GCC visibility pop
+
+#endif /* __XMALLOC_H__ */

@@ -29,9 +29,11 @@ extern "C" {
 #endif
 
 /* Storage resource types */
-#define NORNS_LOCAL_NVML    0x10000000
-#define NORNS_REMOTE_NVML   0x10000001
-#define NORNS_LUSTRE        0x10000002
+#define NORNS_BACKEND_LOCAL_NVML        0x10000000
+#define NORNS_BACKEND_REMOTE_NVML       0x10000001
+#define NORNS_BACKEND_LUSTRE            0x10000002
+#define NORNS_BACKEND_PROCESS_MEMORY    0x10000003
+#define NORNS_BACKEND_ECHOFS            0x10000004
 
 
 #ifdef __cplusplus

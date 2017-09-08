@@ -21,35 +21,33 @@
  * along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <unistd.h>
+#include <stdlib.h>
 
-#if !defined(__NORNS_LIB_H__)
-#error "Never include <norns_error.h> directly; use <norns.h> instead."
-#endif
+#include "xmalloc.h"
 
-#ifndef __NORNS_ERROR_H__
-#define __NORNS_ERROR_H__ 1
+void*
+norns_xmalloc(size_t size, bool clear) {
+	void* p;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+	if(size <= 0) {
+		return NULL;
+    }
 
-#define NORNS_ERRMAX 512
+	if(clear) {
+		p = calloc(1, size);
+    }
+	else {
+		p = malloc(size);
+    }
 
-/** Error codes */
-#define NORNS_SUCCESS           0
-#define NORNS_ESNAFU            -1
-#define NORNS_EBADARGS          -2
-#define NORNS_EBADREQUEST       -3
-#define NORNS_ENOMEM            -4
-#define NORNS_ECONNFAILED       -5
-#define NORNS_ERPCSENDFAILED    -6
-#define NORNS_ERPCRECVFAILED    -7
-#define NORNS_EJOBEXISTS        -8
-#define NORNS_ENOSUCHJOB        -9
-#define NORNS_ENOSUCHPROCESS    -10
-
-#ifdef __cplusplus
+    return p;
 }
-#endif
 
-#endif /* __NORNS_ERROR_H__ */
+void
+norns_xfree(void** p) {
+    if(*p != NULL) {
+        free(*p);
+        *p = NULL;
+    }
+}

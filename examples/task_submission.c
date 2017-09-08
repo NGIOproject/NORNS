@@ -100,13 +100,34 @@ int main(int argc, char* argv[]) {
     }
 
 
-    // update the job description
-    job.jb_hosts = hosts2;
-    job.jb_nhosts = num_hosts2;
+    // submit a task
+    struct norns_iotd task = {
+        .io_taskid = 0,
+        .io_optype = 28,
+        .io_src = {
+            .in_type = NORNS_BACKEND_LOCAL_NVML,
+            .in_path = {
+//                .p_hostname = "node42",
+                .p_hostname = NULL,
+                .p_datapath = "nvm://foobar.bin",
+            },
+        },
+        .io_dst = {
+            .out_type = NORNS_BACKEND_LUSTRE,
+            .out_path = {
+                .p_hostname = "node42",
+                .p_datapath = "nvm://baz.bin",
+            }
+        }
+    };
 
-    if((rv = norns_update_job(&cred, 42, &job)) != NORNS_SUCCESS) {
-        fprintf(stderr, "norns_update_job failed: %s\n", norns_strerror(rv));
+    if((rv = norns_transfer(&task)) != NORNS_SUCCESS) {
+        fprintf(stderr, "ERROR: norns_transfer failed: %s\n", norns_strerror(rv));
     }
+    else {
+        fprintf(stdout, "Task submitted (ID: %d)\n", task.io_taskid);
+    }
+
 
     // unregister the job
     if((rv = norns_unregister_job(&cred, 42)) != NORNS_SUCCESS) {

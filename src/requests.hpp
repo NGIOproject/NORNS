@@ -98,36 +98,84 @@ private:
 
 class process_registration_request : public urd_request {
 public:
-    process_registration_request(uint32_t jobid, pid_t pid, gid_t gid);
+    process_registration_request(uint32_t jobid, uid_t uid, gid_t gid, pid_t pid);
 
     uint32_t jobid() const;
-    pid_t pid() const;
+    uid_t uid() const;
     gid_t gid() const;
+    pid_t pid() const;
 
     bool validate() const;
     std::string to_string() const;
 
 private:
     uint32_t m_jobid;
-    pid_t m_pid;
+    uid_t m_uid;
     gid_t m_gid;
+    pid_t m_pid;
 };
 
 class process_deregistration_request : public urd_request {
 public:
-    process_deregistration_request(uint32_t jobid, pid_t pid, gid_t gid);
+    process_deregistration_request(uint32_t jobid, uid_t uid, gid_t gid, pid_t pid);
 
     uint32_t jobid() const;
-    pid_t pid() const;
+    uid_t uid() const;
     gid_t gid() const;
+    pid_t pid() const;
 
     bool validate() const;
     std::string to_string() const;
 
 private:
     uint32_t m_jobid;
-    pid_t m_pid;
+    uid_t m_uid;
     gid_t m_gid;
+    pid_t m_pid;
+};
+
+struct resource {
+};
+
+struct memory_buffer : public resource {
+
+    memory_buffer(uint32_t backend_type, uint64_t address, std::size_t size)
+        : m_backend_type(backend_type),
+          m_address(address),
+          m_size(size) {}
+
+    uint32_t m_backend_type;
+    uint64_t m_address;
+    std::size_t m_size;
+};
+
+struct filesystem_path : public resource {
+
+    filesystem_path(uint32_t backend_type, std::string hostname, std::string datapath)
+        : m_backend_type(backend_type),
+          m_hostname(hostname),
+          m_datapath(datapath) {}
+
+    uint32_t m_backend_type;
+    std::string m_hostname;
+    std::string m_datapath;
+};
+
+class iotask_request : public urd_request {
+
+public:
+    iotask_request(uint32_t optype, const resource& src, const resource& dst) 
+        : m_optype(optype),
+          m_data_src(src), 
+          m_data_dst(dst) { }
+
+    bool validate() const { return true; }
+    std::string to_string() const { return "path"; }
+
+private:
+    uint32_t m_optype;
+    resource m_data_src;
+    resource m_data_dst;
 };
 
 #endif /* __REQUEST_HPP__ */

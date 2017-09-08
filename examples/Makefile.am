@@ -23,7 +23,8 @@
 
 bin_PROGRAMS = \
 	app \
-	job_registration
+	job_registration \
+	task_submission
 
 app_SOURCES = \
 	app.c
@@ -48,4 +49,17 @@ job_registration_CPPFLAGS = \
 	-I$(top_srcdir)/include
 
 job_registration_LDADD = \
+	$(top_builddir)/lib/libnorns.la
+
+
+task_submission_SOURCES = \
+	task_submission.c
+
+task_submission_CFLAGS = \
+	-std=gnu99 -Wall -Wextra
+
+task_submission_CPPFLAGS = \
+	-I$(top_srcdir)/include
+
+task_submission_LDADD = \
 	$(top_builddir)/lib/libnorns.la

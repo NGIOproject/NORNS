@@ -31,14 +31,14 @@
 
 void print_iotd(struct norns_iotd* iotdp){
     fprintf(stdout, "iotd -> struct nornds_iotd {\n");
-    fprintf(stdout, "  ni_tid = %d;\n", iotdp->ni_tid);
+    fprintf(stdout, "  io_taskid = %d;\n", iotdp->io_taskid);
     fprintf(stdout, "};\n");
 }
 
 
 int main() {
     struct norns_iotd iotd = {
-        .ni_tid = 0,
+        .io_taskid = 0,
     };
 
     fprintf(stdout, "calling norns_transfer(&iotd)\n");

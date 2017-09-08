@@ -30,13 +30,35 @@
 
 urd_request* urd_request::create_from_buffer(const std::vector<uint8_t>& buffer, int size) {
 
-    urd_request* parsed_req = nullptr;
     norns::rpc::Request rpc_req;
 
     if(rpc_req.ParseFromArray(buffer.data(), size)) {
         switch(rpc_req.type()) {
-
             case norns::rpc::Request::SUBMIT_IOTASK:
+
+                if(rpc_req.has_task()) {
+
+                    auto task = rpc_req.task();
+                    auto optype = task.optype();
+                    auto src = task.source();
+                    auto dst = task.destination();
+
+                    if(src.has_buffer()) {
+                        memory_buffer src_buf(src.type(), src.buffer().address(), src.buffer().size());
+                        filesystem_path dst_path(dst.type(), dst.path().hostname(), dst.path().datapath());
+
+                        return new iotask_request(optype, src_buf, dst_path);
+                    }
+
+                    if(src.has_path()) {
+                        filesystem_path src_path(src.type(), src.path().hostname(), src.path().datapath());
+                        filesystem_path dst_path(dst.type(), dst.path().hostname(), dst.path().datapath());
+
+                        return new iotask_request(optype, src_path, dst_path);
+                    }
+
+                    return new bad_request();
+                }
                 break;
             case norns::rpc::Request::REGISTER_JOB:
             case norns::rpc::Request::UPDATE_JOB:
@@ -45,7 +67,6 @@ urd_request* urd_request::create_from_buffer(const std::vector<uint8_t>& buffer,
 
                     auto id = rpc_req.jobid();
                     auto job = rpc_req.job();
-                    urd_request* req_ptr = nullptr;
 
                     std::vector<std::string> hosts;
                     hosts.reserve(job.hosts().size());
@@ -63,19 +84,17 @@ urd_request* urd_request::create_from_buffer(const std::vector<uint8_t>& buffer,
                     }
 
                     if(rpc_req.type() == norns::rpc::Request::REGISTER_JOB) {
-                        req_ptr = new job_registration_request(id, hosts, backends);
+                        return new job_registration_request(id, hosts, backends);
                     }
                     else { // rpc_req.type() == norns::rpc::Request::UPDATE_JOB)
-                        req_ptr = new job_update_request(id, hosts, backends);
+                        return new job_update_request(id, hosts, backends);
                     }
-
-                    parsed_req = req_ptr;
                 }
                 break;
 
             case norns::rpc::Request::UNREGISTER_JOB:
                 if(rpc_req.has_jobid()) {
-                    parsed_req = new job_removal_request(rpc_req.jobid());
+                    return new job_removal_request(rpc_req.jobid());
                 }
                 break;
 
@@ -85,23 +104,18 @@ urd_request* urd_request::create_from_buffer(const std::vector<uint8_t>& buffer,
 
                     auto process = rpc_req.process();
 
-                    urd_request* req_ptr =  nullptr;
-
                     if(rpc_req.type() == norns::rpc::Request::ADD_PROCESS) {
-                        req_ptr = new process_registration_request(rpc_req.jobid(), process.pid(), process.gid());
+                        return new process_registration_request(rpc_req.jobid(), process.uid(), 
+                                                                   process.gid(), process.pid());
                     }
                     else { // rpc_req.type() == norns::rpc::Request::REMOVE_PROCESS
-                        req_ptr = new process_deregistration_request(rpc_req.jobid(), process.pid(), process.gid());
+                        return new process_deregistration_request(rpc_req.jobid(), process.uid(), 
+                                                                  process.gid(), process.pid());
                     }
-
-                    parsed_req = req_ptr;
                 }
                 break;
-
-            default:
-                parsed_req = new bad_request();
         }
     }
 
-    return parsed_req;
+    return new bad_request();
 }

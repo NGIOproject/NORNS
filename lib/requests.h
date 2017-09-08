@@ -21,35 +21,20 @@
  * along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef __REQUESTS_H__
+#define __REQUESTS_H__
 
-#if !defined(__NORNS_LIB_H__)
-#error "Never include <norns_error.h> directly; use <norns.h> instead."
-#endif
+#include "messages.pb-c.h"
 
-#ifndef __NORNS_ERROR_H__
-#define __NORNS_ERROR_H__ 1
+#pragma GCC visibility push(hidden)
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+void job_message_free(Norns__Rpc__Request__Job* msg);
+int job_message_init(struct norns_job* job, Norns__Rpc__Request__Job** msg);
 
-#define NORNS_ERRMAX 512
+int build_task_message(struct norns_iotd* iotdp, 
+                      Norns__Rpc__Request__Task** msg);
+void free_task_message(Norns__Rpc__Request__Task* msg);
 
-/** Error codes */
-#define NORNS_SUCCESS           0
-#define NORNS_ESNAFU            -1
-#define NORNS_EBADARGS          -2
-#define NORNS_EBADREQUEST       -3
-#define NORNS_ENOMEM            -4
-#define NORNS_ECONNFAILED       -5
-#define NORNS_ERPCSENDFAILED    -6
-#define NORNS_ERPCRECVFAILED    -7
-#define NORNS_EJOBEXISTS        -8
-#define NORNS_ENOSUCHJOB        -9
-#define NORNS_ENOSUCHPROCESS    -10
+#pragma GCC visibility pop
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* __NORNS_ERROR_H__ */
+#endif /* __REQUESTS_H__ */

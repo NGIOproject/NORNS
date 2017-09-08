@@ -40,9 +40,17 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/rpc
 
-libnorns_la_SOURCES = 	\
-	norns.c				\
-	errors.c            \
+libnorns_la_SOURCES = \
+	norns.c	\
+	daemon-communication.c \
+	daemon-communication.h \
+	errors.c \
+	requests.c \
+	requests.h \
+	xmalloc.c \
+	xmalloc.h \
+	xstring.c \
+	xstring.h \
 	$(top_srcdir)/include/norns.h \
 	$(top_srcdir)/rpc/norns-rpc.h \
 	messages.pb-c.c \

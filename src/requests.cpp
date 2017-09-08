@@ -140,21 +140,26 @@ std::string job_removal_request::to_string() const {
 /* process_registration_request */
 /********************************/
 
-process_registration_request::process_registration_request(uint32_t jobid, pid_t pid, gid_t gid)
+process_registration_request::process_registration_request(uint32_t jobid, uid_t uid, gid_t gid, pid_t pid)
  : m_jobid(jobid),
-   m_pid(pid),
-   m_gid(gid) {}
+   m_uid(uid),
+   m_gid(gid),
+   m_pid(pid) {}
 
 uint32_t process_registration_request::jobid() const {
     return m_jobid;
 }
 
-pid_t process_registration_request::pid() const {
-    return m_pid;
+uid_t process_registration_request::uid() const {
+    return m_uid;
 }
 
 gid_t process_registration_request::gid() const {
     return m_gid;
+}
+
+pid_t process_registration_request::pid() const {
+    return m_pid;
 }
 
 bool process_registration_request::validate() const {
@@ -162,30 +167,36 @@ bool process_registration_request::validate() const {
 }
 
 std::string process_registration_request::to_string() const {
-    return "jobid: " + std::to_string(m_jobid) + 
-            "pid:" + std::to_string(m_pid) +
-            "gid:" + std::to_string(m_gid);
+    return "jobid: " + std::to_string(m_jobid) + ", "
+           "uid:" + std::to_string(m_uid) + ", "
+           "gid:" + std::to_string(m_gid) + ", "
+           "pid:" + std::to_string(m_pid);
 }
 
 /**********************************/
 /* process_deregistration_request */
 /**********************************/
 
-process_deregistration_request::process_deregistration_request(uint32_t jobid, pid_t pid, gid_t gid)
+process_deregistration_request::process_deregistration_request(uint32_t jobid, uid_t uid, gid_t gid, pid_t pid)
  : m_jobid(jobid),
-   m_pid(pid),
-   m_gid(gid) {}
+   m_uid(uid),
+   m_gid(gid),
+   m_pid(pid) {}
 
 uint32_t process_deregistration_request::jobid() const {
     return m_jobid;
 }
 
-pid_t process_deregistration_request::pid() const {
-    return m_pid;
+uid_t process_deregistration_request::uid() const {
+    return m_uid;
 }
 
 gid_t process_deregistration_request::gid() const {
     return m_gid;
+}
+
+pid_t process_deregistration_request::pid() const {
+    return m_pid;
 }
 
 bool process_deregistration_request::validate() const {
@@ -193,9 +204,8 @@ bool process_deregistration_request::validate() const {
 }
 
 std::string process_deregistration_request::to_string() const {
-    return "jobid: " + std::to_string(m_jobid) + 
-            "pid:" + std::to_string(m_pid) +
-            "gid:" + std::to_string(m_gid);
+    return "jobid: " + std::to_string(m_jobid) + ", "
+           "uid:" + std::to_string(m_uid) + ", "
+           "gid:" + std::to_string(m_gid) + ", "
+           "pid:" + std::to_string(m_pid);
 }
-
-

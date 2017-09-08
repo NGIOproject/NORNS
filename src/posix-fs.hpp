@@ -48,7 +48,7 @@ private:
     uint32_t    m_quota;
 };
 
-NORNS_REGISTER_BACKEND(NORNS_LUSTRE, posix_fs);
+NORNS_REGISTER_BACKEND(NORNS_BACKEND_LUSTRE, posix_fs);
 
 } // namespace storage
 

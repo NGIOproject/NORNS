@@ -42,27 +42,95 @@ struct norns_cred {
     gid_t cr_gid;    /* GID of the process */
 };
 
-/* Data resource descriptor  */
-struct norns_resource {
-    const char* r_hostname;     /* hostname */
-    const char* r_path;         /* path to "data" (i.e. file or directory) */
-    uint32_t    r_type;         /* type of resource */
+struct norns_membuf {
+    void*  b_addr;      /* memory address */
+    size_t b_size;      /* memory size */
+};
+
+struct norns_path {
+    const char* p_hostname;     /* hostname (NULL if local) */
+    const char* p_datapath;     /* path to "data" (i.e. file or directory) */
+};
+
+/* Input data resource descriptor  */
+struct norns_data_in {
+
+    // options:
+    // - read from local nvm and write to lustre
+    // - read from lustre and write to local nvm
+    // - read from remote nvm and write to local nvm
+    // - read from local nvm and write to remote nvm
+    // - read from process memory and write to local nvm
+    // - read from process memory and write to lustre 
+    // - echofs: "read" from lustre into echofs
+    // - echofs: "write" from echofs to lustre
+    //
+    //
+    // - NEXTGenIO input resources: 
+    // 1.   local nvm       nvm://path/to/dir/[file]                DAX-NVML
+    // 2.   local tmpfs     tmpfs://path/to/dir/[file]              DAX-NVML
+    // 3.   lustre          lustre://path/to/dir/[file]             POSIX
+    // 4.   remote nvm      nvm@hostname://path/to/dir/[file]       DAX-NVML+RDMA/TCP
+    // 5.   echofs          echofs://path/to/dir/[file]             CUSTOM
+    // 6.   process memory  [pointer + size]                        MEMORY
+    //
+    // - NEXTGenIO output resources:
+    // 1.   local nvm       nvm://path/to/dir/[file]                DAX-NVML
+    // 2.   local tmpfs     tmpfs://path/to/dir/[file]              DAX-NVML
+    // 3.   lustre (path)   lustre://path/to/dir/[file]             POSIX
+    // 4.   remote nvm      nvm@hostname:://path/to/dir/[file]      DAX-NVML+RDMA/TCP
+    // 5.   echofs          echofs://path/to/dir/[file]             CUSTOM
+
+    uint32_t    in_type;         /* type of resource */
+    union {
+        struct norns_membuf __in_buffer;
+        struct norns_path __in_path;
+    } __in_location;
+
+#define in_buffer __in_location.__in_buffer
+#define in_path __in_location.__in_path
+};
+
+/* Output data resource descriptor  */
+struct norns_data_out {
+
+    // options:
+    // - read from local nvm and write to lustre
+    // - read from lustre and write to local nvm
+    // - read from remote nvm and write to local nvm
+    // - read from local nvm and write to remote nvm
+    // - read from process memory and write to local nvm
+    // - read from process memory and write to lustre 
+    // - echofs: "read" from lustre into echofs
+    // - echofs: "write" from echofs to lustre
+    //
+    //
+    // - input resources: 
+    // 1.   local nvm       nvm://path/to/dir/[file]
+    // 2.   lustre          lustre://path/to/dir/[file]
+    // 3.   remote nvm      nvm@hostname://path/to/dir/[file]
+    // 4.   echofs          echofs://path/to/dir/[file]
+    // 5.   process memory  [pointer + size]
+    //
+    // - output resources:
+    // 1.   local nvm (path)    nvm://foobar
+    // 2.   lustre (path)       lustre://foobar
+    // 3.   remote nvm          nvm@hostname:://foobar
+    // 4.   echofs              echofs://foobar
+
+    uint32_t    out_type;         /* type of resource */
+    struct norns_path out_path;
 };
 
 
 /* I/O task descriptor */
 struct norns_iotd {
-    uint32_t            ni_tid;     /* task identifier */
+    uint32_t            io_taskid;     /* task identifier */
+    uint32_t            io_optype;    /* operation to be performed */
 
-    struct norns_resource ni_src;   /* data source */
-    struct norns_resource ni_dst;   /* data destination */
-    uint32_t            ni_type;    /* operation to be performed */
-    struct norns_cred*  ni_auth;   /* process credentials (NULL if unprivileged) */
-
-    /* Internal members. */
-    pid_t       __pid;      /* pid of the process that made the request */
-    uint32_t    __jobid;    /* job id of the process that made the request (XXX Slurm dependent)*/
-                        
+    struct norns_data_in io_src;   /* data source */
+    struct norns_data_out io_dst;   /* data destination */
+//    struct norns_cred*  ni_auth;   /* process credentials (NULL if unprivileged) */
 };
 
 
@@ -130,9 +198,9 @@ int norns_error(struct norns_iotd* iotdp) __THROW;
 /* Storage backend descriptor */
 struct norns_backend {
     int         b_type;
+    const char* b_prefix; /* prefix ID for this backend (e.g. nvm01, tmpfs02, ...) */
     const char* b_mount; /* mount point */
-    size_t      b_quota; /* backend capacity (in megabytes) allocated to the job */
-
+    size_t      b_quota; /* backend capacity (in megabytes) allocated to the job for writing */
 };
 
 #define NORNS_ALLOC(size)       \
@@ -165,7 +233,7 @@ struct norns_backend {
 struct norns_job {
     const char**            jb_hosts;  /* NULL-terminated list of hostnames participating in the job */
     size_t                  jb_nhosts; /* entries in hostname list */
-    struct norns_backend**  jb_backends; /* NULL-terminated list of storage backends the job will use */
+    struct norns_backend**  jb_backends; /* NULL-terminated list of storage backends the job is allowed to use */
     size_t                  jb_nbackends; /* entries in backend list */
 };
 
@@ -184,10 +252,10 @@ int norns_update_job(struct norns_cred* auth, uint32_t jobid, struct norns_job* 
 int norns_unregister_job(struct norns_cred* auth, uint32_t jobid);
 
 /* Add a process to a registered batch job */
-int norns_add_process(struct norns_cred* auth, uint32_t jobid, pid_t pid, gid_t gid);
+int norns_add_process(struct norns_cred* auth, uint32_t jobid, uid_t uid, gid_t gid, pid_t pid);
 
 /* Remove a process from a registered batch job */
-int norns_remove_process(struct norns_cred* auth, uint32_t jobid, pid_t pid, gid_t gid);
+int norns_remove_process(struct norns_cred* auth, uint32_t jobid, uid_t uid, gid_t gid, pid_t pid);
 
 
 char* norns_strerror(int errnum);

@@ -13,12 +13,36 @@ message Request {
         REMOVE_PROCESS = 6;
     }
 
-    required Type type = 1;
-
     // I/O task descriptor
     message Task {
+
+        message MemoryBuffer {
+            required uint64 address = 1;//XXX probably not needed
+            required uint32 size = 2;
+        };
+
+        message FSPath {
+            optional string hostname = 1;
+            required string datapath = 2;
+        };
+
+        message DataIn {
+
+            required uint32 type = 1;
+            optional MemoryBuffer buffer = 2;
+            optional FSPath path = 3;
+        };
+
+        message DataOut {
+            required uint32 type = 1;
+            required FSPath path = 2;
+        };
+
+//        required uint32 taskid = 1;
+        required uint32 optype = 1;
+        required DataIn source = 2;
+        required DataOut destination = 3;
     }
-    optional Task task = 2;
 
     // job descriptor
     message Job {
@@ -27,19 +51,23 @@ message Request {
         // backend descriptor
         message Backend {
             required int32 type = 1;
-            required string mount = 2;
-            required int32 quota = 3;
+            required string prefix = 2;
+            required string mount = 3;
+            required int32 quota = 4;
         }
 
-        repeated Backend backends = 3;
+        repeated Backend backends = 2;
     }
 
     // process descriptor
     message Process {
-        required int64 pid = 1;
+        required int64 uid = 1;
         required int64 gid = 2;
+        required int64 pid = 3;
     }
 
+    required Type type = 1;
+    optional Task task = 2;
     optional uint32 jobid = 3;
     optional Job job = 4;
     optional Process process = 5;

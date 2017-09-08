@@ -21,35 +21,28 @@
  * along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef __DAEMON_COMMUNICATION_H__
+#define __DAEMON_COMMUNICATION_H__
 
-#if !defined(__NORNS_LIB_H__)
-#error "Never include <norns_error.h> directly; use <norns.h> instead."
-#endif
+#include <norns.h>
 
-#ifndef __NORNS_ERROR_H__
-#define __NORNS_ERROR_H__ 1
+#pragma GCC visibility push(hidden)
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+typedef enum {
+    NORNS_SUBMIT_IOTASK,
+    NORNS_REGISTER_JOB,
+    NORNS_UPDATE_JOB,
+    NORNS_UNREGISTER_JOB,
+    NORNS_ADD_PROCESS,
+    NORNS_REMOVE_PROCESS
+} norns_request_t;
 
-#define NORNS_ERRMAX 512
+int send_transfer_request(struct norns_iotd* iotdp);
+int send_job_request(norns_request_t type, struct norns_cred* auth, 
+                     uint32_t jobid, struct norns_job* job);
+int send_process_request(norns_request_t type, struct norns_cred* auth, 
+                         uint32_t jobid, uid_t uid, gid_t gid, pid_t pid);
 
-/** Error codes */
-#define NORNS_SUCCESS           0
-#define NORNS_ESNAFU            -1
-#define NORNS_EBADARGS          -2
-#define NORNS_EBADREQUEST       -3
-#define NORNS_ENOMEM            -4
-#define NORNS_ECONNFAILED       -5
-#define NORNS_ERPCSENDFAILED    -6
-#define NORNS_ERPCRECVFAILED    -7
-#define NORNS_EJOBEXISTS        -8
-#define NORNS_ENOSUCHJOB        -9
-#define NORNS_ENOSUCHPROCESS    -10
+#pragma GCC visibility pop
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* __NORNS_ERROR_H__ */
+#endif /* __DAEMON_COMMUNICATION_H__ */

@@ -46,7 +46,7 @@ private:
     uint32_t    m_quota;
 };
 
-NORNS_REGISTER_BACKEND(NORNS_LOCAL_NVML, nvml_dax);
+NORNS_REGISTER_BACKEND(NORNS_BACKEND_LOCAL_NVML, nvml_dax);
 
 } // namespace storage
 
