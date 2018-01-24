@@ -436,7 +436,7 @@ void urd::run() {
             return;
         }
     } else{
-        m_logger = std::shared_ptr<logger>(new logger(m_settings->m_progname, "stdout color"));
+        m_logger = std::shared_ptr<logger>(new logger(m_settings->m_progname, "console color"));
     }
 
 	m_logger->info("===========================");

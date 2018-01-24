@@ -258,6 +258,17 @@ class e_formatter:public flag_formatter
     }
 };
 
+// epoch
+class E_formatter:public flag_formatter
+{
+    void format(details::log_msg& msg, const std::tm&) override
+    {
+        auto duration = msg.time.time_since_epoch();
+        auto micros = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
+        msg.formatted << fmt::pad(static_cast<uint64_t>(micros), 16, '0');
+    }
+};
+
 // microseconds
 class f_formatter:public flag_formatter
 {
@@ -607,6 +618,10 @@ inline void spdlog::pattern_formatter::handle_flag(char flag)
 
     case('e'):
         _formatters.push_back(std::unique_ptr<details::flag_formatter>(new details::e_formatter()));
+        break;
+
+    case('E'):
+        _formatters.push_back(std::unique_ptr<details::flag_formatter>(new details::E_formatter()));
         break;
 
     case('f'):
