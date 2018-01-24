@@ -30,6 +30,8 @@
 #include <memory>
 #include <boost/preprocessor/cat.hpp>
 
+#include <iostream>
+
 namespace storage {
 
 class backend {

@@ -74,8 +74,23 @@ message Request {
 }
 
 message Response {
+
+    // oneof would be better here, but the version of protoc provided by
+    // CentOS 7 does not support it yet
+    enum Type {
+        SUBMIT_IOTASK = 1;
+        REGISTER_JOB = 2;
+        UPDATE_JOB = 3;
+        UNREGISTER_JOB = 4;
+        ADD_PROCESS = 5;
+        REMOVE_PROCESS = 6;
+        BAD_REQUEST = 7;
+    }
+
     // most responses only need to return a status code
+    required Type type = 1;
     required uint32 status = 2;
+    optional uint32 taskid = 3;
 }
 
 

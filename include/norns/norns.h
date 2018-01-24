@@ -47,10 +47,28 @@ struct norns_membuf {
     size_t b_size;      /* memory size */
 };
 
+#define NORNS_MEMBUFFER_INIT(addr, size) \
+{ \
+    .b_addr = (addr), \
+    .b_size = (size) \
+}
+
 struct norns_path {
     const char* p_hostname;     /* hostname (NULL if local) */
     const char* p_datapath;     /* path to "data" (i.e. file or directory) */
 };
+
+#define NORNS_LOCAL_PATH_INIT(path) \
+{ \
+    .p_hostname = NULL, \
+    .p_datapath = (path) \
+}
+
+#define NORNS_REMOTE_PATH_INIT(hostname, path) \
+{ \
+    .p_hostname = (hostname), \
+    .p_datapath = (path) \
+}
 
 /* Input data resource descriptor  */
 struct norns_data_in {
@@ -133,6 +151,36 @@ struct norns_iotd {
 //    struct norns_cred*  ni_auth;   /* process credentials (NULL if unprivileged) */
 };
 
+#define NORNS_IOTD_INIT(type, src, dst) \
+{ \
+    .io_taskid = 0, \
+    .io_optype = (type), \
+    .io_src = src, \
+    .io_dst = dst \
+}
+
+#define NORNS_INPUT_PATH_INIT(type, path) \
+{ \
+    .in_type = (type), \
+    .__in_location = { \
+        .__in_path = path \
+    } \
+}
+
+#define NORNS_INPUT_BUFFER_INIT(addr, size) \
+{ \
+    .in_type = NORNS_BACKEND_PROCESS_MEMORY, \
+    .__in_location = { \
+        .__in_buffer = NORNS_MEMBUFFER_INIT((addr), (size)) \
+    } \
+}
+
+#define NORNS_OUTPUT_PATH_INIT(type, path) \
+{ \
+    .out_type = (type), \
+    .out_path = path \
+}
+
 
 
 
@@ -203,6 +251,14 @@ struct norns_backend {
     size_t      b_quota; /* backend capacity (in megabytes) allocated to the job for writing */
 };
 
+#define NORNS_BACKEND_INIT(type, prefix, mount, quota) \
+{ \
+    .b_type = (type), \
+    .b_prefix = (prefix), \
+    .b_mount = (mount), \
+    .b_quota = (quota) \
+}
+
 #define NORNS_ALLOC(size)       \
 ({                              \
     size_t __n = (size);        \
@@ -236,6 +292,14 @@ struct norns_job {
     struct norns_backend**  jb_backends; /* NULL-terminated list of storage backends the job is allowed to use */
     size_t                  jb_nbackends; /* entries in backend list */
 };
+
+#define NORNS_JOB_INIT(hosts, nhosts, backends, nbackends) \
+{ \
+    .jb_hosts = (hosts), \
+    .jb_nhosts = (nhosts), \
+    .jb_backends = (backends), \
+    .jb_nbackends = (nbackends) \
+}
 
 
 /* Send a command to the daemon (e.g. stop accepting new tasks) */

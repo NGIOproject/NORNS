@@ -1,5 +1,5 @@
-/* * Copyright (C) 2017 Barcelona Supercomputing Center
- *                    Centro Nacional de Supercomputacion
+/* * Copyright (C) 2017-2018 Barcelona Supercomputing Center
+ *                           Centro Nacional de Supercomputacion
  *
  * This file is part of the Data Scheduler, a daemon for tracking and managing
  * requests for asynchronous data transfer in a hierarchical storage environment.
@@ -21,44 +21,9 @@
  * along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __REQUESTS_H__
-#define __REQUESTS_H__
+#ifndef __DEFAULTS_H__
+#define  __DEFAULTS_H__
 
-#include "messages.pb-c.h"
+extern const char* norns_api_sockfile;
 
-#pragma GCC visibility push(hidden)
-
-#include <norns.h>
-
-typedef enum {
-    NORNS_SUBMIT_IOTASK,
-    NORNS_REGISTER_JOB,
-    NORNS_UPDATE_JOB,
-    NORNS_UNREGISTER_JOB,
-    NORNS_ADD_PROCESS,
-    NORNS_REMOVE_PROCESS,
-    NORNS_BAD_RPC
-} norns_rpc_type_t;
-
-typedef struct {
-    void* b_data;
-    size_t b_size;
-} msgbuffer_t;
-
-#define MSGBUFFER_INIT() \
-{   .b_data = 0, \
-    .b_size = 0 \
-}
-
-typedef struct {
-    norns_rpc_type_t r_type;
-    int r_status;
-    size_t r_taskid;
-} norns_response_t;
-
-int pack_to_buffer(norns_rpc_type_t type, msgbuffer_t* buf, ...);
-int unpack_from_buffer(msgbuffer_t* buf, norns_response_t* response);
-
-#pragma GCC visibility pop
-
-#endif /* __REQUESTS_H__ */
+#endif /* __DEFAULTS_H__ */

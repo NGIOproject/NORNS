@@ -70,6 +70,7 @@ AX_BOOST_SYSTEM
 AX_BOOST_FILESYSTEM
 AX_BOOST_ASIO
 AX_BOOST_PROGRAM_OPTIONS
+AX_BOOST_THREAD
 
 
 # check that Intel's TBB is available. some distros don't include
@@ -107,5 +108,6 @@ AC_CONFIG_FILES([
         include/Makefile
         lib/Makefile
         src/Makefile
+        tests/Makefile
 ])
 AC_OUTPUT

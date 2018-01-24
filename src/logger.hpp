@@ -72,7 +72,7 @@ public:
     }
 
     ~logger(){
-        std::cerr << "XXXXXXXXXX called!\n";
+//        std::cerr << "XXXXXXXXXX called!\n";
         spdlog::drop_all();
     }
 

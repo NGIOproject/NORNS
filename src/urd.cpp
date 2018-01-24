@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -45,16 +46,15 @@
 #include <norns-rpc.h>
 #include <norns.h>
 
-#include "ipc-listener.hpp"
+#include "api.hpp"
 #include "signal-listener.hpp"
 #include "backend-base.hpp"
 #include "ctpl.h" 
 #include "logger.hpp"
-#include "responses.hpp"
-#include "requests.hpp"
 #include "job.hpp"
 #include "io-task.hpp"
 #include "urd.hpp"
+#include "make-unique.hpp"
 
 #if 0 
 struct task{
@@ -97,28 +97,27 @@ void urd::daemonize() {
 	pid_t pid, sid;
 
 	/* Check if this is already a daemon */ 
-	if (getpid() == 1){
-		return;
+	if(getppid() == 1) {
+	    m_pid = getpid();
+        return;
 	}
 
 	/* Fork off the parent process */
-	pid = fork();
-
-	/* Fork error */
-	if (pid < 0) {
+	if((pid = fork()) < 0) {
 		m_logger->error("[daemonize] fork failed.");
 		perror("Fork");
 		exit(EXIT_FAILURE);
 	}
 
+    m_pid = pid;
+
 	/* Parent exits */
-	if (pid > 0) {
-		exit(EXIT_SUCCESS);
+	if(pid > 0) {
+		return;
 	}
 
 	/* Obtain new process group */
-	sid = setsid();
-	if (sid < 0) {
+	if((sid = setsid()) < 0) {
 		/* Log failure */
 		m_logger->error("[daemonize] setsid failed.");
 		perror("Setsid");
@@ -126,20 +125,20 @@ void urd::daemonize() {
 	}
 
 	/* Close all descriptors */
-	int i;
-	for(i=getdtablesize(); i>=0; --i){
+	for(int i = getdtablesize(); i >= 0; --i){
 		close(i);
 	} 
 
 	/* Handle standard IO */
+	int fd = open("/dev/null", O_RDWR); /* open stdin */
 
-	i=open("/dev/null", O_RDWR); /* open stdin */
-	if(-1 == dup(i)){ /* stdout */
+	if(dup(fd) == -1) { /* stdout */
 		m_logger->error("[daemonize] dup[1] failed.");
 		perror("dup");
 		exit(EXIT_FAILURE);
 	}
-	if(-1 == dup(i)){ /* stderr */
+
+	if(dup(fd) == -1) { /* stderr */
 		m_logger->error("[daemonize] dup[2] failed.");
 		perror("dup");
 		exit(EXIT_FAILURE);
@@ -149,7 +148,7 @@ void urd::daemonize() {
 	umask(027); /* file creation mode to 750 */
 
 	/* Change the current working directory */
-	if ((chdir(m_settings->m_running_dir.c_str())) < 0) {
+	if(chdir(m_settings->m_running_dir.c_str()) < 0) {
 		m_logger->error("[daemonize] chdir failed.");
 		perror("Chdir");
 		exit(EXIT_FAILURE);
@@ -162,12 +161,14 @@ void urd::daemonize() {
 
 	int lfp;
 	lfp = open(m_settings->m_daemon_pidfile.c_str(), O_RDWR|O_CREAT, 0640);
-	if(lfp < 0){
+
+	if(lfp < 0) {
 		m_logger->error("[daemonize] can not open daemon lock file");
 		perror("Can not open daemon lock file");
 		exit(EXIT_FAILURE);
 	} 
-	if(lockf(lfp, F_TLOCK, 0)<0){
+
+	if(lockf(lfp, F_TLOCK, 0) < 0) {
 		m_logger->error("[daemonize] another instance of this daemon already running");
 		perror("Another instance of this daemon already running");
 		exit(EXIT_FAILURE);
@@ -177,12 +178,15 @@ void urd::daemonize() {
 	char str[10];
 	size_t err_snprintf;
 	err_snprintf = snprintf(str, sizeof(str), "%d\n", getpid());
-	if(err_snprintf >= sizeof(str)){
+
+	if(err_snprintf >= sizeof(str)) {
 		m_logger->error("[daemonize] snprintf failed");
 	}
+
 	size_t err_write;
 	err_write = write(lfp, str, strnlen(str, sizeof(str)));
-	if(err_write != strnlen(str, sizeof(str))){
+
+	if(err_write != strnlen(str, sizeof(str))) {
 		m_logger->error("[daemonize] write failed");
 	}
 
@@ -229,61 +233,15 @@ void push_jobs(ctpl::thread_pool &p){
 }
 #endif
 
-std::shared_ptr<urd_response> urd::request_handler(std::shared_ptr<urd_request> request) {
+response_ptr urd::register_job(const request_ptr base_request) {
 
-    // dispatch the request to the appropriate handler
-    // (yes, this is ugly but sometimes we need to create things into urd,
-    // which we could not do if we leave this context)
-    if(dynamic_cast<job_registration_request*>(request.get()) != nullptr) {
-        return this->register_job(std::dynamic_pointer_cast<job_registration_request>(request));
-    }
+    response_ptr resp = std::make_unique<api::job_register_response>();
 
-    if(dynamic_cast<job_update_request*>(request.get()) != nullptr) {
-        return this->update_job(std::dynamic_pointer_cast<job_update_request>(request));
-    }
+    // downcast the generic request to the concrete implementation
+    auto request = static_cast<api::job_register_request*>(base_request.get());
 
-    if(dynamic_cast<job_removal_request*>(request.get()) != nullptr) {
-        return this->remove_job(std::dynamic_pointer_cast<job_removal_request>(request));
-    }
-
-    if(dynamic_cast<process_registration_request*>(request.get()) != nullptr) {
-        return this->add_process(std::dynamic_pointer_cast<process_registration_request>(request));
-    }
-
-    if(dynamic_cast<process_deregistration_request*>(request.get()) != nullptr) {
-        return this->remove_process(std::dynamic_pointer_cast<process_deregistration_request>(request));
-    }
-
-    if(dynamic_cast<iotask_request*>(request.get()) != nullptr) {
-        return this->submit_task(std::dynamic_pointer_cast<iotask_request>(request));
-    }
-
-    // bad requests go through here
-    auto resp = std::make_shared<generic_response>();
-    resp->set_status(NORNS_EBADREQUEST);
-
-    m_logger->info("BAD_REQUEST() = {}", resp->to_string());
-    return resp;
-
-    // XXX return a generic response with BADREQUEST if no match is found
-
-    //request->process();
-
-    /* create a task descriptor & modify original with the task's assigned ID */
-    //std::unique_ptr<urd::task> task(new urd::task(iotdp)); 
-    //iotdp->ni_tid = task->m_task_id;
-
-    //m_workers->push(std::move(io::task(iotdp)));
-
-    /* the ipc_listener will automatically reply to the client when we exit the handler */
-    return 0;
-}
-
-std::shared_ptr<urd_response> urd::register_job(std::shared_ptr<job_registration_request> request) {
-
-    auto resp = std::make_shared<generic_response>();
-
-    uint32_t jobid = request->jobid();
+    uint32_t jobid = request->get<0>();
+    auto hosts = request->get<1>();
 
     boost::unique_lock<boost::shared_mutex> lock(m_jobs_mutex);
 
@@ -293,8 +251,7 @@ std::shared_ptr<urd_response> urd::register_job(std::shared_ptr<job_registration
     }
 
     m_jobs.emplace(jobid, 
-                std::make_shared<job>(request->jobid(), 
-                                        request->hosts()));
+                   std::make_shared<job>(jobid, hosts));
 
     resp->set_status(NORNS_SUCCESS);
 
@@ -303,11 +260,15 @@ log_and_return:
     return resp;
 }
 
-std::shared_ptr<urd_response> urd::update_job(std::shared_ptr<job_update_request> request) {
+response_ptr urd::update_job(const request_ptr base_request) {
 
-    auto resp = std::make_shared<generic_response>();
+    response_ptr resp = std::make_unique<api::job_update_response>();
 
-    uint32_t jobid = request->jobid();
+    // downcast the generic request to the concrete implementation
+    auto request = static_cast<api::job_update_request*>(base_request.get());
+
+    uint32_t jobid = request->get<0>();
+    auto hosts = request->get<1>();
 
     boost::unique_lock<boost::shared_mutex> lock(m_jobs_mutex);
 
@@ -318,7 +279,7 @@ std::shared_ptr<urd_response> urd::update_job(std::shared_ptr<job_update_request
         goto log_and_return;
     }
 
-    it->second->update(request->hosts());
+    it->second->update(hosts);
 
     resp->set_status(NORNS_SUCCESS);
 
@@ -327,11 +288,14 @@ log_and_return:
     return resp;
 }
 
-std::shared_ptr<urd_response> urd::remove_job(std::shared_ptr<job_removal_request> request) {
+response_ptr urd::remove_job(const request_ptr base_request) {
 
-    auto resp = std::make_shared<generic_response>();
+    response_ptr resp = std::make_unique<api::job_unregister_response>();
 
-    uint32_t jobid = request->jobid();
+    // downcast the generic request to the concrete implementation
+    auto request = static_cast<api::job_unregister_request*>(base_request.get());
+
+    uint32_t jobid = request->get<0>();
 
     boost::unique_lock<boost::shared_mutex> lock(m_jobs_mutex);
 
@@ -351,11 +315,17 @@ log_and_return:
     return resp;
 }
 
-std::shared_ptr<urd_response> urd::add_process(std::shared_ptr<process_registration_request> request) {
+response_ptr urd::add_process(const request_ptr base_request) {
 
-    auto resp = std::make_shared<generic_response>();
+    response_ptr resp = std::make_unique<api::process_register_response>();
 
-    uint32_t jobid = request->jobid();
+    // downcast the generic request to the concrete implementation
+    auto request = static_cast<api::process_register_request*>(base_request.get());
+
+    uint32_t jobid = request->get<0>();
+    pid_t uid = request->get<1>();
+    gid_t gid = request->get<2>();
+    pid_t pid = request->get<3>();
 
     boost::unique_lock<boost::shared_mutex> lock(m_jobs_mutex);
 
@@ -366,7 +336,7 @@ std::shared_ptr<urd_response> urd::add_process(std::shared_ptr<process_registrat
         goto log_and_return;
     }
 
-    it->second->add_process(request->pid(), request->gid());
+    it->second->add_process(pid, gid);
 
     resp->set_status(NORNS_SUCCESS);
 
@@ -375,11 +345,17 @@ log_and_return:
     return resp;
 }
 
-std::shared_ptr<urd_response> urd::remove_process(std::shared_ptr<process_deregistration_request> request) {
+response_ptr urd::remove_process(const request_ptr base_request) {
 
-    auto resp = std::make_shared<generic_response>();
+    response_ptr resp = std::make_unique<api::process_unregister_response>();
 
-    uint32_t jobid = request->jobid();
+    // downcast the generic request to the concrete implementation
+    auto request = static_cast<api::process_unregister_request*>(base_request.get());
+
+    uint32_t jobid = request->get<0>();
+    pid_t uid = request->get<1>();
+    gid_t gid = request->get<2>();
+    pid_t pid = request->get<3>();
 
     boost::unique_lock<boost::shared_mutex> lock(m_jobs_mutex);
 
@@ -390,30 +366,34 @@ std::shared_ptr<urd_response> urd::remove_process(std::shared_ptr<process_deregi
         goto log_and_return;
     }
 
-    it->second->remove_process(request->pid(), request->gid());
-
-    resp->set_status(NORNS_SUCCESS);
+    if(it->second->find_and_remove_process(pid, gid)) {
+        resp->set_status(NORNS_SUCCESS);
+    }
+    else {
+        resp->set_status(NORNS_ENOSUCHPROCESS);
+    }
 
 log_and_return:
     m_logger->info("REMOVE_PROCESS({}) = {}", request->to_string(), resp->to_string());
     return resp;
 }
 
-std::shared_ptr<urd_response> urd::submit_task(std::shared_ptr<iotask_request> request) {
+response_ptr urd::create_task(const request_ptr base_request) {
 
-    auto resp = std::make_shared<generic_response>();
+    response_ptr resp = std::make_unique<api::transfer_task_response>();
+
+    // downcast the generic request to the concrete implementation
+    auto request = static_cast<api::transfer_task_request*>(base_request.get());
+
+    m_workers->push(io::task());
 
     resp->set_status(NORNS_SUCCESS);
 
-    //m_workers->push(std::move(io::task(iotdp)));
-    m_workers->push(io::task());
-
-//log_and_return:
-    m_logger->info("SUBMIT_TASK({}) = {}", request->to_string(), resp->to_string());
+    m_logger->info("CREATE_TASK({}) = {}", request->to_string(), resp->to_string());
     return resp;
 }
 
-void urd::set_configuration(const config_settings& settings) {
+void urd::configure(const config_settings& settings) {
     m_settings = std::make_shared<config_settings>(settings);
 }
 
@@ -428,9 +408,10 @@ void urd::signal_handler(int signum){
         case SIGTERM:
             m_logger->info(" A signal(SIGTERM) occurred.");
 
-            m_ipc_listener->stop();
+            m_api_listener->stop();
             ::unlink(m_settings->m_daemon_pidfile.c_str());
             m_logger.reset();
+            exit(EXIT_SUCCESS);
             break;
 
         case SIGHUP:
@@ -444,6 +425,16 @@ void urd::run() {
     // initialize logging facilities
     if(m_settings->m_daemonize) {
         m_logger = std::shared_ptr<logger>(new logger(m_settings->m_progname, "syslog"));
+
+        daemonize();
+
+        if(m_settings->m_detach) {
+            exit(EXIT_SUCCESS);
+        }
+
+        if(m_pid != 0) {
+            return;
+        }
     } else{
         m_logger = std::shared_ptr<logger>(new logger(m_settings->m_progname, "stdout color"));
     }
@@ -460,10 +451,6 @@ void urd::run() {
 	m_logger->info("    workers: {}", m_settings->m_workers_in_pool);
 	m_logger->info("    internal storage: {}", m_settings->m_storage_path);
 	m_logger->info("    internal storage capacity: {}", m_settings->m_storage_capacity);
-
-    if(m_settings->m_daemonize) {
-        daemonize();
-    }
 
     // instantiate configured backends
 //    m_logger->info("* Creating storage backend handlers...");
@@ -499,21 +486,39 @@ void urd::run() {
 	// temporarily change the umask so that the socket file can be accessed by anyone
 	mode_t old_mask = umask(0111);
 
-    //m_ipc_listener = std::shared_ptr<ipc_listener<struct norns_iotd>>(
-    //    new ipc_listener<struct norns_iotd>(m_settings->m_ipc_sockfile,
-    //            std::bind(&urd::new_request_handler, this, std::placeholders::_1)));
+    // create API listener and register callbacks for each request type
+    m_api_listener = std::make_unique<api_listener>(m_settings->m_ipc_sockfile);
 
-    m_ipc_listener = std::shared_ptr<ipc_listener<message, urd_request, urd_response>>(
-        new ipc_listener<message, urd_request, urd_response>(
-            m_settings->m_ipc_sockfile,
-            std::bind(&urd::request_handler, this, std::placeholders::_1)));
+    m_api_listener->register_callback(
+            api::request_type::job_register,
+            std::bind(&urd::register_job, this, std::placeholders::_1));
+
+    m_api_listener->register_callback(
+            api::request_type::job_update,
+            std::bind(&urd::update_job, this, std::placeholders::_1));
+
+    m_api_listener->register_callback(
+            api::request_type::job_unregister,
+            std::bind(&urd::remove_job, this, std::placeholders::_1));
+
+    m_api_listener->register_callback(
+            api::request_type::process_register,
+            std::bind(&urd::add_process, this, std::placeholders::_1));
+
+    m_api_listener->register_callback(
+            api::request_type::process_unregister,
+            std::bind(&urd::remove_process, this, std::placeholders::_1));
+
+    m_api_listener->register_callback(
+            api::request_type::transfer_task,
+            std::bind(&urd::create_task, this, std::placeholders::_1));
 
     // restore the umask
 	umask(old_mask);
 
     m_logger->info("Urd daemon successfully started!");
     m_logger->info("Awaiting requests...");
-    m_ipc_listener->run();
+    m_api_listener->run();
 	/*
 	 *	Create thread pool
 	 *	Set number of threads
@@ -526,3 +531,25 @@ void urd::run() {
 	
 	//m_workers.push(urd::communication_thread);
 }
+
+void urd::stop() {
+    if(m_pid != 0) {
+
+        m_logger->info("[stop] Sending SIGTERM to {}...", m_pid);
+
+        if(kill(m_pid, SIGTERM) != 0) {
+            m_logger->error("[stop] Unable to send SIGTERM to daemon process: {}", strerror(errno));
+            return;
+        }
+
+        int status;
+
+        if(waitpid(m_pid, &status, 0) == -1) {
+            m_logger->error("[stop] Unable to wait for daemon process: {}", strerror(errno));
+            return;
+        }
+
+        m_logger->info("[stop] Daemon process exited with status {}", status);
+    }
+}
+

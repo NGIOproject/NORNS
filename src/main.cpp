@@ -66,7 +66,7 @@ int main(int argc, char* argv[]){
     settings.m_daemonize = !run_in_foreground;
 
     urd daemon;
-    daemon.set_configuration(settings);
+    daemon.configure(settings);
     daemon.run();
 
     exit(EXIT_SUCCESS);

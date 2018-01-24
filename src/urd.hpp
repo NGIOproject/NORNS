@@ -31,41 +31,48 @@
 #include "settings.hpp"
 #include "backend-base.hpp"
 #include "signal-listener.hpp"
-#include "message.hpp"
-#include "ipc-listener.hpp"
 #include "logger.hpp"
+#include "api.hpp"
 #include "ctpl.h"
-#include "request-base.hpp"
-#include "response-base.hpp"
+
+
+
+
+
 #include "job.hpp"
+
+/*! Aliases for convenience */
+using api_listener = api::listener<api::message<api::request, api::response>>;
+using api_listener_ptr = std::unique_ptr<api_listener>;
+using request_ptr = std::unique_ptr<api::request>;
+using response_ptr = std::unique_ptr<api::response>;
 
 
 class urd {
 
 public:
-    void set_configuration(const config_settings& settings);
+    void configure(const config_settings& settings);
     void run();
+    void stop();
 
 private:
     void daemonize();
-    //void new_request_handler(struct norns_iotd*);
-    void new_request_handler(message* msg);
-    std::shared_ptr<urd_response> request_handler(std::shared_ptr<urd_request> request);
     void signal_handler(int);
 
-    std::shared_ptr<urd_response> register_job(std::shared_ptr<job_registration_request> request);
-    std::shared_ptr<urd_response> update_job(std::shared_ptr<job_update_request> request);
-    std::shared_ptr<urd_response> remove_job(std::shared_ptr<job_removal_request> request);
-    std::shared_ptr<urd_response> add_process(std::shared_ptr<process_registration_request> request);
-    std::shared_ptr<urd_response> remove_process(std::shared_ptr<process_deregistration_request> request);
-    std::shared_ptr<urd_response> submit_task(std::shared_ptr<iotask_request> request);
+    response_ptr register_job(const request_ptr req);
+    response_ptr update_job(const request_ptr req);
+    response_ptr remove_job(const request_ptr req);
+    response_ptr add_process(const request_ptr req);
+    response_ptr remove_process(const request_ptr req);
+    response_ptr create_task(const request_ptr req);
 
 private:
+    pid_t                                               m_pid;
     std::shared_ptr<logger>                             m_logger;
     std::shared_ptr<signal_listener>                    m_signal_listener;
     std::shared_ptr<config_settings>                    m_settings;
     std::shared_ptr<ctpl::thread_pool>                  m_workers;
-    std::shared_ptr<ipc_listener<message, urd_request, urd_response>> m_ipc_listener;
+    api_listener_ptr                                    m_api_listener;
     std::list<std::shared_ptr<storage::backend>>        m_backends;
 
 

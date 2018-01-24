@@ -56,6 +56,7 @@ struct config_settings {
 
     std::string        m_progname;
     bool               m_daemonize;
+    bool               m_detach;
     std::string        m_running_dir;
     std::string        m_ipc_sockfile;
     std::string        m_daemon_pidfile;

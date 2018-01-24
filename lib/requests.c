@@ -21,7 +21,7 @@
  * along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
+#include <stdarg.h>
 
 #include <norns.h>
 #include "messages.pb-c.h"
@@ -30,8 +30,160 @@
 
 #include "requests.h"
 
+static Norns__Rpc__Request__Task* build_task_msg(const struct norns_iotd* iotdp);
+static void free_task_msg(Norns__Rpc__Request__Task* msg);
+static Norns__Rpc__Request__Job* build_job_msg(const struct norns_job* job);
+static void free_job_msg(Norns__Rpc__Request__Job* msg);
+static void* build_membuf_msg(const struct norns_data_in* src);
+static int remap_request(norns_rpc_type_t type);
+static norns_rpc_type_t remap_response(int type);
+
+int 
+remap_request(norns_rpc_type_t type) {
+    switch(type) {
+        case NORNS_SUBMIT_IOTASK:
+            return NORNS__RPC__REQUEST__TYPE__SUBMIT_IOTASK;
+        case NORNS_REGISTER_JOB:
+            return NORNS__RPC__REQUEST__TYPE__REGISTER_JOB;
+        case NORNS_UPDATE_JOB:
+            return NORNS__RPC__REQUEST__TYPE__UPDATE_JOB;
+        case NORNS_UNREGISTER_JOB:
+            return NORNS__RPC__REQUEST__TYPE__UNREGISTER_JOB;
+        case NORNS_ADD_PROCESS:
+            return NORNS__RPC__REQUEST__TYPE__ADD_PROCESS;
+        case NORNS_REMOVE_PROCESS:
+            return NORNS__RPC__REQUEST__TYPE__REMOVE_PROCESS;
+        default:
+            return -1;
+    }
+}
+
+norns_rpc_type_t 
+remap_response(int norns_rpc_type) {
+    switch(norns_rpc_type) {
+        case NORNS__RPC__RESPONSE__TYPE__SUBMIT_IOTASK:
+            return NORNS_SUBMIT_IOTASK;
+        case NORNS__RPC__RESPONSE__TYPE__REGISTER_JOB:
+            return NORNS_REGISTER_JOB;
+        case NORNS__RPC__RESPONSE__TYPE__UPDATE_JOB:
+            return NORNS_UPDATE_JOB;
+        case NORNS__RPC__RESPONSE__TYPE__UNREGISTER_JOB:
+            return NORNS_UNREGISTER_JOB;
+        case NORNS__RPC__RESPONSE__TYPE__ADD_PROCESS:
+            return NORNS_ADD_PROCESS;
+        case NORNS__RPC__RESPONSE__TYPE__REMOVE_PROCESS:
+            return NORNS_REMOVE_PROCESS;
+        case NORNS__RPC__RESPONSE__TYPE__BAD_REQUEST:
+            // intentionally fall through
+        default:
+            return NORNS_BAD_RPC;
+    }
+}
+
+Norns__Rpc__Request*
+build_request_msg(norns_rpc_type_t type, va_list ap) {
+
+    Norns__Rpc__Request* req_msg = NULL;
+
+    if((req_msg = (Norns__Rpc__Request*) xmalloc(sizeof(*req_msg))) == NULL) {
+        goto cleanup_on_error;
+    }
+
+    norns__rpc__request__init(req_msg);
+
+    req_msg->type = type;
+
+    switch(type) {
+        case NORNS_SUBMIT_IOTASK:
+        {
+            const struct norns_iotd* iotdp = va_arg(ap, struct norns_iotd*);
+
+            if((req_msg->type = remap_request(type)) < 0) {
+                goto cleanup_on_error;
+            }
+
+            if((req_msg->task = build_task_msg(iotdp)) == NULL) {
+                goto cleanup_on_error;
+            }
+
+            break;
+        }
+
+        case NORNS_REGISTER_JOB:
+        case NORNS_UPDATE_JOB:
+        case NORNS_UNREGISTER_JOB:
+        {
+            const struct norns_cred* auth = va_arg(ap, struct norns_cred*);
+            const uint32_t jobid = va_arg(ap, uint32_t);
+            const struct norns_job* job = va_arg(ap, struct norns_job*);
+
+            (void) auth;
+
+            if((req_msg->type = remap_request(type)) < 0) {
+                goto cleanup_on_error;
+            }
+
+            req_msg->has_jobid = true;
+            req_msg->jobid = jobid;
+
+            if(type == NORNS_UNREGISTER_JOB) {
+                req_msg->job = NULL;
+            }
+            else {
+                if((req_msg->job = build_job_msg(job)) == NULL) {
+                    goto cleanup_on_error;
+                }
+            }
+
+            break;
+        }
+        case NORNS_ADD_PROCESS:
+        case NORNS_REMOVE_PROCESS:
+        {
+            const struct norns_cred* auth = va_arg(ap, struct norns_cred*);
+            const uint32_t jobid = va_arg(ap, uint32_t);
+            const uid_t uid = va_arg(ap, uid_t);
+            const gid_t gid = va_arg(ap, gid_t);
+            const pid_t pid = va_arg(ap, pid_t);
+
+            (void) auth;
+
+            if((req_msg->type = remap_request(type)) < 0) {
+                goto cleanup_on_error;
+            }
+
+            req_msg->has_jobid = true;
+            req_msg->jobid = jobid;
+
+            if((req_msg->process = xmalloc(sizeof *req_msg->process)) == NULL) {
+                goto cleanup_on_error;
+            }
+
+            norns__rpc__request__process__init(req_msg->process);
+            req_msg->process->uid = uid;
+            req_msg->process->gid = gid;
+            req_msg->process->pid = pid;
+
+            break;
+        }
+    }
+
+    return req_msg;
+
+cleanup_on_error:
+    if(req_msg != NULL) {
+        xfree(req_msg);//TODO
+    }
+
+    return NULL;
+}
+
+void
+free_request_msg(Norns__Rpc__Request* req) {
+}
+
 void 
-job_message_free(Norns__Rpc__Request__Job* msg) {
+free_job_msg(Norns__Rpc__Request__Job* msg) {
 
     assert(msg != NULL);
 
@@ -59,11 +211,8 @@ job_message_free(Norns__Rpc__Request__Job* msg) {
     xfree(msg);
 }
 
-int 
-job_message_init(struct norns_job* job, Norns__Rpc__Request__Job** msg) {
-
-    int rv;
-    *msg = NULL;
+Norns__Rpc__Request__Job*
+build_job_msg(const struct norns_job* job) {
 
     assert(job != NULL);
 
@@ -71,8 +220,7 @@ job_message_init(struct norns_job* job, Norns__Rpc__Request__Job** msg) {
         (Norns__Rpc__Request__Job*) xmalloc(sizeof(*jobmsg));
 
     if(jobmsg == NULL) {
-        rv = NORNS_ENOMEM;
-        goto error_cleanup;
+        return NULL;
     }
 
     norns__rpc__request__job__init(jobmsg);
@@ -82,7 +230,6 @@ job_message_init(struct norns_job* job, Norns__Rpc__Request__Job** msg) {
     jobmsg->hosts = xmalloc(jobmsg->n_hosts*sizeof(char*));
 
     if(jobmsg->hosts == NULL) {
-        rv = NORNS_ENOMEM;
         goto error_cleanup;
     }
 
@@ -94,7 +241,6 @@ job_message_init(struct norns_job* job, Norns__Rpc__Request__Job** msg) {
         jobmsg->hosts[i] = xstrdup(job->jb_hosts[i]);
 
         if(jobmsg->hosts[i] == NULL) {
-            rv = NORNS_ENOMEM;
             goto error_cleanup;
         }
     }
@@ -105,7 +251,6 @@ job_message_init(struct norns_job* job, Norns__Rpc__Request__Job** msg) {
         xmalloc(job->jb_nbackends*sizeof(Norns__Rpc__Request__Job__Backend*));
     
     if(jobmsg->backends == NULL){
-        rv = NORNS_ENOMEM;
         goto error_cleanup;
     }
 
@@ -113,7 +258,6 @@ job_message_init(struct norns_job* job, Norns__Rpc__Request__Job** msg) {
         jobmsg->backends[i] = xmalloc(sizeof(Norns__Rpc__Request__Job__Backend));
 
         if(jobmsg->backends[i] == NULL) {
-            rv = NORNS_ENOMEM;
             goto error_cleanup;
         }
 
@@ -122,26 +266,24 @@ job_message_init(struct norns_job* job, Norns__Rpc__Request__Job** msg) {
         jobmsg->backends[i]->mount = xstrdup(job->jb_backends[i]->b_mount);
 
         if(jobmsg->backends[i]->mount == NULL) {
-            rv = NORNS_ENOMEM;
             goto error_cleanup;
         }
 
         jobmsg->backends[i]->quota = job->jb_backends[i]->b_quota;
     }
 
-    *msg = jobmsg;
-    return NORNS_SUCCESS;
+    return jobmsg;
 
 error_cleanup:
     if(jobmsg != NULL) {
-        job_message_free(jobmsg);
+        free_job_msg(jobmsg);
     }
-    return rv;
+    return NULL;
 }
 
 
-static void*
-build_buffer_message(struct norns_data_in* src) {
+void*
+build_membuf_msg(const struct norns_data_in* src) {
 
     Norns__Rpc__Request__Task__MemoryBuffer* msg = 
         xmalloc(sizeof(*msg));
@@ -157,7 +299,7 @@ build_buffer_message(struct norns_data_in* src) {
 }
 
 static void*
-build_path_message(void* src, bool is_input_data) {
+build_path_msg(const void* src, bool is_input_data) {
 
     const char* src_hostname = NULL;
     const char* src_datapath = NULL;
@@ -212,18 +354,14 @@ cleanup:
     return NULL;
 }
 
-int 
-build_task_message(struct norns_iotd* iotdp, Norns__Rpc__Request__Task** msg) {
-
-    int rv;
-    *msg = NULL;
+Norns__Rpc__Request__Task*
+build_task_msg(const struct norns_iotd* iotdp) {
 
     Norns__Rpc__Request__Task* taskmsg =
         (Norns__Rpc__Request__Task*) xmalloc(sizeof(*taskmsg));
 
     if(taskmsg == NULL) {
-        rv = NORNS_ENOMEM;
-        goto cleanup;
+        return NULL;
     }
 
     norns__rpc__request__task__init(taskmsg);
@@ -234,8 +372,7 @@ build_task_message(struct norns_iotd* iotdp, Norns__Rpc__Request__Task** msg) {
     taskmsg->source = xmalloc(sizeof(Norns__Rpc__Request__Task__DataIn));
 
     if(taskmsg->source == NULL) {
-        rv = NORNS_ENOMEM;
-        goto cleanup;
+        goto cleanup_on_error;
     }
 
     norns__rpc__request__task__data_in__init(taskmsg->source);
@@ -243,57 +380,50 @@ build_task_message(struct norns_iotd* iotdp, Norns__Rpc__Request__Task** msg) {
     taskmsg->source->type = iotdp->io_src.in_type;
 
     if(iotdp->io_src.in_type == NORNS_BACKEND_PROCESS_MEMORY) {
-        taskmsg->source->buffer = build_buffer_message(&iotdp->io_src);
+        taskmsg->source->buffer = build_membuf_msg(&iotdp->io_src);
         taskmsg->source->path = NULL;
 
         if(taskmsg->source->buffer == NULL) {
-            rv = NORNS_ENOMEM;
-            goto cleanup;
+            goto cleanup_on_error;
         }
     }
     else {
-        taskmsg->source->path = build_path_message(&iotdp->io_src, true);
+        taskmsg->source->path = build_path_msg(&iotdp->io_src, true);
         taskmsg->source->buffer = NULL;
 
         if(taskmsg->source->path == NULL) {
-            rv = NORNS_ENOMEM;
-            goto cleanup;
+            goto cleanup_on_error;
         }
     }
 
-    fprintf(stderr, "destination\n");
     // construct destination
     taskmsg->destination = xmalloc(sizeof(Norns__Rpc__Request__Task__DataOut));
 
     if(taskmsg->destination == NULL) {
-        rv = NORNS_ENOMEM;
-        goto cleanup;
+        goto cleanup_on_error;
     }
 
     norns__rpc__request__task__data_out__init(taskmsg->destination);
 
     taskmsg->destination->type = iotdp->io_dst.out_type;
 
-    taskmsg->destination->path = build_path_message(&iotdp->io_dst, false);
+    taskmsg->destination->path = build_path_msg(&iotdp->io_dst, false);
 
     if(taskmsg->destination->path == NULL) {
-        rv = NORNS_ENOMEM;
-        goto cleanup;
+        goto cleanup_on_error;
     }
 
-    *msg = taskmsg;
-    return NORNS_SUCCESS;
+    return taskmsg;
 
-
-cleanup:
+cleanup_on_error:
     if(taskmsg != NULL) {
-        free_task_message(taskmsg);
+        free_task_msg(taskmsg);
     }
 
-    return rv;
+    return NULL;
 }
 
-void free_task_message(Norns__Rpc__Request__Task* msg) {
+void free_task_msg(Norns__Rpc__Request__Task* msg) {
 
     assert(msg != NULL);
 
@@ -323,3 +453,96 @@ void free_task_message(Norns__Rpc__Request__Task* msg) {
 
     xfree(msg);
 }
+
+int
+pack_to_buffer(norns_rpc_type_t type, msgbuffer_t* buf, ...) {
+
+    Norns__Rpc__Request* req_msg = NULL;
+    void* req_buf = NULL;
+    size_t req_len = 0;
+    va_list ap;
+    va_start(ap, buf);
+
+    if((req_msg = build_request_msg(type, ap)) == NULL) {
+        goto cleanup_on_error;
+    }
+
+    req_len = norns__rpc__request__get_packed_size(req_msg);
+    req_buf = xmalloc_nz(req_len);
+
+    if(req_buf == NULL) {
+        goto cleanup_on_error;
+    }
+
+    norns__rpc__request__pack(req_msg, req_buf);
+
+    buf->b_data = req_buf;
+    buf->b_size = req_len;
+
+    va_end(ap);
+    free_request_msg(req_msg);
+
+    return NORNS_SUCCESS;
+
+#if 0
+    va_list ap;
+    va_start(ap, buf);
+
+    Norns__Rpc__Request* req = NULL;
+    void* req_buf = NULL;
+    size_t req_len = 0;
+
+    if((req = build_request_msg2(type, ap)) == NULL) {
+        goto cleanup_on_error;
+    }
+
+    norns__rpc__request__pack(req, req_buf);
+
+    req_len = norns__rpc__request__get_packed_size(req);
+    req_buf = xmalloc_nz(req_len);
+
+    if(req_buf == NULL) {
+        goto cleanup_on_error;
+    }
+
+    buf->b_data = req_buf;
+    buf->b_size = req_len;
+
+    va_end(ap);
+    free_request_msg(req);
+
+    return NORNS_SUCCESS;
+#endif
+
+cleanup_on_error:
+    if(req_msg != NULL) {
+        free_request_msg(req_msg);
+    }
+
+    if(req_buf != NULL) {
+        xfree(req_buf);
+    }
+
+    va_end(ap);
+    return NORNS_ENOMEM;
+}
+
+int
+unpack_from_buffer(msgbuffer_t* buf, norns_response_t* response) {
+
+    Norns__Rpc__Response* rpc_resp = NULL;
+    void* resp_buf = buf->b_data;
+    size_t resp_len = buf->b_size;
+
+    rpc_resp = norns__rpc__response__unpack(NULL, resp_len, resp_buf);
+
+    if(rpc_resp == NULL) {
+        return NORNS_ERPCRECVFAILED;
+    }
+
+    response->r_type = remap_response(rpc_resp->type);
+    response->r_status = rpc_resp->status;
+
+    return NORNS_SUCCESS;
+}
+

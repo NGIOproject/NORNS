@@ -57,15 +57,18 @@ public:
         }
     }
 
-    void remove_process(pid_t pid, gid_t gid) {
+    bool find_and_remove_process(pid_t pid, gid_t gid) {
 
         auto key = std::make_pair(pid, gid);
 
         const auto& it = m_processes.find(key);
 
-        if(it != m_processes.end()) {
-            m_processes.erase(it);
+        if(it == m_processes.end()) {
+            return false;
         }
+
+        m_processes.erase(it);
+        return true;
     }
 
 private:

@@ -24,23 +24,14 @@
 #ifndef __DAEMON_COMMUNICATION_H__
 #define __DAEMON_COMMUNICATION_H__
 
-#include <norns.h>
+#include "requests.h"
 
 #pragma GCC visibility push(hidden)
 
-typedef enum {
-    NORNS_SUBMIT_IOTASK,
-    NORNS_REGISTER_JOB,
-    NORNS_UPDATE_JOB,
-    NORNS_UNREGISTER_JOB,
-    NORNS_ADD_PROCESS,
-    NORNS_REMOVE_PROCESS
-} norns_request_t;
-
 int send_transfer_request(struct norns_iotd* iotdp);
-int send_job_request(norns_request_t type, struct norns_cred* auth, 
+int send_job_request(norns_rpc_type_t type, struct norns_cred* auth, 
                      uint32_t jobid, struct norns_job* job);
-int send_process_request(norns_request_t type, struct norns_cred* auth, 
+int send_process_request(norns_rpc_type_t type, struct norns_cred* auth, 
                          uint32_t jobid, uid_t uid, gid_t gid, pid_t pid);
 
 #pragma GCC visibility pop

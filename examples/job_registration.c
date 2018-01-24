@@ -96,6 +96,7 @@ int main(int argc, char* argv[]) {
     for(int i=0; i<5; ++i) {
         if((rv = norns_add_process(&cred, 42, (uid_t) i, (gid_t) i, (pid_t) i)) != NORNS_SUCCESS) {
             fprintf(stderr, "norns_add_process failed: %s\n", norns_strerror(rv));
+            exit(EXIT_FAILURE);
         }
     }
 
@@ -106,11 +107,13 @@ int main(int argc, char* argv[]) {
 
     if((rv = norns_update_job(&cred, 42, &job)) != NORNS_SUCCESS) {
         fprintf(stderr, "norns_update_job failed: %s\n", norns_strerror(rv));
+        exit(EXIT_FAILURE);
     }
 
     // unregister the job
     if((rv = norns_unregister_job(&cred, 42)) != NORNS_SUCCESS) {
         fprintf(stderr, "norns_unregister_job failed: %s\n", norns_strerror(rv));
+        exit(EXIT_FAILURE);
     }
 
     NORNS_PLIST_FREE(hosts1);

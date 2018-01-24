@@ -25,30 +25,35 @@ ACLOCAL_AMFLAGS = -I m4
 
 bin_PROGRAMS = urd
 
+################################################################################
+# build 'urd_aux.la', a convenience library so that we can build both the daemon
+# and any tests that may need it
+################################################################################
+noinst_LTLIBRARIES = \
+	liburd_aux.la
+
 MOSTLYCLEANFILES = \
 	defaults.cpp \
 	messages.pb.cc \
 	messages.pb.h
 
-urd_SOURCES = \
+liburd_aux_la_SOURCES = \
 	$(top_srcdir)/rpc/norns-rpc.h \
-	ipc-listener.hpp \
+	api.hpp \
+	api/dispatch-table.hpp \
+	api/listener.hpp \
+	api/message.hpp \
+	api/request.hpp \
+	api/request.cpp \
+	api/response.hpp \
+	api/response.cpp \
 	backend-base.cpp \
 	backend-base.hpp \
 	defaults.hpp \
 	nvml-dax.cpp \
 	nvml-dax.hpp \
-	main.cpp	 \
-	messages.hpp \
 	posix-fs.cpp \
 	posix-fs.hpp \
-	response-base.hpp \
-	responses.cpp \
-	responses.hpp \
-	request-base.cpp \
-	request-base.hpp \
-	requests.hpp \
-	requests.cpp \
 	settings.cpp \
 	settings.hpp \
 	urd.cpp	\
@@ -56,16 +61,16 @@ urd_SOURCES = \
 	utils.cpp \
 	utils.hpp
 
-nodist_urd_SOURCES = \
+nodist_liburd_aux_la_SOURCES = \
 	defaults.cpp \
 	messages.pb.cc \
 	messages.pb.h
 
-urd_CXXFLAGS = \
+liburd_aux_la_CXXFLAGS = \
 	@TBB_CFLAGS@ \
 	-std=gnu++11 -Wall -Wextra
 
-urd_CPPFLAGS = \
+liburd_aux_la_CPPFLAGS = \
 	-DSPDLOG_ENABLE_SYSLOG \
 	@BOOST_CPPFLAGS@ \
 	-I$(top_srcdir)/include \
@@ -73,18 +78,15 @@ urd_CPPFLAGS = \
 	-I$(top_srcdir)/rpc	\
 	-I$(top_builddir)/rpc
 
-urd_LDFLAGS = 				\
-	@TBB_LIBS@	  				\
-	@BOOST_LDFLAGS@				\
-    @BOOST_SYSTEM_LIB@			\
-    @BOOST_ASIO_LIB@			\
+liburd_aux_la_LDFLAGS = \
+	@TBB_LIBS@ \
+    @BOOST_ASIO_LIB@ \
+	@BOOST_LDFLAGS@	\
     @BOOST_PROGRAM_OPTIONS_LIB@	\
+    @BOOST_SYSTEM_LIB@ \
+    @BOOST_THREAD_LIB@ \
 	@PROTOBUF_LIBS@ \
 	-pthread
-
-urd_LDADD = \
-	-lboost_system \
-	-lboost_thread
 
 BUILT_SOURCES = \
 	defaults.hpp \
@@ -98,6 +100,7 @@ defaults.cpp: Makefile
 	   echo "namespace defaults {"; \
 	   echo "    const char* progname           = \"urd\";"; \
 	   echo "    const bool  daemonize          = true;"; \
+	   echo "    const bool  detach             = true;"; \
 	   echo "    const char* running_dir        = \"/tmp\";"; \
 	   echo "    const char* ipc_sockfile       = \"/tmp/urd.socket\";"; \
 	   echo "    const char* daemon_pidfile     = \"/tmp/urd.pid\";"; \
@@ -108,3 +111,48 @@ defaults.cpp: Makefile
 
 %.pb.cc %.pb.h: $(top_srcdir)/rpc/%.proto
 	$(PROTOC) --proto_path=$(top_srcdir)/rpc --cpp_out=$(builddir) $^
+
+################################################################################
+# build 'urd', the main binary for the service daemon
+################################################################################
+urd_SOURCES = \
+	main.cpp
+
+urd_CXXFLAGS = \
+	@TBB_CFLAGS@ \
+	-std=gnu++11 -Wall -Wextra
+
+urd_CPPFLAGS = \
+	-DSPDLOG_ENABLE_SYSLOG \
+	@BOOST_CPPFLAGS@ \
+	-I$(top_srcdir)/include \
+	-I$(top_srcdir)/src	\
+	-I$(top_srcdir)/rpc	\
+	-I$(top_builddir)/rpc
+
+
+# NOTE: we cannot pass 'liburd_aux.la' directly to 'urd_LDFLAGS' as usual,
+# because backends rely on the initialization of several static (and 
+# unreferenced) variables to self-register, so that they can be automatically 
+# constructed. Since they are not referenced elsewhere, the linker removes
+# the variables, which makes the self-registering process not work. To avoid 
+# this, we need to link the convenience library with '-Wl,--whole-archive'
+# to force the inclusion of these symbols and then disable it with 
+# '-Wl,--no-whole-archive'. Unfortunately, the order of flags
+# cannot be controlled, which forces us to define it explicitly as
+# '-Wl,--whole-archive,.libs/liburd_aux.a,--no-whole-archive' and to include
+# several extra dependencies which would not be needed otherwise
+urd_LDFLAGS = \
+	@TBB_LIBS@ \
+    @BOOST_ASIO_LIB@ \
+	@BOOST_LDFLAGS@	\
+    @BOOST_PROGRAM_OPTIONS_LIB@	\
+    @BOOST_SYSTEM_LIB@ \
+    @BOOST_THREAD_LIB@ \
+	@PROTOBUF_LIBS@ \
+	-Wl,--whole-archive,.libs/liburd_aux.a,--no-whole-archive
+
+# we also need to include it as an additional dependency, since automake
+# will no longer detect it as a dependency
+EXTRA_urd_DEPENDENCIES = \
+	liburd_aux.la

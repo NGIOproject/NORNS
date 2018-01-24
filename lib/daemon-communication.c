@@ -28,80 +28,187 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <errno.h>
+#include <stdarg.h>
 
 #include <norns.h>
 #include <norns-rpc.h>
 
+#include "defaults.h"
 #include "messages.pb-c.h"
 #include "requests.h"
 #include "daemon-communication.h"
 #include "xmalloc.h"
 
-const char* SOCKET_FILE = "/tmp/urd.socket"; ///TODO defaults.h
-
 static int connect_to_daemon(void);
-static int send_message(int conn, const void* msg, size_t msg_size);
-static int recv_message(int conn, void** msg, size_t* msg_size);
+static int send_message(int conn, const msgbuffer_t* buffer);
+static int recv_message(int conn, msgbuffer_t* buffer);
 static ssize_t recv_data(int conn, void* data, size_t size);
 static ssize_t send_data(int conn, const void* data, size_t size);
 static void print_hex(void* buffer, size_t bytes);
 
-static int remap_request_type(norns_request_t type) {
+
+
+
+static int
+send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
+
+    int res;
+    msgbuffer_t req_buf = MSGBUFFER_INIT();
+    msgbuffer_t resp_buf = MSGBUFFER_INIT();
+
+    va_list ap;
+    va_start(ap, resp);
+
+    // fetch args and pack them into a buffer
     switch(type) {
         case NORNS_SUBMIT_IOTASK:
-            return NORNS__RPC__REQUEST__TYPE__SUBMIT_IOTASK;
+        {
+            const struct norns_iotd* iotdp =
+                va_arg(ap, const struct norns_iotd*);
+
+            if((res = pack_to_buffer(type, &req_buf, iotdp)) 
+                    != NORNS_SUCCESS) {
+                return res;
+            }
+
+            break;
+        }
+
         case NORNS_REGISTER_JOB:
-            return NORNS__RPC__REQUEST__TYPE__REGISTER_JOB;
         case NORNS_UPDATE_JOB:
-            return NORNS__RPC__REQUEST__TYPE__UPDATE_JOB;
         case NORNS_UNREGISTER_JOB:
-            return NORNS__RPC__REQUEST__TYPE__UNREGISTER_JOB;
+        {
+            const struct norns_cred* auth = 
+                va_arg(ap, const struct norns_cred*);
+            const uint32_t jobid =
+                va_arg(ap, const uint32_t);
+            const struct norns_job* job =
+                va_arg(ap, const struct norns_job*);
+
+            if((res = pack_to_buffer(type, &req_buf, auth, jobid, job)) 
+                    != NORNS_SUCCESS) {
+                return res;
+            }
+
+            break;
+        }
+
         case NORNS_ADD_PROCESS:
-            return NORNS__RPC__REQUEST__TYPE__ADD_PROCESS;
         case NORNS_REMOVE_PROCESS:
-            return NORNS__RPC__REQUEST__TYPE__REMOVE_PROCESS;
+        {
+            const struct norns_cred* auth =
+                va_arg(ap, const struct norns_cred*);
+            const uint32_t jobid =
+                va_arg(ap, const uint32_t);
+            const uid_t uid =
+                va_arg(ap, const uid_t);
+            const gid_t gid =
+                va_arg(ap, const gid_t);
+            const pid_t pid =
+                va_arg(ap, const pid_t);
+
+            if((res = pack_to_buffer(type, &req_buf, auth, jobid, uid, gid, pid)) 
+                    != NORNS_SUCCESS) {
+                return res;
+            }
+
+            break;
+        }
+
         default:
-            return -1;
+            return NORNS_ESNAFU;
+
     }
+
+    // connect to urd
+    int conn = connect_to_daemon();
+
+    if(conn == -1) {
+        res = NORNS_ECONNFAILED;
+        goto cleanup_on_error;
+    }
+
+	// connection established, send the message
+	if(send_message(conn, &req_buf) < 0) {
+	    res = NORNS_ERPCSENDFAILED;
+	    goto cleanup_on_error;
+    }
+
+    // wait for the urd's response
+    if(recv_message(conn, &resp_buf) < 0) {
+        res = NORNS_ERPCRECVFAILED;
+	    goto cleanup_on_error;
+    }
+
+    if((res = unpack_from_buffer(&resp_buf, resp)) != NORNS_SUCCESS) {
+	    goto cleanup_on_error;
+    }
+
+    va_end(ap);
+
+    close(conn);
+
+    return res;
+
+cleanup_on_error:
+    va_end(ap);
+    return res;
 }
 
 int 
 send_transfer_request(struct norns_iotd* iotdp) {
-    int rv;
-    void* req_buf, *resp_buf;
-    size_t req_len, resp_len;
-    int conn = -1;
 
-    Norns__Rpc__Request__Task* taskmsg = NULL; 
-    Norns__Rpc__Request* req = NULL;
-    Norns__Rpc__Response* resp = NULL;
-    req_buf = resp_buf = NULL;
-    req_len = resp_len = 0;
+    int res;
+    norns_response_t resp;
 
+    // XXX add missing checks
     if(iotdp->io_taskid != 0 || false
             
             ) {
         return NORNS_EBADARGS;
     }
 
-
-    if((req = (Norns__Rpc__Request*) xmalloc(sizeof(*req))) == NULL) {
-        rv = NORNS_ENOMEM;
-        goto cleanup;
+    if((res = send_request(NORNS_SUBMIT_IOTASK, &resp, iotdp)) 
+            != NORNS_SUCCESS) {
+        return res;
     }
 
-    norns__rpc__request__init(req);
+    if(resp.r_type != NORNS_SUBMIT_IOTASK) {
+        return NORNS_ESNAFU;
+    }
 
-    req->type = NORNS__RPC__REQUEST__TYPE__SUBMIT_IOTASK;
+    iotdp->io_taskid = resp.r_taskid;
 
-    // this request needs a valid task descriptor
-    if(iotdp != NULL) {
-        if((rv = build_task_message(iotdp, &taskmsg)) != NORNS_SUCCESS) {
-            goto cleanup;
-        }
+    return resp.r_status;
 
-        assert(taskmsg != NULL);
-        req->task = taskmsg;
+#if 0
+    int rv;
+    void* req_buf, *resp_buf;
+    size_t req_len, resp_len;
+    int conn = -1;
+
+    Norns__Rpc__Request* req = NULL;
+    Norns__Rpc__Response* resp = NULL;
+    req_buf = resp_buf = NULL;
+    req_len = resp_len = 0;
+
+    // XXX add missing checks
+    if(iotdp->io_taskid != 0 || false
+            
+            ) {
+        return NORNS_EBADARGS;
+    }
+
+    msgbuffer_t xbuffer;
+
+    if((rv = pack_to_buffer(NORNS_SUBMIT_IOTASK, &xbuffer, iotdp)) != NORNS_SUCCESS) {
+        goto cleanup_on_error;
+    }
+
+#if 0
+    if((req = build_request_msg(NORNS_SUBMIT_IOTASK, iotdp)) == NULL) {
+        rv = NORNS_ENOMEM;
+        goto cleanup_on_error;
     }
 
     // fill the buffer
@@ -110,241 +217,86 @@ send_transfer_request(struct norns_iotd* iotdp) {
 
     if(req_buf == NULL) {
         rv = NORNS_ENOMEM;
-        goto cleanup;
+        goto cleanup_on_error;
     }
 
     norns__rpc__request__pack(req, req_buf);
+#endif
 
     conn = connect_to_daemon();
 
     if(conn == -1) {
         rv = NORNS_ECONNFAILED;
-        goto cleanup;
+        goto cleanup_on_error;
     }
 
 	// connection established, send the message
 	if(send_message(conn, req_buf, req_len) < 0) {
 	    rv = NORNS_ERPCSENDFAILED;
-	    goto cleanup;
+	    goto cleanup_on_error;
     }
 
     // wait for the daemon's response
     if(recv_message(conn, &resp_buf, &resp_len) < 0) {
         rv = NORNS_ERPCRECVFAILED;
-	    goto cleanup;
+	    goto cleanup_on_error;
     }
 
     resp = norns__rpc__response__unpack(NULL, resp_len, resp_buf);
 
     if(resp == NULL) {
         rv = NORNS_ERPCRECVFAILED;
-        goto cleanup;
+        goto cleanup_on_error;
     }
 
     rv = resp->status;
 
-cleanup:
+cleanup_on_error:
     if(req != NULL) {
         xfree(req);
     }
 
     return rv;
+#endif
 }
 
 int 
-send_job_request(norns_request_t type, struct norns_cred* auth, 
+send_job_request(norns_rpc_type_t type, struct norns_cred* auth, 
                  uint32_t jobid, struct norns_job* job) {
 
-    //TODO: encapsulate the construction of the request buffer into requests.c
+    int res;
+    norns_response_t resp;
 
-    (void) auth;
+    if((res = send_request(type, &resp, auth, jobid, job)) 
+            != NORNS_SUCCESS) {
+        return res;
+    }
 
-    int rv;
-    void* req_buf, *resp_buf;
-    size_t req_len, resp_len;
-    int conn = -1;
-
-    Norns__Rpc__Request__Type req_type;
-    Norns__Rpc__Request__Job* jobmsg = NULL; 
-    Norns__Rpc__Response* resp = NULL;
-    req_buf = resp_buf = NULL;
-    req_len = resp_len = 0;
-
-    if((req_type = remap_request_type(type)) < 0) {
+    if(resp.r_type != type) {
         return NORNS_ESNAFU;
     }
 
-    Norns__Rpc__Request req = NORNS__RPC__REQUEST__INIT;
-    req.type = req_type;
-    req.has_jobid = true;
-    req.jobid = jobid;
-
-    // this request needs a valid job descriptor
-    if(job != NULL) {
-        if(job->jb_nhosts <= 0 || job->jb_nbackends <= 0) {
-            return NORNS_EBADARGS;
-        }
-
-        if((rv = job_message_init(job, &jobmsg)) != NORNS_SUCCESS) {
-            goto cleanup;
-        }
-
-        assert(jobmsg != NULL);
-        req.job = jobmsg;
-    }
-
-    // fill the buffer
-    req_len = norns__rpc__request__get_packed_size(&req);
-    req_buf = xmalloc_nz(req_len);
-
-    if(req_buf == NULL) {
-        rv = NORNS_ENOMEM;
-        goto cleanup;
-    }
-
-    norns__rpc__request__pack(&req, req_buf);
-
-    conn = connect_to_daemon();
-
-    if(conn == -1) {
-        rv = NORNS_ECONNFAILED;
-        goto cleanup;
-    }
-
-	// connection established, send the message
-	if(send_message(conn, req_buf, req_len) < 0) {
-	    rv = NORNS_ERPCSENDFAILED;
-	    goto cleanup;
-    }
-
-    // wait for the daemon's response
-    if(recv_message(conn, &resp_buf, &resp_len) < 0) {
-        rv = NORNS_ERPCRECVFAILED;
-	    goto cleanup;
-    }
-
-    resp = norns__rpc__response__unpack(NULL, resp_len, resp_buf);
-
-    if(resp == NULL) {
-        rv = NORNS_ERPCRECVFAILED;
-        goto cleanup;
-    }
-
-    rv = resp->status;
-
-cleanup:
-    if(jobmsg != NULL) {
-        job_message_free(jobmsg);
-    }
-
-    if(req_buf != NULL) {
-        xfree(req_buf);
-    }
-
-    if(resp_buf) {
-        xfree(resp_buf);
-    }
-
-    if(conn != -1) {
-        close(conn);
-    }
-
-    if(resp != NULL) {
-        norns__rpc__response__free_unpacked(resp, NULL);
-    }
-
-    return rv;
+    return resp.r_status;
 }
 
 
 int
-send_process_request(norns_request_t type, struct norns_cred* auth, 
+send_process_request(norns_rpc_type_t type, struct norns_cred* auth, 
                      uint32_t jobid, uid_t uid, gid_t gid, pid_t pid) {
 
-    (void) auth;
+    int res;
+    norns_response_t resp;
 
-    int rv;
-    void* req_buf, *resp_buf;
-    size_t req_len, resp_len;
-    int conn = -1;
-    Norns__Rpc__Request__Type req_type;
-    Norns__Rpc__Response* resp = NULL;
-    req_buf = resp_buf = NULL;
-    req_len = resp_len = 0;
+    if((res = send_request(type, &resp, auth, jobid, uid, gid, pid)) 
+            != NORNS_SUCCESS) {
+        return res;
+    }
 
-    if((req_type = remap_request_type(type)) < 0) {
+    if(resp.r_type != type) {
         return NORNS_ESNAFU;
     }
 
-    Norns__Rpc__Request req = NORNS__RPC__REQUEST__INIT;
-    req.type = req_type;
-    req.has_jobid = true;
-    req.jobid = jobid;
-
-    Norns__Rpc__Request__Process proc = NORNS__RPC__REQUEST__PROCESS__INIT;
-    proc.uid = uid;
-    proc.gid = gid;
-    proc.pid = pid;
-
-    req.process = &proc;
-
-    // fill the buffer
-    req_len = norns__rpc__request__get_packed_size(&req);
-    req_buf = xmalloc_nz(req_len);
-
-    if(req_buf == NULL) {
-        rv = NORNS_ENOMEM;
-        goto cleanup;
-    }
-
-    norns__rpc__request__pack(&req, req_buf);
-
-    conn = connect_to_daemon();
-
-    if(conn == -1) {
-        rv = NORNS_ECONNFAILED;
-        goto cleanup;
-    }
-
-	// connection established, send the message
-	if(send_message(conn, req_buf, req_len) < 0) {
-	    rv = NORNS_ERPCSENDFAILED;
-	    goto cleanup;
-    }
-
-    // wait for the daemon's response
-    if(recv_message(conn, &resp_buf, &resp_len) < 0) {
-        rv = NORNS_ERPCRECVFAILED;
-	    goto cleanup;
-    }
-
-    resp = norns__rpc__response__unpack(NULL, resp_len, resp_buf);
-
-    if(resp == NULL) {
-        rv = NORNS_ERPCRECVFAILED;
-        goto cleanup;
-    }
-
-    rv = resp->status;
-
-cleanup:
-    if(req_buf != NULL) {
-        xfree(req_buf);
-    }
-
-    if(resp_buf) {
-        xfree(resp_buf);
-    }
-
-    if(conn != -1) {
-        close(conn);
-    }
-
-    if(resp != NULL) {
-        norns__rpc__response__free_unpacked(resp, NULL);
-    }
-
-    return rv;
+    return resp.r_status;
 }
 
 static int connect_to_daemon(void) {
@@ -358,7 +310,7 @@ static int connect_to_daemon(void) {
 	}
 
 	server.sun_family = AF_UNIX;
-	strncpy(server.sun_path, SOCKET_FILE, sizeof(server.sun_path));
+	strncpy(server.sun_path, norns_api_sockfile, sizeof(server.sun_path));
 	server.sun_path[sizeof(server.sun_path)-1] = '\0';
 
 	if (connect(sfd, (struct sockaddr *) &server, sizeof(struct sockaddr_un)) < 0) {
@@ -368,12 +320,20 @@ static int connect_to_daemon(void) {
     return sfd;
 }
 
-static int send_message(int conn, const void* msg, size_t msg_size) {
+static int
+send_message(int conn, const msgbuffer_t* buffer) {
+
+    if(buffer == NULL || buffer->b_data == NULL || buffer->b_size == 0) {
+        return -1;
+    }
+
+    const void* msg_data = buffer->b_data;
+    size_t msg_length = buffer->b_size;
+
 
     // transform the message size into network order and send it 
     // before the actual data
-
-    uint64_t prefix = htonll(msg_size);
+    uint64_t prefix = htonll(msg_length);
 
     assert(sizeof(prefix) == NORNS_RPC_HEADER_LENGTH); 
 
@@ -381,14 +341,15 @@ static int send_message(int conn, const void* msg, size_t msg_size) {
         return -1;
     }
 
-	if(send_data(conn, msg, msg_size) < 0) {
+	if(send_data(conn, msg_data, msg_length) < 0) {
         return -1;
     }
 
     return 0;
 }
 
-static int recv_message(int conn, void** msg, size_t* msg_size) {
+static int 
+recv_message(int conn, msgbuffer_t* buffer) {
 
     // first of all read the message prefix and decode it 
     // so that we know how much data to receive
@@ -398,35 +359,35 @@ static int recv_message(int conn, void** msg, size_t* msg_size) {
         goto recv_error;
     }
 
-    print_hex(&prefix, sizeof(prefix));
+//    print_hex(&prefix, sizeof(prefix));
 
-    size_t expected_size = ntohll(prefix);
+    size_t msg_size = ntohll(prefix);
 
-    if(expected_size == 0) {
+    if(msg_size == 0) {
         goto recv_error;
     }
 
-    void* buffer = xmalloc_nz(expected_size);
+    void* msg_data = xmalloc_nz(msg_size);
 
-    if(buffer == NULL) {
+    if(msg_data == NULL) {
         goto recv_error;
     }
 
-    if(recv_data(conn, buffer, expected_size) < 0) {
-        xfree(buffer);
+    if(recv_data(conn, msg_data, msg_size) < 0) {
+        xfree(msg_data);
         goto recv_error;
     }
 
-    print_hex(buffer, expected_size);
+//    print_hex(msg_data, msg_size);
 
-    *msg = buffer;
-    *msg_size = expected_size;
+    buffer->b_data = msg_data;
+    buffer->b_size = msg_size;
 
     return 0;
 
 recv_error:
-    *msg = NULL;
-    *msg_size = 0;
+    buffer->b_data = NULL;
+    buffer->b_size = 0;
 
     return -1;
 }
@@ -440,7 +401,7 @@ static ssize_t recv_data(int conn, void* data, size_t size) {
 	while(brecvd < size) {
 		n = read(conn, data + brecvd, bleft);
 
-		fprintf(stdout, "read %zd\n", n);
+//		fprintf(stdout, "read %zd\n", n);
 
 		if(n == -1 || n == 0) {
 		    if(errno == EINTR) {

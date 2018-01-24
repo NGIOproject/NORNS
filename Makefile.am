@@ -23,6 +23,6 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = etc lib include examples src
+SUBDIRS = etc lib include examples src tests
 
 DIST_SUBDIRS = lib examples

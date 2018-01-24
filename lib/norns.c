@@ -33,6 +33,12 @@
 #include "xstring.h"
 #include "daemon-communication.h"
 
+static bool
+validate_job(struct norns_job* job) {
+
+    return (job != NULL) && (job->jb_hosts != NULL) && (job->jb_nhosts) != 0 &&
+       (job->jb_backends != NULL) && (job->jb_nbackends != 0);
+}
 
 /* Public API */
 
@@ -52,7 +58,7 @@ int
 norns_register_job(struct norns_cred* auth, uint32_t jobid, 
                    struct norns_job* job) {
 
-    if(auth == NULL || job == NULL) {
+    if(auth == NULL || !validate_job(job)) {
         return NORNS_EBADARGS;
     }
 
@@ -64,7 +70,7 @@ int
 norns_update_job(struct norns_cred* auth, uint32_t jobid, 
                  struct norns_job* job) {
 
-    if(auth == NULL || job == NULL) {
+    if(auth == NULL || !validate_job(job)) {
         return NORNS_EBADARGS;
     }
 
@@ -108,5 +114,3 @@ norns_remove_process(struct norns_cred* auth, uint32_t jobid, uid_t uid,
     return send_process_request(NORNS_REMOVE_PROCESS, auth, jobid, 
                                 uid, gid, pid);
 }
-
-
