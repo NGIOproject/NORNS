@@ -93,7 +93,7 @@ public:
     logger(logger&& other) = default;
     logger& operator=(logger&& other) = default;
 
-    ~logger(){
+    ~logger() {
         spdlog::drop_all();
     }
 
@@ -116,24 +116,24 @@ public:
     // some macros to make it more convenient to use the global logger
 
 #define LOGGER_INFO(...) \
-    efsng::logger::get_global_logger()->info(__VA_ARGS__)
+    logger::get_global_logger()->info(__VA_ARGS__)
 
 #ifdef __LOGGER_ENABLE_DEBUG__
 #define LOGGER_DEBUG(...) \
-    efsng::logger::get_global_logger()->debug(__VA_ARGS__)
+    logger::get_global_logger()->debug(__VA_ARGS__)
 #else
 #define LOGGER_DEBUG(...) \
     do {} while(0)
 #endif
 
 #define LOGGER_WARN(...) \
-    efsng::logger::get_global_logger()->warn(__VA_ARGS__)
+    logger::get_global_logger()->warn(__VA_ARGS__)
 
 #define LOGGER_ERROR(...) \
-    efsng::logger::get_global_logger()->error(__VA_ARGS__)
+    logger::get_global_logger()->error(__VA_ARGS__)
 
 #define LOGGER_CRITICAL(...) \
-    efsng::logger::get_global_logger()->critical(__VA_ARGS__)
+    logger::get_global_logger()->critical(__VA_ARGS__)
 
     // the following member functions can be used to interact 
     // with a specific logger instance

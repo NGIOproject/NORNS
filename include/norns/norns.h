@@ -237,6 +237,9 @@ ssize_t norns_progress(struct norns_iotd* iotdp, struct norns_iotst* statp) __TH
 /* Retrieve error status associated with iotdp */
 int norns_error(struct norns_iotd* iotdp) __THROW;
 
+/* Check if the urd daemon is running */
+int norns_ping() __THROW;
+
 
 /**************************************************************************/
 /* Administrative API                                                     */

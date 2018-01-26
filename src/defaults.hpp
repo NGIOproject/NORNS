@@ -34,7 +34,7 @@
 namespace defaults {
     extern const char* progname;
     extern const bool  daemonize;
-    extern const bool  detach;
+    extern const bool  use_syslog;
     extern const char* running_dir;
     extern const char* ipc_sockfile;
     extern const char* daemon_pidfile;

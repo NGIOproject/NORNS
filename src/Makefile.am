@@ -100,7 +100,7 @@ defaults.cpp: Makefile
 	   echo "namespace defaults {"; \
 	   echo "    const char* progname           = \"urd\";"; \
 	   echo "    const bool  daemonize          = true;"; \
-	   echo "    const bool  detach             = true;"; \
+	   echo "    const bool  use_syslog         = false;"; \
 	   echo "    const char* running_dir        = \"/tmp\";"; \
 	   echo "    const char* ipc_sockfile       = \"/tmp/urd.socket\";"; \
 	   echo "    const char* daemon_pidfile     = \"/tmp/urd.pid\";"; \

@@ -25,55 +25,26 @@
  *                                                                       *
  *************************************************************************/
 
-#include "messages.pb.h"
-#include "response.hpp"
+#ifndef __FAKE_DAEMON_HPP__
+#define  __FAKE_DAEMON_HPP__
 
-namespace api {
+#include <sys/types.h>
+#include <sys/wait.h>
 
-bool response::store_to_buffer(response_ptr response, std::vector<uint8_t>& buffer) {
+#include <urd.hpp>
+#include <settings.hpp>
 
-    norns::rpc::Response rpc_resp;
+struct fake_daemon {
 
-    rpc_resp.set_status(response->status());
+    fake_daemon();
+    ~fake_daemon();
+    void run();
+    int stop();
 
-    switch(response->type()) {
-        case response_type::job_register: 
-            rpc_resp.set_type(norns::rpc::Response::REGISTER_JOB);
-            break;
-        case response_type::job_update:
-            rpc_resp.set_type(norns::rpc::Response::UPDATE_JOB);
-            break;
-        case response_type::job_unregister:
-            rpc_resp.set_type(norns::rpc::Response::UNREGISTER_JOB);
-            break;
-        case response_type::process_register:
-            rpc_resp.set_type(norns::rpc::Response::ADD_PROCESS);
-            break;
-        case response_type::process_unregister:
-            rpc_resp.set_type(norns::rpc::Response::REMOVE_PROCESS);
-            break;
-        case response_type::transfer_task:
-            rpc_resp.set_type(norns::rpc::Response::SUBMIT_IOTASK);
-            break;
-        case response_type::ping:
-            rpc_resp.set_type(norns::rpc::Response::PING);
-            break;
-        case response_type::bad_request:
-            rpc_resp.set_type(norns::rpc::Response::BAD_REQUEST);
-            break;
-    }
+    pid_t m_pid = 0;
+    bool m_running = false;
+    urd m_daemon;
+};
 
-    size_t reserved_size = buffer.size();
-    size_t message_size = rpc_resp.ByteSize();
-    size_t buffer_size = reserved_size + message_size;
+#endif /* __FAKE_DAEMON_HPP__ */
 
-    buffer.resize(buffer_size);
-
-    return rpc_resp.SerializeToArray(&buffer[reserved_size], message_size);
-}
-
-void response::cleanup() {
-    google::protobuf::ShutdownProtobufLibrary();
-}
-
-} // namespace api

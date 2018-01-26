@@ -41,7 +41,9 @@ enum class response_type {
     job_unregister,
     process_register,
     process_unregister,
-    transfer_task
+    transfer_task,
+    ping,
+    bad_request
 };
 
 /*! Base virtual class for responses */
@@ -121,6 +123,14 @@ using process_unregister_response = detail::response_impl<
 
 using transfer_task_response = detail::response_impl<
     response_type::transfer_task
+>;
+
+using ping_response = detail::response_impl<
+    response_type::ping
+>;
+
+using bad_request_response = detail::response_impl<
+    response_type::bad_request
 >;
 
 } // namespace api

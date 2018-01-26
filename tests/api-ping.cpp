@@ -25,55 +25,45 @@
  *                                                                       *
  *************************************************************************/
 
-#include "messages.pb.h"
-#include "response.hpp"
 
-namespace api {
+#include <norns.h>
+#include "catch.hpp"
+#include "fake-daemon.hpp"
 
-bool response::store_to_buffer(response_ptr response, std::vector<uint8_t>& buffer) {
+// enable to test connections with an already running daemon
+//#define USE_REAL_DAEMON
 
-    norns::rpc::Response rpc_resp;
+SCENARIO("ping request", "[api::norns_ping]") {
+    GIVEN("a running urd instance") {
 
-    rpc_resp.set_status(response->status());
+#ifndef USE_REAL_DAEMON
+        fake_daemon td;
+        td.run();
+#endif
 
-    switch(response->type()) {
-        case response_type::job_register: 
-            rpc_resp.set_type(norns::rpc::Response::REGISTER_JOB);
-            break;
-        case response_type::job_update:
-            rpc_resp.set_type(norns::rpc::Response::UPDATE_JOB);
-            break;
-        case response_type::job_unregister:
-            rpc_resp.set_type(norns::rpc::Response::UNREGISTER_JOB);
-            break;
-        case response_type::process_register:
-            rpc_resp.set_type(norns::rpc::Response::ADD_PROCESS);
-            break;
-        case response_type::process_unregister:
-            rpc_resp.set_type(norns::rpc::Response::REMOVE_PROCESS);
-            break;
-        case response_type::transfer_task:
-            rpc_resp.set_type(norns::rpc::Response::SUBMIT_IOTASK);
-            break;
-        case response_type::ping:
-            rpc_resp.set_type(norns::rpc::Response::PING);
-            break;
-        case response_type::bad_request:
-            rpc_resp.set_type(norns::rpc::Response::BAD_REQUEST);
-            break;
+        WHEN("pinging urd") {
+
+            int rv = norns_ping();
+
+            THEN("NORNS_SUCCESS is returned") {
+                REQUIRE(rv == NORNS_SUCCESS);
+            }
+        }
+
+#ifndef USE_REAL_DAEMON
+        int ret = td.stop();
+        REQUIRE(ret == 0);
+#endif
     }
 
-    size_t reserved_size = buffer.size();
-    size_t message_size = rpc_resp.ByteSize();
-    size_t buffer_size = reserved_size + message_size;
+    GIVEN("a non-running urd instance") {
+        WHEN("pinging urd") {
 
-    buffer.resize(buffer_size);
+            int rv = norns_ping();
 
-    return rpc_resp.SerializeToArray(&buffer[reserved_size], message_size);
+            THEN("NORNS_ECONNFAILED is returned") {
+                REQUIRE(rv == NORNS_ECONNFAILED);
+            }
+        }
+    }
 }
-
-void response::cleanup() {
-    google::protobuf::ShutdownProtobufLibrary();
-}
-
-} // namespace api

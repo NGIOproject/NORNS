@@ -80,7 +80,7 @@ tbb::concurrent_queue<task> jobs_priority_1;
 tbb::concurrent_hash_map<pid_t, std::list<task_finished>> tasks_finished_map;
 #endif
 
-void urd::daemonize() {
+pid_t urd::daemonize() {
 	/*
 	 * --- Daemonize structure ---
 	 *	Check if this is already a daemon
@@ -98,34 +98,31 @@ void urd::daemonize() {
 
 	/* Check if this is already a daemon */ 
 	if(getppid() == 1) {
-	    m_pid = getpid();
-        return;
+        return 0;
 	}
 
 	/* Fork off the parent process */
 	if((pid = fork()) < 0) {
-		m_logger->error("[daemonize] fork failed.");
+		LOGGER_ERROR("[daemonize] fork failed.");
 		perror("Fork");
 		exit(EXIT_FAILURE);
 	}
 
-    m_pid = pid;
-
 	/* Parent exits */
-	if(pid > 0) {
-		return;
+	if(pid != 0) {
+		return pid;
 	}
 
 	/* Obtain new process group */
 	if((sid = setsid()) < 0) {
 		/* Log failure */
-		m_logger->error("[daemonize] setsid failed.");
+		LOGGER_ERROR("[daemonize] setsid failed.");
 		perror("Setsid");
 		exit(EXIT_FAILURE);
 	}
 
 	/* Close all descriptors */
-	for(int i = getdtablesize(); i >= 0; --i){
+	for(int i = getdtablesize() - 1; i >= 0; --i){
 		close(i);
 	} 
 
@@ -133,13 +130,13 @@ void urd::daemonize() {
 	int fd = open("/dev/null", O_RDWR); /* open stdin */
 
 	if(dup(fd) == -1) { /* stdout */
-		m_logger->error("[daemonize] dup[1] failed.");
+		LOGGER_ERROR("[daemonize] dup[1] failed.");
 		perror("dup");
 		exit(EXIT_FAILURE);
 	}
 
 	if(dup(fd) == -1) { /* stderr */
-		m_logger->error("[daemonize] dup[2] failed.");
+		LOGGER_ERROR("[daemonize] dup[2] failed.");
 		perror("dup");
 		exit(EXIT_FAILURE);
 	}
@@ -149,7 +146,7 @@ void urd::daemonize() {
 
 	/* Change the current working directory */
 	if(chdir(m_settings->m_running_dir.c_str()) < 0) {
-		m_logger->error("[daemonize] chdir failed.");
+		LOGGER_ERROR("[daemonize] chdir failed.");
 		perror("Chdir");
 		exit(EXIT_FAILURE);
 	}
@@ -163,13 +160,13 @@ void urd::daemonize() {
 	lfp = open(m_settings->m_daemon_pidfile.c_str(), O_RDWR|O_CREAT, 0640);
 
 	if(lfp < 0) {
-		m_logger->error("[daemonize] can not open daemon lock file");
+		LOGGER_ERROR("[daemonize] can not open daemon lock file");
 		perror("Can not open daemon lock file");
 		exit(EXIT_FAILURE);
 	} 
 
 	if(lockf(lfp, F_TLOCK, 0) < 0) {
-		m_logger->error("[daemonize] another instance of this daemon already running");
+		LOGGER_ERROR("[daemonize] another instance of this daemon already running");
 		perror("Another instance of this daemon already running");
 		exit(EXIT_FAILURE);
 	}
@@ -180,14 +177,14 @@ void urd::daemonize() {
 	err_snprintf = snprintf(str, sizeof(str), "%d\n", getpid());
 
 	if(err_snprintf >= sizeof(str)) {
-		m_logger->error("[daemonize] snprintf failed");
+		LOGGER_ERROR("[daemonize] snprintf failed");
 	}
 
 	size_t err_write;
 	err_write = write(lfp, str, strnlen(str, sizeof(str)));
 
 	if(err_write != strnlen(str, sizeof(str))) {
-		m_logger->error("[daemonize] write failed");
+		LOGGER_ERROR("[daemonize] write failed");
 	}
 
 	close(lfp);
@@ -256,7 +253,7 @@ response_ptr urd::register_job(const request_ptr base_request) {
     resp->set_status(NORNS_SUCCESS);
 
 log_and_return:
-    m_logger->info("REGISTER_JOB({}) = {}", request->to_string(), resp->to_string());
+    LOGGER_INFO("REGISTER_JOB({}) = {}", request->to_string(), resp->to_string());
     return resp;
 }
 
@@ -284,7 +281,7 @@ response_ptr urd::update_job(const request_ptr base_request) {
     resp->set_status(NORNS_SUCCESS);
 
 log_and_return:
-    m_logger->info("UPDATE_JOB({}) = {}", request->to_string(), resp->to_string());
+    LOGGER_INFO("UPDATE_JOB({}) = {}", request->to_string(), resp->to_string());
     return resp;
 }
 
@@ -311,7 +308,7 @@ response_ptr urd::remove_job(const request_ptr base_request) {
     resp->set_status(NORNS_SUCCESS);
 
 log_and_return:
-    m_logger->info("UNREGISTER_JOB({}) = {}", request->to_string(), resp->to_string());
+    LOGGER_INFO("UNREGISTER_JOB({}) = {}", request->to_string(), resp->to_string());
     return resp;
 }
 
@@ -341,7 +338,7 @@ response_ptr urd::add_process(const request_ptr base_request) {
     resp->set_status(NORNS_SUCCESS);
 
 log_and_return:
-    m_logger->info("ADD_PROCESS({}) = {}", request->to_string(), resp->to_string());
+    LOGGER_INFO("ADD_PROCESS({}) = {}", request->to_string(), resp->to_string());
     return resp;
 }
 
@@ -374,7 +371,7 @@ response_ptr urd::remove_process(const request_ptr base_request) {
     }
 
 log_and_return:
-    m_logger->info("REMOVE_PROCESS({}) = {}", request->to_string(), resp->to_string());
+    LOGGER_INFO("REMOVE_PROCESS({}) = {}", request->to_string(), resp->to_string());
     return resp;
 }
 
@@ -389,7 +386,25 @@ response_ptr urd::create_task(const request_ptr base_request) {
 
     resp->set_status(NORNS_SUCCESS);
 
-    m_logger->info("CREATE_TASK({}) = {}", request->to_string(), resp->to_string());
+    LOGGER_INFO("CREATE_TASK({}) = {}", request->to_string(), resp->to_string());
+    return resp;
+}
+
+response_ptr urd::ping_request(const request_ptr /*base_request*/) {
+    response_ptr resp = std::make_unique<api::ping_response>();
+
+    resp->set_status(NORNS_SUCCESS);
+
+    LOGGER_INFO("PING_REQUEST() = {}", resp->to_string());
+    return resp;
+}
+
+response_ptr urd::unknown_request(const request_ptr /*base_request*/) {
+    response_ptr resp = std::make_unique<api::bad_request_response>();
+
+    resp->set_status(NORNS_EBADREQUEST);
+
+    LOGGER_INFO("UNKNOWN_REQUEST() = {}", resp->to_string());
     return resp;
 }
 
@@ -402,66 +417,68 @@ void urd::signal_handler(int signum){
     switch(signum) {
 
         case SIGINT:
-            m_logger->info(" A signal(SIGINT) occurred.");
+            LOGGER_INFO(" A signal(SIGINT) occurred.");
+            if(m_api_listener) {
+                m_api_listener->stop();
+            }
             break;
 
         case SIGTERM:
-            m_logger->info(" A signal(SIGTERM) occurred.");
-
-            m_api_listener->stop();
-            ::unlink(m_settings->m_daemon_pidfile.c_str());
-            m_logger.reset();
-            exit(EXIT_SUCCESS);
+            LOGGER_INFO(" A signal(SIGTERM) occurred.");
+            if(m_api_listener) {
+                m_api_listener->stop();
+            }
             break;
 
         case SIGHUP:
-            m_logger->info(" A signal(SIGHUP) occurred.");
+            LOGGER_INFO(" A signal(SIGHUP) occurred.");
             break;
     }
 }
 
-void urd::run() {
+int urd::run() {
 
     // initialize logging facilities
     if(m_settings->m_daemonize) {
-        m_logger = std::shared_ptr<logger>(new logger(m_settings->m_progname, "syslog"));
+        logger::create_global_logger(m_settings->m_progname, "syslog");
 
-        daemonize();
-
-        if(m_settings->m_detach) {
-            exit(EXIT_SUCCESS);
-        }
-
-        if(m_pid != 0) {
-            return;
+        if(daemonize() != 0) {
+            /* parent clean ups and unwinds */
+            teardown();
+            return EXIT_SUCCESS;
         }
     } else{
-        m_logger = std::shared_ptr<logger>(new logger(m_settings->m_progname, "console color"));
+        if(m_settings->m_use_syslog) {
+            logger::create_global_logger(m_settings->m_progname, "syslog");
+        }
+        else {
+            logger::create_global_logger(m_settings->m_progname, "console color");
+        }
     }
 
-	m_logger->info("===========================");
-	m_logger->info("== Starting Urd daemon   ==");
-	m_logger->info("===========================");
+	LOGGER_INFO("===========================");
+	LOGGER_INFO("== Starting Urd daemon   ==");
+	LOGGER_INFO("===========================");
 
-	m_logger->info("");
-	m_logger->info("* Settings:");
-	m_logger->info("    daemonize?: {}", m_settings->m_daemonize);
-	m_logger->info("    running directory: {}", m_settings->m_running_dir);
-	m_logger->info("    pidfile: {}", m_settings->m_daemon_pidfile);
-	m_logger->info("    workers: {}", m_settings->m_workers_in_pool);
-	m_logger->info("    internal storage: {}", m_settings->m_storage_path);
-	m_logger->info("    internal storage capacity: {}", m_settings->m_storage_capacity);
+	LOGGER_INFO("");
+	LOGGER_INFO("* Settings:");
+	LOGGER_INFO("    daemonize?: {}", m_settings->m_daemonize);
+	LOGGER_INFO("    running directory: {}", m_settings->m_running_dir);
+	LOGGER_INFO("    pidfile: {}", m_settings->m_daemon_pidfile);
+	LOGGER_INFO("    workers: {}", m_settings->m_workers_in_pool);
+	LOGGER_INFO("    internal storage: {}", m_settings->m_storage_path);
+	LOGGER_INFO("    internal storage capacity: {}", m_settings->m_storage_capacity);
 
     // instantiate configured backends
-//    m_logger->info("* Creating storage backend handlers...");
+//    LOGGER_INFO("* Creating storage backend handlers...");
 //    for(const auto& bend : m_settings->m_backends){
 //        try {
 //
 //            auto b = storage::backend_factory::get_instance().create(bend.m_type, bend.m_options);
 //            m_backends.push_back(b);
 //
-//            m_logger->info("    Registered backend '{}' (type: {})", bend.m_name, bend.m_type);  
-//            m_logger->info("      [ capacity: {} bytes ]", b->get_capacity());
+//            LOGGER_INFO("    Registered backend '{}' (type: {})", bend.m_name, bend.m_type);  
+//            LOGGER_INFO("      [ capacity: {} bytes ]", b->get_capacity());
 //
 //        } catch(std::invalid_argument ex) {
 //            m_logger->warn(" Ignoring definition of backend '{}' (type: unknown)", bend.m_name);
@@ -469,7 +486,7 @@ void urd::run() {
 //    }
 
     // signal handlers must be installed AFTER daemonizing
-    m_logger->info("* Installing signal handlers...");
+    LOGGER_INFO("* Installing signal handlers...");
     m_signal_listener = std::shared_ptr<signal_listener>(new signal_listener(
                 std::bind(&urd::signal_handler, this, std::placeholders::_1)));
 
@@ -477,10 +494,10 @@ void urd::run() {
 
     // create worker pool
     m_workers = std::shared_ptr<ctpl::thread_pool>(new ctpl::thread_pool(m_settings->m_workers_in_pool));
-    m_logger->info("* Creating workers...");
+    LOGGER_INFO("* Creating workers...");
 
-    // create (but not start) the IPC listening mechanism
-    m_logger->info("* Creating request listener...");
+    // create (but not start) the API listening mechanism
+    LOGGER_INFO("* Creating request listener...");
     ::unlink(m_settings->m_ipc_sockfile.c_str());
 
 	// temporarily change the umask so that the socket file can be accessed by anyone
@@ -513,43 +530,44 @@ void urd::run() {
             api::request_type::transfer_task,
             std::bind(&urd::create_task, this, std::placeholders::_1));
 
+    m_api_listener->register_callback(
+            api::request_type::ping,
+            std::bind(&urd::ping_request, this, std::placeholders::_1));
+
+    m_api_listener->register_callback(
+            api::request_type::bad_request,
+            std::bind(&urd::unknown_request, this, std::placeholders::_1));
+
     // restore the umask
 	umask(old_mask);
 
-    m_logger->info("Urd daemon successfully started!");
-    m_logger->info("Awaiting requests...");
+    LOGGER_INFO("Urd daemon successfully started!");
+    LOGGER_INFO("Awaiting requests...");
     m_api_listener->run();
-	/*
-	 *	Create thread pool
-	 *	Set number of threads
-	 *	Start infinite loop
-	 */
 
-	//ctpl::thread_pool p(N_THREADS_IN_POOL);
-	//p.push(communication_thread);
-	//push_jobs(p);
-	
-	//m_workers.push(urd::communication_thread);
+    teardown();
+
+    return EXIT_SUCCESS;
 }
 
-void urd::stop() {
-    if(m_pid != 0) {
+void urd::teardown() {
 
-        m_logger->info("[stop] Sending SIGTERM to {}...", m_pid);
-
-        if(kill(m_pid, SIGTERM) != 0) {
-            m_logger->error("[stop] Unable to send SIGTERM to daemon process: {}", strerror(errno));
-            return;
-        }
-
-        int status;
-
-        if(waitpid(m_pid, &status, 0) == -1) {
-            m_logger->error("[stop] Unable to wait for daemon process: {}", strerror(errno));
-            return;
-        }
-
-        m_logger->info("[stop] Daemon process exited with status {}", status);
+    if(m_signal_listener) {
+        m_signal_listener->stop();
+        m_signal_listener.reset();
     }
-}
 
+    if(m_api_listener) {
+        m_api_listener->stop();
+        m_api_listener.reset();
+    }
+
+    api_listener::cleanup();
+
+    if(m_settings) {
+        ::unlink(m_settings->m_daemon_pidfile.c_str());
+        m_settings.reset();
+    }
+
+    m_workers.reset();
+}

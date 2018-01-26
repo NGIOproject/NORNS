@@ -67,7 +67,8 @@ int main(int argc, char* argv[]){
 
     urd daemon;
     daemon.configure(settings);
-    daemon.run();
 
-    exit(EXIT_SUCCESS);
+    int status = daemon.run();
+
+    return status;
 }

@@ -45,9 +45,12 @@ api_SOURCES = \
 	api-job-register.cpp \
 	api-job-update.cpp \
 	api-job-unregister.cpp \
+	api-ping.cpp \
 	api-process-add.cpp \
 	api-process-remove.cpp \
 	api-transfer.cpp \
+	fake-daemon.cpp \
+	fake-daemon.hpp \
 	$(END)
 
 # NOTE: we cannot pass 'liburd_aux.la' directly to 'urd_LDFLAGS' as usual,

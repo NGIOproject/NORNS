@@ -65,13 +65,14 @@ namespace api {
 
 /*! Valid types for an API request */
 enum class request_type { 
-    bad_request,
     job_register, 
     job_update,
     job_unregister,
     process_register,
     process_unregister,
-    transfer_task
+    transfer_task,
+    ping,
+    bad_request
 };
 
 /*! Hashing class for request_type */
@@ -223,6 +224,10 @@ using transfer_task_request = detail::request_impl<
     uint32_t, //XXX replace by enum class?
     data_resource,
     data_resource
+>;
+
+using ping_request = detail::request_impl<
+    request_type::ping
 >;
 
 } // namespace api

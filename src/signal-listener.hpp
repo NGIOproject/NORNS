@@ -38,7 +38,7 @@ class signal_listener {
 
 public:
     signal_listener(callback_t callback) 
-    : m_signals(m_ios, SIGHUP, SIGTERM),
+    : m_signals(m_ios, SIGHUP, SIGTERM, SIGINT),
       m_callback(callback) {
         m_signals.async_wait(
             std::bind(&signal_listener::handler, this, std::ref(m_signals), 
@@ -50,6 +50,10 @@ public:
             [&](){
                 m_ios.run();
             }).detach();
+    }
+
+    void stop() {
+        m_ios.stop();
     }
 
 private:

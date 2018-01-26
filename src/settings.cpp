@@ -39,6 +39,8 @@ void config_settings::load(const std::string& filename) {
 
     m_progname = defaults::progname;
 
+    m_use_syslog = defaults::use_syslog;
+
     m_running_dir = pt.get<std::string>("settings.running_dir", "");
 
     if(m_running_dir == ""){

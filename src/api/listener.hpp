@@ -163,7 +163,7 @@ public:
     }
 
     ~listener() {
-        std::cerr << "Called!\n";
+        //std::cerr << "Called!\n";
         Message::cleanup();
     }
 
@@ -178,6 +178,10 @@ public:
     template <typename Callable>
     void register_callback(MessageKey k, Callable&& func) {
         m_callbacks->add(k, std::forward<Callable>(func));
+    }
+
+    static void cleanup() {
+        Message::cleanup();
     }
 
 private:

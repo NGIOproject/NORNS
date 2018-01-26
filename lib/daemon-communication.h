@@ -33,6 +33,7 @@ int send_job_request(norns_rpc_type_t type, struct norns_cred* auth,
                      uint32_t jobid, struct norns_job* job);
 int send_process_request(norns_rpc_type_t type, struct norns_cred* auth, 
                          uint32_t jobid, uid_t uid, gid_t gid, pid_t pid);
+int send_ping_request();
 
 #pragma GCC visibility pop
 

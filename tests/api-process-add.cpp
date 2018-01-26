@@ -25,38 +25,20 @@
  *                                                                       *
  *************************************************************************/
 
-#include "catch.hpp"
-
-#include <chrono>
 #include <norns.h>
-#include <urd.hpp>
-#include <settings.hpp>
+#include "catch.hpp"
+#include "fake-daemon.hpp"
+
+// enable to test connections with an already running daemon
+//#define USE_REAL_DAEMON
 
 SCENARIO("add process to job", "[api::norns_add_process]") {
     GIVEN("a running urd instance") {
 
-        urd test_daemon;
-
-        config_settings settings = {
-            "test_urd", /* progname */
-            true, /* daemonize */
-            false, /* detach */
-            "./", /* running_dir */
-            "./test_urd.socket", /* api_sockfile */
-            "./test_urd.pid", /* daemon_pidfile */
-            2, /* api workers */
-            "./",
-            42,
-            {}
-        };
-
-        test_daemon.configure(settings);
-        test_daemon.run();
-        extern const char* norns_api_sockfile;
-        norns_api_sockfile = "./test_urd.socket";
-
-        // wait some time for the daemon to prepare itself to receive requests
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+#ifndef USE_REAL_DAEMON
+        fake_daemon td;
+        td.run();
+#endif
 
         WHEN("a process is added to a non-registered job") {
 
@@ -181,9 +163,10 @@ SCENARIO("add process to job", "[api::norns_add_process]") {
             }
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
-        test_daemon.stop();
+#ifndef USE_REAL_DAEMON
+        int ret = td.stop();
+        REQUIRE(ret == 0);
+#endif
     }
 
     GIVEN("a non-running urd instance") {

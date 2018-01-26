@@ -114,3 +114,9 @@ norns_remove_process(struct norns_cred* auth, uint32_t jobid, uid_t uid,
     return send_process_request(NORNS_REMOVE_PROCESS, auth, jobid, 
                                 uid, gid, pid);
 }
+
+
+int
+norns_ping() {
+    return send_ping_request();
+}

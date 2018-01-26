@@ -53,6 +53,8 @@ remap_request(norns_rpc_type_t type) {
             return NORNS__RPC__REQUEST__TYPE__ADD_PROCESS;
         case NORNS_REMOVE_PROCESS:
             return NORNS__RPC__REQUEST__TYPE__REMOVE_PROCESS;
+        case NORNS_PING:
+            return NORNS__RPC__REQUEST__TYPE__PING;
         default:
             return -1;
     }
@@ -73,6 +75,8 @@ remap_response(int norns_rpc_type) {
             return NORNS_ADD_PROCESS;
         case NORNS__RPC__RESPONSE__TYPE__REMOVE_PROCESS:
             return NORNS_REMOVE_PROCESS;
+        case NORNS__RPC__RESPONSE__TYPE__PING:
+            return NORNS_PING;
         case NORNS__RPC__RESPONSE__TYPE__BAD_REQUEST:
             // intentionally fall through
         default:
@@ -91,7 +95,7 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
 
     norns__rpc__request__init(req_msg);
 
-    req_msg->type = type;
+    //req_msg->type = type;
 
     switch(type) {
         case NORNS_SUBMIT_IOTASK:
@@ -164,6 +168,15 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
             req_msg->process->gid = gid;
             req_msg->process->pid = pid;
 
+            break;
+        }
+
+        case NORNS_PING:
+        {
+
+            if((req_msg->type = remap_request(type)) < 0) {
+                goto cleanup_on_error;
+            }
             break;
         }
     }

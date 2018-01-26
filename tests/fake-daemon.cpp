@@ -25,78 +25,113 @@
  *                                                                       *
  *************************************************************************/
 
-#include "fake-daemon.hpp"
 
-#include "catch.hpp"
+#ifdef DEBUG_OUTPUT
+#include <iostream>
+#endif
 
 #include <chrono>
-#include <norns.h>
-#include <urd.hpp>
-#include <settings.hpp>
-
 #include "fake-daemon.hpp"
 
-//#define USE_REAL_DAEMON
+fake_daemon::fake_daemon() {
+    extern const char* norns_api_sockfile;
+    norns_api_sockfile = "./test_urd.socket";
+}
 
-SCENARIO("transfer request", "[api::norns_transfer]") {
-    GIVEN("a running urd instance") {
+fake_daemon::~fake_daemon() {
+    if(m_running) {
+        stop();
+    }
+}
 
-#ifndef USE_REAL_DAEMON
-//        extern const char* norns_api_sockfile;
-//        norns_api_sockfile = "./test_urd.socket";
+void fake_daemon::run() {
 
-        fake_daemon td;
-        td.run();
+    m_running = true;
+
+    m_pid = fork();
+
+    if(m_pid != 0) {
+
+#ifdef DEBUG_OUTPUT
+        std::cerr << "[" << getpid() << "] daemon process spawned (" << m_pid << ")\n";
 #endif
 
+        int rv;
 
+        do {
+            std::this_thread::sleep_for(std::chrono::microseconds(200));
+            rv = norns_ping();
+        } while(rv != NORNS_SUCCESS);
 
-        WHEN("requesting a transfer") {
-
-            struct norns_iotd iotd = NORNS_IOTD_INIT(
-                NORNS_COPY, 
-                NORNS_INPUT_PATH_INIT(
-                    NORNS_BACKEND_LOCAL_NVML,
-                    NORNS_LOCAL_PATH_INIT("nvml0://a/b/c")),
-                NORNS_OUTPUT_PATH_INIT(
-                    NORNS_BACKEND_REMOTE_NVML,
-                    NORNS_REMOTE_PATH_INIT("host0", "nvml1://a/b/d"))
-            );
-
-            int rv = norns_transfer(&iotd);
-
-            THEN("NORNS_SUCCESS is returned") {
-                REQUIRE(rv == NORNS_SUCCESS);
-                REQUIRE(iotd.io_taskid != 0);
-            }
-        }
-
-#ifndef USE_REAL_DAEMON
-        int ret = td.stop();
-        REQUIRE(ret == 0);
+#ifdef DEBUG_OUTPUT
+        std::cerr << "[" << getpid() << "] daemon process ready\n";
 #endif
+
+        return;
     }
 
-#if 0
-    GIVEN("a non-running urd instance") {
-        WHEN("attempting to request a transfer") {
+    config_settings settings = {
+        "test_urd", /* progname */
+        false, /* daemonize */
+        true, /* use syslog */
+        "./", /* running_dir */
+        "./test_urd.socket", /* api_sockfile */
+        "./test_urd.pid", /* daemon_pidfile */
+        2, /* api workers */
+        "./",
+        42,
+        {}
+    };
 
-            struct norns_iotd iotd = NORNS_IOTD_INIT(
-                NORNS_COPY, 
-                NORNS_INPUT_PATH_INIT(
-                    NORNS_BACKEND_LOCAL_NVML,
-                    NORNS_LOCAL_PATH_INIT("nvml0://a/b/c")),
-                NORNS_OUTPUT_PATH_INIT(
-                    NORNS_BACKEND_REMOTE_NVML,
-                    NORNS_REMOTE_PATH_INIT("host0", "nvml1://a/b/d"))
-            );
+    m_daemon.configure(settings);
+    m_daemon.run();
+    m_daemon.teardown();
 
-            int rv = norns_transfer(&iotd);
-
-            THEN("NORNS_ECONNFAILED is returned") {
-                REQUIRE(rv == NORNS_ECONNFAILED);
-            }
-        }
-    }
+#ifdef DEBUG_OUTPUT
+    std::cerr << "[" << getpid() << "] exitting...\n";
 #endif
+
+    exit(0);
+}
+
+int fake_daemon::stop() {
+
+    if(!m_running) {
+        return 0;
+    }
+
+    if(m_pid != 0) {
+
+#ifdef DEBUG_OUTPUT
+        std::cerr << "[" << getpid() << "] Sending SIGTERM to " << m_pid << "\n";
+#endif
+
+        if(kill(m_pid, SIGTERM) != 0) {
+
+#ifdef DEBUG_OUTPUT
+            std::cerr << "[" << getpid() << "] Unable to send SIGTERM to daemon process: " << strerror(errno) << "\n";
+#endif
+
+            return -1;
+        }
+
+        int status;
+
+        if(waitpid(m_pid, &status, 0) == -1) {
+
+#ifdef DEBUG_OUTPUT
+            std::cerr << "[" << getpid() << "] Unable to wait for daemon process\n";
+#endif
+
+            return -1;
+        }
+
+#ifdef DEBUG_OUTPUT
+        std::cerr << "[" << getpid() << "] Daemon process exited with status " << status << "\n";
+#endif
+
+        m_running = false;
+    }
+
+    return 0;
 }

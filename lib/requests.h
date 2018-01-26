@@ -37,6 +37,7 @@ typedef enum {
     NORNS_UNREGISTER_JOB,
     NORNS_ADD_PROCESS,
     NORNS_REMOVE_PROCESS,
+    NORNS_PING,
     NORNS_BAD_RPC
 } norns_rpc_type_t;
 

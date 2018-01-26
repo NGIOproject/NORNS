@@ -131,6 +131,8 @@ request_ptr request::create_from_buffer(const std::vector<uint8_t>& buffer, int 
                 }
                 break;
 
+            case norns::rpc::Request::PING:
+                return std::make_unique<ping_request>();
         }
     }
 

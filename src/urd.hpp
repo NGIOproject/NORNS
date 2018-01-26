@@ -52,11 +52,11 @@ class urd {
 
 public:
     void configure(const config_settings& settings);
-    void run();
-    void stop();
+    int run();
+    void teardown();
 
 private:
-    void daemonize();
+    int daemonize();
     void signal_handler(int);
 
     response_ptr register_job(const request_ptr req);
@@ -65,10 +65,10 @@ private:
     response_ptr add_process(const request_ptr req);
     response_ptr remove_process(const request_ptr req);
     response_ptr create_task(const request_ptr req);
+    response_ptr ping_request(const request_ptr req);
+    response_ptr unknown_request(const request_ptr req);
 
 private:
-    pid_t                                               m_pid;
-    std::shared_ptr<logger>                             m_logger;
     std::shared_ptr<signal_listener>                    m_signal_listener;
     std::shared_ptr<config_settings>                    m_settings;
     std::shared_ptr<ctpl::thread_pool>                  m_workers;

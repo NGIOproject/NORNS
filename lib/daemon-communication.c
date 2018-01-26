@@ -115,6 +115,15 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
             break;
         }
 
+        case NORNS_PING:
+        {
+            if((res = pack_to_buffer(type, &req_buf)) != NORNS_SUCCESS) {
+                return res;
+            }
+
+            break;
+        }
+
         default:
             return NORNS_ESNAFU;
 
@@ -297,6 +306,24 @@ send_process_request(norns_rpc_type_t type, struct norns_cred* auth,
     }
 
     return resp.r_status;
+}
+
+int
+send_ping_request() {
+
+    int res;
+    norns_response_t resp;
+
+    if((res = send_request(NORNS_PING, &resp)) != NORNS_SUCCESS) {
+        return res;
+    }
+
+    if(resp.r_type != NORNS_PING) {
+        return NORNS_ESNAFU;
+    }
+
+    return resp.r_status;
+
 }
 
 static int connect_to_daemon(void) {
