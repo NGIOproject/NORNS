@@ -47,7 +47,7 @@ public:
 
     void run() {
         std::thread(
-            [&](){
+            [&]() {
                 m_ios.run();
             }).detach();
     }

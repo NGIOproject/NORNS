@@ -37,8 +37,9 @@ struct task {
     task() {
     }
 
-    void operator()(int /* thread_id */) const {
+    void operator()(int thread_id) const {
         std::cout << "Hello from a task!\n";
+        std::cout << thread_id << "\n";
     }
 
     uint64_t    m_id;

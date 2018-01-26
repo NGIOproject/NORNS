@@ -33,7 +33,8 @@
 #include "signal-listener.hpp"
 #include "logger.hpp"
 #include "api.hpp"
-#include "ctpl.h"
+
+#include "thread-pool.hpp"
 
 
 
@@ -42,8 +43,12 @@
 #include "job.hpp"
 
 /*! Aliases for convenience */
+using signal_listener_ptr = std::unique_ptr<signal_listener>;
+using thread_pool_ptr = std::unique_ptr<thread_pool>;
+
 using api_listener = api::listener<api::message<api::request, api::response>>;
 using api_listener_ptr = std::unique_ptr<api_listener>;
+
 using request_ptr = std::unique_ptr<api::request>;
 using response_ptr = std::unique_ptr<api::response>;
 
@@ -69,9 +74,12 @@ private:
     response_ptr unknown_request(const request_ptr req);
 
 private:
-    std::shared_ptr<signal_listener>                    m_signal_listener;
+    signal_listener_ptr                    m_signal_listener;
     std::shared_ptr<config_settings>                    m_settings;
-    std::shared_ptr<ctpl::thread_pool>                  m_workers;
+    thread_pool_ptr m_workers;
+
+
+
     api_listener_ptr                                    m_api_listener;
     std::list<std::shared_ptr<storage::backend>>        m_backends;
 

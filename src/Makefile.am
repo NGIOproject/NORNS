@@ -54,6 +54,9 @@ liburd_aux_la_SOURCES = \
 	nvml-dax.hpp \
 	posix-fs.cpp \
 	posix-fs.hpp \
+	pool.hpp \
+	pool/thread-pool.hpp \
+	pool/thread-pool-queue.hpp \
 	settings.cpp \
 	settings.hpp \
 	urd.cpp	\

@@ -49,7 +49,6 @@
 #include "api.hpp"
 #include "signal-listener.hpp"
 #include "backend-base.hpp"
-#include "ctpl.h" 
 #include "logger.hpp"
 #include "job.hpp"
 #include "io-task.hpp"
@@ -382,7 +381,7 @@ response_ptr urd::create_task(const request_ptr base_request) {
     // downcast the generic request to the concrete implementation
     auto request = static_cast<api::transfer_task_request*>(base_request.get());
 
-    m_workers->push(io::task());
+    m_workers->submit_and_forget(io::task(), 42);
 
     resp->set_status(NORNS_SUCCESS);
 
@@ -487,14 +486,13 @@ int urd::run() {
 
     // signal handlers must be installed AFTER daemonizing
     LOGGER_INFO("* Installing signal handlers...");
-    m_signal_listener = std::shared_ptr<signal_listener>(new signal_listener(
-                std::bind(&urd::signal_handler, this, std::placeholders::_1)));
+    m_signal_listener = std::make_unique<signal_listener>(std::bind(&urd::signal_handler, this, std::placeholders::_1));
 
     m_signal_listener->run();
 
     // create worker pool
-    m_workers = std::shared_ptr<ctpl::thread_pool>(new ctpl::thread_pool(m_settings->m_workers_in_pool));
     LOGGER_INFO("* Creating workers...");
+    m_workers = std::make_unique<thread_pool>(m_settings->m_workers_in_pool);
 
     // create (but not start) the API listening mechanism
     LOGGER_INFO("* Creating request listener...");
@@ -553,11 +551,13 @@ int urd::run() {
 void urd::teardown() {
 
     if(m_signal_listener) {
+        LOGGER_INFO("* Stopping signal listener...");
         m_signal_listener->stop();
-        m_signal_listener.reset();
+        //m_signal_listener.reset();
     }
 
     if(m_api_listener) {
+        LOGGER_INFO("* Stopping API listener...");
         m_api_listener->stop();
         m_api_listener.reset();
     }
@@ -569,5 +569,10 @@ void urd::teardown() {
         m_settings.reset();
     }
 
-    m_workers.reset();
+    //m_workers.reset();
+    if(m_workers) {
+        LOGGER_INFO("* Stopping worker threads...");
+        m_workers->stop();
+        m_workers.reset();
+    }
 }
