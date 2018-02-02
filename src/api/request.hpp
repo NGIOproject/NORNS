@@ -57,7 +57,7 @@
 #include <string>
 #include <sstream>
 
-#include "backend-base.hpp"
+#include "backends.hpp"
 
 using backend_ptr = std::shared_ptr<storage::backend>;
 
@@ -65,13 +65,16 @@ namespace api {
 
 /*! Valid types for an API request */
 enum class request_type { 
+    transfer_task,
+    ping,
     job_register, 
     job_update,
     job_unregister,
     process_register,
     process_unregister,
-    transfer_task,
-    ping,
+    backend_register,
+    backend_update,
+    backend_unregister,
     bad_request
 };
 
@@ -184,6 +187,17 @@ using bad_request = detail::request_impl<
     request_type::bad_request
 >;
 
+using transfer_task_request = detail::request_impl<
+    request_type::transfer_task,
+    uint32_t, //XXX replace by enum class?
+    data_resource,
+    data_resource
+>;
+
+using ping_request = detail::request_impl<
+    request_type::ping
+>;
+
 using job_register_request = detail::request_impl<
     request_type::job_register, 
     uint32_t, 
@@ -219,15 +233,25 @@ using process_unregister_request = detail::request_impl<
     pid_t
 >;
 
-using transfer_task_request = detail::request_impl<
-    request_type::transfer_task,
-    uint32_t, //XXX replace by enum class?
-    data_resource,
-    data_resource
+using backend_register_request = detail::request_impl<
+    request_type::backend_register, 
+    std::string, // prefix
+    int32_t, // type
+    std::string, // mount
+    int32_t // quota
 >;
 
-using ping_request = detail::request_impl<
-    request_type::ping
+using backend_update_request = detail::request_impl<
+    request_type::backend_update, 
+    std::string, // prefix
+    int32_t, // type
+    std::string, // mount
+    int32_t // quota
+>;
+
+using backend_unregister_request = detail::request_impl<
+    request_type::backend_unregister, 
+    std::string
 >;
 
 } // namespace api

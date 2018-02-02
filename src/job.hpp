@@ -28,7 +28,7 @@
 #include <vector>
 #include <map>
 
-#include "backend-base.hpp"
+#include "backends.hpp"
 
 struct process { }; // temporary stub, will probably replace with a valid munge credential
 

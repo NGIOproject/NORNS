@@ -29,7 +29,7 @@
 #include <boost/thread/shared_mutex.hpp>
 
 #include "settings.hpp"
-#include "backend-base.hpp"
+#include "backends.hpp"
 #include "signal-listener.hpp"
 #include "logger.hpp"
 #include "api.hpp"
@@ -52,6 +52,10 @@ using api_listener_ptr = std::unique_ptr<api_listener>;
 using request_ptr = std::unique_ptr<api::request>;
 using response_ptr = std::unique_ptr<api::response>;
 
+using backend_ptr = std::shared_ptr<storage::backend>;
+using backend_manager = std::unordered_map<std::string, backend_ptr>;
+using backend_manager_ptr = std::unique_ptr<backend_manager>;
+
 
 class urd {
 
@@ -64,13 +68,16 @@ private:
     int daemonize();
     void signal_handler(int);
 
+    response_ptr create_task(const request_ptr req);
+    response_ptr ping_request(const request_ptr req);
     response_ptr register_job(const request_ptr req);
     response_ptr update_job(const request_ptr req);
     response_ptr remove_job(const request_ptr req);
     response_ptr add_process(const request_ptr req);
     response_ptr remove_process(const request_ptr req);
-    response_ptr create_task(const request_ptr req);
-    response_ptr ping_request(const request_ptr req);
+    response_ptr register_backend(const request_ptr req);
+    response_ptr update_backend(const request_ptr req);
+    response_ptr remove_backend(const request_ptr req);
     response_ptr unknown_request(const request_ptr req);
 
 private:
@@ -81,7 +88,10 @@ private:
 
 
     api_listener_ptr                                    m_api_listener;
-    std::list<std::shared_ptr<storage::backend>>        m_backends;
+//    std::list<std::shared_ptr<storage::backend>>        m_backends;
+
+    backend_manager_ptr m_backends;
+    boost::shared_mutex                         m_backends_mutex;
 
 
     std::map<uint32_t, std::shared_ptr<job>>    m_jobs;

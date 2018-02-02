@@ -6,12 +6,15 @@ message Request {
     // CentOS 7 does not support it yet
     enum Type {
         SUBMIT_IOTASK = 1;
-        REGISTER_JOB = 2;
-        UPDATE_JOB = 3;
-        UNREGISTER_JOB = 4;
-        ADD_PROCESS = 5;
-        REMOVE_PROCESS = 6;
-        PING = 7;
+        PING = 2;
+        REGISTER_JOB = 3;
+        UPDATE_JOB = 4;
+        UNREGISTER_JOB = 5;
+        ADD_PROCESS = 6;
+        REMOVE_PROCESS = 7;
+        REGISTER_BACKEND = 8;
+        UPDATE_BACKEND = 9;
+        UNREGISTER_BACKEND = 10;
     }
 
     // I/O task descriptor
@@ -48,15 +51,6 @@ message Request {
     // job descriptor
     message Job {
         repeated string hosts = 1;
-
-        // backend descriptor
-        message Backend {
-            required int32 type = 1;
-            required string prefix = 2;
-            required string mount = 3;
-            required int32 quota = 4;
-        }
-
         repeated Backend backends = 2;
     }
 
@@ -67,11 +61,21 @@ message Request {
         required int64 pid = 3;
     }
 
+    // backend descriptor
+    message Backend {
+        required int32 type = 1;
+        required string prefix = 2;
+        required string mount = 3;
+        required int32 quota = 4;
+    }
+
     required Type type = 1;
     optional Task task = 2;
     optional uint32 jobid = 3;
     optional Job job = 4;
     optional Process process = 5;
+    optional string prefix = 6;
+    optional Backend backend = 7;
 }
 
 message Response {
@@ -80,13 +84,16 @@ message Response {
     // CentOS 7 does not support it yet
     enum Type {
         SUBMIT_IOTASK = 1;
-        REGISTER_JOB = 2;
-        UPDATE_JOB = 3;
-        UNREGISTER_JOB = 4;
-        ADD_PROCESS = 5;
-        REMOVE_PROCESS = 6;
-        PING = 7;
-        BAD_REQUEST = 8;
+        PING = 2;
+        REGISTER_JOB = 3;
+        UPDATE_JOB = 4;
+        UNREGISTER_JOB = 5;
+        ADD_PROCESS = 6;
+        REMOVE_PROCESS = 7;
+        REGISTER_BACKEND = 8;
+        UPDATE_BACKEND = 9;
+        UNREGISTER_BACKEND = 10;
+        BAD_REQUEST = 11;
     }
 
     // most responses only need to return a status code

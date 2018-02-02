@@ -42,6 +42,8 @@ api_CPPFLAGS = \
 api_SOURCES = \
 	catch.hpp \
 	api-main.cpp \
+	api-backend-register.cpp \
+	api-backend-unregister.cpp \
 	api-job-register.cpp \
 	api-job-update.cpp \
 	api-job-unregister.cpp \

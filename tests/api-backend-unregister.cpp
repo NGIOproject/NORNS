@@ -32,7 +32,7 @@
 // enable to test connections with an already running daemon
 //#define USE_REAL_DAEMON
 
-SCENARIO("register job", "[api::norns_register_job]") {
+SCENARIO("unregister backend", "[api::norns_unregister_backend]") {
     GIVEN("a running urd instance") {
 
 #ifndef USE_REAL_DAEMON
@@ -40,71 +40,58 @@ SCENARIO("register job", "[api::norns_register_job]") {
         td.run();
 #endif
 
-        WHEN("a job is registered with invalid information") {
+        WHEN("a backend is unregistered with an invalid prefix") {
 
             struct norns_cred cred;
-            struct norns_job job = NORNS_JOB_INIT(NULL, 0, NULL, 0);
 
-            const uint32_t jobid = 42;
-
-            int rv = norns_register_job(&cred, jobid, &job);
+            int rv = norns_unregister_backend(&cred, NULL);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
             }
         }
 
-        WHEN("a job is registered with valid information") {
-
-            const char* test_hosts[] = { "host00", "host01" };
-            const size_t test_nhosts = sizeof(test_hosts) / sizeof(test_hosts[0]);
-
-            struct norns_backend b0 = NORNS_BACKEND_INIT("b0://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b0", 1024);
-            struct norns_backend b1 = NORNS_BACKEND_INIT("b1://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b1", 2048);
-            struct norns_backend b2 = NORNS_BACKEND_INIT("b2://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b2", 1024);
-
-            struct norns_backend* test_backends[] = { &b0, &b1, &b2 };
-
-            const size_t test_nbackends = sizeof(test_backends) / sizeof(test_backends[0]);
+        WHEN("attempting to unregister a non-existing backend") {
 
             struct norns_cred cred;
-            struct norns_job job = NORNS_JOB_INIT(test_hosts, test_nhosts, test_backends, test_nbackends);
 
-            const uint32_t jobid = 42;
+            int rv = norns_unregister_backend(&cred, "b0://");
 
-            int rv = norns_register_job(&cred, jobid, &job);
+            THEN("NORNS_ENOSUCHBACKEND is returned") {
+                REQUIRE(rv == NORNS_ENOSUCHBACKEND);
+            }
+        }
+
+        WHEN("unregistering a registered backend") {
+
+            struct norns_cred cred;
+            struct norns_backend b0 = NORNS_BACKEND_INIT("b0://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b0", 4096);
+
+            int rv = norns_register_backend(&cred, &b0);
+
+            REQUIRE(rv == NORNS_SUCCESS);
+
+            rv = norns_unregister_backend(&cred, b0.b_prefix);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
             }
+
         }
+
 
 #ifndef USE_REAL_DAEMON
         int ret = td.stop();
         REQUIRE(ret == 0);
 #endif
+
     }
 
     GIVEN("a non-running urd instance") {
-        WHEN("attempting to register a job") {
-
-            const char* test_hosts[] = { "host00", "host01" };
-            const size_t test_nhosts = sizeof(test_hosts) / sizeof(test_hosts[0]);
-
-            struct norns_backend b0 = NORNS_BACKEND_INIT("b0://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b0", 1024);
-            struct norns_backend b1 = NORNS_BACKEND_INIT("b1://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b1", 2048);
-            struct norns_backend b2 = NORNS_BACKEND_INIT("b2://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b2", 1024);
-
-            struct norns_backend* test_backends[] = { &b0, &b1, &b2 };
-
-            const size_t test_nbackends = sizeof(test_backends) / sizeof(test_backends[0]);
+        WHEN("attempting to unregister a backend") {
 
             struct norns_cred cred;
-            struct norns_job job = NORNS_JOB_INIT(test_hosts, test_nhosts, test_backends, test_nbackends);
-
-            const uint32_t jobid = 42;
-
-            int rv = norns_register_job(&cred, jobid, &job);
+            int rv = norns_unregister_backend(&cred, "b0://");
 
             THEN("NORNS_ECONNFAILED is returned") {
                 REQUIRE(rv == NORNS_ECONNFAILED);

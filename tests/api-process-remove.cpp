@@ -61,9 +61,9 @@ SCENARIO("remove process from job", "[api::norns_remove_process]") {
             const char* test_hosts[] = { "host00", "host01" };
             const size_t test_nhosts = sizeof(test_hosts) / sizeof(test_hosts[0]);
 
-            struct norns_backend b0 = NORNS_BACKEND_INIT(NORNS_BACKEND_LOCAL_NVML, "b0://", "/mnt/b0", 1024);
-            struct norns_backend b1 = NORNS_BACKEND_INIT(NORNS_BACKEND_LOCAL_NVML, "b1://", "/mnt/b1", 2048);
-            struct norns_backend b2 = NORNS_BACKEND_INIT(NORNS_BACKEND_LOCAL_NVML, "b2://", "/mnt/b2", 1024);
+            struct norns_backend b0 = NORNS_BACKEND_INIT("b0://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b0", 1024);
+            struct norns_backend b1 = NORNS_BACKEND_INIT("b1://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b1", 2048);
+            struct norns_backend b2 = NORNS_BACKEND_INIT("b2://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b2", 1024);
 
             struct norns_backend* test_backends[] = { &b0, &b1, &b2 };
             const size_t test_nbackends = sizeof(test_backends) / sizeof(test_backends[0]);
@@ -92,9 +92,9 @@ SCENARIO("remove process from job", "[api::norns_remove_process]") {
             const char* test_hosts[] = { "host00", "host01" };
             const size_t test_nhosts = sizeof(test_hosts) / sizeof(test_hosts[0]);
 
-            struct norns_backend b0 = NORNS_BACKEND_INIT(NORNS_BACKEND_LOCAL_NVML, "b0://", "/mnt/b0", 1024);
-            struct norns_backend b1 = NORNS_BACKEND_INIT(NORNS_BACKEND_LOCAL_NVML, "b1://", "/mnt/b1", 2048);
-            struct norns_backend b2 = NORNS_BACKEND_INIT(NORNS_BACKEND_LOCAL_NVML, "b2://", "/mnt/b2", 1024);
+            struct norns_backend b0 = NORNS_BACKEND_INIT("b0://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b0", 1024);
+            struct norns_backend b1 = NORNS_BACKEND_INIT("b1://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b1", 2048);
+            struct norns_backend b2 = NORNS_BACKEND_INIT("b2://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b2", 1024);
 
             struct norns_backend* test_backends[] = { &b0, &b1, &b2 };
             const size_t test_nbackends = sizeof(test_backends) / sizeof(test_backends[0]);
@@ -128,9 +128,9 @@ SCENARIO("remove process from job", "[api::norns_remove_process]") {
             const char* test_hosts[] = { "host00", "host01" };
             const size_t test_nhosts = sizeof(test_hosts) / sizeof(test_hosts[0]);
 
-            struct norns_backend b0 = NORNS_BACKEND_INIT(NORNS_BACKEND_LOCAL_NVML, "b0://", "/mnt/b0", 1024);
-            struct norns_backend b1 = NORNS_BACKEND_INIT(NORNS_BACKEND_LOCAL_NVML, "b1://", "/mnt/b1", 2048);
-            struct norns_backend b2 = NORNS_BACKEND_INIT(NORNS_BACKEND_LOCAL_NVML, "b2://", "/mnt/b2", 1024);
+            struct norns_backend b0 = NORNS_BACKEND_INIT("b0://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b0", 1024);
+            struct norns_backend b1 = NORNS_BACKEND_INIT("b1://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b1", 2048);
+            struct norns_backend b2 = NORNS_BACKEND_INIT("b2://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b2", 1024);
 
             struct norns_backend* test_backends[] = { &b0, &b1, &b2 };
             const size_t test_nbackends = sizeof(test_backends) / sizeof(test_backends[0]);

@@ -25,19 +25,32 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <string.h>
 
 #include <norns.h>
-//#include <norns-rpc.h>
 
 #include "xmalloc.h"
-#include "xstring.h"
 #include "daemon-communication.h"
 
 static bool
 validate_job(struct norns_job* job) {
 
-    return (job != NULL) && (job->jb_hosts != NULL) && (job->jb_nhosts) != 0 &&
-       (job->jb_backends != NULL) && (job->jb_nbackends != 0);
+    return (job != NULL) && 
+           (job->jb_hosts != NULL) && 
+           (job->jb_nhosts) != 0 &&
+           (job->jb_backends != NULL) && 
+           (job->jb_nbackends != 0);
+}
+
+static bool
+validate_backend(struct norns_backend* backend) {
+
+    return (backend != NULL) && 
+           (backend->b_prefix != NULL) &&
+           (strncmp(backend->b_prefix, "", 1) != 0) &&
+           (backend->b_mount != NULL) &&
+           (strncmp(backend->b_mount, "", 1) != 0) &&
+           (backend->b_quota > 0);
 }
 
 /* Public API */
@@ -52,6 +65,10 @@ norns_transfer(struct norns_iotd* iotdp) {
     return send_transfer_request(iotdp);
 }
 
+int
+norns_ping() {
+    return send_ping_request();
+}
 
 /* Register and describe a batch job */
 int 
@@ -115,8 +132,27 @@ norns_remove_process(struct norns_cred* auth, uint32_t jobid, uid_t uid,
                                 uid, gid, pid);
 }
 
+/* Register a backend in the local norns server */
+int 
+norns_register_backend(struct norns_cred* auth, struct norns_backend* backend) {
 
-int
-norns_ping() {
-    return send_ping_request();
+    if(auth == NULL || !validate_backend(backend)) {
+        return NORNS_EBADARGS;
+    }
+
+    const char* const prefix = backend->b_prefix;
+
+    return send_backend_request(NORNS_REGISTER_BACKEND, auth, prefix, backend);
 }
+
+/* Unregister a backend from the local norns server */
+int 
+norns_unregister_backend(struct norns_cred* auth, const char* prefix) {
+
+    if(auth == NULL || prefix == NULL) {
+        return NORNS_EBADARGS;
+    }
+
+    return send_backend_request(NORNS_UNREGISTER_BACKEND, auth, prefix, NULL);
+}
+

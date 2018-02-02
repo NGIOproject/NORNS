@@ -22,8 +22,8 @@
 // along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef __BACKENDS_HPP__
-#define __BACKENDS_HPP__
+#ifndef __BACKEND_BASE_HPP__
+#define __BACKEND_BASE_HPP__
 
 #include <functional>
 #include <unordered_map>
@@ -94,4 +94,4 @@ private:
 
 } // namespace storage
 
-#endif // __BACKENDS_HPP__
+#endif // __BACKEND_BASE_HPP__

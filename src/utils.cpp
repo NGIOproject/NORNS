@@ -120,8 +120,14 @@ std::string strerror(int error_code) {
             return "NORNS_EJOBEXISTS";
         case NORNS_ENOSUCHJOB:
             return "NORNS_ENOSUCHJOB";
+        case NORNS_EPROCESSEXISTS:
+            return "NORNS_EPROCESSEXISTS";
         case NORNS_ENOSUCHPROCESS:
             return "NORNS_ENOSUCHPROCESS";
+        case NORNS_EBACKENDEXISTS:
+            return "NORNS_EBACKENDEXISTS";
+        case NORNS_ENOSUCHBACKEND:
+            return "NORNS_ENOSUCHBACKEND";
         default:
             return "UNKNOWN_ERROR";
     }

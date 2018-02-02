@@ -74,6 +74,16 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
             break;
         }
 
+
+        case NORNS_PING:
+        {
+            if((res = pack_to_buffer(type, &req_buf)) != NORNS_SUCCESS) {
+                return res;
+            }
+
+            break;
+        }
+
         case NORNS_REGISTER_JOB:
         case NORNS_UPDATE_JOB:
         case NORNS_UNREGISTER_JOB:
@@ -115,9 +125,19 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
             break;
         }
 
-        case NORNS_PING:
+        case NORNS_REGISTER_BACKEND:
+        case NORNS_UPDATE_BACKEND:
+        case NORNS_UNREGISTER_BACKEND:
         {
-            if((res = pack_to_buffer(type, &req_buf)) != NORNS_SUCCESS) {
+            const struct norns_cred* auth =
+                va_arg(ap, const struct norns_cred*);
+            const char* const prefix =
+                va_arg(ap, const char* const);
+            const struct norns_backend* backend = 
+                va_arg(ap, const struct norns_backend*);
+
+            if((res = pack_to_buffer(type, &req_buf, auth, prefix, backend)) 
+                    != NORNS_SUCCESS) {
                 return res;
             }
 
@@ -269,6 +289,23 @@ cleanup_on_error:
 #endif
 }
 
+int
+send_ping_request() {
+
+    int res;
+    norns_response_t resp;
+
+    if((res = send_request(NORNS_PING, &resp)) != NORNS_SUCCESS) {
+        return res;
+    }
+
+    if(resp.r_type != NORNS_PING) {
+        return NORNS_ESNAFU;
+    }
+
+    return resp.r_status;
+}
+
 int 
 send_job_request(norns_rpc_type_t type, struct norns_cred* auth, 
                  uint32_t jobid, struct norns_job* job) {
@@ -309,22 +346,24 @@ send_process_request(norns_rpc_type_t type, struct norns_cred* auth,
 }
 
 int
-send_ping_request() {
+send_backend_request(norns_rpc_type_t type, struct norns_cred* auth, 
+                     const char* prefix_id, struct norns_backend* backend) {
 
     int res;
     norns_response_t resp;
 
-    if((res = send_request(NORNS_PING, &resp)) != NORNS_SUCCESS) {
+    if((res = send_request(type, &resp, auth, prefix_id, backend)) 
+            != NORNS_SUCCESS) {
         return res;
     }
 
-    if(resp.r_type != NORNS_PING) {
+    if(resp.r_type != type) {
         return NORNS_ESNAFU;
     }
 
     return resp.r_status;
-
 }
+
 
 static int connect_to_daemon(void) {
 

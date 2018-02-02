@@ -37,6 +37,12 @@ bool response::store_to_buffer(response_ptr response, std::vector<uint8_t>& buff
     rpc_resp.set_status(response->status());
 
     switch(response->type()) {
+        case response_type::transfer_task:
+            rpc_resp.set_type(norns::rpc::Response::SUBMIT_IOTASK);
+            break;
+        case response_type::ping:
+            rpc_resp.set_type(norns::rpc::Response::PING);
+            break;
         case response_type::job_register: 
             rpc_resp.set_type(norns::rpc::Response::REGISTER_JOB);
             break;
@@ -52,11 +58,14 @@ bool response::store_to_buffer(response_ptr response, std::vector<uint8_t>& buff
         case response_type::process_unregister:
             rpc_resp.set_type(norns::rpc::Response::REMOVE_PROCESS);
             break;
-        case response_type::transfer_task:
-            rpc_resp.set_type(norns::rpc::Response::SUBMIT_IOTASK);
+        case response_type::backend_register: 
+            rpc_resp.set_type(norns::rpc::Response::REGISTER_BACKEND);
             break;
-        case response_type::ping:
-            rpc_resp.set_type(norns::rpc::Response::PING);
+        case response_type::backend_update:
+            rpc_resp.set_type(norns::rpc::Response::UPDATE_BACKEND);
+            break;
+        case response_type::backend_unregister:
+            rpc_resp.set_type(norns::rpc::Response::UNREGISTER_BACKEND);
             break;
         case response_type::bad_request:
             rpc_resp.set_type(norns::rpc::Response::BAD_REQUEST);

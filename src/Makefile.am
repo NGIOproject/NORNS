@@ -47,14 +47,15 @@ liburd_aux_la_SOURCES = \
 	api/request.cpp \
 	api/response.hpp \
 	api/response.cpp \
-	backend-base.cpp \
-	backend-base.hpp \
+	backends.hpp \
+	backends/backend-base.cpp \
+	backends/backend-base.hpp \
+	backends/nvml-dax.cpp \
+	backends/nvml-dax.hpp \
+	backends/posix-fs.cpp \
+	backends/posix-fs.hpp \
 	defaults.hpp \
-	nvml-dax.cpp \
-	nvml-dax.hpp \
-	posix-fs.cpp \
-	posix-fs.hpp \
-	pool.hpp \
+	thread-pool.hpp \
 	pool/thread-pool.hpp \
 	pool/thread-pool-queue.hpp \
 	settings.cpp \

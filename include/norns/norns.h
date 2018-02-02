@@ -248,16 +248,16 @@ int norns_ping() __THROW;
 
 /* Storage backend descriptor */
 struct norns_backend {
-    int         b_type;
     const char* b_prefix; /* prefix ID for this backend (e.g. nvm01, tmpfs02, ...) */
+    int         b_type;
     const char* b_mount; /* mount point */
     size_t      b_quota; /* backend capacity (in megabytes) allocated to the job for writing */
 };
 
-#define NORNS_BACKEND_INIT(type, prefix, mount, quota) \
+#define NORNS_BACKEND_INIT(prefix, type, mount, quota) \
 { \
-    .b_type = (type), \
     .b_prefix = (prefix), \
+    .b_type = (type), \
     .b_mount = (mount), \
     .b_quota = (quota) \
 }
@@ -323,6 +323,15 @@ int norns_add_process(struct norns_cred* auth, uint32_t jobid, uid_t uid, gid_t 
 
 /* Remove a process from a registered batch job */
 int norns_remove_process(struct norns_cred* auth, uint32_t jobid, uid_t uid, gid_t gid, pid_t pid);
+
+/* Register a backend in the local norns server */
+int norns_register_backend(struct norns_cred* auth, struct norns_backend* backend);
+
+/* Update an existing backend in the local norns server */
+int norns_register_backend(struct norns_cred* auth, struct norns_backend* backend);
+
+/* Unregister a backend from the local norns server */
+int norns_unregister_backend(struct norns_cred* auth, const char* prefix);
 
 
 char* norns_strerror(int errnum);

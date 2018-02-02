@@ -32,6 +32,8 @@
 
 static Norns__Rpc__Request__Task* build_task_msg(const struct norns_iotd* iotdp);
 static void free_task_msg(Norns__Rpc__Request__Task* msg);
+static Norns__Rpc__Request__Backend* build_backend_msg(const struct norns_backend* backend);
+static void free_backend_msg(Norns__Rpc__Request__Backend* msg);
 static Norns__Rpc__Request__Job* build_job_msg(const struct norns_job* job);
 static void free_job_msg(Norns__Rpc__Request__Job* msg);
 static void* build_membuf_msg(const struct norns_data_in* src);
@@ -43,6 +45,8 @@ remap_request(norns_rpc_type_t type) {
     switch(type) {
         case NORNS_SUBMIT_IOTASK:
             return NORNS__RPC__REQUEST__TYPE__SUBMIT_IOTASK;
+        case NORNS_PING:
+            return NORNS__RPC__REQUEST__TYPE__PING;
         case NORNS_REGISTER_JOB:
             return NORNS__RPC__REQUEST__TYPE__REGISTER_JOB;
         case NORNS_UPDATE_JOB:
@@ -53,8 +57,12 @@ remap_request(norns_rpc_type_t type) {
             return NORNS__RPC__REQUEST__TYPE__ADD_PROCESS;
         case NORNS_REMOVE_PROCESS:
             return NORNS__RPC__REQUEST__TYPE__REMOVE_PROCESS;
-        case NORNS_PING:
-            return NORNS__RPC__REQUEST__TYPE__PING;
+        case NORNS_REGISTER_BACKEND:
+            return NORNS__RPC__REQUEST__TYPE__REGISTER_BACKEND;
+        case NORNS_UPDATE_BACKEND:
+            return NORNS__RPC__REQUEST__TYPE__UPDATE_BACKEND;
+        case NORNS_UNREGISTER_BACKEND:
+            return NORNS__RPC__REQUEST__TYPE__UNREGISTER_BACKEND;
         default:
             return -1;
     }
@@ -65,6 +73,8 @@ remap_response(int norns_rpc_type) {
     switch(norns_rpc_type) {
         case NORNS__RPC__RESPONSE__TYPE__SUBMIT_IOTASK:
             return NORNS_SUBMIT_IOTASK;
+        case NORNS__RPC__RESPONSE__TYPE__PING:
+            return NORNS_PING;
         case NORNS__RPC__RESPONSE__TYPE__REGISTER_JOB:
             return NORNS_REGISTER_JOB;
         case NORNS__RPC__RESPONSE__TYPE__UPDATE_JOB:
@@ -75,8 +85,12 @@ remap_response(int norns_rpc_type) {
             return NORNS_ADD_PROCESS;
         case NORNS__RPC__RESPONSE__TYPE__REMOVE_PROCESS:
             return NORNS_REMOVE_PROCESS;
-        case NORNS__RPC__RESPONSE__TYPE__PING:
-            return NORNS_PING;
+        case NORNS__RPC__REQUEST__TYPE__REGISTER_BACKEND:
+            return NORNS_REGISTER_BACKEND;
+        case NORNS__RPC__REQUEST__TYPE__UPDATE_BACKEND:
+            return NORNS_UPDATE_BACKEND;
+        case NORNS__RPC__REQUEST__TYPE__UNREGISTER_BACKEND:
+            return NORNS_UNREGISTER_BACKEND;
         case NORNS__RPC__RESPONSE__TYPE__BAD_REQUEST:
             // intentionally fall through
         default:
@@ -95,8 +109,6 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
 
     norns__rpc__request__init(req_msg);
 
-    //req_msg->type = type;
-
     switch(type) {
         case NORNS_SUBMIT_IOTASK:
         {
@@ -110,6 +122,15 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
                 goto cleanup_on_error;
             }
 
+            break;
+        }
+
+        case NORNS_PING:
+        {
+
+            if((req_msg->type = remap_request(type)) < 0) {
+                goto cleanup_on_error;
+            }
             break;
         }
 
@@ -141,6 +162,7 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
 
             break;
         }
+
         case NORNS_ADD_PROCESS:
         case NORNS_REMOVE_PROCESS:
         {
@@ -171,14 +193,44 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
             break;
         }
 
-        case NORNS_PING:
+        case NORNS_REGISTER_BACKEND:
+        case NORNS_UPDATE_BACKEND:
+        case NORNS_UNREGISTER_BACKEND:
         {
+            const struct norns_cred* auth =
+                va_arg(ap, const struct norns_cred*);
+            const char* const prefix =
+                va_arg(ap, const char* const);
+            const struct norns_backend* backend = 
+                va_arg(ap, const struct norns_backend*);
+
+            (void) auth;
 
             if((req_msg->type = remap_request(type)) < 0) {
                 goto cleanup_on_error;
             }
+
+            if(type == NORNS_UNREGISTER_BACKEND) {
+                req_msg->prefix = xstrdup(prefix);
+
+                if(req_msg->prefix == NULL) {
+                    goto cleanup_on_error;
+                }
+
+                req_msg->backend = NULL;
+            }
+            else {
+
+                req_msg->prefix = NULL;
+
+                if((req_msg->backend = build_backend_msg(backend)) == NULL) {
+                    goto cleanup_on_error;
+                }
+            }
+
             break;
         }
+
     }
 
     return req_msg;
@@ -193,6 +245,11 @@ cleanup_on_error:
 
 void
 free_request_msg(Norns__Rpc__Request* req) {
+}
+
+void
+free_backend_msg(Norns__Rpc__Request__Backend* msg) {
+    //TODO
 }
 
 void 
@@ -222,6 +279,46 @@ free_job_msg(Norns__Rpc__Request__Job* msg) {
         xfree(msg->backends);
     }
     xfree(msg);
+}
+
+Norns__Rpc__Request__Backend*
+build_backend_msg(const struct norns_backend* backend) {
+
+    assert(backend != NULL);
+
+    Norns__Rpc__Request__Backend* backendmsg = 
+        (Norns__Rpc__Request__Backend*) xmalloc(sizeof(*backendmsg));
+
+    if(backendmsg == NULL) {
+        return NULL;
+    }
+
+    norns__rpc__request__backend__init(backendmsg);
+
+    backendmsg->prefix = xstrdup(backend->b_prefix);
+
+    if(backendmsg->prefix == NULL) {
+        goto error_cleanup;
+    }
+
+    backendmsg->type = backend->b_type;
+    backendmsg->mount = xstrdup(backend->b_mount);
+
+    if(backendmsg->mount == NULL) {
+        goto error_cleanup;
+    }
+
+    backendmsg->quota = backend->b_quota;
+
+    return backendmsg;
+
+error_cleanup:
+
+    if(backendmsg != NULL) {
+        free_backend_msg(backendmsg);
+    }
+
+    return NULL;
 }
 
 Norns__Rpc__Request__Job*
@@ -261,20 +358,28 @@ build_job_msg(const struct norns_job* job) {
     // add backends
     jobmsg->n_backends = job->jb_nbackends;
     jobmsg->backends = 
-        xmalloc(job->jb_nbackends*sizeof(Norns__Rpc__Request__Job__Backend*));
+        xmalloc(job->jb_nbackends*sizeof(Norns__Rpc__Request__Backend*));
     
     if(jobmsg->backends == NULL){
         goto error_cleanup;
     }
 
     for(size_t i=0; i<job->jb_nbackends; ++i) {
-        jobmsg->backends[i] = xmalloc(sizeof(Norns__Rpc__Request__Job__Backend));
+
+        jobmsg->backends[i] = build_backend_msg(job->jb_backends[i]);
 
         if(jobmsg->backends[i] == NULL) {
             goto error_cleanup;
         }
 
-        norns__rpc__request__job__backend__init(jobmsg->backends[i]);
+        /*
+        jobmsg->backends[i] = xmalloc(sizeof(Norns__Rpc__Request__Backend));
+
+        if(jobmsg->backends[i] == NULL) {
+            goto error_cleanup;
+        }
+
+        norns__rpc__request__backend__init(jobmsg->backends[i]);
         jobmsg->backends[i]->type = job->jb_backends[i]->b_type;
         jobmsg->backends[i]->mount = xstrdup(job->jb_backends[i]->b_mount);
 
@@ -283,6 +388,7 @@ build_job_msg(const struct norns_job* job) {
         }
 
         jobmsg->backends[i]->quota = job->jb_backends[i]->b_quota;
+        */
     }
 
     return jobmsg;
@@ -496,36 +602,6 @@ pack_to_buffer(norns_rpc_type_t type, msgbuffer_t* buf, ...) {
     free_request_msg(req_msg);
 
     return NORNS_SUCCESS;
-
-#if 0
-    va_list ap;
-    va_start(ap, buf);
-
-    Norns__Rpc__Request* req = NULL;
-    void* req_buf = NULL;
-    size_t req_len = 0;
-
-    if((req = build_request_msg2(type, ap)) == NULL) {
-        goto cleanup_on_error;
-    }
-
-    norns__rpc__request__pack(req, req_buf);
-
-    req_len = norns__rpc__request__get_packed_size(req);
-    req_buf = xmalloc_nz(req_len);
-
-    if(req_buf == NULL) {
-        goto cleanup_on_error;
-    }
-
-    buf->b_data = req_buf;
-    buf->b_size = req_len;
-
-    va_end(ap);
-    free_request_msg(req);
-
-    return NORNS_SUCCESS;
-#endif
 
 cleanup_on_error:
     if(req_msg != NULL) {

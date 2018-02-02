@@ -36,13 +36,16 @@
 namespace api {
 
 enum class response_type {
+    transfer_task,
+    ping,
     job_register, 
     job_update,
     job_unregister,
     process_register,
     process_unregister,
-    transfer_task,
-    ping,
+    backend_register, 
+    backend_update,
+    backend_unregister,
     bad_request
 };
 
@@ -101,6 +104,14 @@ struct response_impl : std::tuple<FieldTypes...>, response {
 } // namespace detail
 
 /*! Aliases for convenience */
+using transfer_task_response = detail::response_impl<
+    response_type::transfer_task
+>;
+
+using ping_response = detail::response_impl<
+    response_type::ping
+>;
+
 using job_register_response = detail::response_impl<
     response_type::job_register
 >;
@@ -121,12 +132,16 @@ using process_unregister_response = detail::response_impl<
     response_type::process_unregister
 >;
 
-using transfer_task_response = detail::response_impl<
-    response_type::transfer_task
+using backend_register_response = detail::response_impl<
+    response_type::backend_register
 >;
 
-using ping_response = detail::response_impl<
-    response_type::ping
+using backend_update_response = detail::response_impl<
+    response_type::backend_update
+>;
+
+using backend_unregister_response = detail::response_impl<
+    response_type::backend_unregister
 >;
 
 using bad_request_response = detail::response_impl<

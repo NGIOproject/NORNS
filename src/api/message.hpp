@@ -29,8 +29,6 @@
 #define __API_MESSAGE_HPP__
 
 #include <norns-rpc.h>
-#include "requests.hpp"
-#include "responses.hpp"
 #include <arpa/inet.h>
 #include <iomanip>
 

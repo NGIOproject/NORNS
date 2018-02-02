@@ -58,9 +58,9 @@ SCENARIO("unregister job", "[api::norns_unregister_job]") {
             const char* test_hosts[] = { "host00", "host01" };
             const size_t test_nhosts = sizeof(test_hosts) / sizeof(test_hosts[0]);
 
-            struct norns_backend b0 = NORNS_BACKEND_INIT(NORNS_BACKEND_LOCAL_NVML, "b0://", "/mnt/b0", 1024);
-            struct norns_backend b1 = NORNS_BACKEND_INIT(NORNS_BACKEND_LOCAL_NVML, "b1://", "/mnt/b1", 2048);
-            struct norns_backend b2 = NORNS_BACKEND_INIT(NORNS_BACKEND_LOCAL_NVML, "b2://", "/mnt/b2", 1024);
+            struct norns_backend b0 = NORNS_BACKEND_INIT("b0://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b0", 1024);
+            struct norns_backend b1 = NORNS_BACKEND_INIT("b1://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b1", 2048);
+            struct norns_backend b2 = NORNS_BACKEND_INIT("b2://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b2", 1024);
 
             struct norns_backend* test_backends[] = { &b0, &b1, &b2 };
             const size_t test_nbackends = sizeof(test_backends) / sizeof(test_backends[0]);
@@ -88,10 +88,10 @@ SCENARIO("unregister job", "[api::norns_unregister_job]") {
             const size_t test_nhosts1 = sizeof(test_hosts1) / sizeof(test_hosts1[0]);
             const size_t test_nhosts2 = sizeof(test_hosts2) / sizeof(test_hosts2[0]);
 
-            struct norns_backend b0 = NORNS_BACKEND_INIT(NORNS_BACKEND_LOCAL_NVML, "b0://", "/mnt/b0", 1024);
-            struct norns_backend b1 = NORNS_BACKEND_INIT(NORNS_BACKEND_LOCAL_NVML, "b1://", "/mnt/b1", 2048);
-            struct norns_backend b2 = NORNS_BACKEND_INIT(NORNS_BACKEND_LOCAL_NVML, "b2://", "/mnt/b2", 1024);
-            struct norns_backend b3 = NORNS_BACKEND_INIT(NORNS_BACKEND_LOCAL_NVML, "b3://", "/mnt/b3", 3072);
+            struct norns_backend b0 = NORNS_BACKEND_INIT("b0://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b0", 1024);
+            struct norns_backend b1 = NORNS_BACKEND_INIT("b1://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b1", 2048);
+            struct norns_backend b2 = NORNS_BACKEND_INIT("b2://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b2", 1024);
+            struct norns_backend b3 = NORNS_BACKEND_INIT("b3://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b3", 3072);
 
             struct norns_backend* test_backends1[] = { &b0, &b1, &b2 };
             const size_t test_nbackends1 = sizeof(test_backends1) / sizeof(test_backends1[0]);

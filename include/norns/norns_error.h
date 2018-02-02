@@ -46,7 +46,10 @@ extern "C" {
 #define NORNS_ERPCRECVFAILED    -7
 #define NORNS_EJOBEXISTS        -8
 #define NORNS_ENOSUCHJOB        -9
-#define NORNS_ENOSUCHPROCESS    -10
+#define NORNS_EPROCESSEXISTS    -10
+#define NORNS_ENOSUCHPROCESS    -11
+#define NORNS_EBACKENDEXISTS    -12
+#define NORNS_ENOSUCHBACKEND    -13
 
 #ifdef __cplusplus
 }

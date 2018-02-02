@@ -30,7 +30,7 @@
 
 #include "make-unique.hpp"
 #include "messages.pb.h"
-#include "backend-base.hpp"
+#include "backends.hpp"
 #include "request.hpp"
 
 namespace api {
@@ -69,6 +69,9 @@ request_ptr request::create_from_buffer(const std::vector<uint8_t>& buffer, int 
                     return std::make_unique<bad_request>();
                 }
             break;
+
+            case norns::rpc::Request::PING:
+                return std::make_unique<ping_request>();
 
             case norns::rpc::Request::REGISTER_JOB:
             case norns::rpc::Request::UPDATE_JOB:
@@ -131,8 +134,26 @@ request_ptr request::create_from_buffer(const std::vector<uint8_t>& buffer, int 
                 }
                 break;
 
-            case norns::rpc::Request::PING:
-                return std::make_unique<ping_request>();
+            case norns::rpc::Request::REGISTER_BACKEND:
+            case norns::rpc::Request::UPDATE_BACKEND:
+                if(rpc_req.has_backend()) {
+
+                    const auto& b = rpc_req.backend();
+
+                    if(rpc_req.type() == norns::rpc::Request::REGISTER_BACKEND) {
+                        return std::make_unique<backend_register_request>(b.prefix(), b.type(), b.mount(), b.quota());
+                    }
+                    else { // rpc_req.type() == norns::rpc::Request::UPDATE_BACKEND
+                        return std::make_unique<backend_update_request>(b.prefix(), b.type(), b.mount(), b.quota());
+                    }
+                }
+                break;
+
+            case norns::rpc::Request::UNREGISTER_BACKEND:
+                if(rpc_req.has_prefix()) {
+                    return std::make_unique<backend_unregister_request>(rpc_req.prefix());
+                }
+                break;
         }
     }
 

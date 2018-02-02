@@ -48,36 +48,12 @@
 
 #include "api.hpp"
 #include "signal-listener.hpp"
-#include "backend-base.hpp"
+#include "backends.hpp"
 #include "logger.hpp"
 #include "job.hpp"
 #include "io-task.hpp"
 #include "urd.hpp"
 #include "make-unique.hpp"
-
-#if 0 
-struct task{
-	pid_t pid;
-	uint64_t taskId;
-	const char *filePath;
-};
-
-struct task_finished{
-	pid_t pid;
-	uint64_t taskId;
-	uint64_t status;
-};
-
-enum job_type{
-	ENQUEUE_TASK,
-	CHECK_TASK_STATUS,
-	CHECK_ALL_TASKS
-};
-
-
-tbb::concurrent_queue<task> jobs_priority_1;
-tbb::concurrent_hash_map<pid_t, std::list<task_finished>> tasks_finished_map;
-#endif
 
 pid_t urd::daemonize() {
 	/*
@@ -198,36 +174,30 @@ pid_t urd::daemonize() {
 
 }
 
-#if 0
-void push_jobs(ctpl::thread_pool &p){
-	/*
-	 * 1. If p.n_idle > 0 (probably sleep between checks)
-	 * 2. Push job
-	 */
-	(void) p;
-	while(1){
-		//log_message(LOG_FILE, "[main_thread] not blocked");
-		sleep(5);
-	};
-	/*
-	while(1){
-		task t;
-		if (p.n_idle() > 0 and jobs_priority_1.unsafe_size() > 0){
-			bool pop_status = jobs_priority_1.try_pop(t);
-			while (!pop_status){
-				// some kind of sleep
-				pop_status = jobs_priority_1.try_pop(t);
-			}
-			p.push(serve_job, t);
-		} else {
-			//When there are no more jobs or available threads, sleep
-			sleep(4);
-		}
+response_ptr urd::create_task(const request_ptr base_request) {
 
-	}*/
+    response_ptr resp = std::make_unique<api::transfer_task_response>();
 
+    // downcast the generic request to the concrete implementation
+    auto request = static_cast<api::transfer_task_request*>(base_request.get());
+
+    m_workers->submit_and_forget(io::task(), 42);
+
+    resp->set_status(NORNS_SUCCESS);
+
+    LOGGER_INFO("CREATE_TASK({}) = {}", request->to_string(), resp->to_string());
+    return resp;
 }
-#endif
+
+response_ptr urd::ping_request(const request_ptr /*base_request*/) {
+    response_ptr resp = std::make_unique<api::ping_response>();
+
+    resp->set_status(NORNS_SUCCESS);
+
+    LOGGER_INFO("PING_REQUEST() = {}", resp->to_string());
+    return resp;
+}
+
 
 response_ptr urd::register_job(const request_ptr base_request) {
 
@@ -239,19 +209,18 @@ response_ptr urd::register_job(const request_ptr base_request) {
     uint32_t jobid = request->get<0>();
     auto hosts = request->get<1>();
 
-    boost::unique_lock<boost::shared_mutex> lock(m_jobs_mutex);
+    {
+        boost::unique_lock<boost::shared_mutex> lock(m_jobs_mutex);
 
-    if(m_jobs.find(jobid) != m_jobs.end()) {
-        resp->set_status(NORNS_EJOBEXISTS);
-        goto log_and_return;
+        if(m_jobs.find(jobid) != m_jobs.end()) {
+            resp->set_status(NORNS_EJOBEXISTS);
+        }
+        else {
+            m_jobs.emplace(jobid, std::make_shared<job>(jobid, hosts));
+            resp->set_status(NORNS_SUCCESS);
+        }
     }
 
-    m_jobs.emplace(jobid, 
-                   std::make_shared<job>(jobid, hosts));
-
-    resp->set_status(NORNS_SUCCESS);
-
-log_and_return:
     LOGGER_INFO("REGISTER_JOB({}) = {}", request->to_string(), resp->to_string());
     return resp;
 }
@@ -266,20 +235,20 @@ response_ptr urd::update_job(const request_ptr base_request) {
     uint32_t jobid = request->get<0>();
     auto hosts = request->get<1>();
 
-    boost::unique_lock<boost::shared_mutex> lock(m_jobs_mutex);
+    {
+        boost::unique_lock<boost::shared_mutex> lock(m_jobs_mutex);
 
-    const auto& it = m_jobs.find(jobid);
+        const auto& it = m_jobs.find(jobid);
 
-    if(it == m_jobs.end()) {
-        resp->set_status(NORNS_ENOSUCHJOB);
-        goto log_and_return;
+        if(it == m_jobs.end()) {
+            resp->set_status(NORNS_ENOSUCHJOB);
+        }
+        else {
+            it->second->update(hosts);
+            resp->set_status(NORNS_SUCCESS);
+        }
     }
 
-    it->second->update(hosts);
-
-    resp->set_status(NORNS_SUCCESS);
-
-log_and_return:
     LOGGER_INFO("UPDATE_JOB({}) = {}", request->to_string(), resp->to_string());
     return resp;
 }
@@ -293,20 +262,20 @@ response_ptr urd::remove_job(const request_ptr base_request) {
 
     uint32_t jobid = request->get<0>();
 
-    boost::unique_lock<boost::shared_mutex> lock(m_jobs_mutex);
+    {
+        boost::unique_lock<boost::shared_mutex> lock(m_jobs_mutex);
 
-    const auto& it = m_jobs.find(jobid);
+        const auto& it = m_jobs.find(jobid);
 
-    if(it == m_jobs.end()) {
-        resp->set_status(NORNS_ENOSUCHJOB);
-        goto log_and_return;
+        if(it == m_jobs.end()) {
+            resp->set_status(NORNS_ENOSUCHJOB);
+        }
+        else {
+            m_jobs.erase(it);
+            resp->set_status(NORNS_SUCCESS);
+        }
     }
 
-    m_jobs.erase(it);
-
-    resp->set_status(NORNS_SUCCESS);
-
-log_and_return:
     LOGGER_INFO("UNREGISTER_JOB({}) = {}", request->to_string(), resp->to_string());
     return resp;
 }
@@ -374,27 +343,77 @@ log_and_return:
     return resp;
 }
 
-response_ptr urd::create_task(const request_ptr base_request) {
+response_ptr urd::register_backend(const request_ptr base_request) {
 
-    response_ptr resp = std::make_unique<api::transfer_task_response>();
+    response_ptr resp = std::make_unique<api::backend_register_response>();
 
     // downcast the generic request to the concrete implementation
-    auto request = static_cast<api::transfer_task_request*>(base_request.get());
+    auto request = static_cast<api::backend_register_request*>(base_request.get());
 
-    m_workers->submit_and_forget(io::task(), 42);
+    std::string prefix = request->get<0>();
+    int32_t type = request->get<1>();
+    std::string mount = request->get<2>();
+    int32_t quota = request->get<3>();
 
-    resp->set_status(NORNS_SUCCESS);
+    {
+        boost::unique_lock<boost::shared_mutex> lock(m_backends_mutex);
 
-    LOGGER_INFO("CREATE_TASK({}) = {}", request->to_string(), resp->to_string());
+        if(m_backends->count(prefix) != 0) {
+            resp->set_status(NORNS_EBACKENDEXISTS);
+        }
+        else {
+
+            backend_ptr bptr = storage::backend_factory::create_from(type, mount, quota);
+
+            m_backends->emplace(std::make_pair(prefix, bptr));
+
+            resp->set_status(NORNS_SUCCESS);
+        }
+    }
+
+    LOGGER_INFO("REGISTER_BACKEND({}) = {}", request->to_string(), resp->to_string());
     return resp;
 }
 
-response_ptr urd::ping_request(const request_ptr /*base_request*/) {
-    response_ptr resp = std::make_unique<api::ping_response>();
+/*
+response_ptr urd::update_backend(const request_ptr base_request) {
+
+    response_ptr resp = std::make_unique<api::backend_update_response>();
+
+    // downcast the generic request to the concrete implementation
+    auto request = static_cast<api::backend_update_request*>(base_request.get());
 
     resp->set_status(NORNS_SUCCESS);
 
-    LOGGER_INFO("PING_REQUEST() = {}", resp->to_string());
+log_and_return:
+    LOGGER_INFO("UPDATE_BACKEND({}) = {}", request->to_string(), resp->to_string());
+    return resp;
+}*/
+
+response_ptr urd::remove_backend(const request_ptr base_request) {
+
+    response_ptr resp = std::make_unique<api::backend_unregister_response>();
+
+    // downcast the generic request to the concrete implementation
+    auto request = static_cast<api::backend_unregister_request*>(base_request.get());
+
+    std::string prefix = request->get<0>();
+
+    {
+        boost::unique_lock<boost::shared_mutex> lock(m_backends_mutex);
+
+        const auto& it = m_backends->find(prefix);
+
+        if(it == m_backends->end()) {
+            resp->set_status(NORNS_ENOSUCHBACKEND);
+        }
+        else {
+            m_backends->erase(it);
+            resp->set_status(NORNS_SUCCESS);
+        }
+    }
+
+    LOGGER_INFO("UNREGISTER_BACKEND({}) = {}", request->to_string(), resp->to_string());
     return resp;
 }
 
@@ -416,21 +435,21 @@ void urd::signal_handler(int signum){
     switch(signum) {
 
         case SIGINT:
-            LOGGER_INFO(" A signal(SIGINT) occurred.");
+            LOGGER_WARN("A signal (SIGINT) occurred.");
             if(m_api_listener) {
                 m_api_listener->stop();
             }
             break;
 
         case SIGTERM:
-            LOGGER_INFO(" A signal(SIGTERM) occurred.");
+            LOGGER_WARN("A signal (SIGTERM) occurred.");
             if(m_api_listener) {
                 m_api_listener->stop();
             }
             break;
 
         case SIGHUP:
-            LOGGER_INFO(" A signal(SIGHUP) occurred.");
+            LOGGER_WARN("A signal (SIGHUP) occurred.");
             break;
     }
 }
@@ -446,7 +465,7 @@ int urd::run() {
             teardown();
             return EXIT_SUCCESS;
         }
-    } else{
+    } else {
         if(m_settings->m_use_syslog) {
             logger::create_global_logger(m_settings->m_progname, "syslog");
         }
@@ -468,22 +487,6 @@ int urd::run() {
 	LOGGER_INFO("    internal storage: {}", m_settings->m_storage_path);
 	LOGGER_INFO("    internal storage capacity: {}", m_settings->m_storage_capacity);
 
-    // instantiate configured backends
-//    LOGGER_INFO("* Creating storage backend handlers...");
-//    for(const auto& bend : m_settings->m_backends){
-//        try {
-//
-//            auto b = storage::backend_factory::get_instance().create(bend.m_type, bend.m_options);
-//            m_backends.push_back(b);
-//
-//            LOGGER_INFO("    Registered backend '{}' (type: {})", bend.m_name, bend.m_type);  
-//            LOGGER_INFO("      [ capacity: {} bytes ]", b->get_capacity());
-//
-//        } catch(std::invalid_argument ex) {
-//            m_logger->warn(" Ignoring definition of backend '{}' (type: unknown)", bend.m_name);
-//        }
-//    }
-
     // signal handlers must be installed AFTER daemonizing
     LOGGER_INFO("* Installing signal handlers...");
     m_signal_listener = std::make_unique<signal_listener>(std::bind(&urd::signal_handler, this, std::placeholders::_1));
@@ -504,6 +507,16 @@ int urd::run() {
     // create API listener and register callbacks for each request type
     m_api_listener = std::make_unique<api_listener>(m_settings->m_ipc_sockfile);
 
+    /* user-level functionalities */
+    m_api_listener->register_callback(
+            api::request_type::transfer_task,
+            std::bind(&urd::create_task, this, std::placeholders::_1));
+
+    m_api_listener->register_callback(
+            api::request_type::ping,
+            std::bind(&urd::ping_request, this, std::placeholders::_1));
+
+    /* admin-level functionalities */
     m_api_listener->register_callback(
             api::request_type::job_register,
             std::bind(&urd::register_job, this, std::placeholders::_1));
@@ -525,16 +538,22 @@ int urd::run() {
             std::bind(&urd::remove_process, this, std::placeholders::_1));
 
     m_api_listener->register_callback(
-            api::request_type::transfer_task,
-            std::bind(&urd::create_task, this, std::placeholders::_1));
+            api::request_type::backend_register,
+            std::bind(&urd::register_backend, this, std::placeholders::_1));
+
+/*    m_api_listener->register_callback(
+            api::request_type::backend_update,
+            std::bind(&urd::update_backend, this, std::placeholders::_1));*/
 
     m_api_listener->register_callback(
-            api::request_type::ping,
-            std::bind(&urd::ping_request, this, std::placeholders::_1));
+            api::request_type::backend_unregister,
+            std::bind(&urd::remove_backend, this, std::placeholders::_1));
 
     m_api_listener->register_callback(
             api::request_type::bad_request,
             std::bind(&urd::unknown_request, this, std::placeholders::_1));
+
+    m_backends = std::make_unique<backend_manager>();
 
     // restore the umask
 	umask(old_mask);
@@ -543,7 +562,15 @@ int urd::run() {
     LOGGER_INFO("Awaiting requests...");
     m_api_listener->run();
 
+	LOGGER_INFO("");
+	LOGGER_INFO("===========================");
+	LOGGER_INFO("== Stopping Urd daemon   ==");
+	LOGGER_INFO("===========================");
+	LOGGER_INFO("");
+
     teardown();
+
+	LOGGER_INFO("[Stopped]");
 
     return EXIT_SUCCESS;
 }
