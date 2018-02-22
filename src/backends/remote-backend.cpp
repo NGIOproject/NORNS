@@ -25,46 +25,40 @@
  *                                                                       *
  *************************************************************************/
 
-#ifndef __IO_TASK_HPP__
-#define __IO_TASK_HPP__
+#include "backend-base.hpp"
+#include "remote-backend.hpp"
 
-#include <cstdint>
-#include <memory>
+namespace storage {
+namespace detail {
 
-#include "norns.h"
-#include "resources.hpp"
-#include "backends.hpp"
+remote_backend::remote_backend() {} 
 
-namespace io {
+std::string remote_backend::mount() const {
+    return "";
+}
 
-/*! Valid types of IO tasks */
-enum class task_type {
-    copy,
-    move,
-    unknown
-};
+uint32_t remote_backend::quota() const {
+    return 0;
+}
 
-struct task {
+bool remote_backend::accepts(resource_info_ptr res) const {
+    switch(res->type()) {
+        case data::resource_type::local_posix_path:
+            return true;
+        default:
+            return false;
+    }
+}
 
-    using backend_ptr = std::shared_ptr<storage::backend>;
-    using resource_ptr = std::shared_ptr<data::resource>;
+void remote_backend::read_data() const {
+}
 
-    task(norns_op_t type, const resource_ptr src, const resource_ptr dst);
-    norns_tid_t id() const;
-    bool is_valid() const;
-    void operator()() const;
+void remote_backend::write_data() const {
+}
 
-    static norns_tid_t create_id();
+std::string remote_backend::to_string() const {
+    return "REMOTE_BACKEND(";// + m_mount + ", " + std::to_string(m_quota) + ")";
+}
 
-    uint64_t    m_id;
-    pid_t       m_pid;
-    uint32_t    m_jobid;
-    
-    task_type m_type;
-    resource_ptr m_src;
-    resource_ptr m_dst;
-};
-
-} // namespace io
-
-#endif // __IO_TASK_HPP__
+} // namespace detail
+} // namespace storage

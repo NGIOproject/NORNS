@@ -25,46 +25,30 @@
  *                                                                       *
  *************************************************************************/
 
-#ifndef __IO_TASK_HPP__
-#define __IO_TASK_HPP__
+#ifndef __RESOURCE_INFO_HPP__
+#define __RESOURCE_INFO_HPP__
 
-#include <cstdint>
-#include <memory>
+#include <string>
 
-#include "norns.h"
-#include "resources.hpp"
-#include "backends.hpp"
+namespace data {
 
-namespace io {
-
-/*! Valid types of IO tasks */
-enum class task_type {
-    copy,
-    move,
-    unknown
+/*! Supported resource types */
+enum class resource_type {
+    memory_region,
+    local_posix_path,
+    shared_posix_path,
+    remote_posix_path
 };
 
-struct task {
-
-    using backend_ptr = std::shared_ptr<storage::backend>;
-    using resource_ptr = std::shared_ptr<data::resource>;
-
-    task(norns_op_t type, const resource_ptr src, const resource_ptr dst);
-    norns_tid_t id() const;
-    bool is_valid() const;
-    void operator()() const;
-
-    static norns_tid_t create_id();
-
-    uint64_t    m_id;
-    pid_t       m_pid;
-    uint32_t    m_jobid;
-    
-    task_type m_type;
-    resource_ptr m_src;
-    resource_ptr m_dst;
+/*! Base class for data resources */
+struct resource_info {
+    virtual ~resource_info() {}
+    virtual resource_type type() const = 0;
+    virtual std::string nsid() const = 0;
+    virtual bool is_remote() const = 0;
+    virtual std::string to_string() const = 0;
 };
 
-} // namespace io
+} // namespace data
 
-#endif // __IO_TASK_HPP__
+#endif /* __RESOURCE_INFO_HPP__ */

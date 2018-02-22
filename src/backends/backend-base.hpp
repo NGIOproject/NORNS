@@ -30,11 +30,15 @@
 #include <memory>
 #include <boost/preprocessor/cat.hpp>
 
-#include <iostream>
+#include "resources/resource-info.hpp"
 
 namespace storage {
 
 class backend {
+
+protected:
+    using resource_info_ptr = std::shared_ptr<data::resource_info>;
+
 public:
     virtual ~backend() {};
 
@@ -43,13 +47,15 @@ public:
     virtual void read_data() const = 0;
     virtual void write_data() const = 0;
 
+    virtual bool accepts(resource_info_ptr res) const = 0;
+
     virtual std::string to_string() const = 0;
 
 }; // class backend
 
 #define NORNS_REGISTER_BACKEND(id, T)                                                 \
     static bool BOOST_PP_CAT(T, __regged) =                                           \
-        storage::backend_factory::get_instance().register_backend<T>(id,              \
+        storage::backend_factory::get().register_backend<T>(id,              \
                 [](const std::string& mount, uint32_t quota) {                        \
                     return std::shared_ptr<T>(new T(mount, quota)); \
                 });
@@ -60,11 +66,17 @@ class backend_factory {
 
 
 public:
-    static backend_factory& get_instance();
+    static backend_factory& get();
 
     template <typename ...Args>
     static std::shared_ptr<backend> create_from(Args&& ...args) {
-        return get_instance().create(std::forward<Args>(args)...);
+
+        try {
+            return get().create(std::forward<Args>(args)...);
+        }
+        catch(std::invalid_argument) {
+            return std::shared_ptr<backend>();
+        }
     }
 
     template <typename T>

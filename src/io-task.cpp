@@ -25,46 +25,60 @@
  *                                                                       *
  *************************************************************************/
 
-#ifndef __IO_TASK_HPP__
-#define __IO_TASK_HPP__
-
-#include <cstdint>
-#include <memory>
-
+#include <atomic>
 #include "norns.h"
-#include "resources.hpp"
-#include "backends.hpp"
+#include "logger.hpp"
+#include "io-task.hpp"
+
+namespace {
+
+io::task_type remap_type(norns_op_t type) {
+    switch(type) {
+        case NORNS_IOTASK_COPY:
+            return io::task_type::copy;
+        case NORNS_IOTASK_MOVE:
+            return io::task_type::move;
+        default:
+            return io::task_type::unknown;
+    }
+}
+
+}
 
 namespace io {
 
-/*! Valid types of IO tasks */
-enum class task_type {
-    copy,
-    move,
-    unknown
-};
+task::task(norns_op_t type, const resource_ptr src, const resource_ptr dst)
+    : m_id(create_id()),
+      m_type(remap_type(type)),
+      m_src(src),
+      m_dst(dst) { }
 
-struct task {
+norns_tid_t task::id() const {
+    return m_id;
+}
 
-    using backend_ptr = std::shared_ptr<storage::backend>;
-    using resource_ptr = std::shared_ptr<data::resource>;
+bool task::is_valid() const {
+    return true;
+}
 
-    task(norns_op_t type, const resource_ptr src, const resource_ptr dst);
-    norns_tid_t id() const;
-    bool is_valid() const;
-    void operator()() const;
+norns_tid_t task::create_id() {
+    static std::atomic<norns_tid_t> base(0);
+    return ++base;
+}
 
-    static norns_tid_t create_id();
+void task::operator()() const {
+    LOGGER_WARN("[{}] Starting I/O task", m_id);
+    LOGGER_WARN("[{}]   FROM: {}", m_id, m_src->to_string());
+    LOGGER_WARN("[{}]     TO: {}", m_id, m_dst->to_string());
 
-    uint64_t    m_id;
-    pid_t       m_pid;
-    uint32_t    m_jobid;
-    
-    task_type m_type;
-    resource_ptr m_src;
-    resource_ptr m_dst;
-};
+/*
+    while(m_src->get_data()) {
+        m_dst->put_data();
+    }
+    */
+
+    LOGGER_WARN("[{}] I/O task complete", m_id);
+}
 
 } // namespace io
 
-#endif // __IO_TASK_HPP__

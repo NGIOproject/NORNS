@@ -43,7 +43,6 @@ SCENARIO("remove process from job", "[api::norns_remove_process]") {
         WHEN("a process is removed from a non-registered job") {
 
             struct norns_cred cred;
-            struct norns_job job = NORNS_JOB_INIT(NULL, 0, NULL, 0);
             const uint32_t jobid = 42;
             const uid_t uid = 1001;
             const gid_t gid = 2001;
@@ -61,15 +60,15 @@ SCENARIO("remove process from job", "[api::norns_remove_process]") {
             const char* test_hosts[] = { "host00", "host01" };
             const size_t test_nhosts = sizeof(test_hosts) / sizeof(test_hosts[0]);
 
-            struct norns_backend b0 = NORNS_BACKEND_INIT("b0://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b0", 1024);
-            struct norns_backend b1 = NORNS_BACKEND_INIT("b1://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b1", 2048);
-            struct norns_backend b2 = NORNS_BACKEND_INIT("b2://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b2", 1024);
+            norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b0", 1024);
+            norns_backend_t b1 = NORNS_BACKEND("b1://", NORNS_BACKEND_NVML, "/mnt/b1", 2048);
+            norns_backend_t b2 = NORNS_BACKEND("b2://", NORNS_BACKEND_NVML, "/mnt/b2", 1024);
 
-            struct norns_backend* test_backends[] = { &b0, &b1, &b2 };
+            norns_backend_t* test_backends[] = { &b0, &b1, &b2 };
             const size_t test_nbackends = sizeof(test_backends) / sizeof(test_backends[0]);
 
             struct norns_cred cred;
-            struct norns_job job = NORNS_JOB_INIT(test_hosts, test_nhosts, test_backends, test_nbackends);
+            norns_job_t job = NORNS_JOB(test_hosts, test_nhosts, test_backends, test_nbackends);
             const uint32_t jobid = 42;
             const uid_t uid = 1001;
             const gid_t gid = 2001;
@@ -92,16 +91,15 @@ SCENARIO("remove process from job", "[api::norns_remove_process]") {
             const char* test_hosts[] = { "host00", "host01" };
             const size_t test_nhosts = sizeof(test_hosts) / sizeof(test_hosts[0]);
 
-            struct norns_backend b0 = NORNS_BACKEND_INIT("b0://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b0", 1024);
-            struct norns_backend b1 = NORNS_BACKEND_INIT("b1://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b1", 2048);
-            struct norns_backend b2 = NORNS_BACKEND_INIT("b2://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b2", 1024);
+            norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b0", 1024);
+            norns_backend_t b1 = NORNS_BACKEND("b1://", NORNS_BACKEND_NVML, "/mnt/b1", 2048);
+            norns_backend_t b2 = NORNS_BACKEND("b2://", NORNS_BACKEND_NVML, "/mnt/b2", 1024);
 
-            struct norns_backend* test_backends[] = { &b0, &b1, &b2 };
+            norns_backend_t* test_backends[] = { &b0, &b1, &b2 };
             const size_t test_nbackends = sizeof(test_backends) / sizeof(test_backends[0]);
 
             struct norns_cred cred;
-            struct norns_job job1 = NORNS_JOB_INIT(test_hosts, test_nhosts, test_backends, test_nbackends);
-            struct norns_job job2 = NORNS_JOB_INIT(NULL, 0, NULL, 0);
+            norns_job_t job1 = NORNS_JOB(test_hosts, test_nhosts, test_backends, test_nbackends);
             const uint32_t jobid = 42;
             const uid_t uid = 1001;
             const gid_t gid = 2001;
@@ -128,16 +126,15 @@ SCENARIO("remove process from job", "[api::norns_remove_process]") {
             const char* test_hosts[] = { "host00", "host01" };
             const size_t test_nhosts = sizeof(test_hosts) / sizeof(test_hosts[0]);
 
-            struct norns_backend b0 = NORNS_BACKEND_INIT("b0://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b0", 1024);
-            struct norns_backend b1 = NORNS_BACKEND_INIT("b1://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b1", 2048);
-            struct norns_backend b2 = NORNS_BACKEND_INIT("b2://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b2", 1024);
+            norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b0", 1024);
+            norns_backend_t b1 = NORNS_BACKEND("b1://", NORNS_BACKEND_NVML, "/mnt/b1", 2048);
+            norns_backend_t b2 = NORNS_BACKEND("b2://", NORNS_BACKEND_NVML, "/mnt/b2", 1024);
 
-            struct norns_backend* test_backends[] = { &b0, &b1, &b2 };
+            norns_backend_t* test_backends[] = { &b0, &b1, &b2 };
             const size_t test_nbackends = sizeof(test_backends) / sizeof(test_backends[0]);
 
             struct norns_cred cred;
-            struct norns_job job1 = NORNS_JOB_INIT(test_hosts, test_nhosts, test_backends, test_nbackends);
-            struct norns_job job2 = NORNS_JOB_INIT(NULL, 0, NULL, 0);
+            norns_job_t job1 = NORNS_JOB(test_hosts, test_nhosts, test_backends, test_nbackends);
             const uint32_t jobid = 42;
             const uid_t uid = 1001;
             const gid_t gid = 2001;
@@ -172,7 +169,6 @@ SCENARIO("remove process from job", "[api::norns_remove_process]") {
         WHEN("attempting to remove a process") {
 
             struct norns_cred cred;
-            struct norns_job job = NORNS_JOB_INIT(NULL, 0, NULL, 0);
             const uint32_t jobid = 42;
             const uid_t uid = 1001;
             const gid_t gid = 2001;

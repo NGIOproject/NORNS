@@ -56,6 +56,8 @@ using backend_ptr = std::shared_ptr<storage::backend>;
 using backend_manager = std::unordered_map<std::string, backend_ptr>;
 using backend_manager_ptr = std::unique_ptr<backend_manager>;
 
+using resource_info_ptr = std::shared_ptr<data::resource_info>;
+using resource_ptr = std::shared_ptr<data::resource>;
 
 class urd {
 
@@ -67,6 +69,13 @@ public:
 private:
     int daemonize();
     void signal_handler(int);
+    //norns_error_t validate_task_args(norns_op_t op, 
+    //                                 const foo& src, 
+    //                                 const foo& dst) const;
+
+    norns_error_t validate_iotask_args(norns_op_t op, 
+                                       resource_info_ptr src_info, 
+                                       resource_info_ptr dst_info) const;
 
     response_ptr create_task(const request_ptr req);
     response_ptr ping_request(const request_ptr req);

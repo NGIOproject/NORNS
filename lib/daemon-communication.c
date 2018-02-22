@@ -44,10 +44,108 @@ static int send_message(int conn, const msgbuffer_t* buffer);
 static int recv_message(int conn, msgbuffer_t* buffer);
 static ssize_t recv_data(int conn, void* data, size_t size);
 static ssize_t send_data(int conn, const void* data, size_t size);
-static void print_hex(void* buffer, size_t bytes);
+static void print_hex(void* buffer, size_t bytes) __attribute__((unused));
+static norns_error_t send_request(norns_rpc_type_t type, norns_response_t* resp, ...);
+
+norns_error_t
+send_submit_request(norns_iotask_t* task) {
+
+    int res;
+    norns_response_t resp;
+
+    // XXX add missing checks
+    if(task->t_id != 0) {
+        return NORNS_EBADARGS;
+    }
+
+    if((res = send_request(NORNS_SUBMIT_IOTASK, &resp, task)) 
+            != NORNS_SUCCESS) {
+        return res;
+    }
+
+    if(resp.r_type != NORNS_SUBMIT_IOTASK) {
+        return NORNS_ESNAFU;
+    }
+
+    task->t_id = resp.r_taskid;
+
+    return resp.r_status;
+}
+
+norns_error_t
+send_ping_request() {
+
+    int res;
+    norns_response_t resp;
+
+    if((res = send_request(NORNS_PING, &resp)) != NORNS_SUCCESS) {
+        return res;
+    }
+
+    if(resp.r_type != NORNS_PING) {
+        return NORNS_ESNAFU;
+    }
+
+    return resp.r_status;
+}
+
+norns_error_t
+send_job_request(norns_rpc_type_t type, struct norns_cred* auth, 
+                 uint32_t jobid, norns_job_t* job) {
+
+    int res;
+    norns_response_t resp;
+
+    if((res = send_request(type, &resp, auth, jobid, job)) 
+            != NORNS_SUCCESS) {
+        return res;
+    }
+
+    if(resp.r_type != type) {
+        return NORNS_ESNAFU;
+    }
+
+    return resp.r_status;
+}
 
 
+norns_error_t
+send_process_request(norns_rpc_type_t type, struct norns_cred* auth, 
+                     uint32_t jobid, uid_t uid, gid_t gid, pid_t pid) {
 
+    int res;
+    norns_response_t resp;
+
+    if((res = send_request(type, &resp, auth, jobid, uid, gid, pid)) 
+            != NORNS_SUCCESS) {
+        return res;
+    }
+
+    if(resp.r_type != type) {
+        return NORNS_ESNAFU;
+    }
+
+    return resp.r_status;
+}
+
+norns_error_t
+send_backend_request(norns_rpc_type_t type, struct norns_cred* auth, 
+                     const char* nsid, norns_backend_t* backend) {
+
+    int res;
+    norns_response_t resp;
+
+    if((res = send_request(type, &resp, auth, nsid, backend)) 
+            != NORNS_SUCCESS) {
+        return res;
+    }
+
+    if(resp.r_type != type) {
+        return NORNS_ESNAFU;
+    }
+
+    return resp.r_status;
+}
 
 static int
 send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
@@ -63,10 +161,10 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
     switch(type) {
         case NORNS_SUBMIT_IOTASK:
         {
-            const struct norns_iotd* iotdp =
-                va_arg(ap, const struct norns_iotd*);
+            const norns_iotask_t* task =
+                va_arg(ap, const norns_iotask_t*);
 
-            if((res = pack_to_buffer(type, &req_buf, iotdp)) 
+            if((res = pack_to_buffer(type, &req_buf, task)) 
                     != NORNS_SUCCESS) {
                 return res;
             }
@@ -92,8 +190,8 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
                 va_arg(ap, const struct norns_cred*);
             const uint32_t jobid =
                 va_arg(ap, const uint32_t);
-            const struct norns_job* job =
-                va_arg(ap, const struct norns_job*);
+            const norns_job_t* job =
+                va_arg(ap, const norns_job_t*);
 
             if((res = pack_to_buffer(type, &req_buf, auth, jobid, job)) 
                     != NORNS_SUCCESS) {
@@ -133,8 +231,8 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
                 va_arg(ap, const struct norns_cred*);
             const char* const prefix =
                 va_arg(ap, const char* const);
-            const struct norns_backend* backend = 
-                va_arg(ap, const struct norns_backend*);
+            const norns_backend_t* backend = 
+                va_arg(ap, const norns_backend_t*);
 
             if((res = pack_to_buffer(type, &req_buf, auth, prefix, backend)) 
                     != NORNS_SUCCESS) {
@@ -184,188 +282,10 @@ cleanup_on_error:
     return res;
 }
 
-int 
-send_transfer_request(struct norns_iotd* iotdp) {
-
-    int res;
-    norns_response_t resp;
-
-    // XXX add missing checks
-    if(iotdp->io_taskid != 0 || false
-            
-            ) {
-        return NORNS_EBADARGS;
-    }
-
-    if((res = send_request(NORNS_SUBMIT_IOTASK, &resp, iotdp)) 
-            != NORNS_SUCCESS) {
-        return res;
-    }
-
-    if(resp.r_type != NORNS_SUBMIT_IOTASK) {
-        return NORNS_ESNAFU;
-    }
-
-    iotdp->io_taskid = resp.r_taskid;
-
-    return resp.r_status;
-
-#if 0
-    int rv;
-    void* req_buf, *resp_buf;
-    size_t req_len, resp_len;
-    int conn = -1;
-
-    Norns__Rpc__Request* req = NULL;
-    Norns__Rpc__Response* resp = NULL;
-    req_buf = resp_buf = NULL;
-    req_len = resp_len = 0;
-
-    // XXX add missing checks
-    if(iotdp->io_taskid != 0 || false
-            
-            ) {
-        return NORNS_EBADARGS;
-    }
-
-    msgbuffer_t xbuffer;
-
-    if((rv = pack_to_buffer(NORNS_SUBMIT_IOTASK, &xbuffer, iotdp)) != NORNS_SUCCESS) {
-        goto cleanup_on_error;
-    }
-
-#if 0
-    if((req = build_request_msg(NORNS_SUBMIT_IOTASK, iotdp)) == NULL) {
-        rv = NORNS_ENOMEM;
-        goto cleanup_on_error;
-    }
-
-    // fill the buffer
-    req_len = norns__rpc__request__get_packed_size(req);
-    req_buf = xmalloc_nz(req_len);
-
-    if(req_buf == NULL) {
-        rv = NORNS_ENOMEM;
-        goto cleanup_on_error;
-    }
-
-    norns__rpc__request__pack(req, req_buf);
-#endif
-
-    conn = connect_to_daemon();
-
-    if(conn == -1) {
-        rv = NORNS_ECONNFAILED;
-        goto cleanup_on_error;
-    }
-
-	// connection established, send the message
-	if(send_message(conn, req_buf, req_len) < 0) {
-	    rv = NORNS_ERPCSENDFAILED;
-	    goto cleanup_on_error;
-    }
-
-    // wait for the daemon's response
-    if(recv_message(conn, &resp_buf, &resp_len) < 0) {
-        rv = NORNS_ERPCRECVFAILED;
-	    goto cleanup_on_error;
-    }
-
-    resp = norns__rpc__response__unpack(NULL, resp_len, resp_buf);
-
-    if(resp == NULL) {
-        rv = NORNS_ERPCRECVFAILED;
-        goto cleanup_on_error;
-    }
-
-    rv = resp->status;
-
-cleanup_on_error:
-    if(req != NULL) {
-        xfree(req);
-    }
-
-    return rv;
-#endif
-}
-
-int
-send_ping_request() {
-
-    int res;
-    norns_response_t resp;
-
-    if((res = send_request(NORNS_PING, &resp)) != NORNS_SUCCESS) {
-        return res;
-    }
-
-    if(resp.r_type != NORNS_PING) {
-        return NORNS_ESNAFU;
-    }
-
-    return resp.r_status;
-}
-
-int 
-send_job_request(norns_rpc_type_t type, struct norns_cred* auth, 
-                 uint32_t jobid, struct norns_job* job) {
-
-    int res;
-    norns_response_t resp;
-
-    if((res = send_request(type, &resp, auth, jobid, job)) 
-            != NORNS_SUCCESS) {
-        return res;
-    }
-
-    if(resp.r_type != type) {
-        return NORNS_ESNAFU;
-    }
-
-    return resp.r_status;
-}
 
 
-int
-send_process_request(norns_rpc_type_t type, struct norns_cred* auth, 
-                     uint32_t jobid, uid_t uid, gid_t gid, pid_t pid) {
-
-    int res;
-    norns_response_t resp;
-
-    if((res = send_request(type, &resp, auth, jobid, uid, gid, pid)) 
-            != NORNS_SUCCESS) {
-        return res;
-    }
-
-    if(resp.r_type != type) {
-        return NORNS_ESNAFU;
-    }
-
-    return resp.r_status;
-}
-
-int
-send_backend_request(norns_rpc_type_t type, struct norns_cred* auth, 
-                     const char* prefix_id, struct norns_backend* backend) {
-
-    int res;
-    norns_response_t resp;
-
-    if((res = send_request(type, &resp, auth, prefix_id, backend)) 
-            != NORNS_SUCCESS) {
-        return res;
-    }
-
-    if(resp.r_type != type) {
-        return NORNS_ESNAFU;
-    }
-
-    return resp.r_status;
-}
-
-
-static int connect_to_daemon(void) {
+static int 
+connect_to_daemon(void) {
 
 	struct sockaddr_un server;
 
@@ -458,7 +378,8 @@ recv_error:
     return -1;
 }
 
-static ssize_t recv_data(int conn, void* data, size_t size) {
+static ssize_t 
+recv_data(int conn, void* data, size_t size) {
 
     size_t brecvd = 0; // bytes received
     size_t bleft = size; // bytes left to receive
@@ -484,7 +405,8 @@ static ssize_t recv_data(int conn, void* data, size_t size) {
 }
 
 
-static ssize_t send_data(int conn, const void* data, size_t size) {
+static ssize_t
+send_data(int conn, const void* data, size_t size) {
 
 	size_t bsent = 0;	// bytes sent
 	size_t bleft = size;// bytes left to send
@@ -510,7 +432,8 @@ static ssize_t send_data(int conn, const void* data, size_t size) {
 	return (n == -1 ? n : (ssize_t) bsent);
 }
 
-static void print_hex(void* buffer, size_t bytes) {
+static void 
+print_hex(void* buffer, size_t bytes) {
 
     unsigned char* p = (unsigned char*) buffer;
 

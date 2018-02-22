@@ -28,7 +28,13 @@
 #ifndef __NORNS_BACKENDS_HPP__
 #define  __NORNS_BACKENDS_HPP__
 
+#include <memory>
 #include "backends/backend-base.hpp"
+#include "backends/remote-backend.hpp"
+
+namespace storage {
+    static const auto remote_backend = std::make_shared<detail::remote_backend>();
+} // namespace storage
 
 #endif /* __NORNS_BACKENDS_HPP__ */
 

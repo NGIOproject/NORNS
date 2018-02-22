@@ -25,78 +25,17 @@
  *                                                                       *
  *************************************************************************/
 
-#include "fake-daemon.hpp"
+#ifndef __RESOURCES_HPP__
+#define  __RESOURCES_HPP__
 
-#include "catch.hpp"
+#include "resources/resource-info.hpp" // must be first
 
-#include <chrono>
-#include <norns.h>
-#include <urd.hpp>
-#include <settings.hpp>
+#include "resources/local-path.hpp"
+#include "resources/memory-buffer.hpp"
+#include "resources/remote-path.hpp"
+#include "resources/shared-path.hpp"
 
-#include "fake-daemon.hpp"
+#include "resources/resource.hpp" // must be last
 
-//#define USE_REAL_DAEMON
+#endif /* __RESOURCES_HPP__ */
 
-SCENARIO("transfer request", "[api::norns_transfer]") {
-    GIVEN("a running urd instance") {
-
-#ifndef USE_REAL_DAEMON
-//        extern const char* norns_api_sockfile;
-//        norns_api_sockfile = "./test_urd.socket";
-
-        fake_daemon td;
-        td.run();
-#endif
-
-
-
-        WHEN("requesting a transfer") {
-
-            struct norns_iotd iotd = NORNS_IOTD_INIT(
-                NORNS_COPY, 
-                NORNS_INPUT_PATH_INIT(
-                    NORNS_BACKEND_LOCAL_NVML,
-                    NORNS_LOCAL_PATH_INIT("nvml0://a/b/c")),
-                NORNS_OUTPUT_PATH_INIT(
-                    NORNS_BACKEND_REMOTE_NVML,
-                    NORNS_REMOTE_PATH_INIT("host0", "nvml1://a/b/d"))
-            );
-
-            int rv = norns_transfer(&iotd);
-
-            THEN("NORNS_SUCCESS is returned") {
-                REQUIRE(rv == NORNS_SUCCESS);
-                REQUIRE(iotd.io_taskid != 0);
-            }
-        }
-
-#ifndef USE_REAL_DAEMON
-        int ret = td.stop();
-        REQUIRE(ret == 0);
-#endif
-    }
-
-#if 0
-    GIVEN("a non-running urd instance") {
-        WHEN("attempting to request a transfer") {
-
-            struct norns_iotd iotd = NORNS_IOTD_INIT(
-                NORNS_COPY, 
-                NORNS_INPUT_PATH_INIT(
-                    NORNS_BACKEND_LOCAL_NVML,
-                    NORNS_LOCAL_PATH_INIT("nvml0://a/b/c")),
-                NORNS_OUTPUT_PATH_INIT(
-                    NORNS_BACKEND_REMOTE_NVML,
-                    NORNS_REMOTE_PATH_INIT("host0", "nvml1://a/b/d"))
-            );
-
-            int rv = norns_transfer(&iotd);
-
-            THEN("NORNS_ECONNFAILED is returned") {
-                REQUIRE(rv == NORNS_ECONNFAILED);
-            }
-        }
-    }
-#endif
-}

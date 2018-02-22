@@ -29,14 +29,17 @@
 
 #include <norns.h>
 
+#if 0
 void print_iotd(struct norns_iotd* iotdp){
     fprintf(stdout, "iotd -> struct nornds_iotd {\n");
     fprintf(stdout, "  io_taskid = %d;\n", iotdp->io_taskid);
     fprintf(stdout, "};\n");
 }
+#endif
 
 
 int main() {
+#if 0
     struct norns_iotd iotd = {
         .io_taskid = 0,
     };
@@ -52,6 +55,7 @@ int main() {
     fprintf(stdout, "norns_transfer() succeeded!\n");
     fprintf(stdout, "output from submission:\n");
     print_iotd(&iotd);
+#endif
 
     return 0;
 }

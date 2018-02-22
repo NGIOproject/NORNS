@@ -41,6 +41,15 @@ uint32_t nvml_dax::quota() const {
     return m_quota;
 }
 
+bool nvml_dax::accepts(resource_info_ptr res) const {
+    switch(res->type()) {
+        case data::resource_type::local_posix_path:
+            return true;
+        default:
+            return false;
+    }
+}
+
 void nvml_dax::read_data() const {
 }
 

@@ -50,7 +50,9 @@ api_SOURCES = \
 	api-ping.cpp \
 	api-process-add.cpp \
 	api-process-remove.cpp \
-	api-transfer.cpp \
+	api-resource-init.cpp \
+	api-task-init.cpp \
+	api-task-submit.cpp \
 	fake-daemon.cpp \
 	fake-daemon.hpp \
 	$(END)

@@ -37,6 +37,7 @@ public:
 
     std::string mount() const override;
     uint32_t quota() const override;
+    bool accepts(resource_info_ptr res) const override;
     void read_data() const override;
     void write_data() const override;
     std::string to_string() const;
@@ -46,7 +47,7 @@ private:
     uint32_t    m_quota;
 };
 
-NORNS_REGISTER_BACKEND(NORNS_BACKEND_LOCAL_NVML, nvml_dax);
+NORNS_REGISTER_BACKEND(NORNS_BACKEND_NVML, nvml_dax);
 
 } // namespace storage
 

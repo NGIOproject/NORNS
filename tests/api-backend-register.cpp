@@ -54,7 +54,7 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
         WHEN("a backend is registered with an invalid prefix") {
 
             struct norns_cred cred;
-            struct norns_backend b0 = NORNS_BACKEND_INIT(NULL, NORNS_BACKEND_LOCAL_NVML, "/mnt/b0", 1024);
+            norns_backend_t b0 = NORNS_BACKEND(NULL, NORNS_BACKEND_NVML, "/mnt/b0", 1024);
 
             int rv = norns_register_backend(&cred, &b0);
 
@@ -66,7 +66,7 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
         WHEN("a backend is registered with an invalid prefix") {
 
             struct norns_cred cred;
-            struct norns_backend b0 = NORNS_BACKEND_INIT("", NORNS_BACKEND_LOCAL_NVML, "/mnt/b0", 1024);
+            norns_backend_t b0 = NORNS_BACKEND("", NORNS_BACKEND_NVML, "/mnt/b0", 1024);
 
             int rv = norns_register_backend(&cred, &b0);
 
@@ -79,7 +79,7 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
         WHEN("a backend is registered with an invalid type") {
 
             struct norns_cred cred;
-            struct norns_backend b0 = NORNS_BACKEND_INIT("b0", 42, "/mnt/b0", 1024);
+            norns_backend_t b0 = NORNS_BACKEND("b0", 42, "/mnt/b0", 1024);
 
             int rv = norns_register_backend(&cred, &b0);
 
@@ -91,7 +91,7 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
 
         WHEN("a backend is registered with an invalid mount point") {
             struct norns_cred cred;
-            struct norns_backend b0 = NORNS_BACKEND_INIT("b0://", NORNS_BACKEND_LOCAL_NVML, "", 1024);
+            norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "", 1024);
 
             int rv = norns_register_backend(&cred, &b0);
 
@@ -102,7 +102,7 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
 
         WHEN("a backend is registered with an invalid mount point") {
             struct norns_cred cred;
-            struct norns_backend b0 = NORNS_BACKEND_INIT("b0://", NORNS_BACKEND_LOCAL_NVML, NULL, 1024);
+            norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, NULL, 1024);
 
             int rv = norns_register_backend(&cred, &b0);
 
@@ -113,7 +113,7 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
 
         WHEN("a backend is registered with an invalid quota") {
             struct norns_cred cred;
-            struct norns_backend b0 = NORNS_BACKEND_INIT("b0://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b0", 0);
+            norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b0", 0);
 
             int rv = norns_register_backend(&cred, &b0);
 
@@ -124,7 +124,7 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
 
         WHEN("a backend is registered with valid information") {
             struct norns_cred cred;
-            struct norns_backend b0 = NORNS_BACKEND_INIT("b0://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b0", 4096);
+            norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b0", 4096);
 
             int rv = norns_register_backend(&cred, &b0);
 
@@ -135,8 +135,8 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
 
         WHEN("attempting to register a backend with a duplicate prefix") {
             struct norns_cred cred;
-            struct norns_backend b0 = NORNS_BACKEND_INIT("b0://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b0", 4096);
-            struct norns_backend b1 = NORNS_BACKEND_INIT("b0://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b1", 4096);
+            norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b0", 4096);
+            norns_backend_t b1 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b1", 4096);
 
             int rv = norns_register_backend(&cred, &b0);
 
@@ -160,7 +160,7 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
         WHEN("attempting to register a backend") {
 
             struct norns_cred cred;
-            struct norns_backend b0 = NORNS_BACKEND_INIT("b0://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b0", 1024);
+            norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b0", 1024);
 
             int rv = norns_register_backend(&cred, &b0);
 

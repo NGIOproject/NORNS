@@ -25,46 +25,45 @@
  *                                                                       *
  *************************************************************************/
 
-#ifndef __IO_TASK_HPP__
-#define __IO_TASK_HPP__
+#include <sstream>
+#include "resource-info.hpp"
 
-#include <cstdint>
-#include <memory>
+#ifndef __MEMORY_BUFFER_HPP__
+#define __MEMORY_BUFFER_HPP__
 
-#include "norns.h"
-#include "resources.hpp"
-#include "backends.hpp"
+namespace data {
 
-namespace io {
+/*! Memory buffer data */
+struct memory_buffer : public resource_info {
 
-/*! Valid types of IO tasks */
-enum class task_type {
-    copy,
-    move,
-    unknown
+    memory_buffer(std::string nsid, uint64_t address, std::size_t size)
+        : m_nsid(nsid),
+          m_address(address),
+          m_size(size) {}
+
+    resource_type type() const override {
+        return resource_type::memory_region;
+    }
+
+    std::string nsid() const override {
+        return m_nsid;
+    }
+
+    bool is_remote() const override {
+        return false;
+    }
+
+    std::string to_string() const override {
+        std::stringstream ss;
+        ss << "0x" << std::hex << m_address << "+" << "0x" << m_size;
+        return "MEMBUF[" + ss.str() + "]";
+    }
+
+    std::string m_nsid;
+    uint64_t m_address;
+    std::size_t m_size;
 };
 
-struct task {
+} // namespace data
 
-    using backend_ptr = std::shared_ptr<storage::backend>;
-    using resource_ptr = std::shared_ptr<data::resource>;
-
-    task(norns_op_t type, const resource_ptr src, const resource_ptr dst);
-    norns_tid_t id() const;
-    bool is_valid() const;
-    void operator()() const;
-
-    static norns_tid_t create_id();
-
-    uint64_t    m_id;
-    pid_t       m_pid;
-    uint32_t    m_jobid;
-    
-    task_type m_type;
-    resource_ptr m_src;
-    resource_ptr m_dst;
-};
-
-} // namespace io
-
-#endif // __IO_TASK_HPP__
+#endif /* __MEMORY_BUFFER_HPP__ */

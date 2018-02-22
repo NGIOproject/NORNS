@@ -25,46 +25,42 @@
  *                                                                       *
  *************************************************************************/
 
-#ifndef __IO_TASK_HPP__
-#define __IO_TASK_HPP__
+#include "backend-base.hpp"
+#include "process-memory.hpp"
 
-#include <cstdint>
-#include <memory>
+namespace storage {
 
-#include "norns.h"
-#include "resources.hpp"
-#include "backends.hpp"
+process_memory::process_memory(const std::string& mount, uint32_t quota) { 
+    (void) mount;
+    (void) quota;
+}
 
-namespace io {
+std::string process_memory::mount() const {
+    return "";
+}
 
-/*! Valid types of IO tasks */
-enum class task_type {
-    copy,
-    move,
-    unknown
-};
+uint32_t process_memory::quota() const {
+    return 0;
+}
 
-struct task {
+bool process_memory::accepts(resource_info_ptr res) const {
+    switch(res->type()) {
+        case data::resource_type::memory_region:
+            return true;
+        default:
+            return false;
+    }
+}
 
-    using backend_ptr = std::shared_ptr<storage::backend>;
-    using resource_ptr = std::shared_ptr<data::resource>;
+void process_memory::read_data() const {
+}
 
-    task(norns_op_t type, const resource_ptr src, const resource_ptr dst);
-    norns_tid_t id() const;
-    bool is_valid() const;
-    void operator()() const;
+void process_memory::write_data() const {
+}
 
-    static norns_tid_t create_id();
+std::string process_memory::to_string() const {
+    return "PROCESS_MEMORY";
+}
 
-    uint64_t    m_id;
-    pid_t       m_pid;
-    uint32_t    m_jobid;
-    
-    task_type m_type;
-    resource_ptr m_src;
-    resource_ptr m_dst;
-};
+} // namespace storage
 
-} // namespace io
-
-#endif // __IO_TASK_HPP__

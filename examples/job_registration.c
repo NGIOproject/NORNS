@@ -39,6 +39,7 @@ const char* ex_hosts[5] = {
 
 int main(int argc, char* argv[]) {
 
+#if 0
     (void) argc;
     (void) argv;
     struct norns_cred cred;
@@ -119,5 +120,6 @@ int main(int argc, char* argv[]) {
     NORNS_PLIST_FREE(hosts1);
     NORNS_PLIST_FREE(hosts2);
     NORNS_PLIST_FREE(backends);
+#endif
 
 }

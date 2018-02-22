@@ -25,46 +25,39 @@
  *                                                                       *
  *************************************************************************/
 
-#ifndef __IO_TASK_HPP__
-#define __IO_TASK_HPP__
+#ifndef __RESOURCE_HPP__
+#define __RESOURCE_HPP__
 
-#include <cstdint>
 #include <memory>
-
-#include "norns.h"
-#include "resources.hpp"
+#include "resource-info.hpp"
 #include "backends.hpp"
 
-namespace io {
+namespace data {
 
-/*! Valid types of IO tasks */
-enum class task_type {
-    copy,
-    move,
-    unknown
-};
-
-struct task {
+/*! A fully qualified resource for which we have a description and the backend
+ * that stores it */
+struct resource {
 
     using backend_ptr = std::shared_ptr<storage::backend>;
-    using resource_ptr = std::shared_ptr<data::resource>;
+    using resource_info_ptr = std::shared_ptr<data::resource_info>;
 
-    task(norns_op_t type, const resource_ptr src, const resource_ptr dst);
-    norns_tid_t id() const;
-    bool is_valid() const;
-    void operator()() const;
+    resource(backend_ptr backend, resource_info_ptr rinfo) 
+        : m_backend(backend),
+          m_resource_info(rinfo) { }
 
-    static norns_tid_t create_id();
+    resource_type type() const {
+        return m_resource_info->type();
+    }
 
-    uint64_t    m_id;
-    pid_t       m_pid;
-    uint32_t    m_jobid;
-    
-    task_type m_type;
-    resource_ptr m_src;
-    resource_ptr m_dst;
+    std::string to_string() const {
+        return m_backend->to_string() + m_resource_info->to_string();
+    }
+
+
+    backend_ptr         m_backend;
+    resource_info_ptr   m_resource_info;
 };
 
-} // namespace io
+} // namespace data 
 
-#endif // __IO_TASK_HPP__
+#endif /* __RESOURCE_HPP__ */

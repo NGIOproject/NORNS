@@ -20,32 +20,26 @@ message Request {
     // I/O task descriptor
     message Task {
 
-        message MemoryBuffer {
+        message MemoryRegion {
             required uint64 address = 1;//XXX probably not needed
             required uint32 size = 2;
         };
 
-        message FSPath {
+        message PosixPath {
             optional string hostname = 1;
             required string datapath = 2;
         };
 
-        message DataIn {
-
+        message Resource {
             required uint32 type = 1;
-            optional MemoryBuffer buffer = 2;
-            optional FSPath path = 3;
+            required string nsid = 2;
+            optional MemoryRegion buffer = 3;
+            optional PosixPath path = 4;
         };
 
-        message DataOut {
-            required uint32 type = 1;
-            required FSPath path = 2;
-        };
-
-//        required uint32 taskid = 1;
         required uint32 optype = 1;
-        required DataIn source = 2;
-        required DataOut destination = 3;
+        required Resource source = 2;
+        required Resource destination = 3;
     }
 
     // job descriptor
@@ -64,7 +58,7 @@ message Request {
     // backend descriptor
     message Backend {
         required int32 type = 1;
-        required string prefix = 2;
+        required string nsid = 2;
         required string mount = 3;
         required int32 quota = 4;
     }
@@ -74,7 +68,7 @@ message Request {
     optional uint32 jobid = 3;
     optional Job job = 4;
     optional Process process = 5;
-    optional string prefix = 6;
+    optional string nsid = 6;
     optional Backend backend = 7;
 }
 

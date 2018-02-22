@@ -33,6 +33,8 @@
 extern "C" {
 #endif
 
+typedef int norns_error_t;
+
 #define NORNS_ERRMAX 512
 
 /** Error codes */
@@ -50,6 +52,8 @@ extern "C" {
 #define NORNS_ENOSUCHPROCESS    -11
 #define NORNS_EBACKENDEXISTS    -12
 #define NORNS_ENOSUCHBACKEND    -13
+
+#define NORNS_ENOTSUPPORTED     -64
 
 #ifdef __cplusplus
 }

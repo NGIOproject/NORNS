@@ -25,46 +25,32 @@
  *                                                                       *
  *************************************************************************/
 
-#ifndef __IO_TASK_HPP__
-#define __IO_TASK_HPP__
+#ifndef __LUSTRE_FS_HPP__
+#define __LUSTRE_FS_HPP__
 
-#include <cstdint>
-#include <memory>
+#include "norns/norns_backends.h"
+#include "backend-base.hpp"
 
-#include "norns.h"
-#include "resources.hpp"
-#include "backends.hpp"
+namespace storage {
 
-namespace io {
+class lustre final : public storage::backend {
+public:
+    lustre(const std::string& mount, uint32_t quota);
 
-/*! Valid types of IO tasks */
-enum class task_type {
-    copy,
-    move,
-    unknown
+    std::string mount() const override;
+    uint32_t quota() const override;
+    bool accepts(resource_info_ptr res) const override;
+    void read_data() const override;
+    void write_data() const override;
+    std::string to_string() const override;
+
+protected:
+    std::string m_mount;
+    uint32_t    m_quota;
 };
 
-struct task {
+NORNS_REGISTER_BACKEND(NORNS_BACKEND_LUSTRE, lustre);
 
-    using backend_ptr = std::shared_ptr<storage::backend>;
-    using resource_ptr = std::shared_ptr<data::resource>;
+} // namespace storage
 
-    task(norns_op_t type, const resource_ptr src, const resource_ptr dst);
-    norns_tid_t id() const;
-    bool is_valid() const;
-    void operator()() const;
-
-    static norns_tid_t create_id();
-
-    uint64_t    m_id;
-    pid_t       m_pid;
-    uint32_t    m_jobid;
-    
-    task_type m_type;
-    resource_ptr m_src;
-    resource_ptr m_dst;
-};
-
-} // namespace io
-
-#endif // __IO_TASK_HPP__
+#endif // __LUSTRE_FS_HPP__

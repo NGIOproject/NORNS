@@ -31,6 +31,8 @@
 #include <memory>
 #include <vector>
 #include <string>
+
+#include "norns.h"
 #include "utils.hpp"
 
 namespace api {
@@ -97,6 +99,11 @@ struct response_impl : std::tuple<FieldTypes...>, response {
         return std::get<I>(*this);
     }
 
+    template <std::size_t I>
+    void set(typename std::tuple_element<I, std::tuple<FieldTypes...>>::type v) {
+        std::get<I>(*this) = v;
+    }
+
     response_type m_type;
     uint32_t m_status;
 };
@@ -105,7 +112,8 @@ struct response_impl : std::tuple<FieldTypes...>, response {
 
 /*! Aliases for convenience */
 using transfer_task_response = detail::response_impl<
-    response_type::transfer_task
+    response_type::transfer_task,
+    norns_tid_t
 >;
 
 using ping_response = detail::response_impl<

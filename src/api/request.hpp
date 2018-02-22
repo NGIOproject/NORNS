@@ -58,8 +58,10 @@
 #include <sstream>
 
 #include "backends.hpp"
+#include "resources.hpp"
 
 using backend_ptr = std::shared_ptr<storage::backend>;
+using resource_info_ptr = std::shared_ptr<data::resource_info>;
 
 namespace api {
 
@@ -84,36 +86,6 @@ struct request_type_hash {
     std::size_t operator()(T t) const {
         return static_cast<std::size_t>(t);
     }
-};
-
-/*! Base class for data resources */
-struct data_resource {
-};
-
-/*! Memory buffer data */
-struct memory_buffer : public data_resource {
-
-    memory_buffer(uint32_t backend_type, uint64_t address, std::size_t size)
-        : m_backend_type(backend_type),
-          m_address(address),
-          m_size(size) {}
-
-    uint32_t m_backend_type;
-    uint64_t m_address;
-    std::size_t m_size;
-};
-
-/*! Filesystem path data */
-struct filesystem_path : public data_resource {
-
-    filesystem_path(uint32_t backend_type, std::string hostname, std::string datapath)
-        : m_backend_type(backend_type),
-          m_hostname(hostname),
-          m_datapath(datapath) {}
-
-    uint32_t m_backend_type;
-    std::string m_hostname;
-    std::string m_datapath;
 };
 
 /*! Base virtual class for requests */
@@ -187,11 +159,19 @@ using bad_request = detail::request_impl<
     request_type::bad_request
 >;
 
+/* XXX old format -- deprecated
 using transfer_task_request = detail::request_impl<
     request_type::transfer_task,
     uint32_t, //XXX replace by enum class?
     data_resource,
     data_resource
+>;*/
+
+using transfer_task_request = detail::request_impl<
+    request_type::transfer_task,
+    uint32_t, //XXX replace by enum class?
+    resource_info_ptr,
+    resource_info_ptr
 >;
 
 using ping_request = detail::request_impl<
@@ -235,7 +215,7 @@ using process_unregister_request = detail::request_impl<
 
 using backend_register_request = detail::request_impl<
     request_type::backend_register, 
-    std::string, // prefix
+    std::string, // nsid
     int32_t, // type
     std::string, // mount
     int32_t // quota
@@ -243,7 +223,7 @@ using backend_register_request = detail::request_impl<
 
 using backend_update_request = detail::request_impl<
     request_type::backend_update, 
-    std::string, // prefix
+    std::string, // nsid
     int32_t, // type
     std::string, // mount
     int32_t // quota

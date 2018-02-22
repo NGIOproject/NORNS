@@ -26,7 +26,7 @@
 
 namespace storage {
 
-    backend_factory& backend_factory::get_instance() {
+    backend_factory& backend_factory::get() {
         static backend_factory _;
         return _;
     }

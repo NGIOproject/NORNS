@@ -39,6 +39,7 @@ const char* ex_hosts[5] = {
 
 int main(int argc, char* argv[]) {
 
+#if 0
     (void) argc;
     (void) argv;
     struct norns_cred cred;
@@ -108,15 +109,15 @@ int main(int argc, char* argv[]) {
             .in_type = NORNS_BACKEND_LOCAL_NVML,
             .in_path = {
 //                .p_hostname = "node42",
-                .p_hostname = NULL,
-                .p_datapath = "nvm://foobar.bin",
+                .p_host = NULL,
+                .p_path = "nvm://foobar.bin",
             },
         },
         .io_dst = {
             .out_type = NORNS_BACKEND_LUSTRE,
             .out_path = {
-                .p_hostname = "node42",
-                .p_datapath = "nvm://baz.bin",
+                .p_host = "node42",
+                .p_path = "nvm://baz.bin",
             }
         }
     };
@@ -137,5 +138,6 @@ int main(int argc, char* argv[]) {
     NORNS_PLIST_FREE(hosts1);
     NORNS_PLIST_FREE(hosts2);
     NORNS_PLIST_FREE(backends);
+#endif
 
 }

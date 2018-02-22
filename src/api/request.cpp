@@ -28,10 +28,85 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 
+#include "norns.h"
 #include "make-unique.hpp"
 #include "messages.pb.h"
 #include "backends.hpp"
+#include "resources.hpp"
+#include "utils.hpp"
 #include "request.hpp"
+
+namespace {
+
+bool is_valid(const norns::rpc::Request_Task_Resource& res) {
+    if(!(res.type() & (NORNS_PROCESS_MEMORY | NORNS_POSIX_PATH))) {
+        return false;
+    }
+
+    if(res.type() & NORNS_PROCESS_MEMORY) { 
+        if(!res.has_buffer()) { 
+            return false;
+        }
+
+        return true;
+    }
+
+    if(res.type() & NORNS_POSIX_PATH) {
+        if(!res.has_path()) { 
+            return false;
+        }
+
+        if(!(res.type() & (R_LOCAL | R_SHARED | R_REMOTE))) {
+            return false;
+        }
+
+        if((res.type() & R_LOCAL) && res.path().has_hostname()) {
+            return false;
+        }
+
+        if((res.type() & R_SHARED) && res.path().has_hostname()) {
+            return false;
+        }
+
+        if((res.type() & R_REMOTE) && !res.path().has_hostname()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    return true;
+}
+
+resource_info_ptr create_from(const norns::rpc::Request_Task_Resource& res) {
+
+    if(is_valid(res)) {
+        if(res.type() & NORNS_PROCESS_MEMORY) {
+            return std::make_shared<data::memory_buffer>(res.nsid(),
+                                                         res.buffer().address(),
+                                                         res.buffer().size());
+        }
+        else { // NORNS_POSIX_PATH
+            if(res.type() & R_LOCAL) {
+                return std::make_shared<data::local_path>(res.nsid(),
+                                                          res.path().datapath());
+            }
+            else if(res.type() & R_SHARED) {
+                return std::make_shared<data::shared_path>(res.nsid(),
+                                                           res.path().datapath());
+            }
+            else { // R_REMOTE
+                return std::make_shared<data::remote_path>(res.nsid(),
+                                                           res.path().hostname(), 
+                                                           res.path().datapath());
+            }
+        }
+    }
+
+    return resource_info_ptr();
+}
+
+}
 
 namespace api {
 
@@ -49,21 +124,12 @@ request_ptr request::create_from_buffer(const std::vector<uint8_t>& buffer, int 
 
                     auto task = rpc_req.task();
                     auto optype = task.optype();
-                    auto src = task.source();
-                    auto dst = task.destination();
 
-                    if(src.has_buffer()) {
-                        memory_buffer src_buf(src.type(), src.buffer().address(), src.buffer().size());
-                        filesystem_path dst_path(dst.type(), dst.path().hostname(), dst.path().datapath());
+                    resource_info_ptr src_res = create_from(task.source());
+                    resource_info_ptr dst_res = create_from(task.destination());
 
-                        return std::make_unique<transfer_task_request>(optype, src_buf, dst_path);
-                    }
-
-                    if(src.has_path()) {
-                        filesystem_path src_path(src.type(), src.path().hostname(), src.path().datapath());
-                        filesystem_path dst_path(dst.type(), dst.path().hostname(), dst.path().datapath());
-
-                        return std::make_unique<transfer_task_request>(optype, src_path, dst_path);
+                    if(src_res != nullptr && dst_res != nullptr) {
+                        return std::make_unique<transfer_task_request>(optype, src_res, dst_res);
                     }
 
                     return std::make_unique<bad_request>();
@@ -141,17 +207,17 @@ request_ptr request::create_from_buffer(const std::vector<uint8_t>& buffer, int 
                     const auto& b = rpc_req.backend();
 
                     if(rpc_req.type() == norns::rpc::Request::REGISTER_BACKEND) {
-                        return std::make_unique<backend_register_request>(b.prefix(), b.type(), b.mount(), b.quota());
+                        return std::make_unique<backend_register_request>(b.nsid(), b.type(), b.mount(), b.quota());
                     }
                     else { // rpc_req.type() == norns::rpc::Request::UPDATE_BACKEND
-                        return std::make_unique<backend_update_request>(b.prefix(), b.type(), b.mount(), b.quota());
+                        return std::make_unique<backend_update_request>(b.nsid(), b.type(), b.mount(), b.quota());
                     }
                 }
                 break;
 
             case norns::rpc::Request::UNREGISTER_BACKEND:
-                if(rpc_req.has_prefix()) {
-                    return std::make_unique<backend_unregister_request>(rpc_req.prefix());
+                if(rpc_req.has_nsid()) {
+                    return std::make_unique<backend_unregister_request>(rpc_req.nsid());
                 }
                 break;
         }
@@ -254,9 +320,65 @@ std::string process_unregister_request::to_string() const {
 }
 
 template<>
+std::string backend_register_request::to_string() const {
+
+    const auto& nsid = this->get<0>();
+    const auto& type = this->get<1>();
+    const auto& mount = this->get<2>();
+    const auto& quota = this->get<3>();
+
+#if 0 // verbose
+    return "nsid: \"" + nsid + "\", "
+           "type:" + utils::to_string(type) + ", "
+           (mount != "" ?  "mount: \"" + mount + "\", " : "") +
+           (quota != 0 ? "quota: " + std::to_string(quota) : "unlimited");
+#else
+    return "\"" + nsid + "\", " +
+           utils::to_string(type) + ", " +
+           (mount != "" ?  "\"" + mount + "\", " : "") +
+           (quota != 0 ? std::to_string(quota) : "unlimited");
+#endif
+}
+
+template<>
+std::string backend_update_request::to_string() const {
+
+    const auto& nsid = this->get<0>();
+    const auto& type = this->get<1>();
+    const auto& mount = this->get<2>();
+    const auto& quota = this->get<3>();
+
+#if 0 // verbose
+    return "nsid: \"" + nsid + "\", "
+           "type:" + utils::to_string(type) + ", "
+           (mount != "" ?  "mount: \"" + mount + "\", " : "") +
+           (quota != 0 ? "quota: " + std::to_string(quota) : "unlimited");
+#else
+    return "\"" + nsid + "\", " +
+           utils::to_string(type) + ", " +
+           (mount != "" ?  "\"" + mount + "\", " : "") +
+           (quota != 0 ? std::to_string(quota) : "unlimited");
+#endif
+}
+
+template<>
+std::string backend_unregister_request::to_string() const {
+
+    const auto& nsid = this->get<0>();
+    
+    return "\"" + nsid + "\"";
+}
+
+template<>
 std::string transfer_task_request::to_string() const {
 
-    return "TODO: ???";
+    const auto op = this->get<0>();
+    const auto src = this->get<1>();
+    const auto dst = this->get<2>();
+
+    return utils::to_string(op) + ", "
+           + src->to_string() + " => "
+           + dst->to_string();
 }
 
 } // namespace detail

@@ -51,6 +51,7 @@
 #include "backends.hpp"
 #include "logger.hpp"
 #include "job.hpp"
+#include "resources.hpp"
 #include "io-task.hpp"
 #include "urd.hpp"
 #include "make-unique.hpp"
@@ -174,18 +175,101 @@ pid_t urd::daemonize() {
 
 }
 
+norns_error_t urd::validate_iotask_args(norns_op_t op, 
+                                        const resource_info_ptr src_info,
+                                        const resource_info_ptr dst_info) const {
+
+    if(op != NORNS_IOTASK_COPY && op != NORNS_IOTASK_MOVE) {
+        return NORNS_EBADARGS;
+    }
+
+    // src_resource cannot be remote
+    if(src_info->type() == data::resource_type::remote_posix_path) {
+        return NORNS_ENOTSUPPORTED;
+    }
+
+    // dst_resource cannot be a memory region
+    if(dst_info->type() == data::resource_type::memory_region) {
+        return NORNS_ENOTSUPPORTED;
+    }
+
+    return NORNS_SUCCESS;
+}
+
 response_ptr urd::create_task(const request_ptr base_request) {
 
-    response_ptr resp = std::make_unique<api::transfer_task_response>();
 
     // downcast the generic request to the concrete implementation
     auto request = static_cast<api::transfer_task_request*>(base_request.get());
 
-    m_workers->submit_and_forget(io::task(), 42);
+    auto type = request->get<0>();
+    auto src_info = request->get<1>();
+    auto dst_info = request->get<2>();
 
-    resp->set_status(NORNS_SUCCESS);
+    response_ptr resp;
+    norns_tid_t tid = 0;
+    norns_error_t rv = NORNS_SUCCESS;
 
-    LOGGER_INFO("CREATE_TASK({}) = {}", request->to_string(), resp->to_string());
+    /* Helper lambda used to construct a data::resource from a storage::backend and 
+     * a data::resource_info. The function creates a data::resource if the provided 
+     * data::resource_info 'info' is valid, return it
+     * XXX
+     * in the 'res' parameter and return NORNS_SUCCESS. Otherwise, return an appropriate error */
+    auto make_resource = [&](const resource_info_ptr info) -> std::pair<norns_error_t, resource_ptr> {
+
+        // remote backend validation is left to the recipient
+        if(info->is_remote()) {
+
+            return std::make_pair<norns_error_t, resource_ptr>(NORNS_SUCCESS, 
+                    std::make_shared<data::resource>(storage::remote_backend, info)); //XXX we need a "remote" backend
+        }
+
+        const auto nsid = info->nsid();
+
+        // backend does not exist 
+        if(m_backends->count(nsid) == 0) {
+            return std::make_pair(NORNS_ENOSUCHBACKEND, resource_ptr());
+        }
+
+        // check that resource is compatible with selected backend
+        auto backend_ptr = m_backends->at(nsid);
+
+        if(!backend_ptr->accepts(info)) {
+            return std::make_pair(NORNS_EBADARGS, resource_ptr());
+        }
+
+        return std::make_pair(NORNS_SUCCESS, 
+                std::make_shared<data::resource>(backend_ptr, info));
+    };
+
+    if((rv = validate_iotask_args(type, src_info, dst_info)) == NORNS_SUCCESS) {
+
+        auto src_rv = make_resource(src_info);
+        auto dst_rv = make_resource(dst_info);
+
+        if((src_rv.first == NORNS_SUCCESS) && (dst_rv.first == NORNS_SUCCESS)) {
+
+            resource_ptr src = src_rv.second;
+            resource_ptr dst = dst_rv.second;
+
+            // everything is ok, add the I/O task to the queue
+            io::task t(type, src, dst);
+            tid = t.id();
+
+            m_workers->submit_and_forget(std::move(t));
+        }
+        else if(src_rv.first != NORNS_SUCCESS) {
+            rv = src_rv.first;
+        }
+        else {
+            rv = dst_rv.first;
+        }
+    }
+
+    resp = std::make_unique<api::transfer_task_response>(tid);
+    resp->set_status(rv);
+
+    LOGGER_INFO("NEW_IOTASK({}) = {}", request->to_string(), resp->to_string());
     return resp;
 }
 
@@ -350,7 +434,7 @@ response_ptr urd::register_backend(const request_ptr base_request) {
     // downcast the generic request to the concrete implementation
     auto request = static_cast<api::backend_register_request*>(base_request.get());
 
-    std::string prefix = request->get<0>();
+    std::string nsid = request->get<0>();
     int32_t type = request->get<1>();
     std::string mount = request->get<2>();
     int32_t quota = request->get<3>();
@@ -358,16 +442,20 @@ response_ptr urd::register_backend(const request_ptr base_request) {
     {
         boost::unique_lock<boost::shared_mutex> lock(m_backends_mutex);
 
-        if(m_backends->count(prefix) != 0) {
+        if(m_backends->count(nsid) != 0) {
             resp->set_status(NORNS_EBACKENDEXISTS);
         }
         else {
 
             backend_ptr bptr = storage::backend_factory::create_from(type, mount, quota);
 
-            m_backends->emplace(std::make_pair(prefix, bptr));
-
-            resp->set_status(NORNS_SUCCESS);
+            if(bptr != nullptr) {
+                m_backends->emplace(std::make_pair(nsid, bptr));
+                resp->set_status(NORNS_SUCCESS);
+            }
+            else {
+                resp->set_status(NORNS_EBADARGS);
+            }
         }
     }
 
@@ -375,7 +463,7 @@ response_ptr urd::register_backend(const request_ptr base_request) {
     return resp;
 }
 
-/*
+/* XXX not supported yet
 response_ptr urd::update_backend(const request_ptr base_request) {
 
     response_ptr resp = std::make_unique<api::backend_update_response>();
@@ -397,12 +485,12 @@ response_ptr urd::remove_backend(const request_ptr base_request) {
     // downcast the generic request to the concrete implementation
     auto request = static_cast<api::backend_unregister_request*>(base_request.get());
 
-    std::string prefix = request->get<0>();
+    std::string nsid = request->get<0>();
 
     {
         boost::unique_lock<boost::shared_mutex> lock(m_backends_mutex);
 
-        const auto& it = m_backends->find(prefix);
+        const auto& it = m_backends->find(nsid);
 
         if(it == m_backends->end()) {
             resp->set_status(NORNS_ENOSUCHBACKEND);
@@ -570,6 +658,7 @@ int urd::run() {
 
     teardown();
 
+	LOGGER_INFO("");
 	LOGGER_INFO("[Stopped]");
 
     return EXIT_SUCCESS;

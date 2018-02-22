@@ -25,46 +25,40 @@
  *                                                                       *
  *************************************************************************/
 
-#ifndef __IO_TASK_HPP__
-#define __IO_TASK_HPP__
+#include "backend-base.hpp"
+#include "lustre-fs.hpp"
 
-#include <cstdint>
-#include <memory>
+namespace storage {
 
-#include "norns.h"
-#include "resources.hpp"
-#include "backends.hpp"
+lustre::lustre(const std::string& mount, uint32_t quota) 
+    : m_mount(mount), m_quota(quota) { }
 
-namespace io {
+std::string lustre::mount() const {
+    return m_mount;
+}
 
-/*! Valid types of IO tasks */
-enum class task_type {
-    copy,
-    move,
-    unknown
-};
+uint32_t lustre::quota() const {
+    return m_quota;
+}
 
-struct task {
+bool lustre::accepts(resource_info_ptr res) const {
+    switch(res->type()) {
+        case data::resource_type::local_posix_path:
+        case data::resource_type::shared_posix_path:
+            return true;
+        default:
+            return false;
+    }
+}
 
-    using backend_ptr = std::shared_ptr<storage::backend>;
-    using resource_ptr = std::shared_ptr<data::resource>;
+void lustre::read_data() const {
+}
 
-    task(norns_op_t type, const resource_ptr src, const resource_ptr dst);
-    norns_tid_t id() const;
-    bool is_valid() const;
-    void operator()() const;
+void lustre::write_data() const {
+}
 
-    static norns_tid_t create_id();
+std::string lustre::to_string() const {
+    return "LUSTRE(\"" + m_mount + "\", " + std::to_string(m_quota) + ")";
+}
 
-    uint64_t    m_id;
-    pid_t       m_pid;
-    uint32_t    m_jobid;
-    
-    task_type m_type;
-    resource_ptr m_src;
-    resource_ptr m_dst;
-};
-
-} // namespace io
-
-#endif // __IO_TASK_HPP__
+} // namespace storage

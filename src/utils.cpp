@@ -26,7 +26,7 @@
 #include <algorithm>
 #include <locale>
 #include "utils.hpp"
-#include <norns.h>
+#include "norns.h"
 
 
 namespace utils {
@@ -128,9 +128,36 @@ std::string strerror(int error_code) {
             return "NORNS_EBACKENDEXISTS";
         case NORNS_ENOSUCHBACKEND:
             return "NORNS_ENOSUCHBACKEND";
+
+        case NORNS_ENOTSUPPORTED:
+            return "NORNS_ENOTSUPPORTED";
+
         default:
             return "UNKNOWN_ERROR";
     }
 }
+
+std::string to_string(uint32_t c) {
+
+    switch(c) {
+        case NORNS_IOTASK_COPY:
+            return "DATA_COPY";
+        case NORNS_IOTASK_MOVE:
+            return "DATA_MOVE";
+        case NORNS_BACKEND_NVML:
+            return "NVML";
+        case NORNS_BACKEND_LUSTRE:
+            return "LUSTRE";
+        case NORNS_BACKEND_PROCESS_MEMORY:
+            return "PROCESS_MEMORY";
+        case NORNS_BACKEND_ECHOFS:
+            return "ECHOFS";
+        case NORNS_BACKEND_POSIX_FILESYSTEM:
+            return "POSIX_FILESYSTEM";
+        default:
+            return "UNKNOWN_FIELD";
+    }
+}
+
 
 } // namespace utils

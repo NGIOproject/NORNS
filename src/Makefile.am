@@ -50,14 +50,28 @@ liburd_aux_la_SOURCES = \
 	backends.hpp \
 	backends/backend-base.cpp \
 	backends/backend-base.hpp \
+	backends/lustre-fs.cpp \
+	backends/lustre-fs.hpp \
 	backends/nvml-dax.cpp \
 	backends/nvml-dax.hpp \
 	backends/posix-fs.cpp \
 	backends/posix-fs.hpp \
+	backends/process-memory.cpp \
+	backends/process-memory.hpp \
+	backends/remote-backend.cpp \
+	backends/remote-backend.hpp \
 	defaults.hpp \
+	io-task.cpp \
+	io-task.hpp \
 	thread-pool.hpp \
 	pool/thread-pool.hpp \
 	pool/thread-pool-queue.hpp \
+	resources.hpp \
+	resources/local-path.hpp \
+	resources/memory-buffer.hpp \
+	resources/remote-path.hpp \
+	resources/resource-base.hpp \
+	resources/shared-path.hpp \
 	settings.cpp \
 	settings.hpp \
 	urd.cpp	\

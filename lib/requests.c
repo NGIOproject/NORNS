@@ -30,17 +30,28 @@
 
 #include "requests.h"
 
-static Norns__Rpc__Request__Task* build_task_msg(const struct norns_iotd* iotdp);
+/* helpers */
+static Norns__Rpc__Request__Task* build_task_msg(const norns_iotask_t* iotdp);
 static void free_task_msg(Norns__Rpc__Request__Task* msg);
-static Norns__Rpc__Request__Backend* build_backend_msg(const struct norns_backend* backend);
+static Norns__Rpc__Request__Backend* build_backend_msg(const norns_backend_t* backend);
 static void free_backend_msg(Norns__Rpc__Request__Backend* msg);
-static Norns__Rpc__Request__Job* build_job_msg(const struct norns_job* job);
+static Norns__Rpc__Request__Job* build_job_msg(const norns_job_t* job);
 static void free_job_msg(Norns__Rpc__Request__Job* msg);
-static void* build_membuf_msg(const struct norns_data_in* src);
+
+static Norns__Rpc__Request__Task__Resource* build_resource_msg(const norns_resource_t* res);
+static void free_resource_msg(Norns__Rpc__Request__Task__Resource* msg);
+
+static Norns__Rpc__Request__Task__MemoryRegion* build_membuf_msg(const norns_memory_region_t* buf);
+static void free_membuf_msg(Norns__Rpc__Request__Task__MemoryRegion* msg);
+
+static Norns__Rpc__Request__Task__PosixPath* build_path_msg(const norns_posix_path_t* path);
+static void free_path_msg(Norns__Rpc__Request__Task__PosixPath* msg);
+
+
 static int remap_request(norns_rpc_type_t type);
 static norns_rpc_type_t remap_response(int type);
 
-int 
+static int 
 remap_request(norns_rpc_type_t type) {
     switch(type) {
         case NORNS_SUBMIT_IOTASK:
@@ -68,7 +79,7 @@ remap_request(norns_rpc_type_t type) {
     }
 }
 
-norns_rpc_type_t 
+static norns_rpc_type_t 
 remap_response(int norns_rpc_type) {
     switch(norns_rpc_type) {
         case NORNS__RPC__RESPONSE__TYPE__SUBMIT_IOTASK:
@@ -112,13 +123,13 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
     switch(type) {
         case NORNS_SUBMIT_IOTASK:
         {
-            const struct norns_iotd* iotdp = va_arg(ap, struct norns_iotd*);
+            const norns_iotask_t* task = va_arg(ap, norns_iotask_t*);
 
             if((req_msg->type = remap_request(type)) < 0) {
                 goto cleanup_on_error;
             }
 
-            if((req_msg->task = build_task_msg(iotdp)) == NULL) {
+            if((req_msg->task = build_task_msg(task)) == NULL) {
                 goto cleanup_on_error;
             }
 
@@ -140,7 +151,7 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
         {
             const struct norns_cred* auth = va_arg(ap, struct norns_cred*);
             const uint32_t jobid = va_arg(ap, uint32_t);
-            const struct norns_job* job = va_arg(ap, struct norns_job*);
+            const norns_job_t* job = va_arg(ap, norns_job_t*);
 
             (void) auth;
 
@@ -199,10 +210,10 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
         {
             const struct norns_cred* auth =
                 va_arg(ap, const struct norns_cred*);
-            const char* const prefix =
+            const char* const nsid =
                 va_arg(ap, const char* const);
-            const struct norns_backend* backend = 
-                va_arg(ap, const struct norns_backend*);
+            const norns_backend_t* backend = 
+                va_arg(ap, const norns_backend_t*);
 
             (void) auth;
 
@@ -211,9 +222,9 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
             }
 
             if(type == NORNS_UNREGISTER_BACKEND) {
-                req_msg->prefix = xstrdup(prefix);
+                req_msg->nsid = xstrdup(nsid);
 
-                if(req_msg->prefix == NULL) {
+                if(req_msg->nsid == NULL) {
                     goto cleanup_on_error;
                 }
 
@@ -221,7 +232,7 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
             }
             else {
 
-                req_msg->prefix = NULL;
+                req_msg->nsid = NULL;
 
                 if((req_msg->backend = build_backend_msg(backend)) == NULL) {
                     goto cleanup_on_error;
@@ -231,6 +242,8 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
             break;
         }
 
+        default:
+            goto cleanup_on_error;
     }
 
     return req_msg;
@@ -245,14 +258,16 @@ cleanup_on_error:
 
 void
 free_request_msg(Norns__Rpc__Request* req) {
+    (void) req;
 }
 
-void
+static void
 free_backend_msg(Norns__Rpc__Request__Backend* msg) {
     //TODO
+    (void) msg;
 }
 
-void 
+static void 
 free_job_msg(Norns__Rpc__Request__Job* msg) {
 
     assert(msg != NULL);
@@ -281,8 +296,8 @@ free_job_msg(Norns__Rpc__Request__Job* msg) {
     xfree(msg);
 }
 
-Norns__Rpc__Request__Backend*
-build_backend_msg(const struct norns_backend* backend) {
+static Norns__Rpc__Request__Backend*
+build_backend_msg(const norns_backend_t* backend) {
 
     assert(backend != NULL);
 
@@ -295,17 +310,25 @@ build_backend_msg(const struct norns_backend* backend) {
 
     norns__rpc__request__backend__init(backendmsg);
 
-    backendmsg->prefix = xstrdup(backend->b_prefix);
+    backendmsg->nsid = xstrdup(backend->b_nsid);
 
-    if(backendmsg->prefix == NULL) {
+    if(backendmsg->nsid == NULL) {
         goto error_cleanup;
     }
 
     backendmsg->type = backend->b_type;
-    backendmsg->mount = xstrdup(backend->b_mount);
 
-    if(backendmsg->mount == NULL) {
-        goto error_cleanup;
+    // b_mount might be NULL for some backends 
+    // (e.g. NORNS_BACKEND_PROCESS_MEMORY)
+    if(backend->b_mount != NULL) {
+        backendmsg->mount = xstrdup(backend->b_mount);
+
+        if(backendmsg->mount == NULL) {
+            goto error_cleanup;
+        }
+    }
+    else {
+        backendmsg->mount = NULL;
     }
 
     backendmsg->quota = backend->b_quota;
@@ -321,8 +344,8 @@ error_cleanup:
     return NULL;
 }
 
-Norns__Rpc__Request__Job*
-build_job_msg(const struct norns_job* job) {
+static Norns__Rpc__Request__Job*
+build_job_msg(const norns_job_t* job) {
 
     assert(job != NULL);
 
@@ -336,19 +359,19 @@ build_job_msg(const struct norns_job* job) {
     norns__rpc__request__job__init(jobmsg);
 
     // add hosts
-    jobmsg->n_hosts = job->jb_nhosts; // save number of repeated hosts
+    jobmsg->n_hosts = job->j_nhosts; // save number of repeated hosts
     jobmsg->hosts = xmalloc(jobmsg->n_hosts*sizeof(char*));
 
     if(jobmsg->hosts == NULL) {
         goto error_cleanup;
     }
 
-    for(size_t i=0; i<job->jb_nhosts; ++i){
-        if(job->jb_hosts[i] == NULL){
+    for(size_t i=0; i<job->j_nhosts; ++i){
+        if(job->j_hosts[i] == NULL){
             continue;
         }
 
-        jobmsg->hosts[i] = xstrdup(job->jb_hosts[i]);
+        jobmsg->hosts[i] = xstrdup(job->j_hosts[i]);
 
         if(jobmsg->hosts[i] == NULL) {
             goto error_cleanup;
@@ -356,17 +379,17 @@ build_job_msg(const struct norns_job* job) {
     }
 
     // add backends
-    jobmsg->n_backends = job->jb_nbackends;
+    jobmsg->n_backends = job->j_nbackends;
     jobmsg->backends = 
-        xmalloc(job->jb_nbackends*sizeof(Norns__Rpc__Request__Backend*));
+        xmalloc(job->j_nbackends*sizeof(Norns__Rpc__Request__Backend*));
     
     if(jobmsg->backends == NULL){
         goto error_cleanup;
     }
 
-    for(size_t i=0; i<job->jb_nbackends; ++i) {
+    for(size_t i=0; i<job->j_nbackends; ++i) {
 
-        jobmsg->backends[i] = build_backend_msg(job->jb_backends[i]);
+        jobmsg->backends[i] = build_backend_msg(job->j_backends[i]);
 
         if(jobmsg->backends[i] == NULL) {
             goto error_cleanup;
@@ -380,14 +403,14 @@ build_job_msg(const struct norns_job* job) {
         }
 
         norns__rpc__request__backend__init(jobmsg->backends[i]);
-        jobmsg->backends[i]->type = job->jb_backends[i]->b_type;
-        jobmsg->backends[i]->mount = xstrdup(job->jb_backends[i]->b_mount);
+        jobmsg->backends[i]->type = job->j_backends[i]->b_type;
+        jobmsg->backends[i]->mount = xstrdup(job->j_backends[i]->b_mount);
 
         if(jobmsg->backends[i]->mount == NULL) {
             goto error_cleanup;
         }
 
-        jobmsg->backends[i]->quota = job->jb_backends[i]->b_quota;
+        jobmsg->backends[i]->quota = job->j_backends[i]->b_quota;
         */
     }
 
@@ -400,50 +423,111 @@ error_cleanup:
     return NULL;
 }
 
+static Norns__Rpc__Request__Task__Resource* 
+build_resource_msg(const norns_resource_t* res) {
 
-void*
-build_membuf_msg(const struct norns_data_in* src) {
+    Norns__Rpc__Request__Task__Resource* msg = 
+        xmalloc(sizeof(*msg));
 
-    Norns__Rpc__Request__Task__MemoryBuffer* msg = 
+    if(msg == NULL) {
+        goto oom_cleanup;
+    }
+
+    norns__rpc__request__task__resource__init(msg);
+
+    msg->type = res->r_flags;
+    msg->nsid = xstrdup(res->r_nsid);
+
+    if(msg->nsid == NULL) {
+        goto oom_cleanup;
+    }
+
+    if(res->r_flags & NORNS_PROCESS_MEMORY) {
+        msg->buffer = build_membuf_msg(&res->r_buffer);
+
+        if(msg->buffer == NULL) {
+            goto oom_cleanup;
+        }
+    }
+    else {
+        assert(res->r_flags & NORNS_POSIX_PATH);
+
+        msg->path = build_path_msg(&res->r_posix_path);
+
+        if(msg->path == NULL) {
+            goto oom_cleanup;
+        }
+    }
+
+    return msg;
+
+oom_cleanup:
+    if(msg != NULL) {
+        free_resource_msg(msg);
+    }
+    return NULL;
+}
+
+static void 
+free_resource_msg(Norns__Rpc__Request__Task__Resource* msg) {
+
+    assert(msg != NULL);
+
+    if(msg->buffer != NULL) {
+        free_membuf_msg(msg->buffer);
+    }
+
+    if(msg->path != NULL) {
+        free_path_msg(msg->path);
+    }
+
+    xfree(msg);
+}
+
+static Norns__Rpc__Request__Task__MemoryRegion*
+build_membuf_msg(const norns_memory_region_t* buf) {
+
+    Norns__Rpc__Request__Task__MemoryRegion* msg = 
         xmalloc(sizeof(*msg));
 
     if(msg == NULL) {
         return NULL;
     }
 
-    msg->address = (uint64_t) src->in_buffer.b_addr;
-    msg->size = src->in_buffer.b_size;
+    norns__rpc__request__task__memory_region__init(msg);
+
+    msg->address = (uint64_t) buf->b_addr;
+    msg->size = buf->b_size;
 
     return msg;
 }
 
-static void*
-build_path_msg(const void* src, bool is_input_data) {
+static void 
+free_membuf_msg(Norns__Rpc__Request__Task__MemoryRegion* msg) {
+    (void) msg;
+}
+
+static Norns__Rpc__Request__Task__PosixPath*
+build_path_msg(const norns_posix_path_t* path) {
 
     const char* src_hostname = NULL;
     const char* src_datapath = NULL;
-    Norns__Rpc__Request__Task__FSPath* msg = xmalloc(sizeof(*msg));
+    Norns__Rpc__Request__Task__PosixPath* msg = xmalloc(sizeof(*msg));
 
     if(msg == NULL) {
         return NULL;
     }
 
-    norns__rpc__request__task__fspath__init(msg);
+    norns__rpc__request__task__posix_path__init(msg);
 
-    if(is_input_data) {
-        src_hostname = ((struct norns_data_in*) src)->in_path.p_hostname;
-        src_datapath = ((struct norns_data_in*) src)->in_path.p_datapath;
-    }
-    else {
-        src_hostname = ((struct norns_data_out*) src)->out_path.p_hostname;
-        src_datapath = ((struct norns_data_out*) src)->out_path.p_datapath;
-    }
+    src_hostname = path->p_host;
+    src_datapath = path->p_path;
 
     if(src_hostname != NULL) {
         msg->hostname = xstrdup(src_hostname);
 
         if(msg->hostname == NULL) {
-            goto cleanup;
+            goto oom_cleanup;
         }
     }
 
@@ -451,13 +535,25 @@ build_path_msg(const void* src, bool is_input_data) {
         msg->datapath = xstrdup(src_datapath);
 
         if(msg->datapath == NULL) {
-            goto cleanup;
+            goto oom_cleanup;
         }
     }
 
     return msg;
 
-cleanup:
+oom_cleanup:
+    if(msg != NULL) {
+        free_path_msg(msg);
+    }
+
+    return NULL;
+}
+
+static void 
+free_path_msg(Norns__Rpc__Request__Task__PosixPath* msg) {
+
+    assert(msg != NULL);
+
     if(msg->hostname != NULL) { 
         xfree(msg->hostname);
     }
@@ -466,15 +562,11 @@ cleanup:
         xfree(msg->datapath);
     }
 
-    if(msg != NULL) {
-        xfree(msg);
-    }
-
-    return NULL;
+    xfree(msg);
 }
 
-Norns__Rpc__Request__Task*
-build_task_msg(const struct norns_iotd* iotdp) {
+static Norns__Rpc__Request__Task*
+build_task_msg(const norns_iotask_t* task) {
 
     Norns__Rpc__Request__Task* taskmsg =
         (Norns__Rpc__Request__Task*) xmalloc(sizeof(*taskmsg));
@@ -485,50 +577,19 @@ build_task_msg(const struct norns_iotd* iotdp) {
 
     norns__rpc__request__task__init(taskmsg);
 
-    taskmsg->optype = iotdp->io_optype;
+    taskmsg->optype = task->t_op;
 
     // construct source
-    taskmsg->source = xmalloc(sizeof(Norns__Rpc__Request__Task__DataIn));
+    taskmsg->source = build_resource_msg(&task->t_src);
 
     if(taskmsg->source == NULL) {
         goto cleanup_on_error;
     }
 
-    norns__rpc__request__task__data_in__init(taskmsg->source);
-
-    taskmsg->source->type = iotdp->io_src.in_type;
-
-    if(iotdp->io_src.in_type == NORNS_BACKEND_PROCESS_MEMORY) {
-        taskmsg->source->buffer = build_membuf_msg(&iotdp->io_src);
-        taskmsg->source->path = NULL;
-
-        if(taskmsg->source->buffer == NULL) {
-            goto cleanup_on_error;
-        }
-    }
-    else {
-        taskmsg->source->path = build_path_msg(&iotdp->io_src, true);
-        taskmsg->source->buffer = NULL;
-
-        if(taskmsg->source->path == NULL) {
-            goto cleanup_on_error;
-        }
-    }
-
     // construct destination
-    taskmsg->destination = xmalloc(sizeof(Norns__Rpc__Request__Task__DataOut));
+    taskmsg->destination = build_resource_msg(&task->t_dst);
 
     if(taskmsg->destination == NULL) {
-        goto cleanup_on_error;
-    }
-
-    norns__rpc__request__task__data_out__init(taskmsg->destination);
-
-    taskmsg->destination->type = iotdp->io_dst.out_type;
-
-    taskmsg->destination->path = build_path_msg(&iotdp->io_dst, false);
-
-    if(taskmsg->destination->path == NULL) {
         goto cleanup_on_error;
     }
 
@@ -542,7 +603,8 @@ cleanup_on_error:
     return NULL;
 }
 
-void free_task_msg(Norns__Rpc__Request__Task* msg) {
+static void 
+free_task_msg(Norns__Rpc__Request__Task* msg) {
 
     assert(msg != NULL);
 

@@ -36,6 +36,7 @@ lib_LTLIBRARIES = \
 include_HEADERS = \
 	$(top_srcdir)/include/norns.h
 	$(top_srcdir)/include/norns/norns_error.h
+	$(top_srcdir)/include/norns/norns_resources.h
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
@@ -48,6 +49,7 @@ libnorns_la_SOURCES = \
 	errors.c \
 	requests.c \
 	requests.h \
+	resources.c \
 	xmalloc.c \
 	xmalloc.h \
 	xstring.c \

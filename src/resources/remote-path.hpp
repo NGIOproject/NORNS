@@ -25,46 +25,42 @@
  *                                                                       *
  *************************************************************************/
 
-#ifndef __IO_TASK_HPP__
-#define __IO_TASK_HPP__
+#include "resource-info.hpp"
 
-#include <cstdint>
-#include <memory>
+#ifndef __REMOTE_PATH_HPP__
+#define __REMOTE_PATH_HPP__
 
-#include "norns.h"
-#include "resources.hpp"
-#include "backends.hpp"
+namespace data {
 
-namespace io {
+/*! Remote filesystem path data */
+struct remote_path : public resource_info {
 
-/*! Valid types of IO tasks */
-enum class task_type {
-    copy,
-    move,
-    unknown
+    remote_path(std::string nsid, std::string hostname, std::string datapath)
+        : m_nsid(nsid),
+          m_hostname(hostname),
+          m_datapath(datapath) {}
+
+    resource_type type() const override {
+        return resource_type::remote_posix_path;
+    }
+
+    std::string nsid() const override {
+        return m_nsid;
+    }
+
+    bool is_remote() const override {
+        return true;
+    }
+
+    std::string to_string() const override {
+        return "REMOTE_PATH[\"" + m_hostname + "\", \"" + m_nsid + "\", \"" + m_datapath + "\"]";
+    }
+
+    std::string m_nsid;
+    std::string m_hostname;
+    std::string m_datapath;
 };
 
-struct task {
+} // namespace data
 
-    using backend_ptr = std::shared_ptr<storage::backend>;
-    using resource_ptr = std::shared_ptr<data::resource>;
-
-    task(norns_op_t type, const resource_ptr src, const resource_ptr dst);
-    norns_tid_t id() const;
-    bool is_valid() const;
-    void operator()() const;
-
-    static norns_tid_t create_id();
-
-    uint64_t    m_id;
-    pid_t       m_pid;
-    uint32_t    m_jobid;
-    
-    task_type m_type;
-    resource_ptr m_src;
-    resource_ptr m_dst;
-};
-
-} // namespace io
-
-#endif // __IO_TASK_HPP__
+#endif /* __REMOTE_PATH_HPP__ */

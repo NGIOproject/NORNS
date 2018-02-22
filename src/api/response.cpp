@@ -85,4 +85,15 @@ void response::cleanup() {
     google::protobuf::ShutdownProtobufLibrary();
 }
 
+namespace detail {
+
+template<>
+std::string transfer_task_response::to_string() const {
+    norns_tid_t id = this->get<0>();
+    return utils::strerror(m_status) + (id != 0 ? " [tid: " + std::to_string(id) + "]": "");
+}
+
+
+} // namespace detail
+
 } // namespace api

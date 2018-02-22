@@ -43,7 +43,7 @@ SCENARIO("register job", "[api::norns_register_job]") {
         WHEN("a job is registered with invalid information") {
 
             struct norns_cred cred;
-            struct norns_job job = NORNS_JOB_INIT(NULL, 0, NULL, 0);
+            norns_job_t job = NORNS_JOB(NULL, 0, NULL, 0);
 
             const uint32_t jobid = 42;
 
@@ -59,16 +59,16 @@ SCENARIO("register job", "[api::norns_register_job]") {
             const char* test_hosts[] = { "host00", "host01" };
             const size_t test_nhosts = sizeof(test_hosts) / sizeof(test_hosts[0]);
 
-            struct norns_backend b0 = NORNS_BACKEND_INIT("b0://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b0", 1024);
-            struct norns_backend b1 = NORNS_BACKEND_INIT("b1://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b1", 2048);
-            struct norns_backend b2 = NORNS_BACKEND_INIT("b2://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b2", 1024);
+            norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b0", 1024);
+            norns_backend_t b1 = NORNS_BACKEND("b1://", NORNS_BACKEND_NVML, "/mnt/b1", 2048);
+            norns_backend_t b2 = NORNS_BACKEND("b2://", NORNS_BACKEND_NVML, "/mnt/b2", 1024);
 
-            struct norns_backend* test_backends[] = { &b0, &b1, &b2 };
+            norns_backend_t* test_backends[] = { &b0, &b1, &b2 };
 
             const size_t test_nbackends = sizeof(test_backends) / sizeof(test_backends[0]);
 
             struct norns_cred cred;
-            struct norns_job job = NORNS_JOB_INIT(test_hosts, test_nhosts, test_backends, test_nbackends);
+            norns_job_t job = NORNS_JOB(test_hosts, test_nhosts, test_backends, test_nbackends);
 
             const uint32_t jobid = 42;
 
@@ -91,16 +91,16 @@ SCENARIO("register job", "[api::norns_register_job]") {
             const char* test_hosts[] = { "host00", "host01" };
             const size_t test_nhosts = sizeof(test_hosts) / sizeof(test_hosts[0]);
 
-            struct norns_backend b0 = NORNS_BACKEND_INIT("b0://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b0", 1024);
-            struct norns_backend b1 = NORNS_BACKEND_INIT("b1://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b1", 2048);
-            struct norns_backend b2 = NORNS_BACKEND_INIT("b2://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b2", 1024);
+            norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b0", 1024);
+            norns_backend_t b1 = NORNS_BACKEND("b1://", NORNS_BACKEND_NVML, "/mnt/b1", 2048);
+            norns_backend_t b2 = NORNS_BACKEND("b2://", NORNS_BACKEND_NVML, "/mnt/b2", 1024);
 
-            struct norns_backend* test_backends[] = { &b0, &b1, &b2 };
+            norns_backend_t* test_backends[] = { &b0, &b1, &b2 };
 
             const size_t test_nbackends = sizeof(test_backends) / sizeof(test_backends[0]);
 
             struct norns_cred cred;
-            struct norns_job job = NORNS_JOB_INIT(test_hosts, test_nhosts, test_backends, test_nbackends);
+            norns_job_t job = NORNS_JOB(test_hosts, test_nhosts, test_backends, test_nbackends);
 
             const uint32_t jobid = 42;
 

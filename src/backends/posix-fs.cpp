@@ -1,58 +1,63 @@
-//
-// Copyright (C) 2017 Barcelona Supercomputing Center
-//                    Centro Nacional de Supercomputacion
-//
-// This file is part of the Data Scheduler, a daemon for tracking and managing
-// requests for asynchronous data transfer in a hierarchical storage environment.
-//
-// See AUTHORS file in the top level directory for information
-// regarding developers and contributors.
-//
-// The Data Scheduler is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// Data Scheduler is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with Data Scheduler.  If not, see <http://www.gnu.org/licenses/>.
-//
+/*************************************************************************
+ * Copyright (C) 2017-2018 Barcelona Supercomputing Center               *
+ *                         Centro Nacional de Supercomputacion           *
+ *                                                                       *
+ * This file is part of the Data Scheduler, a daemon for tracking and    *
+ * managing requests for asynchronous data transfer in a hierarchical    *
+ * storage environment.                                                  *
+ *                                                                       *
+ * See AUTHORS file in the top level directory for information           *
+ * regarding developers and contributors.                                *
+ *                                                                       *
+ * The Data Scheduler is free software: you can redistribute it and/or   *
+ * modify it under the terms of the GNU Lesser General Public License    *
+ * as published by the Free Software Foundation, either version 3 of     *
+ * the License, or (at your option) any later version.                   *
+ *                                                                       *
+ * The Data Scheduler is distributed in the hope that it will be useful, *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU     *
+ * Lesser General Public License for more details.                       *
+ *                                                                       *
+ * You should have received a copy of the GNU Lesser General             *
+ * Public License along with Data Scheduler.  If not, see                *
+ * <http://www.gnu.org/licenses/>.                                       *
+ *                                                                       *
+ *************************************************************************/
 
-#include <sstream>
-#include <boost/foreach.hpp>
 #include "backend-base.hpp"
-#include "utils.hpp"
 #include "posix-fs.hpp"
 
 namespace storage {
 
-posix_fs::posix_fs(const std::string& mount, uint32_t quota) 
+posix_filesystem::posix_filesystem(const std::string& mount, uint32_t quota) 
     : m_mount(mount), m_quota(quota) { }
 
-std::string posix_fs::mount() const {
+std::string posix_filesystem::mount() const {
     return m_mount;
 }
 
-uint32_t posix_fs::quota() const {
+uint32_t posix_filesystem::quota() const {
     return m_quota;
 }
 
-void posix_fs::read_data() const {
+bool posix_filesystem::accepts(resource_info_ptr res) const {
+    switch(res->type()) {
+        case data::resource_type::local_posix_path:
+            return true;
+        default:
+            return false;
+    }
 }
 
-void posix_fs::write_data() const {
+void posix_filesystem::read_data() const {
 }
 
-std::string posix_fs::to_string() const {
-    std::stringstream ss;
+void posix_filesystem::write_data() const {
+}
 
-    ss << "{NORNS_POSIX, " << m_mount << ", " << m_quota << "}";
-
-    return ss.str();
+std::string posix_filesystem::to_string() const {
+    return "POSIX_FILESYSTEM(" + m_mount + ", " + std::to_string(m_quota) + ")";
 }
 
 } // namespace storage

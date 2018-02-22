@@ -65,13 +65,13 @@ SCENARIO("unregister backend", "[api::norns_unregister_backend]") {
         WHEN("unregistering a registered backend") {
 
             struct norns_cred cred;
-            struct norns_backend b0 = NORNS_BACKEND_INIT("b0://", NORNS_BACKEND_LOCAL_NVML, "/mnt/b0", 4096);
+            norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b0", 4096);
 
             int rv = norns_register_backend(&cred, &b0);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_backend(&cred, b0.b_prefix);
+            rv = norns_unregister_backend(&cred, b0.b_nsid);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
