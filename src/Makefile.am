@@ -63,17 +63,22 @@ liburd_aux_la_SOURCES = \
 	defaults.hpp \
 	io-task.cpp \
 	io-task.hpp \
-	thread-pool.hpp \
-	pool/thread-pool.hpp \
-	pool/thread-pool-queue.hpp \
+	job.hpp \
+	logger.hpp \
+	make-unique.hpp \
 	resources.hpp \
 	resources/local-path.hpp \
 	resources/memory-buffer.hpp \
 	resources/remote-path.hpp \
-	resources/resource-base.hpp \
+	resources/resource.hpp \
+	resources/resource-info.hpp \
 	resources/shared-path.hpp \
 	settings.cpp \
 	settings.hpp \
+	signal-listener.hpp \
+	thread-pool.hpp \
+	thread-pool/thread-pool.hpp \
+	thread-pool/thread-pool-queue.hpp \
 	urd.cpp	\
 	urd.hpp	\
 	utils.cpp \

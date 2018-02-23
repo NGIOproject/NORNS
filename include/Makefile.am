@@ -28,7 +28,9 @@ nornsincludedir=$(includedir)/norns
 nornsinclude_HEADERS = \
 	norns/norns.h \
 	norns/norns_backends.h \
-	norns/norns_error.h
+	norns/norns_error.h \
+	norns/norns_resources.h \
+	norns/norns_types.h
 
 include_HEADERS = \
 	norns.h
