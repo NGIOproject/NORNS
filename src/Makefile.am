@@ -67,11 +67,16 @@ liburd_aux_la_SOURCES = \
 	logger.hpp \
 	make-unique.hpp \
 	resources.hpp \
+	resources/local-path.cpp \
 	resources/local-path.hpp \
+	resources/make-resource.hpp \
+	resources/make-stream.hpp \
+	resources/memory-buffer.cpp \
 	resources/memory-buffer.hpp \
+	resources/remote-path.cpp \
 	resources/remote-path.hpp \
 	resources/resource.hpp \
-	resources/resource-info.hpp \
+	resources/shared-path.cpp \
 	resources/shared-path.hpp \
 	settings.cpp \
 	settings.hpp \

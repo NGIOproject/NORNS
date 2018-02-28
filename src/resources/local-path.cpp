@@ -25,56 +25,67 @@
  *                                                                       *
  *************************************************************************/
 
-#include "resource.hpp"
-
-#ifndef __REMOTE_PATH_HPP__
-#define __REMOTE_PATH_HPP__
+#include "backends.hpp"
+#include "local-path.hpp"
 
 namespace data {
 
-/*! Remote filesystem path data */
-struct remote_path : public resource_info {
+/*! Remote path data */
+local_path::local_path(std::string nsid, std::string datapath)
+    : m_nsid(nsid),
+      m_datapath(datapath) {}
 
-    remote_path(std::string nsid, std::string hostname, std::string datapath);
-    ~remote_path();
-    resource_type type() const override;
-    std::string nsid() const override;
-    bool is_remote() const override;
-    std::string to_string() const override;
+local_path::~local_path() { }
 
-    std::string m_nsid;
-    std::string m_hostname;
-    std::string m_datapath;
-};
+resource_type local_path::type() const {
+    return resource_type::local_posix_path;
+}
+
+std::string local_path::nsid() const {
+    return m_nsid;
+}
+
+bool local_path::is_remote() const {
+    return false;
+}
+
+std::string local_path::to_string() const {
+    return "LOCAL_PATH[\"" + m_nsid + "\", \"" + m_datapath + "\"]";
+}
 
 namespace detail {
 
-template<>
-struct resource_impl<resource_type::remote_posix_path> : public resource {
+resource_impl<resource_type::local_posix_path>::resource_impl(std::shared_ptr<resource_info> base_info) :
+    m_backend(),
+    m_resource_info(std::static_pointer_cast<local_path>(base_info)) { }
 
-    using backend_ptr = std::shared_ptr<storage::backend>;
+std::string resource_impl<resource_type::local_posix_path>::to_string() const {
+    return m_backend->to_string() + m_resource_info->to_string();
+}
 
-    resource_impl(std::shared_ptr<resource_info> base_info);
-    std::string to_string() const override;
-    resource_type type() const override;
-    void set_backend(const backend_ptr backend);
+resource_type resource_impl<resource_type::local_posix_path>::type() const {
+    return resource_type::local_posix_path;
+}
 
-    backend_ptr m_backend;
-    std::shared_ptr<remote_path> m_resource_info;
-};
+void resource_impl<resource_type::local_posix_path>::set_backend(const backend_ptr backend) {
+    m_backend = backend;
+}
 
-template <>
-struct stream_impl<resource_type::remote_posix_path> : public stream {
-    stream_impl(std::shared_ptr<resource> resource);
-    std::size_t read(buffer& b) override;
-    std::size_t write(const buffer& b) override;
-};
+/* Stream implementation */
+stream_impl<resource_type::local_posix_path>::stream_impl(std::shared_ptr<resource> resource) {
+    (void) resource;
+}
+
+std::size_t stream_impl<resource_type::local_posix_path>::read(buffer& b) {
+    (void) b;
+    return 0;
+}
+
+std::size_t stream_impl<resource_type::local_posix_path>::write(const buffer& b) {
+    (void) b;
+    return 0;
+}
 
 } // namespace detail
 
-using remote_path_resource = detail::resource_impl<resource_type::remote_posix_path>;
-using remote_path_stream = detail::stream_impl<resource_type::remote_posix_path>;
-
 } // namespace data
-
-#endif /* __REMOTE_PATH_HPP__ */

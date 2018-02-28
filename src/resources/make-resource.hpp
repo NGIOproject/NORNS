@@ -25,56 +25,33 @@
  *                                                                       *
  *************************************************************************/
 
-#include "resource.hpp"
+#ifndef __MAKE_RESOURCE_HPP__
+#define __MAKE_RESOURCE_HPP__
 
-#ifndef __REMOTE_PATH_HPP__
-#define __REMOTE_PATH_HPP__
+// add additional concrete implementations here
+#include "resources/local-path.hpp"
+#include "resources/memory-buffer.hpp"
+#include "resources/shared-path.hpp"
+#include "resources/remote-path.hpp"
 
 namespace data {
 
-/*! Remote filesystem path data */
-struct remote_path : public resource_info {
+inline std::shared_ptr<resource> make_resource(std::shared_ptr<resource_info> rinfo) {
+    switch(rinfo->type()) {
+        case data::resource_type::memory_region:
+            return std::make_shared<data::memory_buffer_resource>(rinfo);
+        case data::resource_type::local_posix_path:
+            return std::make_shared<data::local_path_resource>(rinfo);
+        case data::resource_type::shared_posix_path:
+            return std::make_shared<data::shared_path_resource>(rinfo);
+        case data::resource_type::remote_posix_path:
+            return std::make_shared<data::remote_path_resource>(rinfo);
+    }
 
-    remote_path(std::string nsid, std::string hostname, std::string datapath);
-    ~remote_path();
-    resource_type type() const override;
-    std::string nsid() const override;
-    bool is_remote() const override;
-    std::string to_string() const override;
-
-    std::string m_nsid;
-    std::string m_hostname;
-    std::string m_datapath;
-};
-
-namespace detail {
-
-template<>
-struct resource_impl<resource_type::remote_posix_path> : public resource {
-
-    using backend_ptr = std::shared_ptr<storage::backend>;
-
-    resource_impl(std::shared_ptr<resource_info> base_info);
-    std::string to_string() const override;
-    resource_type type() const override;
-    void set_backend(const backend_ptr backend);
-
-    backend_ptr m_backend;
-    std::shared_ptr<remote_path> m_resource_info;
-};
-
-template <>
-struct stream_impl<resource_type::remote_posix_path> : public stream {
-    stream_impl(std::shared_ptr<resource> resource);
-    std::size_t read(buffer& b) override;
-    std::size_t write(const buffer& b) override;
-};
-
-} // namespace detail
-
-using remote_path_resource = detail::resource_impl<resource_type::remote_posix_path>;
-using remote_path_stream = detail::stream_impl<resource_type::remote_posix_path>;
+    // return an invalid pointer if type is not known
+    return std::shared_ptr<resource>();
+}
 
 } // namespace data
 
-#endif /* __REMOTE_PATH_HPP__ */
+#endif /* __MAKE_RESOURCE_HPP__ */

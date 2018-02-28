@@ -26,8 +26,10 @@
  *************************************************************************/
 
 #include <atomic>
+
 #include "norns.h"
 #include "logger.hpp"
+#include "resources.hpp"
 #include "io-task.hpp"
 
 namespace {
@@ -57,10 +59,6 @@ norns_tid_t task::id() const {
     return m_id;
 }
 
-bool task::is_valid() const {
-    return true;
-}
-
 norns_tid_t task::create_id() {
     static std::atomic<norns_tid_t> base(0);
     return ++base;
@@ -71,11 +69,14 @@ void task::operator()() const {
     LOGGER_WARN("[{}]   FROM: {}", m_id, m_src->to_string());
     LOGGER_WARN("[{}]     TO: {}", m_id, m_dst->to_string());
 
-/*
-    while(m_src->get_data()) {
-        m_dst->put_data();
+    auto input_stream = data::make_stream(m_src);
+    auto output_stream = data::make_stream(m_dst);
+
+    data::buffer b(8192);
+
+    while(input_stream->read(b) != 0) {
+        output_stream->write(b);
     }
-    */
 
     LOGGER_WARN("[{}] I/O task complete", m_id);
 }

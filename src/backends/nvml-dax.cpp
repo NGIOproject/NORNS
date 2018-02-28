@@ -50,6 +50,10 @@ bool nvml_dax::accepts(resource_info_ptr res) const {
     }
 }
 
+bool nvml_dax::contains(resource_info_ptr res) const {
+    return true; //XXX do actual check
+}
+
 void nvml_dax::read_data() const {
 }
 

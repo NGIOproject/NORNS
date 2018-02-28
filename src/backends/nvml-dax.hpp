@@ -38,6 +38,7 @@ public:
     std::string mount() const override;
     uint32_t quota() const override;
     bool accepts(resource_info_ptr res) const override;
+    bool contains(resource_info_ptr res) const override;
     void read_data() const override;
     void write_data() const override;
     std::string to_string() const;

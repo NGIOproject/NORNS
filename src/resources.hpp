@@ -28,14 +28,9 @@
 #ifndef __RESOURCES_HPP__
 #define  __RESOURCES_HPP__
 
-#include "resources/resource-info.hpp" // must be first
-
-#include "resources/local-path.hpp"
-#include "resources/memory-buffer.hpp"
-#include "resources/remote-path.hpp"
-#include "resources/shared-path.hpp"
-
-#include "resources/resource.hpp" // must be last
+#include "resources/resource.hpp"
+#include "resources/make-resource.hpp"
+#include "resources/make-stream.hpp"
 
 #endif /* __RESOURCES_HPP__ */
 

@@ -36,7 +36,7 @@
 
 #include "fake-daemon.hpp"
 
-#define USE_REAL_DAEMON
+//#define USE_REAL_DAEMON
 
 SCENARIO("submit request", "[api::norns_submit]") {
     GIVEN("a running urd instance") {

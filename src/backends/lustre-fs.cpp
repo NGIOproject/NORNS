@@ -51,6 +51,10 @@ bool lustre::accepts(resource_info_ptr res) const {
     }
 }
 
+bool lustre::contains(resource_info_ptr res) const {
+    return true; //XXX do actual check
+}
+
 void lustre::read_data() const {
 }
 

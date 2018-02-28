@@ -210,47 +210,52 @@ response_ptr urd::create_task(const request_ptr base_request) {
     norns_tid_t tid = 0;
     norns_error_t rv = NORNS_SUCCESS;
 
-    /* Helper lambda used to construct a data::resource from a storage::backend and 
-     * a data::resource_info. The function creates a data::resource if the provided 
-     * data::resource_info 'info' is valid, return it
-     * XXX
-     * in the 'res' parameter and return NORNS_SUCCESS. Otherwise, return an appropriate error */
-    auto make_resource = [&](const resource_info_ptr info) -> std::pair<norns_error_t, resource_ptr> {
+    /* Helper lambda used to construct a data::resource from a *storage::backend* and 
+     * a *data::resource_info*. The function creates a *data::resource* if the provided 
+     * *data::resource_info rinfo* exists in the backend and is valid, and returns it 
+     * coupled with a NORNS_SUCCESS error code. Otherwise, return an appropriate error 
+     * code and a std::shared_ptr<data::resource>{nullptr} */
+    auto create_from = [&](const resource_info_ptr rinfo) -> std::tuple<norns_error_t, resource_ptr> {
 
-        // remote backend validation is left to the recipient
-        if(info->is_remote()) {
+        auto res = data::make_resource(rinfo);
 
-            return std::make_pair<norns_error_t, resource_ptr>(NORNS_SUCCESS, 
-                    std::make_shared<data::resource>(storage::remote_backend, info)); //XXX we need a "remote" backend
+        if(res == nullptr) {
+            return std::make_tuple(NORNS_EBADARGS, resource_ptr());
         }
 
-        const auto nsid = info->nsid();
+        // remote backend validation is left to the recipient
+        if(rinfo->is_remote()) {
+            res->set_backend(storage::remote_backend);
+            return std::make_tuple(NORNS_SUCCESS, res);
+        }
+
+        const auto nsid = rinfo->nsid();
 
         // backend does not exist 
         if(m_backends->count(nsid) == 0) {
-            return std::make_pair(NORNS_ENOSUCHBACKEND, resource_ptr());
+            return std::make_tuple(NORNS_ENOSUCHBACKEND, resource_ptr());
         }
 
-        // check that resource is compatible with selected backend
         auto backend_ptr = m_backends->at(nsid);
 
-        if(!backend_ptr->accepts(info)) {
-            return std::make_pair(NORNS_EBADARGS, resource_ptr());
+        // check that resource is compatible with selected backend
+        if(!backend_ptr->accepts(rinfo) || !backend_ptr->contains(rinfo)) {
+            return std::make_tuple(NORNS_EBADARGS, resource_ptr());
         }
 
-        return std::make_pair(NORNS_SUCCESS, 
-                std::make_shared<data::resource>(backend_ptr, info));
+        res->set_backend(backend_ptr);
+        return std::make_tuple(NORNS_SUCCESS, res);
     };
 
     if((rv = validate_iotask_args(type, src_info, dst_info)) == NORNS_SUCCESS) {
 
-        auto src_rv = make_resource(src_info);
-        auto dst_rv = make_resource(dst_info);
+        auto src_rv = create_from(src_info);
+        auto dst_rv = create_from(dst_info);
 
-        if((src_rv.first == NORNS_SUCCESS) && (dst_rv.first == NORNS_SUCCESS)) {
+        if((std::get<0>(src_rv) == NORNS_SUCCESS) && (std::get<0>(dst_rv) == NORNS_SUCCESS)) {
 
-            resource_ptr src = src_rv.second;
-            resource_ptr dst = dst_rv.second;
+            resource_ptr src = std::get<1>(src_rv);
+            resource_ptr dst = std::get<1>(dst_rv);
 
             // everything is ok, add the I/O task to the queue
             io::task t(type, src, dst);
@@ -258,11 +263,11 @@ response_ptr urd::create_task(const request_ptr base_request) {
 
             m_workers->submit_and_forget(std::move(t));
         }
-        else if(src_rv.first != NORNS_SUCCESS) {
-            rv = src_rv.first;
+        else if(std::get<0>(src_rv) != NORNS_SUCCESS) {
+            rv = std::get<0>(src_rv);
         }
         else {
-            rv = dst_rv.first;
+            rv = std::get<0>(dst_rv);
         }
     }
 

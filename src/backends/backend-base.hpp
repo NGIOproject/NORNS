@@ -30,7 +30,8 @@
 #include <memory>
 #include <boost/preprocessor/cat.hpp>
 
-#include "resources/resource-info.hpp"
+//#include "resources/resource-info.hpp"
+#include "resources/resource.hpp"
 
 namespace storage {
 
@@ -48,6 +49,7 @@ public:
     virtual void write_data() const = 0;
 
     virtual bool accepts(resource_info_ptr res) const = 0;
+    virtual bool contains(resource_info_ptr res) const = 0;
 
     virtual std::string to_string() const = 0;
 

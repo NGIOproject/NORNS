@@ -52,6 +52,10 @@ bool process_memory::accepts(resource_info_ptr res) const {
     }
 }
 
+bool process_memory::contains(resource_info_ptr res) const {
+    return true; //XXX do actual check
+}
+
 void process_memory::read_data() const {
 }
 

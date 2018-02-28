@@ -50,6 +50,10 @@ bool remote_backend::accepts(resource_info_ptr res) const {
     }
 }
 
+bool remote_backend::contains(resource_info_ptr res) const {
+    return false;
+}
+
 void remote_backend::read_data() const {
 }
 

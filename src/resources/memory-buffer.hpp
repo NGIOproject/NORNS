@@ -25,8 +25,7 @@
  *                                                                       *
  *************************************************************************/
 
-#include <sstream>
-#include "resource-info.hpp"
+#include "resource.hpp"
 
 #ifndef __MEMORY_BUFFER_HPP__
 #define __MEMORY_BUFFER_HPP__
@@ -36,34 +35,50 @@ namespace data {
 /*! Memory buffer data */
 struct memory_buffer : public resource_info {
 
-    memory_buffer(std::string nsid, uint64_t address, std::size_t size)
-        : m_nsid(nsid),
-          m_address(address),
-          m_size(size) {}
-
-    resource_type type() const override {
-        return resource_type::memory_region;
-    }
-
-    std::string nsid() const override {
-        return m_nsid;
-    }
-
-    bool is_remote() const override {
-        return false;
-    }
-
-    std::string to_string() const override {
-        std::stringstream ss;
-        ss << "0x" << std::hex << m_address << "+" << "0x" << m_size;
-        return "MEMBUF[" + ss.str() + "]";
-    }
+    memory_buffer(std::string nsid, uint64_t address, std::size_t size);
+    ~memory_buffer();
+    resource_type type() const override;
+    std::string nsid() const override;
+    bool is_remote() const override;
+    std::string to_string() const override;
 
     std::string m_nsid;
     uint64_t m_address;
     std::size_t m_size;
 };
 
+
+
+namespace detail {
+
+template<>
+struct resource_impl<resource_type::memory_region> : public resource {
+
+    using backend_ptr = std::shared_ptr<storage::backend>;
+
+    resource_impl(std::shared_ptr<resource_info> base_info);
+    std::string to_string() const override;
+    resource_type type() const override;
+    void set_backend(const backend_ptr backend);
+
+    backend_ptr m_backend;
+    std::shared_ptr<memory_buffer> m_resource_info;
+};
+
+template <>
+struct stream_impl<resource_type::memory_region> : public data::stream {
+    stream_impl(std::shared_ptr<resource> resource);
+    std::size_t read(buffer& b) override;
+    std::size_t write(const buffer& b) override;
+};
+
+} // namespace detail
+
+/* typedefs for convenience */
+using memory_buffer_resource = detail::resource_impl<resource_type::memory_region>;
+using memory_region_stream = detail::stream_impl<resource_type::memory_region>;
+
 } // namespace data
+
 
 #endif /* __MEMORY_BUFFER_HPP__ */

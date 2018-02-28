@@ -50,6 +50,10 @@ bool posix_filesystem::accepts(resource_info_ptr res) const {
     }
 }
 
+bool posix_filesystem::contains(resource_info_ptr res) const {
+    return true; //XXX do actual check
+}
+
 void posix_filesystem::read_data() const {
 }
 

@@ -29,35 +29,69 @@
 #define __RESOURCE_HPP__
 
 #include <memory>
-#include "resource-info.hpp"
-#include "backends.hpp"
+#include <vector>
+
+// forward declare storage::backend
+namespace storage {
+    class backend;
+}
 
 namespace data {
+
+/*! Supported resource types */
+enum class resource_type {
+    memory_region,
+    local_posix_path,
+    shared_posix_path,
+    remote_posix_path
+};
+
+/*! Base class for information about data resources */
+struct resource_info {
+    virtual ~resource_info() {}
+    virtual resource_type type() const = 0;
+    virtual std::string nsid() const = 0;
+    virtual bool is_remote() const = 0;
+    virtual std::string to_string() const = 0;
+};
 
 /*! A fully qualified resource for which we have a description and the backend
  * that stores it */
 struct resource {
-
-    using backend_ptr = std::shared_ptr<storage::backend>;
-    using resource_info_ptr = std::shared_ptr<data::resource_info>;
-
-    resource(backend_ptr backend, resource_info_ptr rinfo) 
-        : m_backend(backend),
-          m_resource_info(rinfo) { }
-
-    resource_type type() const {
-        return m_resource_info->type();
-    }
-
-    std::string to_string() const {
-        return m_backend->to_string() + m_resource_info->to_string();
-    }
-
-
-    backend_ptr         m_backend;
-    resource_info_ptr   m_resource_info;
+    virtual ~resource() {}
+    virtual resource_type type() const = 0;
+    virtual void set_backend(const std::shared_ptr<storage::backend> backend) = 0;
+    virtual std::string to_string() const = 0;
 };
 
+/*! Data buffer with minimum size */
+struct buffer : public std::vector<uint8_t> {
+    buffer(std::size_t size)
+        : std::vector<uint8_t>(size) {}
+};
+
+/*! A resource stream for reading and/or writing data */
+struct stream {
+    virtual ~stream() { }
+
+    virtual std::size_t read(buffer& b) = 0;
+    virtual std::size_t write(const buffer& b) = 0;
+};
+
+
+namespace detail {
+
+/*! Generic template for resource implementations 
+ * (a concrete specialization must be provided for each resource_type) */
+template <resource_type RT>
+struct resource_impl;
+
+/*! Generic template for resource stream implementations
+ * (a concrete specialization must be provided for each resource_type) */
+template <resource_type RT>
+struct stream_impl;
+
+} // namespace detail
 } // namespace data 
 
 #endif /* __RESOURCE_HPP__ */

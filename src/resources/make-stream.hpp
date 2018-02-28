@@ -25,30 +25,33 @@
  *                                                                       *
  *************************************************************************/
 
-#ifndef __RESOURCE_INFO_HPP__
-#define __RESOURCE_INFO_HPP__
+#ifndef __MAKE_STREAM_HPP__
+#define __MAKE_STREAM_HPP__
 
-#include <string>
+// add additional concrete implementations here
+#include "resources/local-path.hpp"
+#include "resources/memory-buffer.hpp"
+#include "resources/shared-path.hpp"
+#include "resources/remote-path.hpp"
 
 namespace data {
 
-/*! Supported resource types */
-enum class resource_type {
-    memory_region,
-    local_posix_path,
-    shared_posix_path,
-    remote_posix_path
-};
+inline std::shared_ptr<stream> make_stream(std::shared_ptr<resource> rsrc) {
+    switch(rsrc->type()) {
+        case data::resource_type::memory_region:
+            return std::make_shared<data::memory_region_stream>(rsrc);
+        case data::resource_type::local_posix_path:
+            return std::make_shared<data::local_path_stream>(rsrc);
+        case data::resource_type::shared_posix_path:
+            return std::make_shared<data::shared_path_stream>(rsrc);
+        case data::resource_type::remote_posix_path:
+            return std::make_shared<data::remote_path_stream>(rsrc);
+    }
 
-/*! Base class for data resources */
-struct resource_info {
-    virtual ~resource_info() {}
-    virtual resource_type type() const = 0;
-    virtual std::string nsid() const = 0;
-    virtual bool is_remote() const = 0;
-    virtual std::string to_string() const = 0;
-};
+    // return an invalid pointer if type is not known
+    return std::shared_ptr<stream>();
+}
 
 } // namespace data
 
-#endif /* __RESOURCE_INFO_HPP__ */
+#endif /* __MAKE_STREAM_HPP__ */

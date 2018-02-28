@@ -25,56 +25,71 @@
  *                                                                       *
  *************************************************************************/
 
-#include "resource.hpp"
-
-#ifndef __REMOTE_PATH_HPP__
-#define __REMOTE_PATH_HPP__
+#include <sstream>
+#include "backends.hpp"
+#include "memory-buffer.hpp"
 
 namespace data {
 
-/*! Remote filesystem path data */
-struct remote_path : public resource_info {
+/*! Memory buffer data */
+memory_buffer::memory_buffer(std::string nsid, uint64_t address, std::size_t size)
+    : m_nsid(nsid),
+      m_address(address),
+      m_size(size) {}
 
-    remote_path(std::string nsid, std::string hostname, std::string datapath);
-    ~remote_path();
-    resource_type type() const override;
-    std::string nsid() const override;
-    bool is_remote() const override;
-    std::string to_string() const override;
+memory_buffer::~memory_buffer() { }
 
-    std::string m_nsid;
-    std::string m_hostname;
-    std::string m_datapath;
-};
+resource_type memory_buffer::type() const {
+    return resource_type::memory_region;
+}
+
+std::string memory_buffer::nsid() const {
+    return m_nsid;
+}
+
+bool memory_buffer::is_remote() const {
+    return false;
+}
+
+std::string memory_buffer::to_string() const {
+    std::stringstream ss;
+    ss << "0x" << std::hex << m_address << "+" << "0x" << m_size;
+    return "MEMBUF[" + ss.str() + "]";
+}
 
 namespace detail {
 
-template<>
-struct resource_impl<resource_type::remote_posix_path> : public resource {
+resource_impl<resource_type::memory_region>::resource_impl(std::shared_ptr<resource_info> base_info) :
+    m_backend(),
+    m_resource_info(std::static_pointer_cast<memory_buffer>(base_info)) { }
 
-    using backend_ptr = std::shared_ptr<storage::backend>;
+std::string resource_impl<resource_type::memory_region>::to_string() const {
+    return m_backend->to_string() + m_resource_info->to_string();
+}
 
-    resource_impl(std::shared_ptr<resource_info> base_info);
-    std::string to_string() const override;
-    resource_type type() const override;
-    void set_backend(const backend_ptr backend);
+resource_type resource_impl<resource_type::memory_region>::type() const {
+    return resource_type::memory_region;
+}
 
-    backend_ptr m_backend;
-    std::shared_ptr<remote_path> m_resource_info;
-};
+void resource_impl<resource_type::memory_region>::set_backend(const backend_ptr backend) {
+    m_backend = backend;
+}
 
-template <>
-struct stream_impl<resource_type::remote_posix_path> : public stream {
-    stream_impl(std::shared_ptr<resource> resource);
-    std::size_t read(buffer& b) override;
-    std::size_t write(const buffer& b) override;
-};
+/* Stream implementation */
+stream_impl<resource_type::memory_region>::stream_impl(std::shared_ptr<resource> resource) {
+    (void) resource;
+}
+
+std::size_t stream_impl<resource_type::memory_region>::read(buffer& b) {
+    (void) b;
+    return 0;
+}
+
+std::size_t stream_impl<resource_type::memory_region>::write(const buffer& b) {
+    (void) b;
+    return 0;
+}
 
 } // namespace detail
 
-using remote_path_resource = detail::resource_impl<resource_type::remote_posix_path>;
-using remote_path_stream = detail::stream_impl<resource_type::remote_posix_path>;
-
 } // namespace data
-
-#endif /* __REMOTE_PATH_HPP__ */

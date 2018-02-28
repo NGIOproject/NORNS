@@ -25,8 +25,7 @@
  *                                                                       *
  *************************************************************************/
 
-#include "resource-info.hpp"
-#include "local-path.hpp"
+#include "resource.hpp"
 
 #ifndef __SHARED_PATH_HPP__
 #define __SHARED_PATH_HPP__
@@ -34,18 +33,47 @@
 namespace data {
 
 /*! Shared filesystem path data */
-struct shared_path : public local_path {
-    shared_path(std::string nsid, std::string datapath)
-        : local_path(nsid, datapath) {}
+struct shared_path : public resource_info {
+    shared_path(std::string nsid, std::string datapath);
+    ~shared_path();
+    resource_type type() const override;
+    std::string nsid() const override;
+    bool is_remote() const override;
+    std::string to_string() const override;
 
-    resource_type type() const override {
-        return resource_type::shared_posix_path;
-    }
-
-    std::string to_string() const override {
-        return "SHARED_PATH[\"" + m_nsid + "\", \"" + m_datapath + "\"]";
-    }
+    std::string m_nsid;
+    std::string m_datapath;
 };
+
+
+namespace detail {
+
+template <>
+struct resource_impl<resource_type::shared_posix_path> : public resource {
+
+    using backend_ptr = std::shared_ptr<storage::backend>;
+
+    resource_impl(std::shared_ptr<resource_info> base_info);
+    std::string to_string() const override;
+    resource_type type() const override;
+
+    void set_backend(const backend_ptr backend);
+
+    backend_ptr m_backend;
+    std::shared_ptr<shared_path> m_resource_info;
+};
+
+template <>
+struct stream_impl<resource_type::shared_posix_path> : public data::stream {
+    stream_impl(std::shared_ptr<resource> resource);
+    std::size_t read(buffer& b) override;
+    std::size_t write(const buffer& b) override;
+};
+
+} // namespace detail
+
+using shared_path_resource = detail::resource_impl<resource_type::shared_posix_path>;
+using shared_path_stream = detail::stream_impl<resource_type::shared_posix_path>;
 
 } // namespace data
 
