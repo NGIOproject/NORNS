@@ -59,7 +59,9 @@ struct resource_info {
  * that stores it */
 struct resource {
     virtual ~resource() {}
-    virtual resource_type type() const = 0;
+//    virtual resource_type type() const = 0;
+    virtual std::shared_ptr<resource_info> info() const = 0;
+    virtual std::shared_ptr<storage::backend> backend() const = 0;
     virtual void set_backend(const std::shared_ptr<storage::backend> backend) = 0;
     virtual std::string to_string() const = 0;
 };
@@ -68,6 +70,13 @@ struct resource {
 struct buffer : public std::vector<uint8_t> {
     buffer(std::size_t size)
         : std::vector<uint8_t>(size) {}
+};
+
+
+/*! Supported stream types */
+enum class stream_type {
+    input,
+    output
 };
 
 /*! A resource stream for reading and/or writing data */

@@ -42,6 +42,8 @@ struct local_path : public resource_info {
     bool is_remote() const override;
     std::string to_string() const override;
 
+    std::string datapath() const;
+
     std::string m_nsid;
     std::string m_datapath;
 };
@@ -52,22 +54,26 @@ namespace detail {
 template <>
 struct resource_impl<resource_type::local_posix_path> : public resource {
 
-    using backend_ptr = std::shared_ptr<storage::backend>;
-
     resource_impl(std::shared_ptr<resource_info> base_info);
     std::string to_string() const override;
-    resource_type type() const override;
-    void set_backend(const backend_ptr backend);
+//    resource_type type() const override;
+    std::shared_ptr<resource_info> info() const override;
+    std::shared_ptr<storage::backend> backend() const override;
+    void set_backend(const std::shared_ptr<storage::backend> backend) override;
 
-    backend_ptr m_backend;
+    std::shared_ptr<storage::backend> m_backend;
     std::shared_ptr<local_path> m_resource_info;
 };
 
 template <>
 struct stream_impl<resource_type::local_posix_path> : public data::stream {
-    stream_impl(std::shared_ptr<resource> resource);
+    stream_impl(std::shared_ptr<resource> resource, stream_type type);
+    ~stream_impl();
     std::size_t read(buffer& b) override;
     std::size_t write(const buffer& b) override;
+
+    int m_fd = -1;
+
 };
 
 } // namespace detail

@@ -59,33 +59,41 @@ std::string memory_buffer::to_string() const {
 
 namespace detail {
 
-resource_impl<resource_type::memory_region>::resource_impl(std::shared_ptr<resource_info> base_info) :
+memory_region_resource::resource_impl(std::shared_ptr<resource_info> base_info) :
     m_backend(),
     m_resource_info(std::static_pointer_cast<memory_buffer>(base_info)) { }
 
-std::string resource_impl<resource_type::memory_region>::to_string() const {
+std::string memory_region_resource::to_string() const {
     return m_backend->to_string() + m_resource_info->to_string();
 }
 
-resource_type resource_impl<resource_type::memory_region>::type() const {
-    return resource_type::memory_region;
+//resource_type memory_region_resource::type() const {
+//    return resource_type::memory_region;
+//}
+
+std::shared_ptr<resource_info> memory_region_resource::info() const {
+    return m_resource_info;
 }
 
-void resource_impl<resource_type::memory_region>::set_backend(const backend_ptr backend) {
+std::shared_ptr<storage::backend> memory_region_resource::backend() const {
+    return m_backend;
+}
+
+void memory_region_resource::set_backend(const std::shared_ptr<storage::backend> backend) {
     m_backend = backend;
 }
 
 /* Stream implementation */
-stream_impl<resource_type::memory_region>::stream_impl(std::shared_ptr<resource> resource) {
+memory_region_stream::stream_impl(std::shared_ptr<resource> resource) {
     (void) resource;
 }
 
-std::size_t stream_impl<resource_type::memory_region>::read(buffer& b) {
+std::size_t memory_region_stream::read(buffer& b) {
     (void) b;
     return 0;
 }
 
-std::size_t stream_impl<resource_type::memory_region>::write(const buffer& b) {
+std::size_t memory_region_stream::write(const buffer& b) {
     (void) b;
     return 0;
 }

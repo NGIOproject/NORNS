@@ -28,6 +28,8 @@
 #ifndef __MAKE_STREAM_HPP__
 #define __MAKE_STREAM_HPP__
 
+#include <system_error>
+
 // add additional concrete implementations here
 #include "resources/local-path.hpp"
 #include "resources/memory-buffer.hpp"
@@ -36,12 +38,12 @@
 
 namespace data {
 
-inline std::shared_ptr<stream> make_stream(std::shared_ptr<resource> rsrc) {
-    switch(rsrc->type()) {
+inline std::shared_ptr<stream> make_stream(std::shared_ptr<resource> rsrc, stream_type type) {
+    switch(rsrc->info()->type()) {
         case data::resource_type::memory_region:
             return std::make_shared<data::memory_region_stream>(rsrc);
         case data::resource_type::local_posix_path:
-            return std::make_shared<data::local_path_stream>(rsrc);
+            return std::make_shared<data::local_path_stream>(rsrc, type);
         case data::resource_type::shared_posix_path:
             return std::make_shared<data::shared_path_stream>(rsrc);
         case data::resource_type::remote_posix_path:

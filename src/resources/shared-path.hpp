@@ -51,15 +51,14 @@ namespace detail {
 template <>
 struct resource_impl<resource_type::shared_posix_path> : public resource {
 
-    using backend_ptr = std::shared_ptr<storage::backend>;
-
     resource_impl(std::shared_ptr<resource_info> base_info);
     std::string to_string() const override;
-    resource_type type() const override;
+    //resource_type type() const override;
+    std::shared_ptr<resource_info> info() const override;
+    std::shared_ptr<storage::backend> backend() const override;
+    void set_backend(const std::shared_ptr<storage::backend> backend) override;
 
-    void set_backend(const backend_ptr backend);
-
-    backend_ptr m_backend;
+    std::shared_ptr<storage::backend> m_backend;
     std::shared_ptr<shared_path> m_resource_info;
 };
 

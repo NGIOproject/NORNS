@@ -23,9 +23,9 @@
 
 AM_CPPFLAGS = -I m4
 
-TESTS = api
+TESTS = api 
 
-check_PROGRAMS = $(TESTS)
+check_PROGRAMS = $(TESTS) api_interactive
 
 END = 
 
@@ -44,6 +44,7 @@ api_SOURCES = \
 	api-main.cpp \
 	api-backend-register.cpp \
 	api-backend-unregister.cpp \
+	api-copy-local-data.cpp \
 	api-job-register.cpp \
 	api-job-update.cpp \
 	api-job-unregister.cpp \
@@ -72,6 +73,7 @@ api_LDFLAGS = \
 	@TBB_LIBS@ \
     @BOOST_ASIO_LIB@ \
 	@BOOST_LDFLAGS@	\
+	@BOOST_FILESYSTEM_LIB@ \
     @BOOST_PROGRAM_OPTIONS_LIB@	\
     @BOOST_SYSTEM_LIB@ \
     @BOOST_THREAD_LIB@ \
@@ -85,3 +87,11 @@ EXTRA_api_DEPENDENCIES = \
 	$(top_builddir)/lib/libnorns.la \
 	$(END)
 
+# The following produces a version of the api tests where the urd daemon 
+# is not started automatically by the test, so that a running daemon can be
+# tested interactively
+api_interactive_CXXFLAGS = $(api_CXXFLAGS)
+api_interactive_CPPFLAGS = $(api_CPPFLAGS) -DUSE_REAL_DAEMON
+api_interactive_SOURCES = $(api_SOURCES)
+api_interactive_LDFLAGS = $(api_LDFLAGS)
+EXTRA_api_interactive_DEPENDENCIES = $(EXTRA_api_DEPENDENCIES)

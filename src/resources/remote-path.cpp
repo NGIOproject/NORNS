@@ -56,33 +56,41 @@ std::string remote_path::to_string() const {
 
 namespace detail {
 
-resource_impl<resource_type::remote_posix_path>::resource_impl(std::shared_ptr<resource_info> base_info) :
+remote_path_resource::resource_impl(std::shared_ptr<resource_info> base_info) :
     m_backend(),
     m_resource_info(std::static_pointer_cast<remote_path>(base_info)) { }
 
-std::string resource_impl<resource_type::remote_posix_path>::to_string() const {
+std::string remote_path_resource::to_string() const {
     return m_backend->to_string() + m_resource_info->to_string();
 }
 
-resource_type resource_impl<resource_type::remote_posix_path>::type() const {
-    return resource_type::remote_posix_path;
+//resource_type remote_path_resource::type() const {
+//    return resource_type::remote_posix_path;
+//}
+
+std::shared_ptr<resource_info> remote_path_resource::info() const {
+    return m_resource_info;
 }
 
-void resource_impl<resource_type::remote_posix_path>::set_backend(const backend_ptr backend) {
+std::shared_ptr<storage::backend> remote_path_resource::backend() const {
+    return m_backend;
+}
+
+void remote_path_resource::set_backend(const std::shared_ptr<storage::backend> backend) {
     m_backend = backend;
 }
 
 /* Stream implementation */
-stream_impl<resource_type::remote_posix_path>::stream_impl(std::shared_ptr<resource> resource) {
+remote_path_stream::stream_impl(std::shared_ptr<resource> resource) {
     (void) resource;
 }
 
-std::size_t stream_impl<resource_type::remote_posix_path>::read(buffer& b) {
+std::size_t remote_path_stream::read(buffer& b) {
     (void) b;
     return 0;
 }
 
-std::size_t stream_impl<resource_type::remote_posix_path>::write(const buffer& b) {
+std::size_t remote_path_stream::write(const buffer& b) {
     (void) b;
     return 0;
 }

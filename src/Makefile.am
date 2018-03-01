@@ -107,8 +107,8 @@ liburd_aux_la_CPPFLAGS = \
 	-I$(top_builddir)/rpc
 
 liburd_aux_la_LDFLAGS = \
-	@TBB_LIBS@ \
     @BOOST_ASIO_LIB@ \
+    @BOOST_FILESYSTEM_LIB@ \
 	@BOOST_LDFLAGS@	\
     @BOOST_PROGRAM_OPTIONS_LIB@	\
     @BOOST_SYSTEM_LIB@ \
@@ -171,8 +171,8 @@ urd_CPPFLAGS = \
 # '-Wl,--whole-archive,.libs/liburd_aux.a,--no-whole-archive' and to include
 # several extra dependencies which would not be needed otherwise
 urd_LDFLAGS = \
-	@TBB_LIBS@ \
     @BOOST_ASIO_LIB@ \
+    @BOOST_FILESYSTEM_LIB@ \
 	@BOOST_LDFLAGS@	\
     @BOOST_PROGRAM_OPTIONS_LIB@	\
     @BOOST_SYSTEM_LIB@ \

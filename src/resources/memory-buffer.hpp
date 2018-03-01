@@ -54,14 +54,14 @@ namespace detail {
 template<>
 struct resource_impl<resource_type::memory_region> : public resource {
 
-    using backend_ptr = std::shared_ptr<storage::backend>;
-
     resource_impl(std::shared_ptr<resource_info> base_info);
     std::string to_string() const override;
-    resource_type type() const override;
-    void set_backend(const backend_ptr backend);
+    //resource_type type() const override;
+    std::shared_ptr<resource_info> info() const override;
+    std::shared_ptr<storage::backend> backend() const override;
+    void set_backend(const std::shared_ptr<storage::backend> backend) override;
 
-    backend_ptr m_backend;
+    std::shared_ptr<storage::backend> m_backend;
     std::shared_ptr<memory_buffer> m_resource_info;
 };
 
@@ -75,7 +75,7 @@ struct stream_impl<resource_type::memory_region> : public data::stream {
 } // namespace detail
 
 /* typedefs for convenience */
-using memory_buffer_resource = detail::resource_impl<resource_type::memory_region>;
+using memory_region_resource = detail::resource_impl<resource_type::memory_region>;
 using memory_region_stream = detail::stream_impl<resource_type::memory_region>;
 
 } // namespace data

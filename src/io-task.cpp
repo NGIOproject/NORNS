@@ -25,6 +25,7 @@
  *                                                                       *
  *************************************************************************/
 
+#include <system_error>
 #include <atomic>
 
 #include "norns.h"
@@ -69,16 +70,44 @@ void task::operator()() const {
     LOGGER_WARN("[{}]   FROM: {}", m_id, m_src->to_string());
     LOGGER_WARN("[{}]     TO: {}", m_id, m_dst->to_string());
 
-    auto input_stream = data::make_stream(m_src);
-    auto output_stream = data::make_stream(m_dst);
+    // helper lambda for creating streams and reporting errors
+    auto create_stream = [&] (const resource_ptr res, data::stream_type type) 
+        -> std::shared_ptr<data::stream> {
 
-    data::buffer b(8192);
+        try {
+            return data::make_stream(res, type);
+        }
+        catch(const std::system_error& error) {
+            LOGGER_ERROR("[{}] Error creating {} stream for {}: \"{}\"", 
+                    m_id, (type == data::stream_type::input ? "input" : "output"),  
+                    res->to_string(), error.code().message());
+            throw;
+        }
+    };
 
-    while(input_stream->read(b) != 0) {
-        output_stream->write(b);
+    try {
+        auto input_stream = create_stream(m_src, data::stream_type::input);
+        auto output_stream = create_stream(m_dst, data::stream_type::output);
+
+        //XXX using something like backend->preferred_transfer_size()
+        //would be nice
+        data::buffer b(8192);
+        std::size_t bytes_read = 0;
+
+        while((bytes_read = input_stream->read(b)) != 0) {
+
+            LOGGER_WARN("[{}] {} bytes read from {}", m_id, bytes_read, m_src->to_string());
+
+            std::size_t bytes_written = output_stream->write(b);
+
+            LOGGER_WARN("[{}] {} bytes written to {}", m_id, bytes_written, m_dst->to_string());
+        }
+
+        LOGGER_WARN("[{}] I/O task completed successfully", m_id);
     }
-
-    LOGGER_WARN("[{}] I/O task complete", m_id);
+    catch(const std::exception& ex) {
+        LOGGER_WARN("[{}] I/O task completed with error", m_id);
+    }
 }
 
 } // namespace io

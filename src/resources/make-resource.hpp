@@ -39,7 +39,7 @@ namespace data {
 inline std::shared_ptr<resource> make_resource(std::shared_ptr<resource_info> rinfo) {
     switch(rinfo->type()) {
         case data::resource_type::memory_region:
-            return std::make_shared<data::memory_buffer_resource>(rinfo);
+            return std::make_shared<data::memory_region_resource>(rinfo);
         case data::resource_type::local_posix_path:
             return std::make_shared<data::local_path_resource>(rinfo);
         case data::resource_type::shared_posix_path:
