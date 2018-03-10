@@ -5,16 +5,17 @@ message Request {
     // oneof would be better here, but the version of protoc provided by
     // CentOS 7 does not support it yet
     enum Type {
-        SUBMIT_IOTASK = 1;
-        PING = 2;
-        REGISTER_JOB = 3;
-        UPDATE_JOB = 4;
-        UNREGISTER_JOB = 5;
-        ADD_PROCESS = 6;
-        REMOVE_PROCESS = 7;
-        REGISTER_BACKEND = 8;
-        UPDATE_BACKEND = 9;
-        UNREGISTER_BACKEND = 10;
+        IOTASK_SUBMIT = 1;
+        IOTASK_STATUS = 2;
+        PING = 3;
+        JOB_REGISTER = 4;
+        JOB_UPDATE = 5;
+        JOB_UNREGISTER = 6;
+        PROCESS_ADD = 7;
+        PROCESS_REMOVE = 8;
+        BACKEND_REGISTER = 9;
+        BACKEND_UPDATE = 10;
+        BACKEND_UNREGISTER = 11;
     }
 
     // I/O task descriptor
@@ -37,9 +38,10 @@ message Request {
             optional PosixPath path = 4;
         };
 
-        required uint32 optype = 1;
-        required Resource source = 2;
-        required Resource destination = 3;
+        required uint32 taskid = 1;
+        required uint32 optype = 2;
+        required Resource source = 3;
+        required Resource destination = 4;
     }
 
     // job descriptor
@@ -77,23 +79,29 @@ message Response {
     // oneof would be better here, but the version of protoc provided by
     // CentOS 7 does not support it yet
     enum Type {
-        SUBMIT_IOTASK = 1;
-        PING = 2;
-        REGISTER_JOB = 3;
-        UPDATE_JOB = 4;
-        UNREGISTER_JOB = 5;
-        ADD_PROCESS = 6;
-        REMOVE_PROCESS = 7;
-        REGISTER_BACKEND = 8;
-        UPDATE_BACKEND = 9;
-        UNREGISTER_BACKEND = 10;
-        BAD_REQUEST = 11;
+        IOTASK_SUBMIT = 1;
+        IOTASK_STATUS = 2;
+        PING = 3;
+        JOB_REGISTER = 4;
+        JOB_UPDATE = 5;
+        JOB_UNREGISTER = 6;
+        PROCESS_ADD = 7;
+        PROCESS_REMOVE = 8;
+        BACKEND_REGISTER = 9;
+        BACKEND_UPDATE = 10;
+        BACKEND_UNREGISTER = 11;
+        BAD_REQUEST = 12;
     }
 
-    // most responses only need to return a status code
+    message TaskStats {
+        required uint32 status = 1;
+    }
+
+    // most responses only need to return an error code
     required Type type = 1;
-    required uint32 status = 2;
+    required uint32 error_code = 2;
     optional uint32 taskid = 3;
+    optional TaskStats stats = 4;
 }
 
 

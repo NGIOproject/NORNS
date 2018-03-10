@@ -49,6 +49,12 @@ namespace {
 
 struct test_env {
 
+    test_env() {
+#ifndef USE_REAL_DAEMON
+        m_td.run();
+#endif
+    }
+
     ~test_env() {
 
         if(m_dirs.size() != 0) {
@@ -66,6 +72,11 @@ struct test_env {
             }
             m_backends.clear();
         }
+
+#ifndef USE_REAL_DAEMON
+        int ret = m_td.stop();
+        //REQUIRE(ret == 0);
+#endif
     }
 
     // NOTE: rel_mount must be relative to the CWD
@@ -113,10 +124,14 @@ struct test_env {
         if(m_backends.count(nsid) != 0) {
             struct norns_cred cred;
             norns_error_t rv = norns_unregister_backend(&cred, nsid.c_str());
-            REQUIRE(rv == NORNS_SUCCESS);
+
+            // cannot use REQUIRE here since it may throw an exception,
+            // and throwing exceptions from destructors is a huge problem
+            //REQUIRE(rv == NORNS_SUCCESS);
         }
     }
 
+    fake_daemon m_td;
     std::set<std::string> m_backends;
     std::unordered_map<std::string, bfs::path> m_dirs;
 };
@@ -125,11 +140,6 @@ struct test_env {
 
 SCENARIO("copy local data", "[api::norns_submit_copy_local]") {
     GIVEN("a running urd instance") {
-
-#ifndef USE_REAL_DAEMON
-        fake_daemon td;
-        td.run();
-#endif
 
         test_env env;
 
@@ -172,14 +182,10 @@ SCENARIO("copy local data", "[api::norns_submit_copy_local]") {
 
             // wait until the task completes
             // TODO: replace with norns_wait() once it's available
-            sleep(15);
+            //sleep(15);
             
         }
 
-#ifndef USE_REAL_DAEMON
-        int ret = td.stop();
-        REQUIRE(ret == 0);
-#endif
     }
 
 #ifndef USE_REAL_DAEMON

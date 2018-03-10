@@ -58,18 +58,42 @@ send_submit_request(norns_iotask_t* task) {
         return NORNS_EBADARGS;
     }
 
-    if((res = send_request(NORNS_SUBMIT_IOTASK, &resp, task)) 
+    if((res = send_request(NORNS_IOTASK_SUBMIT, &resp, task)) 
             != NORNS_SUCCESS) {
         return res;
     }
 
-    if(resp.r_type != NORNS_SUBMIT_IOTASK) {
+    if(resp.r_type != NORNS_IOTASK_SUBMIT) {
         return NORNS_ESNAFU;
     }
 
     task->t_id = resp.r_taskid;
 
-    return resp.r_status;
+    return resp.r_error_code;
+}
+
+norns_error_t
+send_status_request(norns_iotask_t* task, norns_stat_t* stats) {
+
+    int res;
+    norns_response_t resp;
+
+    if(task->t_id == 0) {
+        return NORNS_EBADARGS;
+    }
+
+    if((res = send_request(NORNS_IOTASK_STATUS, &resp, task)) 
+            != NORNS_SUCCESS) {
+        return res;
+    }
+
+    if(resp.r_type != NORNS_IOTASK_STATUS) {
+        return NORNS_ESNAFU;
+    }
+
+    stats->st_status = resp.r_status;
+
+    return resp.r_error_code;
 }
 
 norns_error_t
@@ -86,7 +110,7 @@ send_ping_request() {
         return NORNS_ESNAFU;
     }
 
-    return resp.r_status;
+    return resp.r_error_code;
 }
 
 norns_error_t
@@ -105,7 +129,7 @@ send_job_request(norns_rpc_type_t type, struct norns_cred* auth,
         return NORNS_ESNAFU;
     }
 
-    return resp.r_status;
+    return resp.r_error_code;
 }
 
 
@@ -125,7 +149,7 @@ send_process_request(norns_rpc_type_t type, struct norns_cred* auth,
         return NORNS_ESNAFU;
     }
 
-    return resp.r_status;
+    return resp.r_error_code;
 }
 
 norns_error_t
@@ -144,7 +168,7 @@ send_backend_request(norns_rpc_type_t type, struct norns_cred* auth,
         return NORNS_ESNAFU;
     }
 
-    return resp.r_status;
+    return resp.r_error_code;
 }
 
 static int
@@ -159,7 +183,8 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
 
     // fetch args and pack them into a buffer
     switch(type) {
-        case NORNS_SUBMIT_IOTASK:
+        case NORNS_IOTASK_SUBMIT:
+        case NORNS_IOTASK_STATUS:
         {
             const norns_iotask_t* task =
                 va_arg(ap, const norns_iotask_t*);
@@ -172,7 +197,6 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
             break;
         }
 
-
         case NORNS_PING:
         {
             if((res = pack_to_buffer(type, &req_buf)) != NORNS_SUCCESS) {
@@ -182,9 +206,9 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
             break;
         }
 
-        case NORNS_REGISTER_JOB:
-        case NORNS_UPDATE_JOB:
-        case NORNS_UNREGISTER_JOB:
+        case NORNS_JOB_REGISTER:
+        case NORNS_JOB_UPDATE:
+        case NORNS_JOB_UNREGISTER:
         {
             const struct norns_cred* auth = 
                 va_arg(ap, const struct norns_cred*);
@@ -201,8 +225,8 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
             break;
         }
 
-        case NORNS_ADD_PROCESS:
-        case NORNS_REMOVE_PROCESS:
+        case NORNS_PROCESS_ADD:
+        case NORNS_PROCESS_REMOVE:
         {
             const struct norns_cred* auth =
                 va_arg(ap, const struct norns_cred*);
@@ -223,9 +247,9 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
             break;
         }
 
-        case NORNS_REGISTER_BACKEND:
-        case NORNS_UPDATE_BACKEND:
-        case NORNS_UNREGISTER_BACKEND:
+        case NORNS_BACKEND_REGISTER:
+        case NORNS_BACKEND_UPDATE:
+        case NORNS_BACKEND_UNREGISTER:
         {
             const struct norns_cred* auth =
                 va_arg(ap, const struct norns_cred*);

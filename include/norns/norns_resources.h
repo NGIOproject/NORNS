@@ -84,20 +84,15 @@ typedef struct {
     norns_flags_t r_flags; /* resource type and flags */
     const char*   r_nsid;  /* namespace id */
     union {
-        norns_memory_region_t __r_buffer;
-        norns_posix_path_t __r_posix_path;
-    } __r_data;
-
-#define r_buffer __r_data.__r_buffer
-#define r_posix_path __r_data.__r_posix_path
-
+        norns_memory_region_t r_buffer;
+        norns_posix_path_t r_posix_path;
+    };
 } norns_resource_t;
 
 norns_resource_t NORNS_MEMORY_REGION(const char* nsid, void* addr, size_t size);
 norns_resource_t NORNS_LOCAL_PATH(const char* nsid, const char* path);
 norns_resource_t NORNS_REMOTE_PATH(const char* nsid, const char* host, const char* path);
 norns_resource_t NORNS_SHARED_PATH(const char* nsid, const char* path);
-
 
 #ifdef __cplusplus
 }

@@ -25,8 +25,13 @@
 #ifndef __URD_HPP__
 #define __URD_HPP__
 
-#include <map>
+#include <unordered_map>
 #include <boost/thread/shared_mutex.hpp>
+
+// forward declarations
+namespace io {
+    struct task_stats;
+}
 
 #include "settings.hpp"
 #include "backends.hpp"
@@ -78,6 +83,7 @@ private:
                                        resource_info_ptr dst_info) const;
 
     response_ptr create_task(const request_ptr req);
+    response_ptr check_on_task(const request_ptr req) const;
     response_ptr ping_request(const request_ptr req);
     response_ptr register_job(const request_ptr req);
     response_ptr update_job(const request_ptr req);
@@ -100,11 +106,15 @@ private:
 //    std::list<std::shared_ptr<storage::backend>>        m_backends;
 
     backend_manager_ptr m_backends;
-    boost::shared_mutex                         m_backends_mutex;
+    boost::shared_mutex m_backends_mutex;
 
 
-    std::map<uint32_t, std::shared_ptr<job>>    m_jobs;
+    std::unordered_map<uint32_t, std::shared_ptr<job>>    m_jobs;
     boost::shared_mutex                         m_jobs_mutex;
+
+    std::unordered_map<norns_tid_t, std::shared_ptr<io::task_stats>> m_task_manager;
+    mutable boost::shared_mutex                         m_task_manager_mutex;
+
 
 
 

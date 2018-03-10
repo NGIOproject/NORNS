@@ -28,5 +28,8 @@
 typedef uint32_t norns_tid_t;
 typedef uint32_t norns_op_t;
 typedef uint32_t norns_flags_t;
+typedef int32_t  norns_status_t;
+typedef int32_t  norns_error_t;
+
 
 #endif /* __NORNS_TYPES_H__ */

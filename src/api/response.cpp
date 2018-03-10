@@ -26,7 +26,56 @@
  *************************************************************************/
 
 #include "messages.pb.h"
+#include "io-task-stats.hpp"
 #include "response.hpp"
+
+namespace {
+
+norns::rpc::Response_Type encode(api::response_type type) {
+    switch(type) {
+        case api::response_type::iotask_create:
+            return norns::rpc::Response::IOTASK_SUBMIT;
+        case api::response_type::iotask_status:
+            return norns::rpc::Response::IOTASK_STATUS;
+        case api::response_type::ping:
+            return norns::rpc::Response::PING;
+        case api::response_type::job_register: 
+            return norns::rpc::Response::JOB_REGISTER;
+        case api::response_type::job_update:
+            return norns::rpc::Response::JOB_UPDATE;
+        case api::response_type::job_unregister:
+            return norns::rpc::Response::JOB_UNREGISTER;
+        case api::response_type::process_register:
+            return norns::rpc::Response::PROCESS_ADD;
+        case api::response_type::process_unregister:
+            return norns::rpc::Response::PROCESS_REMOVE;
+        case api::response_type::backend_register: 
+            return norns::rpc::Response::BACKEND_REGISTER;
+        case api::response_type::backend_update:
+            return norns::rpc::Response::BACKEND_UPDATE;
+        case api::response_type::backend_unregister:
+            return norns::rpc::Response::BACKEND_UNREGISTER;
+        case api::response_type::bad_request:
+            return norns::rpc::Response::BAD_REQUEST;
+        default:
+            assert(false && "Unexpected response_type");
+    }
+}
+
+::google::protobuf::uint32 encode(io::task_status status) {
+    switch(status) {
+        case io::task_status::pending:
+            return NORNS_EPENDING;
+        case io::task_status::in_progress:
+            return NORNS_EINPROGRESS;
+        case io::task_status::finished:
+            return NORNS_EFINISHED;
+        default:
+            assert(false && "Unexpected task_status");
+    }
+}
+
+} // anonymous namespace
 
 namespace api {
 
@@ -34,43 +83,9 @@ bool response::store_to_buffer(response_ptr response, std::vector<uint8_t>& buff
 
     norns::rpc::Response rpc_resp;
 
-    rpc_resp.set_status(response->status());
-
-    switch(response->type()) {
-        case response_type::transfer_task:
-            rpc_resp.set_type(norns::rpc::Response::SUBMIT_IOTASK);
-            break;
-        case response_type::ping:
-            rpc_resp.set_type(norns::rpc::Response::PING);
-            break;
-        case response_type::job_register: 
-            rpc_resp.set_type(norns::rpc::Response::REGISTER_JOB);
-            break;
-        case response_type::job_update:
-            rpc_resp.set_type(norns::rpc::Response::UPDATE_JOB);
-            break;
-        case response_type::job_unregister:
-            rpc_resp.set_type(norns::rpc::Response::UNREGISTER_JOB);
-            break;
-        case response_type::process_register:
-            rpc_resp.set_type(norns::rpc::Response::ADD_PROCESS);
-            break;
-        case response_type::process_unregister:
-            rpc_resp.set_type(norns::rpc::Response::REMOVE_PROCESS);
-            break;
-        case response_type::backend_register: 
-            rpc_resp.set_type(norns::rpc::Response::REGISTER_BACKEND);
-            break;
-        case response_type::backend_update:
-            rpc_resp.set_type(norns::rpc::Response::UPDATE_BACKEND);
-            break;
-        case response_type::backend_unregister:
-            rpc_resp.set_type(norns::rpc::Response::UNREGISTER_BACKEND);
-            break;
-        case response_type::bad_request:
-            rpc_resp.set_type(norns::rpc::Response::BAD_REQUEST);
-            break;
-    }
+    rpc_resp.set_error_code(response->error_code());
+    rpc_resp.set_type(encode(response->type()));
+    response->pack_extra_info(rpc_resp);
 
     size_t reserved_size = buffer.size();
     size_t message_size = rpc_resp.ByteSize();
@@ -87,10 +102,40 @@ void response::cleanup() {
 
 namespace detail {
 
+///////////////////////////////////////////////////////////////////////////////
+//   specializations for iotask_create_response 
+///////////////////////////////////////////////////////////////////////////////
 template<>
-std::string transfer_task_response::to_string() const {
+void iotask_create_response::pack_extra_info(norns::rpc::Response& r) const {
+    r.set_taskid(this->get<0>());
+}
+
+template<>
+std::string iotask_create_response::to_string() const {
     norns_tid_t id = this->get<0>();
-    return utils::strerror(m_status) + (id != 0 ? " [tid: " + std::to_string(id) + "]": "");
+    return utils::strerror(m_error_code) + (id != 0 ? " [tid: " + std::to_string(id) + "]": "");
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+//   specializations for iotask_status_response 
+/////////////////////////////////////////////////////////////////////////////////
+template<>
+void iotask_status_response::pack_extra_info(norns::rpc::Response& r) const {
+    const auto& stats = this->get<0>();
+
+    auto stats_msg = new norns::rpc::Response_TaskStats();
+
+    stats_msg->set_status(encode(stats.status()));
+    r.set_allocated_stats(stats_msg);
+
+    // we don't need to free stats_msg because 
+    // set_allocated_stats() frees it once it has copied the data
+}
+
+template<>
+std::string iotask_status_response::to_string() const {
+    const auto& stats = this->get<0>();
+    return utils::to_string(stats.status());
 }
 
 

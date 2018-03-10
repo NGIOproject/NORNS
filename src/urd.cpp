@@ -53,125 +53,127 @@
 #include "job.hpp"
 #include "resources.hpp"
 #include "io-task.hpp"
+#include "io-task-stats.hpp"
 #include "urd.hpp"
 #include "make-unique.hpp"
+#include "unique-ptr-cast.hpp"
 
 pid_t urd::daemonize() {
-	/*
-	 * --- Daemonize structure ---
-	 *	Check if this is already a daemon
-	 *  Fork off praent process
-	 *	Obtain new process group
-	 *	Close all descriptors
-	 *	Handle standard IO
-	 *  Change file mode mask
-	 *	Change the current working directory
-	 *  Check if daemon already exists
-	 *	Manage signals
-	 */
+    /*
+     * --- Daemonize structure ---
+     *  Check if this is already a daemon
+     *  Fork off praent process
+     *  Obtain new process group
+     *  Close all descriptors
+     *  Handle standard IO
+     *  Change file mode mask
+     *  Change the current working directory
+     *  Check if daemon already exists
+     *  Manage signals
+     */
 
-	pid_t pid, sid;
+    pid_t pid, sid;
 
-	/* Check if this is already a daemon */ 
-	if(getppid() == 1) {
+    /* Check if this is already a daemon */ 
+    if(getppid() == 1) {
         return 0;
-	}
+    }
 
-	/* Fork off the parent process */
-	if((pid = fork()) < 0) {
-		LOGGER_ERROR("[daemonize] fork failed.");
-		perror("Fork");
-		exit(EXIT_FAILURE);
-	}
+    /* Fork off the parent process */
+    if((pid = fork()) < 0) {
+        LOGGER_ERROR("[daemonize] fork failed.");
+        perror("Fork");
+        exit(EXIT_FAILURE);
+    }
 
-	/* Parent exits */
-	if(pid != 0) {
-		return pid;
-	}
+    /* Parent exits */
+    if(pid != 0) {
+        return pid;
+    }
 
-	/* Obtain new process group */
-	if((sid = setsid()) < 0) {
-		/* Log failure */
-		LOGGER_ERROR("[daemonize] setsid failed.");
-		perror("Setsid");
-		exit(EXIT_FAILURE);
-	}
+    /* Obtain new process group */
+    if((sid = setsid()) < 0) {
+        /* Log failure */
+        LOGGER_ERROR("[daemonize] setsid failed.");
+        perror("Setsid");
+        exit(EXIT_FAILURE);
+    }
 
-	/* Close all descriptors */
-	for(int i = getdtablesize() - 1; i >= 0; --i){
-		close(i);
-	} 
+    /* Close all descriptors */
+    for(int i = getdtablesize() - 1; i >= 0; --i){
+        close(i);
+    } 
 
-	/* Handle standard IO */
-	int fd = open("/dev/null", O_RDWR); /* open stdin */
+    /* Handle standard IO */
+    int fd = open("/dev/null", O_RDWR); /* open stdin */
 
-	if(dup(fd) == -1) { /* stdout */
-		LOGGER_ERROR("[daemonize] dup[1] failed.");
-		perror("dup");
-		exit(EXIT_FAILURE);
-	}
+    if(dup(fd) == -1) { /* stdout */
+        LOGGER_ERROR("[daemonize] dup[1] failed.");
+        perror("dup");
+        exit(EXIT_FAILURE);
+    }
 
-	if(dup(fd) == -1) { /* stderr */
-		LOGGER_ERROR("[daemonize] dup[2] failed.");
-		perror("dup");
-		exit(EXIT_FAILURE);
-	}
+    if(dup(fd) == -1) { /* stderr */
+        LOGGER_ERROR("[daemonize] dup[2] failed.");
+        perror("dup");
+        exit(EXIT_FAILURE);
+    }
 
-	/* Change the file mode mask */
-	umask(027); /* file creation mode to 750 */
+    /* Change the file mode mask */
+    umask(027); /* file creation mode to 750 */
 
-	/* Change the current working directory */
-	if(chdir(m_settings->m_running_dir.c_str()) < 0) {
-		LOGGER_ERROR("[daemonize] chdir failed.");
-		perror("Chdir");
-		exit(EXIT_FAILURE);
-	}
-	
-	/* Check if daemon already exists:
-	 * First instance of the daemon will lock the file so that other
-	 * instances understand that an instance is already running. 
-	 */
+    /* Change the current working directory */
+    if(chdir(m_settings->m_running_dir.c_str()) < 0) {
+        LOGGER_ERROR("[daemonize] chdir failed.");
+        perror("Chdir");
+        exit(EXIT_FAILURE);
+    }
+    
+    /* Check if daemon already exists:
+     * First instance of the daemon will lock the file so that other
+     * instances understand that an instance is already running. 
+     */
 
-	int lfp;
-	lfp = open(m_settings->m_daemon_pidfile.c_str(), O_RDWR|O_CREAT, 0640);
+    int lfp;
+    lfp = open(m_settings->m_daemon_pidfile.c_str(), O_RDWR|O_CREAT, 0640);
 
-	if(lfp < 0) {
-		LOGGER_ERROR("[daemonize] can not open daemon lock file");
-		perror("Can not open daemon lock file");
-		exit(EXIT_FAILURE);
-	} 
+    if(lfp < 0) {
+        LOGGER_ERROR("[daemonize] can not open daemon lock file");
+        perror("Can not open daemon lock file");
+        exit(EXIT_FAILURE);
+    } 
 
-	if(lockf(lfp, F_TLOCK, 0) < 0) {
-		LOGGER_ERROR("[daemonize] another instance of this daemon already running");
-		perror("Another instance of this daemon already running");
-		exit(EXIT_FAILURE);
-	}
+    if(lockf(lfp, F_TLOCK, 0) < 0) {
+        LOGGER_ERROR("[daemonize] another instance of this daemon already running");
+        perror("Another instance of this daemon already running");
+        exit(EXIT_FAILURE);
+    }
 
-	/* record pid in lockfile */
-	char str[10];
-	size_t err_snprintf;
-	err_snprintf = snprintf(str, sizeof(str), "%d\n", getpid());
+    /* record pid in lockfile */
+    char str[10];
+    size_t err_snprintf;
+    err_snprintf = snprintf(str, sizeof(str), "%d\n", getpid());
 
-	if(err_snprintf >= sizeof(str)) {
-		LOGGER_ERROR("[daemonize] snprintf failed");
-	}
+    if(err_snprintf >= sizeof(str)) {
+        LOGGER_ERROR("[daemonize] snprintf failed");
+    }
 
-	size_t err_write;
-	err_write = write(lfp, str, strnlen(str, sizeof(str)));
+    size_t err_write;
+    err_write = write(lfp, str, strnlen(str, sizeof(str)));
 
-	if(err_write != strnlen(str, sizeof(str))) {
-		LOGGER_ERROR("[daemonize] write failed");
-	}
+    if(err_write != strnlen(str, sizeof(str))) {
+        LOGGER_ERROR("[daemonize] write failed");
+    }
 
-	close(lfp);
+    close(lfp);
 
-	/* Manage signals */
-	signal(SIGCHLD, SIG_IGN); /* ignore child */
-	signal(SIGTSTP, SIG_IGN); /* ignore tty signals */
-	signal(SIGTTOU, SIG_IGN);
-	signal(SIGTTIN, SIG_IGN);
-//	signal(SIGHUP, signal_handler); /* catch hangup signal */
-//	signal(SIGTERM, signal_handler); /* catch kill signal */
+    /* Manage signals */
+    signal(SIGCHLD, SIG_IGN); /* ignore child */
+    signal(SIGTSTP, SIG_IGN); /* ignore tty signals */
+    signal(SIGTTOU, SIG_IGN);
+    signal(SIGTTIN, SIG_IGN);
+//  signal(SIGHUP, signal_handler); /* catch hangup signal */
+//  signal(SIGTERM, signal_handler); /* catch kill signal */
 
 }
 
@@ -200,7 +202,7 @@ response_ptr urd::create_task(const request_ptr base_request) {
 
 
     // downcast the generic request to the concrete implementation
-    auto request = static_cast<api::transfer_task_request*>(base_request.get());
+    auto request = static_cast<api::iotask_create_request*>(base_request.get());
 
     auto type = request->get<0>();
     auto src_info = request->get<1>();
@@ -215,18 +217,19 @@ response_ptr urd::create_task(const request_ptr base_request) {
      * *data::resource_info rinfo* exists in the backend and is valid, and returns it 
      * coupled with a NORNS_SUCCESS error code. Otherwise, return an appropriate error 
      * code and a std::shared_ptr<data::resource>{nullptr} */
-    auto create_from = [&](const resource_info_ptr rinfo) -> std::tuple<norns_error_t, resource_ptr> {
+    auto create_resource_from = [&](const resource_info_ptr rinfo) 
+        -> std::tuple<norns_error_t, resource_ptr> {
 
-        auto res = data::make_resource(rinfo);
+        auto rsrc = data::make_resource(rinfo);
 
-        if(res == nullptr) {
+        if(rsrc == nullptr) {
             return std::make_tuple(NORNS_EBADARGS, resource_ptr());
         }
 
         // remote backend validation is left to the recipient
         if(rinfo->is_remote()) {
-            res->set_backend(storage::remote_backend);
-            return std::make_tuple(NORNS_SUCCESS, res);
+            rsrc->set_backend(storage::remote_backend);
+            return std::make_tuple(NORNS_SUCCESS, rsrc);
         }
 
         const auto nsid = rinfo->nsid();
@@ -243,14 +246,14 @@ response_ptr urd::create_task(const request_ptr base_request) {
             return std::make_tuple(NORNS_EBADARGS, resource_ptr());
         }
 
-        res->set_backend(backend_ptr);
-        return std::make_tuple(NORNS_SUCCESS, res);
+        rsrc->set_backend(backend_ptr);
+        return std::make_tuple(NORNS_SUCCESS, rsrc);
     };
 
     if((rv = validate_iotask_args(type, src_info, dst_info)) == NORNS_SUCCESS) {
 
-        auto src_rv = create_from(src_info);
-        auto dst_rv = create_from(dst_info);
+        auto src_rv = create_resource_from(src_info);
+        auto dst_rv = create_resource_from(dst_info);
 
         if((std::get<0>(src_rv) == NORNS_SUCCESS) && (std::get<0>(dst_rv) == NORNS_SUCCESS)) {
 
@@ -258,10 +261,28 @@ response_ptr urd::create_task(const request_ptr base_request) {
             resource_ptr dst = std::get<1>(dst_rv);
 
             // everything is ok, add the I/O task to the queue
-            io::task t(type, src, dst);
-            tid = t.id();
+            tid = io::task::create_id();
 
-            m_workers->submit_and_forget(std::move(t));
+            std::shared_ptr<io::task_stats> stats_record;
+
+            // register the task in the task manager
+            {
+                boost::unique_lock<boost::shared_mutex> lock(m_task_manager_mutex);
+
+                if(m_task_manager.count(tid) == 0) {
+                    auto it = m_task_manager.emplace(tid, 
+                            std::make_shared<io::task_stats>(io::task_status::pending));
+                    stats_record = it.first->second;
+                }
+                else {
+                    rv = NORNS_ETASKEXISTS;
+                }
+            }
+
+            if(stats_record != nullptr) {
+                m_workers->submit_and_forget(
+                        io::task(tid, type, src, dst, stats_record));
+            }
         }
         else if(std::get<0>(src_rv) != NORNS_SUCCESS) {
             rv = std::get<0>(src_rv);
@@ -271,17 +292,54 @@ response_ptr urd::create_task(const request_ptr base_request) {
         }
     }
 
-    resp = std::make_unique<api::transfer_task_response>(tid);
-    resp->set_status(rv);
+    resp = std::make_unique<api::iotask_create_response>(tid);
+    resp->set_error_code(rv);
 
-    LOGGER_INFO("NEW_IOTASK({}) = {}", request->to_string(), resp->to_string());
+    LOGGER_INFO("IOTASK_CREATE({}) = {}", request->to_string(), resp->to_string());
     return resp;
 }
+
+response_ptr urd::check_on_task(const request_ptr base_request) const {
+
+    response_ptr resp;
+    norns_error_t rv = NORNS_SUCCESS;
+
+    // downcast the generic request to the concrete implementation
+    auto request = static_cast<api::iotask_status_request*>(base_request.get());
+
+    std::shared_ptr<io::task_stats> stats_ptr;
+
+    {
+        boost::shared_lock<boost::shared_mutex> lock(m_task_manager_mutex);
+
+        const auto& it = m_task_manager.find(request->get<0>());
+
+        if(it != m_task_manager.end()) {
+            stats_ptr = it->second;
+        }
+        else {
+            rv = NORNS_ENOSUCHTASK;
+        }
+    }
+
+    // *stats_ptr makes a copy of the current stats for this task in 
+    // m_task_manager so that we don't block other threads needlessly 
+    // while sending the reply
+    resp = std::make_unique<api::iotask_status_response>(
+            io::task_stats_view(*stats_ptr));
+    resp->set_error_code(rv);
+
+    LOGGER_CRITICAL("test: {}", utils::to_string(stats_ptr->status()));
+
+    LOGGER_INFO("IOTASK_STATUS({}) = {}", request->to_string(), resp->to_string());
+    return resp;
+}
+
 
 response_ptr urd::ping_request(const request_ptr /*base_request*/) {
     response_ptr resp = std::make_unique<api::ping_response>();
 
-    resp->set_status(NORNS_SUCCESS);
+    resp->set_error_code(NORNS_SUCCESS);
 
     LOGGER_INFO("PING_REQUEST() = {}", resp->to_string());
     return resp;
@@ -302,11 +360,11 @@ response_ptr urd::register_job(const request_ptr base_request) {
         boost::unique_lock<boost::shared_mutex> lock(m_jobs_mutex);
 
         if(m_jobs.find(jobid) != m_jobs.end()) {
-            resp->set_status(NORNS_EJOBEXISTS);
+            resp->set_error_code(NORNS_EJOBEXISTS);
         }
         else {
             m_jobs.emplace(jobid, std::make_shared<job>(jobid, hosts));
-            resp->set_status(NORNS_SUCCESS);
+            resp->set_error_code(NORNS_SUCCESS);
         }
     }
 
@@ -330,11 +388,11 @@ response_ptr urd::update_job(const request_ptr base_request) {
         const auto& it = m_jobs.find(jobid);
 
         if(it == m_jobs.end()) {
-            resp->set_status(NORNS_ENOSUCHJOB);
+            resp->set_error_code(NORNS_ENOSUCHJOB);
         }
         else {
             it->second->update(hosts);
-            resp->set_status(NORNS_SUCCESS);
+            resp->set_error_code(NORNS_SUCCESS);
         }
     }
 
@@ -357,11 +415,11 @@ response_ptr urd::remove_job(const request_ptr base_request) {
         const auto& it = m_jobs.find(jobid);
 
         if(it == m_jobs.end()) {
-            resp->set_status(NORNS_ENOSUCHJOB);
+            resp->set_error_code(NORNS_ENOSUCHJOB);
         }
         else {
             m_jobs.erase(it);
-            resp->set_status(NORNS_SUCCESS);
+            resp->set_error_code(NORNS_SUCCESS);
         }
     }
 
@@ -386,13 +444,13 @@ response_ptr urd::add_process(const request_ptr base_request) {
     const auto& it = m_jobs.find(jobid);
 
     if(it == m_jobs.end()) {
-        resp->set_status(NORNS_ENOSUCHJOB);
+        resp->set_error_code(NORNS_ENOSUCHJOB);
         goto log_and_return;
     }
 
     it->second->add_process(pid, gid);
 
-    resp->set_status(NORNS_SUCCESS);
+    resp->set_error_code(NORNS_SUCCESS);
 
 log_and_return:
     LOGGER_INFO("ADD_PROCESS({}) = {}", request->to_string(), resp->to_string());
@@ -416,15 +474,15 @@ response_ptr urd::remove_process(const request_ptr base_request) {
     const auto& it = m_jobs.find(jobid);
 
     if(it == m_jobs.end()) {
-        resp->set_status(NORNS_ENOSUCHJOB);
+        resp->set_error_code(NORNS_ENOSUCHJOB);
         goto log_and_return;
     }
 
     if(it->second->find_and_remove_process(pid, gid)) {
-        resp->set_status(NORNS_SUCCESS);
+        resp->set_error_code(NORNS_SUCCESS);
     }
     else {
-        resp->set_status(NORNS_ENOSUCHPROCESS);
+        resp->set_error_code(NORNS_ENOSUCHPROCESS);
     }
 
 log_and_return:
@@ -448,7 +506,7 @@ response_ptr urd::register_backend(const request_ptr base_request) {
         boost::unique_lock<boost::shared_mutex> lock(m_backends_mutex);
 
         if(m_backends->count(nsid) != 0) {
-            resp->set_status(NORNS_EBACKENDEXISTS);
+            resp->set_error_code(NORNS_EBACKENDEXISTS);
         }
         else {
 
@@ -456,10 +514,10 @@ response_ptr urd::register_backend(const request_ptr base_request) {
 
             if(bptr != nullptr) {
                 m_backends->emplace(std::make_pair(nsid, bptr));
-                resp->set_status(NORNS_SUCCESS);
+                resp->set_error_code(NORNS_SUCCESS);
             }
             else {
-                resp->set_status(NORNS_EBADARGS);
+                resp->set_error_code(NORNS_EBADARGS);
             }
         }
     }
@@ -476,7 +534,7 @@ response_ptr urd::update_backend(const request_ptr base_request) {
     // downcast the generic request to the concrete implementation
     auto request = static_cast<api::backend_update_request*>(base_request.get());
 
-    resp->set_status(NORNS_SUCCESS);
+    resp->set_error_code(NORNS_SUCCESS);
 
 log_and_return:
     LOGGER_INFO("UPDATE_BACKEND({}) = {}", request->to_string(), resp->to_string());
@@ -498,11 +556,11 @@ response_ptr urd::remove_backend(const request_ptr base_request) {
         const auto& it = m_backends->find(nsid);
 
         if(it == m_backends->end()) {
-            resp->set_status(NORNS_ENOSUCHBACKEND);
+            resp->set_error_code(NORNS_ENOSUCHBACKEND);
         }
         else {
             m_backends->erase(it);
-            resp->set_status(NORNS_SUCCESS);
+            resp->set_error_code(NORNS_SUCCESS);
         }
     }
 
@@ -513,7 +571,7 @@ response_ptr urd::remove_backend(const request_ptr base_request) {
 response_ptr urd::unknown_request(const request_ptr /*base_request*/) {
     response_ptr resp = std::make_unique<api::bad_request_response>();
 
-    resp->set_status(NORNS_EBADREQUEST);
+    resp->set_error_code(NORNS_EBADREQUEST);
 
     LOGGER_INFO("UNKNOWN_REQUEST() = {}", resp->to_string());
     return resp;
@@ -567,18 +625,18 @@ int urd::run() {
         }
     }
 
-	LOGGER_INFO("===========================");
-	LOGGER_INFO("== Starting Urd daemon   ==");
-	LOGGER_INFO("===========================");
+    LOGGER_INFO("===========================");
+    LOGGER_INFO("== Starting Urd daemon   ==");
+    LOGGER_INFO("===========================");
 
-	LOGGER_INFO("");
-	LOGGER_INFO("* Settings:");
-	LOGGER_INFO("    daemonize?: {}", m_settings->m_daemonize);
-	LOGGER_INFO("    running directory: {}", m_settings->m_running_dir);
-	LOGGER_INFO("    pidfile: {}", m_settings->m_daemon_pidfile);
-	LOGGER_INFO("    workers: {}", m_settings->m_workers_in_pool);
-	LOGGER_INFO("    internal storage: {}", m_settings->m_storage_path);
-	LOGGER_INFO("    internal storage capacity: {}", m_settings->m_storage_capacity);
+    LOGGER_INFO("");
+    LOGGER_INFO("* Settings:");
+    LOGGER_INFO("    daemonize?: {}", m_settings->m_daemonize);
+    LOGGER_INFO("    running directory: {}", m_settings->m_running_dir);
+    LOGGER_INFO("    pidfile: {}", m_settings->m_daemon_pidfile);
+    LOGGER_INFO("    workers: {}", m_settings->m_workers_in_pool);
+    LOGGER_INFO("    internal storage: {}", m_settings->m_storage_path);
+    LOGGER_INFO("    internal storage capacity: {}", m_settings->m_storage_capacity);
 
     // signal handlers must be installed AFTER daemonizing
     LOGGER_INFO("* Installing signal handlers...");
@@ -594,16 +652,20 @@ int urd::run() {
     LOGGER_INFO("* Creating request listener...");
     ::unlink(m_settings->m_ipc_sockfile.c_str());
 
-	// temporarily change the umask so that the socket file can be accessed by anyone
-	mode_t old_mask = umask(0111);
+    // temporarily change the umask so that the socket file can be accessed by anyone
+    mode_t old_mask = umask(0111);
 
     // create API listener and register callbacks for each request type
     m_api_listener = std::make_unique<api_listener>(m_settings->m_ipc_sockfile);
 
     /* user-level functionalities */
     m_api_listener->register_callback(
-            api::request_type::transfer_task,
+            api::request_type::iotask_create,
             std::bind(&urd::create_task, this, std::placeholders::_1));
+
+    m_api_listener->register_callback(
+            api::request_type::iotask_status,
+            std::bind(&urd::check_on_task, this, std::placeholders::_1));
 
     m_api_listener->register_callback(
             api::request_type::ping,
@@ -649,22 +711,22 @@ int urd::run() {
     m_backends = std::make_unique<backend_manager>();
 
     // restore the umask
-	umask(old_mask);
+    umask(old_mask);
 
     LOGGER_INFO("Urd daemon successfully started!");
     LOGGER_INFO("Awaiting requests...");
     m_api_listener->run();
 
-	LOGGER_INFO("");
-	LOGGER_INFO("===========================");
-	LOGGER_INFO("== Stopping Urd daemon   ==");
-	LOGGER_INFO("===========================");
-	LOGGER_INFO("");
+    LOGGER_INFO("");
+    LOGGER_INFO("===========================");
+    LOGGER_INFO("== Stopping Urd daemon   ==");
+    LOGGER_INFO("===========================");
+    LOGGER_INFO("");
 
     teardown();
 
-	LOGGER_INFO("");
-	LOGGER_INFO("[Stopped]");
+    LOGGER_INFO("");
+    LOGGER_INFO("[Stopped]");
 
     return EXIT_SUCCESS;
 }

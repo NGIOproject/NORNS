@@ -33,27 +33,43 @@
 extern "C" {
 #endif
 
-typedef int norns_error_t;
-
 #define NORNS_ERRMAX 512
 
 /** Error codes */
-#define NORNS_SUCCESS           0
-#define NORNS_ESNAFU            -1
-#define NORNS_EBADARGS          -2
-#define NORNS_EBADREQUEST       -3
-#define NORNS_ENOMEM            -4
-#define NORNS_ECONNFAILED       -5
-#define NORNS_ERPCSENDFAILED    -6
-#define NORNS_ERPCRECVFAILED    -7
-#define NORNS_EJOBEXISTS        -8
-#define NORNS_ENOSUCHJOB        -9
-#define NORNS_EPROCESSEXISTS    -10
-#define NORNS_ENOSUCHPROCESS    -11
-#define NORNS_EBACKENDEXISTS    -12
-#define NORNS_ENOSUCHBACKEND    -13
+#define NORNS_SUCCESS              0
+#define NORNS_ESNAFU              -1
+#define NORNS_EBADARGS            -2
+#define NORNS_EBADREQUEST         -3
+#define NORNS_ENOMEM              -4
 
-#define NORNS_ENOTSUPPORTED     -64
+/* errors about communication */
+#define NORNS_ECONNFAILED         -5
+#define NORNS_ERPCSENDFAILED      -6
+#define NORNS_ERPCRECVFAILED      -7
+
+/* errors about jobs */
+#define NORNS_EJOBEXISTS         -10
+#define NORNS_ENOSUCHJOB         -11
+
+/* errors about processes */
+#define NORNS_EPROCESSEXISTS     -20
+#define NORNS_ENOSUCHPROCESS     -21
+
+/* errors about backends */
+#define NORNS_EBACKENDEXISTS     -30
+#define NORNS_ENOSUCHBACKEND     -31
+
+/* errors about tasks */
+#define NORNS_ETASKEXISTS        -40
+#define NORNS_ENOSUCHTASK        -41
+
+/* task status */
+#define NORNS_EPENDING          -100
+#define NORNS_EINPROGRESS       -101
+#define NORNS_EFINISHED         -102
+
+/* misc errors */
+#define NORNS_ENOTSUPPORTED     -200
 
 #ifdef __cplusplus
 }

@@ -48,60 +48,64 @@ static Norns__Rpc__Request__Task__PosixPath* build_path_msg(const norns_posix_pa
 static void free_path_msg(Norns__Rpc__Request__Task__PosixPath* msg);
 
 
-static int remap_request(norns_rpc_type_t type);
-static norns_rpc_type_t remap_response(int type);
+static int encode_request_type(norns_rpc_type_t type);
+static norns_rpc_type_t decode_response_type(int type);
 
 static int 
-remap_request(norns_rpc_type_t type) {
+encode_request_type(norns_rpc_type_t type) {
     switch(type) {
-        case NORNS_SUBMIT_IOTASK:
-            return NORNS__RPC__REQUEST__TYPE__SUBMIT_IOTASK;
+        case NORNS_IOTASK_SUBMIT:
+            return NORNS__RPC__REQUEST__TYPE__IOTASK_SUBMIT;
+        case NORNS_IOTASK_STATUS:
+            return NORNS__RPC__REQUEST__TYPE__IOTASK_STATUS;
         case NORNS_PING:
             return NORNS__RPC__REQUEST__TYPE__PING;
-        case NORNS_REGISTER_JOB:
-            return NORNS__RPC__REQUEST__TYPE__REGISTER_JOB;
-        case NORNS_UPDATE_JOB:
-            return NORNS__RPC__REQUEST__TYPE__UPDATE_JOB;
-        case NORNS_UNREGISTER_JOB:
-            return NORNS__RPC__REQUEST__TYPE__UNREGISTER_JOB;
-        case NORNS_ADD_PROCESS:
-            return NORNS__RPC__REQUEST__TYPE__ADD_PROCESS;
-        case NORNS_REMOVE_PROCESS:
-            return NORNS__RPC__REQUEST__TYPE__REMOVE_PROCESS;
-        case NORNS_REGISTER_BACKEND:
-            return NORNS__RPC__REQUEST__TYPE__REGISTER_BACKEND;
-        case NORNS_UPDATE_BACKEND:
-            return NORNS__RPC__REQUEST__TYPE__UPDATE_BACKEND;
-        case NORNS_UNREGISTER_BACKEND:
-            return NORNS__RPC__REQUEST__TYPE__UNREGISTER_BACKEND;
+        case NORNS_JOB_REGISTER:
+            return NORNS__RPC__REQUEST__TYPE__JOB_REGISTER;
+        case NORNS_JOB_UPDATE:
+            return NORNS__RPC__REQUEST__TYPE__JOB_UPDATE;
+        case NORNS_JOB_UNREGISTER:
+            return NORNS__RPC__REQUEST__TYPE__JOB_UNREGISTER;
+        case NORNS_PROCESS_ADD:
+            return NORNS__RPC__REQUEST__TYPE__PROCESS_ADD;
+        case NORNS_PROCESS_REMOVE:
+            return NORNS__RPC__REQUEST__TYPE__PROCESS_REMOVE;
+        case NORNS_BACKEND_REGISTER:
+            return NORNS__RPC__REQUEST__TYPE__BACKEND_REGISTER;
+        case NORNS_BACKEND_UPDATE:
+            return NORNS__RPC__REQUEST__TYPE__BACKEND_UPDATE;
+        case NORNS_BACKEND_UNREGISTER:
+            return NORNS__RPC__REQUEST__TYPE__BACKEND_UNREGISTER;
         default:
             return -1;
     }
 }
 
 static norns_rpc_type_t 
-remap_response(int norns_rpc_type) {
+decode_response_type(int norns_rpc_type) {
     switch(norns_rpc_type) {
-        case NORNS__RPC__RESPONSE__TYPE__SUBMIT_IOTASK:
-            return NORNS_SUBMIT_IOTASK;
+        case NORNS__RPC__RESPONSE__TYPE__IOTASK_SUBMIT:
+            return NORNS_IOTASK_SUBMIT;
+        case NORNS__RPC__REQUEST__TYPE__IOTASK_STATUS:
+            return NORNS_IOTASK_STATUS;
         case NORNS__RPC__RESPONSE__TYPE__PING:
             return NORNS_PING;
-        case NORNS__RPC__RESPONSE__TYPE__REGISTER_JOB:
-            return NORNS_REGISTER_JOB;
-        case NORNS__RPC__RESPONSE__TYPE__UPDATE_JOB:
-            return NORNS_UPDATE_JOB;
-        case NORNS__RPC__RESPONSE__TYPE__UNREGISTER_JOB:
-            return NORNS_UNREGISTER_JOB;
-        case NORNS__RPC__RESPONSE__TYPE__ADD_PROCESS:
-            return NORNS_ADD_PROCESS;
-        case NORNS__RPC__RESPONSE__TYPE__REMOVE_PROCESS:
-            return NORNS_REMOVE_PROCESS;
-        case NORNS__RPC__REQUEST__TYPE__REGISTER_BACKEND:
-            return NORNS_REGISTER_BACKEND;
-        case NORNS__RPC__REQUEST__TYPE__UPDATE_BACKEND:
-            return NORNS_UPDATE_BACKEND;
-        case NORNS__RPC__REQUEST__TYPE__UNREGISTER_BACKEND:
-            return NORNS_UNREGISTER_BACKEND;
+        case NORNS__RPC__RESPONSE__TYPE__JOB_REGISTER:
+            return NORNS_JOB_REGISTER;
+        case NORNS__RPC__RESPONSE__TYPE__JOB_UPDATE:
+            return NORNS_JOB_UPDATE;
+        case NORNS__RPC__RESPONSE__TYPE__JOB_UNREGISTER:
+            return NORNS_JOB_UNREGISTER;
+        case NORNS__RPC__RESPONSE__TYPE__PROCESS_ADD:
+            return NORNS_PROCESS_ADD;
+        case NORNS__RPC__RESPONSE__TYPE__PROCESS_REMOVE:
+            return NORNS_PROCESS_REMOVE;
+        case NORNS__RPC__REQUEST__TYPE__BACKEND_REGISTER:
+            return NORNS_BACKEND_REGISTER;
+        case NORNS__RPC__REQUEST__TYPE__BACKEND_UPDATE:
+            return NORNS_BACKEND_UPDATE;
+        case NORNS__RPC__REQUEST__TYPE__BACKEND_UNREGISTER:
+            return NORNS_BACKEND_UNREGISTER;
         case NORNS__RPC__RESPONSE__TYPE__BAD_REQUEST:
             // intentionally fall through
         default:
@@ -121,11 +125,12 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
     norns__rpc__request__init(req_msg);
 
     switch(type) {
-        case NORNS_SUBMIT_IOTASK:
+        case NORNS_IOTASK_SUBMIT:
+        case NORNS_IOTASK_STATUS:
         {
             const norns_iotask_t* task = va_arg(ap, norns_iotask_t*);
 
-            if((req_msg->type = remap_request(type)) < 0) {
+            if((req_msg->type = encode_request_type(type)) < 0) {
                 goto cleanup_on_error;
             }
 
@@ -139,15 +144,15 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
         case NORNS_PING:
         {
 
-            if((req_msg->type = remap_request(type)) < 0) {
+            if((req_msg->type = encode_request_type(type)) < 0) {
                 goto cleanup_on_error;
             }
             break;
         }
 
-        case NORNS_REGISTER_JOB:
-        case NORNS_UPDATE_JOB:
-        case NORNS_UNREGISTER_JOB:
+        case NORNS_JOB_REGISTER:
+        case NORNS_JOB_UPDATE:
+        case NORNS_JOB_UNREGISTER:
         {
             const struct norns_cred* auth = va_arg(ap, struct norns_cred*);
             const uint32_t jobid = va_arg(ap, uint32_t);
@@ -155,14 +160,14 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
 
             (void) auth;
 
-            if((req_msg->type = remap_request(type)) < 0) {
+            if((req_msg->type = encode_request_type(type)) < 0) {
                 goto cleanup_on_error;
             }
 
             req_msg->has_jobid = true;
             req_msg->jobid = jobid;
 
-            if(type == NORNS_UNREGISTER_JOB) {
+            if(type == NORNS_JOB_UNREGISTER) {
                 req_msg->job = NULL;
             }
             else {
@@ -174,8 +179,8 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
             break;
         }
 
-        case NORNS_ADD_PROCESS:
-        case NORNS_REMOVE_PROCESS:
+        case NORNS_PROCESS_ADD:
+        case NORNS_PROCESS_REMOVE:
         {
             const struct norns_cred* auth = va_arg(ap, struct norns_cred*);
             const uint32_t jobid = va_arg(ap, uint32_t);
@@ -185,7 +190,7 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
 
             (void) auth;
 
-            if((req_msg->type = remap_request(type)) < 0) {
+            if((req_msg->type = encode_request_type(type)) < 0) {
                 goto cleanup_on_error;
             }
 
@@ -204,9 +209,9 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
             break;
         }
 
-        case NORNS_REGISTER_BACKEND:
-        case NORNS_UPDATE_BACKEND:
-        case NORNS_UNREGISTER_BACKEND:
+        case NORNS_BACKEND_REGISTER:
+        case NORNS_BACKEND_UPDATE:
+        case NORNS_BACKEND_UNREGISTER:
         {
             const struct norns_cred* auth =
                 va_arg(ap, const struct norns_cred*);
@@ -217,11 +222,11 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
 
             (void) auth;
 
-            if((req_msg->type = remap_request(type)) < 0) {
+            if((req_msg->type = encode_request_type(type)) < 0) {
                 goto cleanup_on_error;
             }
 
-            if(type == NORNS_UNREGISTER_BACKEND) {
+            if(type == NORNS_BACKEND_UNREGISTER) {
                 req_msg->nsid = xstrdup(nsid);
 
                 if(req_msg->nsid == NULL) {
@@ -577,6 +582,7 @@ build_task_msg(const norns_iotask_t* task) {
 
     norns__rpc__request__task__init(taskmsg);
 
+    taskmsg->taskid = task->t_id;
     taskmsg->optype = task->t_op;
 
     // construct source
@@ -691,8 +697,27 @@ unpack_from_buffer(msgbuffer_t* buf, norns_response_t* response) {
         return NORNS_ERPCRECVFAILED;
     }
 
-    response->r_type = remap_response(rpc_resp->type);
-    response->r_status = rpc_resp->status;
+    response->r_type = decode_response_type(rpc_resp->type);
+    response->r_error_code = rpc_resp->error_code;
+
+    switch(response->r_type) {
+        case NORNS_IOTASK_SUBMIT:
+            if(!rpc_resp->has_taskid) {
+                return NORNS_ERPCRECVFAILED;
+            }
+            response->r_taskid = rpc_resp->taskid;
+            break;
+
+        case NORNS_IOTASK_STATUS:
+            if(rpc_resp->stats == NULL) {
+                return NORNS_ERPCRECVFAILED;
+            }
+            response->r_status = rpc_resp->stats->status;
+            break;
+
+        default:
+            break;
+    }
 
     return NORNS_SUCCESS;
 }

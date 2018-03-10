@@ -75,6 +75,32 @@ norns_submit(norns_iotask_t* task) {
     return send_submit_request(task);
 }
 
+norns_error_t
+norns_status(norns_iotask_t* task, norns_stat_t* stats) {
+
+    if(task == NULL || stats == NULL) {
+        return NORNS_EBADARGS;
+    }
+
+    return send_status_request(task, stats);
+}
+
+
+/* wait for the completion of the I/O task associated to 'task' */
+norns_error_t
+norns_wait(norns_iotask_t* task) {
+
+    if(task == NULL) {
+        return NORNS_EBADARGS;
+    }
+
+    ///TODO
+    while(1) {
+
+    return send_status_request(task, NULL);
+    }
+}
+
 // XXX deprecated
 #if 0
 int 
@@ -102,7 +128,7 @@ norns_register_job(struct norns_cred* auth, uint32_t jobid,
         return NORNS_EBADARGS;
     }
 
-    return send_job_request(NORNS_REGISTER_JOB, auth, jobid, job);
+    return send_job_request(NORNS_JOB_REGISTER, auth, jobid, job);
 }
 
 /* Update an existing batch job */
@@ -114,7 +140,7 @@ norns_update_job(struct norns_cred* auth, uint32_t jobid,
         return NORNS_EBADARGS;
     }
 
-    return send_job_request(NORNS_UPDATE_JOB, auth, jobid, job);
+    return send_job_request(NORNS_JOB_UPDATE, auth, jobid, job);
 }
 
 
@@ -125,7 +151,7 @@ int norns_unregister_job(struct norns_cred* auth, uint32_t jobid) {
         return NORNS_EBADARGS;
     }
 
-    return send_job_request(NORNS_UNREGISTER_JOB, auth, jobid, NULL);
+    return send_job_request(NORNS_JOB_UNREGISTER, auth, jobid, NULL);
 }
 
 
@@ -138,7 +164,7 @@ norns_add_process(struct norns_cred* auth, uint32_t jobid, uid_t uid,
         return NORNS_EBADARGS;
     }
 
-    return send_process_request(NORNS_ADD_PROCESS, auth, jobid, uid, gid, pid);
+    return send_process_request(NORNS_PROCESS_ADD, auth, jobid, uid, gid, pid);
 }
 
 
@@ -151,7 +177,7 @@ norns_remove_process(struct norns_cred* auth, uint32_t jobid, uid_t uid,
         return NORNS_EBADARGS;
     }
 
-    return send_process_request(NORNS_REMOVE_PROCESS, auth, jobid, 
+    return send_process_request(NORNS_PROCESS_REMOVE, auth, jobid, 
                                 uid, gid, pid);
 }
 
@@ -165,7 +191,7 @@ norns_register_backend(struct norns_cred* auth, norns_backend_t* backend) {
 
     const char* const nsid = backend->b_nsid;
 
-    return send_backend_request(NORNS_REGISTER_BACKEND, auth, nsid, backend);
+    return send_backend_request(NORNS_BACKEND_REGISTER, auth, nsid, backend);
 }
 
 /* Unregister a backend from the local norns server */
@@ -176,7 +202,7 @@ norns_unregister_backend(struct norns_cred* auth, const char* nsid) {
         return NORNS_EBADARGS;
     }
 
-    return send_backend_request(NORNS_UNREGISTER_BACKEND, auth, nsid, NULL);
+    return send_backend_request(NORNS_BACKEND_UNREGISTER, auth, nsid, NULL);
 }
 
 norns_backend_t 

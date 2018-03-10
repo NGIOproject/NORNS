@@ -24,23 +24,30 @@
 #ifndef __REQUESTS_H__
 #define __REQUESTS_H__
 
-#include "messages.pb-c.h"
-
 #pragma GCC visibility push(hidden)
 
-#include <norns.h>
+#include "messages.pb-c.h"
+#include "norns.h"
 
 typedef enum {
-    NORNS_SUBMIT_IOTASK,
+    /* iotasks */
+    NORNS_IOTASK_SUBMIT,
+    NORNS_IOTASK_STATUS,
+
     NORNS_PING,
-    NORNS_REGISTER_JOB,
-    NORNS_UPDATE_JOB,
-    NORNS_UNREGISTER_JOB,
-    NORNS_ADD_PROCESS,
-    NORNS_REMOVE_PROCESS,
-    NORNS_REGISTER_BACKEND,
-    NORNS_UPDATE_BACKEND,
-    NORNS_UNREGISTER_BACKEND,
+
+    /* jobs */
+    NORNS_JOB_REGISTER,
+    NORNS_JOB_UPDATE,
+    NORNS_JOB_UNREGISTER,
+    /* processes */
+    NORNS_PROCESS_ADD,
+    NORNS_PROCESS_REMOVE,
+    /* backends */
+    NORNS_BACKEND_REGISTER,
+    NORNS_BACKEND_UPDATE,
+    NORNS_BACKEND_UNREGISTER,
+    /* other */
     NORNS_BAD_RPC
 } norns_rpc_type_t;
 
@@ -56,8 +63,11 @@ typedef struct {
 
 typedef struct {
     norns_rpc_type_t r_type;
-    int r_status;
-    size_t r_taskid;
+    int r_error_code;
+    union {
+        size_t r_taskid;
+        norns_status_t r_status;
+    };
 } norns_response_t;
 
 int pack_to_buffer(norns_rpc_type_t type, msgbuffer_t* buf, ...);

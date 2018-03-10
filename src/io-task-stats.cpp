@@ -25,54 +25,66 @@
  *                                                                       *
  *************************************************************************/
 
-#ifndef __IO_TASK_HPP__
-#define __IO_TASK_HPP__
-
-#include <cstdint>
-#include <memory>
-
-#include "norns.h"
-#include "resources.hpp"
-#include "backends.hpp"
+#include "io-task-stats.hpp"
 
 namespace io {
 
-/*! Valid types for an I/O task */
-enum class task_type {
-    copy,
-    move,
-    unknown
-};
+task_stats::task_stats(task_status status) 
+    : m_status(status) { }
 
-struct task_stats;
+/*! Return a copy of the current stats by locking the instance and copying 
+ * its internal data. This is useful to obtain a "view" of the instance
+ * in a state where all data is consistent with each other */
+task_stats::task_stats(const task_stats& other) {
+    boost::shared_lock<boost::shared_mutex> lock(m_mutex);
+    m_status = other.m_status;
+}
 
-/*! Descriptor for an I/O task */
-struct task {
+task_stats::task_stats(task_stats&& rhs) noexcept 
+    : m_status(std::move(rhs.m_status)) { }
 
-    using backend_ptr = std::shared_ptr<storage::backend>;
-    using resource_ptr = std::shared_ptr<data::resource>;
-    using task_stats_ptr = std::shared_ptr<task_stats>;
 
-    task(norns_tid_t tid, norns_op_t type, const resource_ptr src, 
-         const resource_ptr dst, const task_stats_ptr stats);
-    norns_tid_t id() const;
-    bool is_valid() const;
-    void operator()() const;
+task_status task_stats::status() const {
+    boost::shared_lock<boost::shared_mutex> lock(m_mutex);
+    return m_status;
+}
 
-    static norns_tid_t create_id(); 
+void task_stats::set_status(const task_status status) {
+    boost::unique_lock<boost::shared_mutex> lock(m_mutex);
+    m_status = status;
+}
 
-    //XXX a munge credential might be better here
-    uint64_t    m_id;
-    pid_t       m_pid;
-    uint32_t    m_jobid;
-    
-    task_type m_type;
-    resource_ptr m_src;
-    resource_ptr m_dst;
-    task_stats_ptr m_stats;
-};
+task_stats_view::task_stats_view(const task_stats& stats) 
+    : m_stats(stats) { }
+
+task_stats_view::task_stats_view(const task_stats_view& other)
+    : m_stats(other.m_stats) { }
+
+task_stats_view::task_stats_view(task_stats_view&& rhs) noexcept
+    : m_stats(std::move(rhs.m_stats)) {}
+
+task_status task_stats_view::status() const {
+    return m_stats.status();
+}
+
 
 
 } // namespace io
 
-#endif // __IO_TASK_HPP__
+namespace utils {
+
+std::string to_string(io::task_status st) {
+    switch(st) {
+        case io::task_status::pending:
+            return "NORNS_EPENDING";
+        case io::task_status::in_progress:
+            return "NORNS_EINPROGRESS";
+        case io::task_status::finished:
+            return "NORNS_EFINISHED";
+        default:
+            return "unknown!";
+    }
+}
+
+}
+

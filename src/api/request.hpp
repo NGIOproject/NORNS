@@ -55,10 +55,17 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include <sstream>
 
-#include "backends.hpp"
-#include "resources.hpp"
+#include "norns.h"
+
+// forward declarations
+namespace storage {
+    class backend;
+}
+
+namespace data {
+    struct resource_info;
+};
 
 using backend_ptr = std::shared_ptr<storage::backend>;
 using resource_info_ptr = std::shared_ptr<data::resource_info>;
@@ -67,7 +74,8 @@ namespace api {
 
 /*! Valid types for an API request */
 enum class request_type { 
-    transfer_task,
+    iotask_create,
+    iotask_status,
     ping,
     job_register, 
     job_update,
@@ -159,19 +167,16 @@ using bad_request = detail::request_impl<
     request_type::bad_request
 >;
 
-/* XXX old format -- deprecated
-using transfer_task_request = detail::request_impl<
-    request_type::transfer_task,
-    uint32_t, //XXX replace by enum class?
-    data_resource,
-    data_resource
->;*/
-
-using transfer_task_request = detail::request_impl<
-    request_type::transfer_task,
+using iotask_create_request = detail::request_impl<
+    request_type::iotask_create,
     uint32_t, //XXX replace by enum class?
     resource_info_ptr,
     resource_info_ptr
+>;
+
+using iotask_status_request = detail::request_impl<
+    request_type::iotask_status,
+    norns_tid_t
 >;
 
 using ping_request = detail::request_impl<
@@ -237,4 +242,3 @@ using backend_unregister_request = detail::request_impl<
 } // namespace api
 
 #endif /* __API_REQUESTS_H__ */
-

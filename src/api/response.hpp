@@ -35,10 +35,21 @@
 #include "norns.h"
 #include "utils.hpp"
 
+// forward declarations
+namespace io {
+    struct task_stats;
+    struct task_stats_view;
+};
+
+namespace norns { namespace rpc {
+    class Response;
+}}
+
 namespace api {
 
 enum class response_type {
-    transfer_task,
+    iotask_create,
+    iotask_status,
     ping,
     job_register, 
     job_update,
@@ -59,9 +70,10 @@ struct response {
 
     virtual ~response() {}
     virtual response_type type() const = 0;
-    virtual uint32_t status() const = 0;
-    virtual void set_status(uint32_t status) = 0;
+    virtual uint32_t error_code() const = 0;
+    virtual void set_error_code(uint32_t ecode) = 0;
     virtual std::string to_string() const = 0;
+    virtual void pack_extra_info(norns::rpc::Response& r) const = 0;
 
     static bool store_to_buffer(response_ptr response, std::vector<uint8_t>& buffer);
     static void cleanup();
@@ -82,16 +94,19 @@ struct response_impl : std::tuple<FieldTypes...>, response {
         return m_type;
     }
 
-    uint32_t status() const override {
-        return m_status;
+    uint32_t error_code() const override {
+        return m_error_code;
     }
 
-    void set_status(uint32_t status) override {
-        m_status = status;
+    void set_error_code(uint32_t ecode) override {
+        m_error_code = ecode;
     }
 
     std::string to_string() const override {
-        return utils::strerror(m_status);
+        return utils::strerror(m_error_code);
+    }
+
+    void pack_extra_info(norns::rpc::Response& /*r*/) const override {
     }
 
     template <std::size_t I>
@@ -105,15 +120,20 @@ struct response_impl : std::tuple<FieldTypes...>, response {
     }
 
     response_type m_type;
-    uint32_t m_status;
+    uint32_t m_error_code;
 };
 
 } // namespace detail
 
 /*! Aliases for convenience */
-using transfer_task_response = detail::response_impl<
-    response_type::transfer_task,
+using iotask_create_response = detail::response_impl<
+    response_type::iotask_create,
     norns_tid_t
+>;
+
+using iotask_status_response = detail::response_impl<
+    response_type::iotask_status,
+    io::task_stats_view
 >;
 
 using ping_response = detail::response_impl<

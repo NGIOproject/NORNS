@@ -32,6 +32,7 @@
 #include "logger.hpp"
 #include "resources.hpp"
 #include "io-task.hpp"
+#include "io-task-stats.hpp"
 
 namespace {
 
@@ -50,11 +51,13 @@ io::task_type remap_type(norns_op_t type) {
 
 namespace io {
 
-task::task(norns_op_t type, const resource_ptr src, const resource_ptr dst)
-    : m_id(create_id()),
+task::task(norns_tid_t tid, norns_op_t type, const resource_ptr src, 
+           const resource_ptr dst, const task_stats_ptr stats)
+    : m_id(tid),
       m_type(remap_type(type)),
       m_src(src),
-      m_dst(dst) { }
+      m_dst(dst),
+      m_stats(stats) { }
 
 norns_tid_t task::id() const {
     return m_id;
@@ -69,6 +72,8 @@ void task::operator()() const {
     LOGGER_WARN("[{}] Starting I/O task", m_id);
     LOGGER_WARN("[{}]   FROM: {}", m_id, m_src->to_string());
     LOGGER_WARN("[{}]     TO: {}", m_id, m_dst->to_string());
+
+    m_stats->set_status(task_status::in_progress);
 
     // helper lambda for creating streams and reporting errors
     auto create_stream = [&] (const resource_ptr res, data::stream_type type) 
@@ -106,9 +111,10 @@ void task::operator()() const {
         LOGGER_WARN("[{}] I/O task completed successfully", m_id);
     }
     catch(const std::exception& ex) {
-        LOGGER_WARN("[{}] I/O task completed with error", m_id);
+        LOGGER_WARN("[{}] I/O task completed with error: {}", m_id, ex.what());
     }
+
+    m_stats->set_status(task_status::finished);
 }
 
 } // namespace io
-

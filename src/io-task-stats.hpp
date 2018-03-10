@@ -25,54 +25,52 @@
  *                                                                       *
  *************************************************************************/
 
-#ifndef __IO_TASK_HPP__
-#define __IO_TASK_HPP__
+#ifndef __IO_TASK_STATS_HPP__
+#define __IO_TASK_STATS_HPP__
 
-#include <cstdint>
-#include <memory>
-
-#include "norns.h"
-#include "resources.hpp"
-#include "backends.hpp"
+#include <string>
+#include <boost/thread/shared_mutex.hpp>
 
 namespace io {
 
-/*! Valid types for an I/O task */
-enum class task_type {
-    copy,
-    move,
-    unknown
+/*! Valid status for an I/O task */
+enum class task_status {
+    pending,
+    in_progress,
+    finished
 };
 
-struct task_stats;
+/*! Stats about a registered I/O task */
+struct task_stats {
 
-/*! Descriptor for an I/O task */
-struct task {
+    task_stats(task_status status);
+    task_stats(const task_stats& other);
+    task_stats(task_stats&& rhs) noexcept;
 
-    using backend_ptr = std::shared_ptr<storage::backend>;
-    using resource_ptr = std::shared_ptr<data::resource>;
-    using task_stats_ptr = std::shared_ptr<task_stats>;
+    task_status status() const;
+    void set_status(const task_status status);
 
-    task(norns_tid_t tid, norns_op_t type, const resource_ptr src, 
-         const resource_ptr dst, const task_stats_ptr stats);
-    norns_tid_t id() const;
-    bool is_valid() const;
-    void operator()() const;
-
-    static norns_tid_t create_id(); 
-
-    //XXX a munge credential might be better here
-    uint64_t    m_id;
-    pid_t       m_pid;
-    uint32_t    m_jobid;
-    
-    task_type m_type;
-    resource_ptr m_src;
-    resource_ptr m_dst;
-    task_stats_ptr m_stats;
+    mutable boost::shared_mutex m_mutex;
+    task_status m_status;
 };
 
+struct task_stats_view {
+
+    task_stats_view(const task_stats& stats);
+    task_stats_view(const task_stats_view& other);
+    task_stats_view(task_stats_view&& rhs) noexcept;
+
+    task_status status() const;
+
+    task_stats m_stats;
+};
 
 } // namespace io
 
-#endif // __IO_TASK_HPP__
+namespace utils {
+
+std::string to_string(io::task_status st);
+
+}
+
+#endif /* __IO_TASK_STATS_HPP__ */

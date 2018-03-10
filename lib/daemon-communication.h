@@ -29,6 +29,7 @@
 #pragma GCC visibility push(hidden)
 
 norns_error_t send_submit_request(norns_iotask_t* task);
+norns_error_t send_status_request(norns_iotask_t* task, norns_stat_t* stats);
 norns_error_t send_job_request(norns_rpc_type_t type, struct norns_cred* auth, 
                      uint32_t jobid, norns_job_t* job);
 norns_error_t send_process_request(norns_rpc_type_t type, struct norns_cred* auth, 

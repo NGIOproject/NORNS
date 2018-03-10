@@ -63,6 +63,8 @@ liburd_aux_la_SOURCES = \
 	defaults.hpp \
 	io-task.cpp \
 	io-task.hpp \
+	io-task-stats.cpp \
+	io-task-stats.hpp \
 	job.hpp \
 	logger.hpp \
 	make-unique.hpp \

@@ -25,6 +25,7 @@
  *                                                                       *
  *************************************************************************/
 
+#include <sstream>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 
@@ -118,7 +119,7 @@ request_ptr request::create_from_buffer(const std::vector<uint8_t>& buffer, int 
 
     if(rpc_req.ParseFromArray(buffer.data(), size)) {
         switch(rpc_req.type()) {
-            case norns::rpc::Request::SUBMIT_IOTASK:
+            case norns::rpc::Request::IOTASK_SUBMIT:
 
                 if(rpc_req.has_task()) {
 
@@ -129,18 +130,29 @@ request_ptr request::create_from_buffer(const std::vector<uint8_t>& buffer, int 
                     resource_info_ptr dst_res = create_from(task.destination());
 
                     if(src_res != nullptr && dst_res != nullptr) {
-                        return std::make_unique<transfer_task_request>(optype, src_res, dst_res);
+                        return std::make_unique<iotask_create_request>(optype, src_res, dst_res);
                     }
 
                     return std::make_unique<bad_request>();
                 }
             break;
 
+            case norns::rpc::Request::IOTASK_STATUS:
+                if(rpc_req.has_task()) {
+
+                    auto task = rpc_req.task();
+
+                    if(task.has_taskid()) {
+                        return std::make_unique<iotask_status_request>(task.taskid());
+                    }
+                }
+            break;
+
             case norns::rpc::Request::PING:
                 return std::make_unique<ping_request>();
 
-            case norns::rpc::Request::REGISTER_JOB:
-            case norns::rpc::Request::UPDATE_JOB:
+            case norns::rpc::Request::JOB_REGISTER:
+            case norns::rpc::Request::JOB_UPDATE:
 
                 if(rpc_req.has_jobid() && rpc_req.has_job()) {
 
@@ -162,35 +174,35 @@ request_ptr request::create_from_buffer(const std::vector<uint8_t>& buffer, int 
                         backends.push_back(storage::backend_factory::create_from(b.type(), b.mount(), b.quota()));
                     }
 
-                    if(rpc_req.type() == norns::rpc::Request::REGISTER_JOB) {
+                    if(rpc_req.type() == norns::rpc::Request::JOB_REGISTER) {
                         return std::make_unique<job_register_request>(id, hosts, backends);
                     }
-                    else { // rpc_req.type() == norns::rpc::Request::UPDATE_JOB)
+                    else { // rpc_req.type() == norns::rpc::Request::JOB_UPDATE)
                         return std::make_unique<job_update_request>(id, hosts, backends);
                     }
                 }
                 break;
 
-            case norns::rpc::Request::UNREGISTER_JOB:
+            case norns::rpc::Request::JOB_UNREGISTER:
                 if(rpc_req.has_jobid()) {
                     return std::make_unique<job_unregister_request>(rpc_req.jobid());
                 }
                 break;
 
-            case norns::rpc::Request::ADD_PROCESS:
-            case norns::rpc::Request::REMOVE_PROCESS:
+            case norns::rpc::Request::PROCESS_ADD:
+            case norns::rpc::Request::PROCESS_REMOVE:
                 if(rpc_req.has_jobid() && rpc_req.has_process()) {
 
                     auto process = rpc_req.process();
 
-                    if(rpc_req.type() == norns::rpc::Request::ADD_PROCESS) {
+                    if(rpc_req.type() == norns::rpc::Request::PROCESS_ADD) {
                         return std::make_unique<process_register_request>(
                                 rpc_req.jobid(), 
                                 process.uid(), 
                                 process.gid(), 
                                 process.pid());
                     }
-                    else { // rpc_req.type() == norns::rpc::Request::REMOVE_PROCESS
+                    else { // rpc_req.type() == norns::rpc::Request::PROCESS_REMOVE
                         return std::make_unique<process_unregister_request>(
                                 rpc_req.jobid(), 
                                 process.uid(), 
@@ -200,22 +212,22 @@ request_ptr request::create_from_buffer(const std::vector<uint8_t>& buffer, int 
                 }
                 break;
 
-            case norns::rpc::Request::REGISTER_BACKEND:
-            case norns::rpc::Request::UPDATE_BACKEND:
+            case norns::rpc::Request::BACKEND_REGISTER:
+            case norns::rpc::Request::BACKEND_UPDATE:
                 if(rpc_req.has_backend()) {
 
                     const auto& b = rpc_req.backend();
 
-                    if(rpc_req.type() == norns::rpc::Request::REGISTER_BACKEND) {
+                    if(rpc_req.type() == norns::rpc::Request::BACKEND_REGISTER) {
                         return std::make_unique<backend_register_request>(b.nsid(), b.type(), b.mount(), b.quota());
                     }
-                    else { // rpc_req.type() == norns::rpc::Request::UPDATE_BACKEND
+                    else { // rpc_req.type() == norns::rpc::Request::BACKEND_UPDATE
                         return std::make_unique<backend_update_request>(b.nsid(), b.type(), b.mount(), b.quota());
                     }
                 }
                 break;
 
-            case norns::rpc::Request::UNREGISTER_BACKEND:
+            case norns::rpc::Request::BACKEND_UNREGISTER:
                 if(rpc_req.has_nsid()) {
                     return std::make_unique<backend_unregister_request>(rpc_req.nsid());
                 }
@@ -370,7 +382,7 @@ std::string backend_unregister_request::to_string() const {
 }
 
 template<>
-std::string transfer_task_request::to_string() const {
+std::string iotask_create_request::to_string() const {
 
     const auto op = this->get<0>();
     const auto src = this->get<1>();
@@ -379,6 +391,14 @@ std::string transfer_task_request::to_string() const {
     return utils::to_string(op) + ", "
            + src->to_string() + " => "
            + dst->to_string();
+}
+
+template<>
+std::string iotask_status_request::to_string() const {
+
+    const auto tid = this->get<0>();
+
+    return std::to_string(tid);
 }
 
 } // namespace detail

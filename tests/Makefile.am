@@ -54,6 +54,7 @@ api_SOURCES = \
 	api-resource-init.cpp \
 	api-task-init.cpp \
 	api-task-submit.cpp \
+	api-task-status.cpp \
 	fake-daemon.cpp \
 	fake-daemon.hpp \
 	$(END)

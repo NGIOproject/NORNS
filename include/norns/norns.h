@@ -56,40 +56,17 @@ typedef struct {
     norns_resource_t    t_dst;  /* destination resource */
 } norns_iotask_t;
 
-#if 0 // deprecated
-#define NORNS_IOTD_INIT(type, src, dst) \
-{ \
-    .io_taskid = 0, \
-    .io_optype = (type), \
-    .io_src = src, \
-    .io_dst = dst \
-}
-#endif
-
 /* Task types */
-//enum {
-//    NORNS_COPY   = 00000000,
-//    NORNS_MOVE   = 00000001,
-//    NORNS_LOCAL  = 00000010,
-//    NORNS_REMOTE = 00000020
-//};
-
-
 #define NORNS_IOTASK_COPY 0x1
 #define NORNS_IOTASK_MOVE 0x2
 
-
 /* I/O task status descriptor */
-struct norns_iotst {
-    int ni_status;  /* current status */
-};
-
-/* Status codes */
-enum {
-    NORNS_WAITING,
-    NORNS_INPROGRESS,
-    NORNS_COMPLETE
-};
+typedef struct {
+    norns_status_t st_status;    /* task current status */
+    norns_error_t  st_error;     /* task return value */
+    size_t         st_pending;   /* bytes pending in task */
+    size_t         st_total;     /* total bytes in task */
+} norns_stat_t;
 
 /**************************************************************************/
 /* Client API                                                             */
@@ -114,20 +91,23 @@ norns_iotask_t NORNS_IOTASK(norns_op_t operation, norns_resource_t src,
 /* Submit an asynchronous I/O task */
 norns_error_t norns_submit(norns_iotask_t* task) __THROW;
 
-/* wait for the completion of the task associated to task */
-int norns_wait(norns_iotask_t* task) __THROW;
+/* wait for the completion of the I/O task associated to 'task' */
+norns_error_t norns_wait(norns_iotask_t* task) __THROW;
 
 /* Try to cancel an asynchronous I/O task associated with task */
 ssize_t norns_cancel(norns_iotask_t* task) __THROW;
 
+/* Check the status of a submitted I/O task */
+norns_error_t norns_status(norns_iotask_t* task, norns_stat_t* stats) __THROW;
+
 /* Retrieve return status associated with task */
-ssize_t norns_return(norns_iotask_t* task, struct norns_iotst* statp) __THROW;
+ssize_t norns_return(norns_iotask_t* task, norns_stat_t* stats) __THROW;
 
 /* Retrieve current status associated with task (if task is NULL, retrieve status for all running tasks) */
-ssize_t norns_progress(norns_iotask_t* task, struct norns_iotst* statp) __THROW;
+//ssize_t norns_progress(norns_iotask_t* task, struct norns_iotst* statp) __THROW;
 
 /* Retrieve error status associated with task */
-int norns_error(norns_iotask_t* task) __THROW;
+//int norns_error(norns_iotask_t* task) __THROW;
 
 /* Check if the urd daemon is running */
 int norns_ping() __THROW;
