@@ -7,3 +7,12 @@ depcomp
 install-sh
 missing
 build-aux
+*.old
+tags
+*~
+ctags.sh
+compile_commands.json
+config.log
+src/old-sources
+src/spdlog_0.12/
+build
