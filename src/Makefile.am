@@ -86,6 +86,7 @@ liburd_aux_la_SOURCES = \
 	thread-pool.hpp \
 	thread-pool/thread-pool.hpp \
 	thread-pool/thread-pool-queue.hpp \
+	unique-ptr-cast.hpp \
 	urd.cpp	\
 	urd.hpp	\
 	utils.cpp \

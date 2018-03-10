@@ -202,7 +202,7 @@ response_ptr urd::create_task(const request_ptr base_request) {
 
 
     // downcast the generic request to the concrete implementation
-    auto request = static_cast<api::iotask_create_request*>(base_request.get());
+    auto request = utils::static_unique_ptr_cast<api::iotask_create_request>(std::move(base_request));
 
     auto type = request->get<0>();
     auto src_info = request->get<1>();
@@ -305,7 +305,7 @@ response_ptr urd::check_on_task(const request_ptr base_request) const {
     norns_error_t rv = NORNS_SUCCESS;
 
     // downcast the generic request to the concrete implementation
-    auto request = static_cast<api::iotask_status_request*>(base_request.get());
+    auto request = utils::static_unique_ptr_cast<api::iotask_status_request>(std::move(base_request));
 
     std::shared_ptr<io::task_stats> stats_ptr;
 
@@ -351,7 +351,7 @@ response_ptr urd::register_job(const request_ptr base_request) {
     response_ptr resp = std::make_unique<api::job_register_response>();
 
     // downcast the generic request to the concrete implementation
-    auto request = static_cast<api::job_register_request*>(base_request.get());
+    auto request = utils::static_unique_ptr_cast<api::job_register_request>(std::move(base_request));
 
     uint32_t jobid = request->get<0>();
     auto hosts = request->get<1>();
@@ -377,7 +377,7 @@ response_ptr urd::update_job(const request_ptr base_request) {
     response_ptr resp = std::make_unique<api::job_update_response>();
 
     // downcast the generic request to the concrete implementation
-    auto request = static_cast<api::job_update_request*>(base_request.get());
+    auto request = utils::static_unique_ptr_cast<api::job_update_request>(std::move(base_request));
 
     uint32_t jobid = request->get<0>();
     auto hosts = request->get<1>();
@@ -405,7 +405,7 @@ response_ptr urd::remove_job(const request_ptr base_request) {
     response_ptr resp = std::make_unique<api::job_unregister_response>();
 
     // downcast the generic request to the concrete implementation
-    auto request = static_cast<api::job_unregister_request*>(base_request.get());
+    auto request = utils::static_unique_ptr_cast<api::job_unregister_request>(std::move(base_request));
 
     uint32_t jobid = request->get<0>();
 
@@ -432,7 +432,7 @@ response_ptr urd::add_process(const request_ptr base_request) {
     response_ptr resp = std::make_unique<api::process_register_response>();
 
     // downcast the generic request to the concrete implementation
-    auto request = static_cast<api::process_register_request*>(base_request.get());
+    auto request = utils::static_unique_ptr_cast<api::process_register_request>(std::move(base_request));
 
     uint32_t jobid = request->get<0>();
     pid_t uid = request->get<1>();
@@ -462,7 +462,7 @@ response_ptr urd::remove_process(const request_ptr base_request) {
     response_ptr resp = std::make_unique<api::process_unregister_response>();
 
     // downcast the generic request to the concrete implementation
-    auto request = static_cast<api::process_unregister_request*>(base_request.get());
+    auto request = utils::static_unique_ptr_cast<api::process_unregister_request>(std::move(base_request));
 
     uint32_t jobid = request->get<0>();
     pid_t uid = request->get<1>();
@@ -495,7 +495,7 @@ response_ptr urd::register_backend(const request_ptr base_request) {
     response_ptr resp = std::make_unique<api::backend_register_response>();
 
     // downcast the generic request to the concrete implementation
-    auto request = static_cast<api::backend_register_request*>(base_request.get());
+    auto request = utils::static_unique_ptr_cast<api::backend_register_request>(std::move(base_request));
 
     std::string nsid = request->get<0>();
     int32_t type = request->get<1>();
@@ -532,7 +532,7 @@ response_ptr urd::update_backend(const request_ptr base_request) {
     response_ptr resp = std::make_unique<api::backend_update_response>();
 
     // downcast the generic request to the concrete implementation
-    auto request = static_cast<api::backend_update_request*>(base_request.get());
+    auto request = utils::static_unique_ptr_cast<api::backend_update_request>(std::move(base_request));
 
     resp->set_error_code(NORNS_SUCCESS);
 
@@ -546,7 +546,7 @@ response_ptr urd::remove_backend(const request_ptr base_request) {
     response_ptr resp = std::make_unique<api::backend_unregister_response>();
 
     // downcast the generic request to the concrete implementation
-    auto request = static_cast<api::backend_unregister_request*>(base_request.get());
+    auto request = utils::static_unique_ptr_cast<api::backend_unregister_request>(std::move(base_request));
 
     std::string nsid = request->get<0>();
 
