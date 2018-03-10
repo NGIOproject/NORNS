@@ -64,6 +64,8 @@ using backend_manager_ptr = std::unique_ptr<backend_manager>;
 using resource_info_ptr = std::shared_ptr<data::resource_info>;
 using resource_ptr = std::shared_ptr<data::resource>;
 
+namespace norns {
+
 class urd {
 
 public:
@@ -74,9 +76,6 @@ public:
 private:
     int daemonize();
     void signal_handler(int);
-    //norns_error_t validate_task_args(norns_op_t op, 
-    //                                 const foo& src, 
-    //                                 const foo& dst) const;
 
     norns_error_t validate_iotask_args(norns_op_t op, 
                                        resource_info_ptr src_info, 
@@ -114,10 +113,8 @@ private:
 
     std::unordered_map<norns_tid_t, std::shared_ptr<io::task_stats>> m_task_manager;
     mutable boost::shared_mutex                         m_task_manager_mutex;
-
-
-
-
 };
+
+} // namespace norns 
 
 #endif /* __URD_HPP__ */

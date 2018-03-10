@@ -65,7 +65,7 @@ int main(int argc, char* argv[]){
 
     settings.m_daemonize = !run_in_foreground;
 
-    urd daemon;
+    norns::urd daemon;
     daemon.configure(settings);
 
     int status = daemon.run();

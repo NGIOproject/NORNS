@@ -58,6 +58,8 @@
 #include "make-unique.hpp"
 #include "unique-ptr-cast.hpp"
 
+namespace norns {
+
 pid_t urd::daemonize() {
     /*
      * --- Daemonize structure ---
@@ -759,3 +761,5 @@ void urd::teardown() {
         m_workers.reset();
     }
 }
+
+} // namespace norns

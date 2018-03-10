@@ -43,7 +43,7 @@ struct fake_daemon {
 
     pid_t m_pid = 0;
     bool m_running = false;
-    urd m_daemon;
+    norns::urd m_daemon;
 };
 
 #endif /* __FAKE_DAEMON_HPP__ */
