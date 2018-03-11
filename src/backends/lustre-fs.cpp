@@ -28,6 +28,7 @@
 #include "backend-base.hpp"
 #include "lustre-fs.hpp"
 
+namespace norns {
 namespace storage {
 
 lustre::lustre(const std::string& mount, uint32_t quota) 
@@ -66,3 +67,4 @@ std::string lustre::to_string() const {
 }
 
 } // namespace storage
+} // namespace norns

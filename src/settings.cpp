@@ -34,6 +34,8 @@
 
 namespace bpt = boost::property_tree;
 
+namespace norns {
+
 void config_settings::load(const std::string& filename) {
 
     bpt::ptree pt;
@@ -134,4 +136,6 @@ void config_settings::load(const std::string& filename) {
     }
 #endif
 }
+
+} // namespace norns
 

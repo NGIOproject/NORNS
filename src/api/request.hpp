@@ -58,6 +58,9 @@
 
 #include "norns.h"
 
+
+namespace norns {
+
 // forward declarations
 namespace storage {
     class backend;
@@ -66,9 +69,6 @@ namespace storage {
 namespace data {
     struct resource_info;
 };
-
-using backend_ptr = std::shared_ptr<storage::backend>;
-using resource_info_ptr = std::shared_ptr<data::resource_info>;
 
 namespace api {
 
@@ -170,8 +170,8 @@ using bad_request = detail::request_impl<
 using iotask_create_request = detail::request_impl<
     request_type::iotask_create,
     uint32_t, //XXX replace by enum class?
-    resource_info_ptr,
-    resource_info_ptr
+    std::shared_ptr<data::resource_info>,
+    std::shared_ptr<data::resource_info>
 >;
 
 using iotask_status_request = detail::request_impl<
@@ -187,14 +187,14 @@ using job_register_request = detail::request_impl<
     request_type::job_register, 
     uint32_t, 
     std::vector<std::string>, 
-    std::vector<backend_ptr>
+    std::vector<std::shared_ptr<storage::backend>>
 >;
 
 using job_update_request = detail::request_impl<
     request_type::job_update, 
     uint32_t,
     std::vector<std::string>, 
-    std::vector<backend_ptr>
+    std::vector<std::shared_ptr<storage::backend>>
 >;
 
 using job_unregister_request = detail::request_impl<
@@ -240,5 +240,6 @@ using backend_unregister_request = detail::request_impl<
 >;
 
 } // namespace api
+} // namespace norns
 
 #endif /* __API_REQUESTS_H__ */

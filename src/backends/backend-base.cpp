@@ -27,6 +27,7 @@
 
 #include "backend-base.hpp"
 
+namespace norns {
 namespace storage {
 
     backend_factory& backend_factory::get() {
@@ -46,4 +47,5 @@ namespace storage {
         }
     };
 
-}
+} // namespace storage
+} // namespace norns

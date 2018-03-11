@@ -28,6 +28,7 @@
 #include "backend-base.hpp"
 #include "remote-backend.hpp"
 
+namespace norns {
 namespace storage {
 namespace detail {
 
@@ -66,3 +67,4 @@ std::string remote_backend::to_string() const {
 
 } // namespace detail
 } // namespace storage
+} // namespace norns

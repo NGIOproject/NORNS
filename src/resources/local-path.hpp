@@ -30,6 +30,7 @@
 #ifndef __LOCAL_PATH_HPP__
 #define __LOCAL_PATH_HPP__
 
+namespace norns {
 namespace data {
 
 /*! Local filesystem path data */
@@ -82,5 +83,6 @@ using local_path_resource = detail::resource_impl<resource_type::local_posix_pat
 using local_path_stream = detail::stream_impl<resource_type::local_posix_path>;
 
 } // namespace data
+} // namespace norns
 
 #endif /* __LOCAL_PATH_HPP__ */

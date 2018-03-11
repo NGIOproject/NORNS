@@ -57,6 +57,8 @@
 
 #include <unordered_map>
 
+namespace norns {
+
 template <typename Key, typename Hash, typename DispatchReturn, typename... DispatchArgs>
 struct dispatch_table {
 
@@ -76,5 +78,7 @@ struct dispatch_table {
 
     std::unordered_map<Key, std::function<DispatchReturn(DispatchArgs...)>, Hash> m_callbacks;
 };
+
+} // namespace norns
 
 #endif /* __DISPATCH_TABLE_HPP__ */

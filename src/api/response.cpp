@@ -31,44 +31,50 @@
 
 namespace {
 
-norns::rpc::Response_Type encode(api::response_type type) {
+norns::rpc::Response_Type encode(norns::api::response_type type) {
+
+    using norns::api::response_type;
+
     switch(type) {
-        case api::response_type::iotask_create:
+        case response_type::iotask_create:
             return norns::rpc::Response::IOTASK_SUBMIT;
-        case api::response_type::iotask_status:
+        case response_type::iotask_status:
             return norns::rpc::Response::IOTASK_STATUS;
-        case api::response_type::ping:
+        case response_type::ping:
             return norns::rpc::Response::PING;
-        case api::response_type::job_register: 
+        case response_type::job_register: 
             return norns::rpc::Response::JOB_REGISTER;
-        case api::response_type::job_update:
+        case response_type::job_update:
             return norns::rpc::Response::JOB_UPDATE;
-        case api::response_type::job_unregister:
+        case response_type::job_unregister:
             return norns::rpc::Response::JOB_UNREGISTER;
-        case api::response_type::process_register:
+        case response_type::process_register:
             return norns::rpc::Response::PROCESS_ADD;
-        case api::response_type::process_unregister:
+        case response_type::process_unregister:
             return norns::rpc::Response::PROCESS_REMOVE;
-        case api::response_type::backend_register: 
+        case response_type::backend_register: 
             return norns::rpc::Response::BACKEND_REGISTER;
-        case api::response_type::backend_update:
+        case response_type::backend_update:
             return norns::rpc::Response::BACKEND_UPDATE;
-        case api::response_type::backend_unregister:
+        case response_type::backend_unregister:
             return norns::rpc::Response::BACKEND_UNREGISTER;
-        case api::response_type::bad_request:
+        case response_type::bad_request:
             return norns::rpc::Response::BAD_REQUEST;
         default:
             assert(false && "Unexpected response_type");
     }
 }
 
-::google::protobuf::uint32 encode(io::task_status status) {
+::google::protobuf::uint32 encode(norns::io::task_status status) {
+
+    using norns::io::task_status;
+
     switch(status) {
-        case io::task_status::pending:
+        case task_status::pending:
             return NORNS_EPENDING;
-        case io::task_status::in_progress:
+        case task_status::in_progress:
             return NORNS_EINPROGRESS;
-        case io::task_status::finished:
+        case task_status::finished:
             return NORNS_EFINISHED;
         default:
             assert(false && "Unexpected task_status");
@@ -77,6 +83,7 @@ norns::rpc::Response_Type encode(api::response_type type) {
 
 } // anonymous namespace
 
+namespace norns {
 namespace api {
 
 bool response::store_to_buffer(response_ptr response, std::vector<uint8_t>& buffer) {
@@ -142,3 +149,4 @@ std::string iotask_status_response::to_string() const {
 } // namespace detail
 
 } // namespace api
+} // namespace norns

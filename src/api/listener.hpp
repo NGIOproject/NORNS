@@ -36,6 +36,7 @@
 
 #include "api/dispatch-table.hpp"
 
+namespace norns {
 namespace api {
 
 namespace ba = boost::asio;
@@ -208,5 +209,6 @@ private:
 };
 
 } // namespace api
+} // namespace norns
 
 #endif /* __API_LISTENER_HPP__ */

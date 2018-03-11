@@ -31,7 +31,7 @@
 #include "utils.hpp"
 #include "norns.h"
 
-
+namespace norns {
 namespace utils {
 
 uint64_t parse_size(const std::string& str){
@@ -162,5 +162,5 @@ std::string to_string(uint32_t c) {
     }
 }
 
-
 } // namespace utils
+} // namespace norns

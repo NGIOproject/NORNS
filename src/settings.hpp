@@ -36,6 +36,8 @@
 
 namespace bpt = boost::property_tree;
 
+namespace norns {
+
 struct config_settings {
 
     struct backend {
@@ -68,5 +70,7 @@ struct config_settings {
     uint64_t           m_storage_capacity; /* internal storage's max capacity */
     std::list<backend> m_backends;         /* list of backend descriptions */
 };
+
+} // namespace norns
 
 #endif /* __SETTINGS_HPP__ */

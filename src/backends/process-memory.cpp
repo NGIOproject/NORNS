@@ -28,6 +28,7 @@
 #include "backend-base.hpp"
 #include "process-memory.hpp"
 
+namespace norns {
 namespace storage {
 
 process_memory::process_memory(const std::string& mount, uint32_t quota) { 
@@ -67,4 +68,5 @@ std::string process_memory::to_string() const {
 }
 
 } // namespace storage
+} // namespace norns
 

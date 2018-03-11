@@ -31,6 +31,7 @@
 #include <string>
 #include <boost/thread/shared_mutex.hpp>
 
+namespace norns {
 namespace io {
 
 /*! Valid status for an I/O task */
@@ -72,5 +73,7 @@ namespace utils {
 std::string to_string(io::task_status st);
 
 }
+
+} // namespace norns
 
 #endif /* __IO_TASK_STATS_HPP__ */

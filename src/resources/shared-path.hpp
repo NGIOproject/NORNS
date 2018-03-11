@@ -30,6 +30,7 @@
 #ifndef __SHARED_PATH_HPP__
 #define __SHARED_PATH_HPP__
 
+namespace norns {
 namespace data {
 
 /*! Shared filesystem path data */
@@ -75,5 +76,6 @@ using shared_path_resource = detail::resource_impl<resource_type::shared_posix_p
 using shared_path_stream = detail::stream_impl<resource_type::shared_posix_path>;
 
 } // namespace data
+} // namespace norns
 
 #endif /* __SHARED_PATH_HPP__ */

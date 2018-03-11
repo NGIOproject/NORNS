@@ -36,19 +36,23 @@
 
 namespace {
 
-io::task_type remap_type(norns_op_t type) {
+norns::io::task_type remap_type(norns_op_t type) {
+
+    using norns::io::task_type;
+
     switch(type) {
         case NORNS_IOTASK_COPY:
-            return io::task_type::copy;
+            return task_type::copy;
         case NORNS_IOTASK_MOVE:
-            return io::task_type::move;
+            return task_type::move;
         default:
-            return io::task_type::unknown;
+            return task_type::unknown;
     }
 }
 
 }
 
+namespace norns {
 namespace io {
 
 task::task(norns_tid_t tid, norns_op_t type, const resource_ptr src, 
@@ -118,3 +122,4 @@ void task::operator()() const {
 }
 
 } // namespace io
+} // namespace norns

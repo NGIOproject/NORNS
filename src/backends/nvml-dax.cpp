@@ -31,6 +31,7 @@
 #include "utils.hpp"
 #include "nvml-dax.hpp"
 
+namespace norns {
 namespace storage {
 
 nvml_dax::nvml_dax(const std::string& mount, uint32_t quota) 
@@ -72,3 +73,4 @@ std::string nvml_dax::to_string() const {
 }
 
 } // namespace storage
+} // namespace norns

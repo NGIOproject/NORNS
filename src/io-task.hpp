@@ -35,6 +35,7 @@
 #include "resources.hpp"
 #include "backends.hpp"
 
+namespace norns {
 namespace io {
 
 /*! Valid types for an I/O task */
@@ -74,5 +75,6 @@ struct task {
 
 
 } // namespace io
+} // namespace norns
 
 #endif // __IO_TASK_HPP__

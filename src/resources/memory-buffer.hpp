@@ -30,6 +30,7 @@
 #ifndef __MEMORY_BUFFER_HPP__
 #define __MEMORY_BUFFER_HPP__
 
+namespace norns {
 namespace data {
 
 /*! Memory buffer data */
@@ -79,6 +80,6 @@ using memory_region_resource = detail::resource_impl<resource_type::memory_regio
 using memory_region_stream = detail::stream_impl<resource_type::memory_region>;
 
 } // namespace data
-
+} // namespace norns
 
 #endif /* __MEMORY_BUFFER_HPP__ */

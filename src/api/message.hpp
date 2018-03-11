@@ -44,6 +44,7 @@ uint64_t ntohll(uint64_t x) {
 
 }
 
+namespace norns {
 namespace api {
 
 // class message implements simple "packing/unpacking" of protocol buffers messages
@@ -175,5 +176,6 @@ private:
 };
 
 } // namespace api
+} // namespace norns
 
 #endif /* __API_MESSAGE_HPP__ */

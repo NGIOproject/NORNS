@@ -34,6 +34,7 @@
 #include "resources/shared-path.hpp"
 #include "resources/remote-path.hpp"
 
+namespace norns {
 namespace data {
 
 inline std::shared_ptr<resource> make_resource(std::shared_ptr<resource_info> rinfo) {
@@ -53,5 +54,6 @@ inline std::shared_ptr<resource> make_resource(std::shared_ptr<resource_info> ri
 }
 
 } // namespace data
+} // namespace norns
 
 #endif /* __MAKE_RESOURCE_HPP__ */

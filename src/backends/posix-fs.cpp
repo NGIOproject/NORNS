@@ -28,6 +28,7 @@
 #include "backend-base.hpp"
 #include "posix-fs.hpp"
 
+namespace norns {
 namespace storage {
 
 posix_filesystem::posix_filesystem(const std::string& mount, uint32_t quota) 
@@ -65,3 +66,4 @@ std::string posix_filesystem::to_string() const {
 }
 
 } // namespace storage
+} // namespace norns

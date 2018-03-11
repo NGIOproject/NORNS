@@ -30,6 +30,7 @@
 
 #include "backend-base.hpp"
 
+namespace norns {
 namespace storage {
 namespace detail {
 
@@ -52,5 +53,6 @@ public:
 
 } // namespace detail
 } // namespace storage
+} // namespace norns
 
 #endif // __REMOTE_BACKEND_HPP__

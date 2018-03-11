@@ -36,6 +36,7 @@
 //#include "resources/resource-info.hpp"
 #include "resources/resource.hpp"
 
+namespace norns {
 namespace storage {
 
 class backend {
@@ -110,5 +111,6 @@ private:
 }; // class factory
 
 } // namespace storage
+} // namespace norns
 
 #endif // __BACKEND_BASE_HPP__

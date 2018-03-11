@@ -79,36 +79,44 @@ bool is_valid(const norns::rpc::Request_Task_Resource& res) {
     return true;
 }
 
-resource_info_ptr create_from(const norns::rpc::Request_Task_Resource& res) {
+std::shared_ptr<norns::data::resource_info> 
+create_from(const norns::rpc::Request_Task_Resource& res) {
+
+    using norns::data::resource_info;
+    using norns::data::memory_buffer;
+    using norns::data::local_path;
+    using norns::data::shared_path;
+    using norns::data::remote_path;
 
     if(is_valid(res)) {
         if(res.type() & NORNS_PROCESS_MEMORY) {
-            return std::make_shared<data::memory_buffer>(res.nsid(),
-                                                         res.buffer().address(),
-                                                         res.buffer().size());
+            return std::make_shared<memory_buffer>(res.nsid(),
+                                                   res.buffer().address(),
+                                                   res.buffer().size());
         }
         else { // NORNS_POSIX_PATH
             if(res.type() & R_LOCAL) {
-                return std::make_shared<data::local_path>(res.nsid(),
-                                                          res.path().datapath());
+                return std::make_shared<local_path>(res.nsid(),
+                                                    res.path().datapath());
             }
             else if(res.type() & R_SHARED) {
-                return std::make_shared<data::shared_path>(res.nsid(),
-                                                           res.path().datapath());
+                return std::make_shared<shared_path>(res.nsid(),
+                                                     res.path().datapath());
             }
             else { // R_REMOTE
-                return std::make_shared<data::remote_path>(res.nsid(),
-                                                           res.path().hostname(), 
-                                                           res.path().datapath());
+                return std::make_shared<remote_path>(res.nsid(),
+                                                     res.path().hostname(), 
+                                                     res.path().datapath());
             }
         }
     }
 
-    return resource_info_ptr();
+    return std::shared_ptr<resource_info>();
 }
 
 }
 
+namespace norns {
 namespace api {
 
 using request_ptr = std::unique_ptr<request>;
@@ -126,8 +134,8 @@ request_ptr request::create_from_buffer(const std::vector<uint8_t>& buffer, int 
                     auto task = rpc_req.task();
                     auto optype = task.optype();
 
-                    resource_info_ptr src_res = create_from(task.source());
-                    resource_info_ptr dst_res = create_from(task.destination());
+                    std::shared_ptr<data::resource_info> src_res = ::create_from(task.source());
+                    std::shared_ptr<data::resource_info> dst_res = ::create_from(task.destination());
 
                     if(src_res != nullptr && dst_res != nullptr) {
                         return std::make_unique<iotask_create_request>(optype, src_res, dst_res);
@@ -261,7 +269,7 @@ std::string job_register_request::to_string() const {
     using boost::algorithm::join;
     using boost::adaptors::transformed;
 
-    auto to_string = [](const backend_ptr& b) {
+    auto to_string = [](const std::shared_ptr<storage::backend>& b) {
         return b->to_string();
     };
 
@@ -284,7 +292,7 @@ std::string job_update_request::to_string() const {
     using boost::algorithm::join;
     using boost::adaptors::transformed;
 
-    auto to_string = [](const backend_ptr& b) {
+    auto to_string = [](const std::shared_ptr<storage::backend>& b) {
         return b->to_string();
     };
 
@@ -405,6 +413,7 @@ std::string iotask_status_request::to_string() const {
 
 
 } // namespace api
+} // namespace norns
 
 
 

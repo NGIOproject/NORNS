@@ -29,6 +29,7 @@
 #include "backends.hpp"
 #include "memory-buffer.hpp"
 
+namespace norns {
 namespace data {
 
 /*! Memory buffer data */
@@ -101,3 +102,4 @@ std::size_t memory_region_stream::write(const buffer& b) {
 } // namespace detail
 
 } // namespace data
+} // namespace norns

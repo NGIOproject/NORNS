@@ -30,6 +30,7 @@
 #ifndef __UNIQUE_PTR_CAST_HPP__
 #define __UNIQUE_PTR_CAST_HPP__
 
+namespace norns {
 namespace utils {
 
 template<typename Derived, typename Base, typename Del>
@@ -60,5 +61,6 @@ dynamic_unique_ptr_cast( std::unique_ptr<Base, Del>&& p )
 }
 
 } // namespace utils
+} // namespace norns
 
 #endif /* __UNIQUE_PTR_CAST_HPP__ */

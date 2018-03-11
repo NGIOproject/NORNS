@@ -28,6 +28,7 @@
 #include "backends.hpp"
 #include "shared-path.hpp"
 
+namespace norns {
 namespace data {
 
 /*! Remote path data */
@@ -97,3 +98,4 @@ std::size_t shared_path_stream::write(const buffer& b) {
 } // namespace detail
 
 } // namespace data
+} // namespace norns

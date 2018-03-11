@@ -27,6 +27,7 @@
 
 #include "io-task-stats.hpp"
 
+namespace norns {
 namespace io {
 
 task_stats::task_stats(task_status status) 
@@ -86,5 +87,5 @@ std::string to_string(io::task_status st) {
     }
 }
 
-}
-
+} // namespace utils
+} // namespace norns

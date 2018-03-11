@@ -35,15 +35,18 @@
 #include "norns.h"
 #include "utils.hpp"
 
+namespace norns {
+
 // forward declarations
 namespace io {
     struct task_stats;
     struct task_stats_view;
 };
 
-namespace norns { namespace rpc {
+namespace rpc {
     class Response;
-}}
+}
+
 
 namespace api {
 
@@ -177,5 +180,6 @@ using bad_request_response = detail::response_impl<
 >;
 
 } // namespace api
+} // namespace norns
 
 #endif /* __API_RESPONSE_HPP__ */

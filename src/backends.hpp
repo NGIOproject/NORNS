@@ -32,9 +32,11 @@
 #include "backends/backend-base.hpp"
 #include "backends/remote-backend.hpp"
 
+namespace norns {
 namespace storage {
     static const auto remote_backend = std::make_shared<detail::remote_backend>();
 } // namespace storage
+} // namespace norns
 
 #endif /* __NORNS_BACKENDS_HPP__ */
 

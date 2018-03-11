@@ -31,6 +31,7 @@
 #include "norns/norns_backends.h"
 #include "backend-base.hpp"
 
+namespace norns {
 namespace storage {
 
 class process_memory final : public storage::backend {
@@ -50,6 +51,7 @@ public:
 NORNS_REGISTER_BACKEND(NORNS_BACKEND_PROCESS_MEMORY, process_memory);
 
 } // namespace storage
+} // namespace norns
 
 
 #endif /* __PROCESS_MEMORY_HPP__ */

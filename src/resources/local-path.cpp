@@ -37,6 +37,7 @@
 
 namespace bfs = boost::filesystem;
 
+namespace norns {
 namespace data {
 
 /*! Remote path data */
@@ -209,3 +210,4 @@ std::size_t local_path_stream::write(const buffer& b) {
 } // namespace detail
 
 } // namespace data
+} // namespace norns

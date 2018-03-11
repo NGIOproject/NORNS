@@ -31,6 +31,7 @@
 #include "norns/norns_backends.h"
 #include "backend-base.hpp"
 
+namespace norns {
 namespace storage {
 
 class posix_filesystem final : public storage::backend {
@@ -53,5 +54,6 @@ private:
 NORNS_REGISTER_BACKEND(NORNS_BACKEND_POSIX_FILESYSTEM, posix_filesystem);
 
 } // namespace storage
+} // namespace norns
 
 #endif // __POSIX_FS_HPP__

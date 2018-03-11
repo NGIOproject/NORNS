@@ -33,6 +33,9 @@
 
 #include "backends.hpp"
 
+
+namespace norns {
+
 struct process { }; // temporary stub, will probably replace with a valid munge credential
 
 class job {
@@ -80,5 +83,7 @@ private:
     std::map<int32_t, backend_ptr>             m_backends;
     std::map<std::pair<pid_t, gid_t>, process_ptr> m_processes;
 }; 
+
+} // namespace norns
 
 #endif /* __JOB_HPP__ */

@@ -32,6 +32,7 @@
 
 #include "backend-base.hpp"
 
+namespace norns {
 namespace storage {
 
 class nvml_dax final : public storage::backend {
@@ -54,6 +55,7 @@ private:
 NORNS_REGISTER_BACKEND(NORNS_BACKEND_NVML, nvml_dax);
 
 } // namespace storage
+} // namespace norns
 
 
 #endif // __NVML_DAX_HPP__

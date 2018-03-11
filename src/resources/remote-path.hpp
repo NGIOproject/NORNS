@@ -30,6 +30,7 @@
 #ifndef __REMOTE_PATH_HPP__
 #define __REMOTE_PATH_HPP__
 
+namespace norns {
 namespace data {
 
 /*! Remote filesystem path data */
@@ -76,5 +77,6 @@ using remote_path_resource = detail::resource_impl<resource_type::remote_posix_p
 using remote_path_stream = detail::stream_impl<resource_type::remote_posix_path>;
 
 } // namespace data
+} // namespace norns
 
 #endif /* __REMOTE_PATH_HPP__ */

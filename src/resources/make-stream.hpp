@@ -36,6 +36,7 @@
 #include "resources/shared-path.hpp"
 #include "resources/remote-path.hpp"
 
+namespace norns {
 namespace data {
 
 inline std::shared_ptr<stream> make_stream(std::shared_ptr<resource> rsrc, stream_type type) {
@@ -55,5 +56,6 @@ inline std::shared_ptr<stream> make_stream(std::shared_ptr<resource> rsrc, strea
 }
 
 } // namespace data
+} // namespace norns
 
 #endif /* __MAKE_STREAM_HPP__ */

@@ -31,6 +31,7 @@
 #include "norns/norns_backends.h"
 #include "backend-base.hpp"
 
+namespace norns {
 namespace storage {
 
 class lustre final : public storage::backend {
@@ -53,5 +54,6 @@ protected:
 NORNS_REGISTER_BACKEND(NORNS_BACKEND_LUSTRE, lustre);
 
 } // namespace storage
+} // namespace norns
 
 #endif // __LUSTRE_FS_HPP__

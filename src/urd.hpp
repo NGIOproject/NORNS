@@ -31,11 +31,6 @@
 #include <unordered_map>
 #include <boost/thread/shared_mutex.hpp>
 
-// forward declarations
-namespace io {
-    struct task_stats;
-}
-
 #include "settings.hpp"
 #include "backends.hpp"
 #include "signal-listener.hpp"
@@ -44,11 +39,12 @@ namespace io {
 
 #include "thread-pool.hpp"
 
-
-
-
-
 #include "job.hpp"
+
+
+
+namespace norns {
+
 
 /*! Aliases for convenience */
 using signal_listener_ptr = std::unique_ptr<signal_listener>;
@@ -67,7 +63,11 @@ using backend_manager_ptr = std::unique_ptr<backend_manager>;
 using resource_info_ptr = std::shared_ptr<data::resource_info>;
 using resource_ptr = std::shared_ptr<data::resource>;
 
-namespace norns {
+// forward declarations
+namespace io {
+    struct task_stats;
+}
+
 
 class urd {
 

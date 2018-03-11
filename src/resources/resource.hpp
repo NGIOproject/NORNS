@@ -31,6 +31,8 @@
 #include <memory>
 #include <vector>
 
+namespace norns {
+
 // forward declare storage::backend
 namespace storage {
     class backend;
@@ -102,5 +104,6 @@ struct stream_impl;
 
 } // namespace detail
 } // namespace data 
+} // namespace norns
 
 #endif /* __RESOURCE_HPP__ */
