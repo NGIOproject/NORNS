@@ -56,8 +56,7 @@
 #include <vector>
 #include <string>
 
-#include "norns.h"
-
+#include "common.hpp"
 
 namespace norns {
 
@@ -169,14 +168,14 @@ using bad_request = detail::request_impl<
 
 using iotask_create_request = detail::request_impl<
     request_type::iotask_create,
-    uint32_t, //XXX replace by enum class?
+    iotask_type,
     std::shared_ptr<data::resource_info>,
     std::shared_ptr<data::resource_info>
 >;
 
 using iotask_status_request = detail::request_impl<
     request_type::iotask_status,
-    norns_tid_t
+    iotask_id
 >;
 
 using ping_request = detail::request_impl<
@@ -221,7 +220,7 @@ using process_unregister_request = detail::request_impl<
 using backend_register_request = detail::request_impl<
     request_type::backend_register, 
     std::string, // nsid
-    int32_t, // type
+    backend_type, // type
     std::string, // mount
     int32_t // quota
 >;
@@ -229,7 +228,7 @@ using backend_register_request = detail::request_impl<
 using backend_update_request = detail::request_impl<
     request_type::backend_update, 
     std::string, // nsid
-    int32_t, // type
+    backend_type, // type
     std::string, // mount
     int32_t // quota
 >;

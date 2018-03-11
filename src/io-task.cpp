@@ -28,47 +28,28 @@
 #include <system_error>
 #include <atomic>
 
-#include "norns.h"
 #include "logger.hpp"
 #include "resources.hpp"
 #include "io-task.hpp"
 #include "io-task-stats.hpp"
 
-namespace {
-
-norns::io::task_type remap_type(norns_op_t type) {
-
-    using norns::io::task_type;
-
-    switch(type) {
-        case NORNS_IOTASK_COPY:
-            return task_type::copy;
-        case NORNS_IOTASK_MOVE:
-            return task_type::move;
-        default:
-            return task_type::unknown;
-    }
-}
-
-}
-
 namespace norns {
 namespace io {
 
-task::task(norns_tid_t tid, norns_op_t type, const resource_ptr src, 
+task::task(iotask_id tid, iotask_type type, const resource_ptr src, 
            const resource_ptr dst, const task_stats_ptr stats)
     : m_id(tid),
-      m_type(remap_type(type)),
+      m_type(type),
       m_src(src),
       m_dst(dst),
       m_stats(stats) { }
 
-norns_tid_t task::id() const {
+iotask_id task::id() const {
     return m_id;
 }
 
-norns_tid_t task::create_id() {
-    static std::atomic<norns_tid_t> base(0);
+iotask_id task::create_id() {
+    static std::atomic<iotask_id> base(0);
     return ++base;
 }
 

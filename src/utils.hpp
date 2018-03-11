@@ -27,12 +27,12 @@
 
 #include <cstdint>
 
+#include "common.hpp"
+
 namespace norns {
 namespace utils {
 
 uint64_t parse_size(const std::string& str);
-std::string strerror(int error_code);
-std::string to_string(uint32_t c);
 
 } // namespace utils
 } // namespace norns

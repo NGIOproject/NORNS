@@ -31,8 +31,6 @@
 #include <thread>
 #include <boost/asio.hpp>
 #include <boost/filesystem.hpp>
-#include <norns.h>
-#include <norns-rpc.h>
 
 #include "api/dispatch-table.hpp"
 

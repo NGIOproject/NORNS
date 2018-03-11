@@ -29,7 +29,6 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 
-#include "norns.h"
 #include "common.hpp"
 #include "messages.pb.h"
 #include "backends.hpp"
@@ -38,6 +37,41 @@
 #include "request.hpp"
 
 namespace {
+
+norns::iotask_type decode_iotask_type(::google::protobuf::uint32 type) {
+
+    using norns::iotask_type;
+
+    switch(type) {
+        case NORNS_IOTASK_COPY:
+            return iotask_type::copy;
+        case NORNS_IOTASK_MOVE:
+            return iotask_type::move;
+        default:
+            return iotask_type::unknown;
+    }
+}
+
+norns::backend_type decode_backend_type(::google::protobuf::uint32 type) {
+
+    using norns::backend_type;
+
+    switch(type) {
+        case NORNS_BACKEND_NVML:
+            return backend_type::nvml;
+        case NORNS_BACKEND_LUSTRE:
+            return backend_type::lustre;
+        case NORNS_BACKEND_PROCESS_MEMORY:
+            return backend_type::process_memory;
+        case NORNS_BACKEND_ECHOFS:
+            return backend_type::echofs;
+        case NORNS_BACKEND_POSIX_FILESYSTEM:
+            return backend_type::posix_filesystem;
+        default:
+            return backend_type::unknown;
+    }
+}
+
 
 bool is_valid(const norns::rpc::Request_Task_Resource& res) {
     if(!(res.type() & (NORNS_PROCESS_MEMORY | NORNS_POSIX_PATH))) {
@@ -132,7 +166,11 @@ request_ptr request::create_from_buffer(const std::vector<uint8_t>& buffer, int 
                 if(rpc_req.has_task()) {
 
                     auto task = rpc_req.task();
-                    auto optype = task.optype();
+                    iotask_type optype = ::decode_iotask_type(task.optype());
+
+                    if(optype == iotask_type::unknown) {
+                        return std::make_unique<bad_request>();
+                    }
 
                     std::shared_ptr<data::resource_info> src_res = ::create_from(task.source());
                     std::shared_ptr<data::resource_info> dst_res = ::create_from(task.destination());
@@ -175,12 +213,17 @@ request_ptr request::create_from_buffer(const std::vector<uint8_t>& buffer, int 
                     }
 
                     std::vector<std::shared_ptr<storage::backend>> backends;
+#if 0 
+                    //XXX deprecated for now, backends are registered elsewhere
+                    //here we should only propagate access rights to backends,
+                    // i.e. nsids this job can access and usage quotas
                     backends.reserve(job.backends().size());
 
 
                     for(const auto& b : job.backends()) {
                         backends.push_back(storage::backend_factory::create_from(b.type(), b.mount(), b.quota()));
                     }
+#endif
 
                     if(rpc_req.type() == norns::rpc::Request::JOB_REGISTER) {
                         return std::make_unique<job_register_request>(id, hosts, backends);
@@ -225,12 +268,17 @@ request_ptr request::create_from_buffer(const std::vector<uint8_t>& buffer, int 
                 if(rpc_req.has_backend()) {
 
                     const auto& b = rpc_req.backend();
+                    backend_type type = ::decode_backend_type(b.type());
+
+                    if(type == backend_type::unknown) {
+                        break;
+                    }
 
                     if(rpc_req.type() == norns::rpc::Request::BACKEND_REGISTER) {
-                        return std::make_unique<backend_register_request>(b.nsid(), b.type(), b.mount(), b.quota());
+                        return std::make_unique<backend_register_request>(b.nsid(), type, b.mount(), b.quota());
                     }
                     else { // rpc_req.type() == norns::rpc::Request::BACKEND_UPDATE
-                        return std::make_unique<backend_update_request>(b.nsid(), b.type(), b.mount(), b.quota());
+                        return std::make_unique<backend_update_request>(b.nsid(), type, b.mount(), b.quota());
                     }
                 }
                 break;

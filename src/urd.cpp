@@ -46,9 +46,6 @@
 #include <boost/atomic.hpp>
 #include <functional>
 
-#include <norns-rpc.h>
-#include <norns.h>
-
 #include "common.hpp"
 #include "api.hpp"
 #include "signal-listener.hpp"
@@ -183,29 +180,28 @@ pid_t urd::daemonize() {
 
 }
 
-norns_error_t urd::validate_iotask_args(norns_op_t op, 
-                                        const resource_info_ptr src_info,
-                                        const resource_info_ptr dst_info) const {
+urd_error urd::validate_iotask_args(iotask_type type, 
+                                    const resource_info_ptr src_info,
+                                    const resource_info_ptr dst_info) const {
 
-    if(op != NORNS_IOTASK_COPY && op != NORNS_IOTASK_MOVE) {
-        return NORNS_EBADARGS;
+    if(type != iotask_type::copy && type != iotask_type::move) {
+        return urd_error::bad_args;
     }
 
     // src_resource cannot be remote
     if(src_info->type() == data::resource_type::remote_posix_path) {
-        return NORNS_ENOTSUPPORTED;
+        return urd_error::not_supported;
     }
 
     // dst_resource cannot be a memory region
     if(dst_info->type() == data::resource_type::memory_region) {
-        return NORNS_ENOTSUPPORTED;
+        return urd_error::not_supported;
     }
 
-    return NORNS_SUCCESS;
+    return urd_error::success;
 }
 
 response_ptr urd::iotask_create_handler(const request_ptr base_request) {
-
 
     // downcast the generic request to the concrete implementation
     auto request = utils::static_unique_ptr_cast<api::iotask_create_request>(std::move(base_request));
@@ -215,53 +211,55 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
     auto dst_info = request->get<2>();
 
     response_ptr resp;
-    norns_tid_t tid = 0;
-    norns_error_t rv = NORNS_SUCCESS;
+    iotask_id tid = 0;
+    urd_error rv = urd_error::success;
 
     /* Helper lambda used to construct a data::resource from a *storage::backend* and 
      * a *data::resource_info*. The function creates a *data::resource* if the provided 
      * *data::resource_info rinfo* exists in the backend and is valid, and returns it 
-     * coupled with a NORNS_SUCCESS error code. Otherwise, return an appropriate error 
+     * coupled with a urd_error::success error code. Otherwise, return an appropriate error 
      * code and a std::shared_ptr<data::resource>{nullptr} */
     auto create_resource_from = [&](const resource_info_ptr rinfo) 
-        -> std::tuple<norns_error_t, resource_ptr> {
+        -> std::tuple<urd_error, resource_ptr> {
 
         auto rsrc = data::make_resource(rinfo);
 
         if(rsrc == nullptr) {
-            return std::make_tuple(NORNS_EBADARGS, resource_ptr());
+            return std::make_tuple(urd_error::bad_args, resource_ptr());
         }
 
         // remote backend validation is left to the recipient
         if(rinfo->is_remote()) {
             rsrc->set_backend(storage::remote_backend);
-            return std::make_tuple(NORNS_SUCCESS, rsrc);
+            return std::make_tuple(urd_error::success, rsrc);
         }
 
         const auto nsid = rinfo->nsid();
 
         // backend does not exist 
         if(m_backends->count(nsid) == 0) {
-            return std::make_tuple(NORNS_ENOSUCHBACKEND, resource_ptr());
+            return std::make_tuple(urd_error::no_such_backend, resource_ptr());
         }
 
         auto backend_ptr = m_backends->at(nsid);
 
         // check that resource is compatible with selected backend
         if(!backend_ptr->accepts(rinfo) || !backend_ptr->contains(rinfo)) {
-            return std::make_tuple(NORNS_EBADARGS, resource_ptr());
+            return std::make_tuple(urd_error::bad_args, resource_ptr());
         }
 
         rsrc->set_backend(backend_ptr);
-        return std::make_tuple(NORNS_SUCCESS, rsrc);
+        return std::make_tuple(urd_error::success, rsrc);
     };
 
-    if((rv = validate_iotask_args(type, src_info, dst_info)) == NORNS_SUCCESS) {
+    if((rv = validate_iotask_args(type, src_info, dst_info)) 
+            == urd_error::success) {
 
         auto src_rv = create_resource_from(src_info);
         auto dst_rv = create_resource_from(dst_info);
 
-        if((std::get<0>(src_rv) == NORNS_SUCCESS) && (std::get<0>(dst_rv) == NORNS_SUCCESS)) {
+        if((std::get<0>(src_rv) == urd_error::success) && 
+           (std::get<0>(dst_rv) == urd_error::success)) {
 
             resource_ptr src = std::get<1>(src_rv);
             resource_ptr dst = std::get<1>(dst_rv);
@@ -281,7 +279,7 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
                     stats_record = it.first->second;
                 }
                 else {
-                    rv = NORNS_ETASKEXISTS;
+                    rv = urd_error::task_exists;
                 }
             }
 
@@ -290,7 +288,7 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
                         io::task(tid, type, src, dst, stats_record));
             }
         }
-        else if(std::get<0>(src_rv) != NORNS_SUCCESS) {
+        else if(std::get<0>(src_rv) != urd_error::success) {
             rv = std::get<0>(src_rv);
         }
         else {
@@ -308,7 +306,7 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
 response_ptr urd::iotask_status_handler(const request_ptr base_request) const {
 
     response_ptr resp;
-    norns_error_t rv = NORNS_SUCCESS;
+    urd_error rv = urd_error::success;
 
     // downcast the generic request to the concrete implementation
     auto request = utils::static_unique_ptr_cast<api::iotask_status_request>(std::move(base_request));
@@ -324,7 +322,7 @@ response_ptr urd::iotask_status_handler(const request_ptr base_request) const {
             stats_ptr = it->second;
         }
         else {
-            rv = NORNS_ENOSUCHTASK;
+            rv = urd_error::no_such_task;
         }
     }
 
@@ -345,7 +343,7 @@ response_ptr urd::iotask_status_handler(const request_ptr base_request) const {
 response_ptr urd::ping_handler(const request_ptr /*base_request*/) {
     response_ptr resp = std::make_unique<api::ping_response>();
 
-    resp->set_error_code(NORNS_SUCCESS);
+    resp->set_error_code(urd_error::success);
 
     LOGGER_INFO("PING_REQUEST() = {}", resp->to_string());
     return resp;
@@ -366,11 +364,11 @@ response_ptr urd::job_register_handler(const request_ptr base_request) {
         boost::unique_lock<boost::shared_mutex> lock(m_jobs_mutex);
 
         if(m_jobs.find(jobid) != m_jobs.end()) {
-            resp->set_error_code(NORNS_EJOBEXISTS);
+            resp->set_error_code(urd_error::job_exists);
         }
         else {
             m_jobs.emplace(jobid, std::make_shared<job>(jobid, hosts));
-            resp->set_error_code(NORNS_SUCCESS);
+            resp->set_error_code(urd_error::success);
         }
     }
 
@@ -394,11 +392,11 @@ response_ptr urd::job_update_handler(const request_ptr base_request) {
         const auto& it = m_jobs.find(jobid);
 
         if(it == m_jobs.end()) {
-            resp->set_error_code(NORNS_ENOSUCHJOB);
+            resp->set_error_code(urd_error::no_such_job);
         }
         else {
             it->second->update(hosts);
-            resp->set_error_code(NORNS_SUCCESS);
+            resp->set_error_code(urd_error::success);
         }
     }
 
@@ -421,11 +419,11 @@ response_ptr urd::job_remove_handler(const request_ptr base_request) {
         const auto& it = m_jobs.find(jobid);
 
         if(it == m_jobs.end()) {
-            resp->set_error_code(NORNS_ENOSUCHJOB);
+            resp->set_error_code(urd_error::no_such_job);
         }
         else {
             m_jobs.erase(it);
-            resp->set_error_code(NORNS_SUCCESS);
+            resp->set_error_code(urd_error::success);
         }
     }
 
@@ -450,13 +448,12 @@ response_ptr urd::process_add_handler(const request_ptr base_request) {
     const auto& it = m_jobs.find(jobid);
 
     if(it == m_jobs.end()) {
-        resp->set_error_code(NORNS_ENOSUCHJOB);
+        resp->set_error_code(urd_error::no_such_job);
         goto log_and_return;
     }
 
     it->second->add_process(pid, gid);
-
-    resp->set_error_code(NORNS_SUCCESS);
+    resp->set_error_code(urd_error::success);
 
 log_and_return:
     LOGGER_INFO("ADD_PROCESS({}) = {}", request->to_string(), resp->to_string());
@@ -480,15 +477,15 @@ response_ptr urd::process_remove_handler(const request_ptr base_request) {
     const auto& it = m_jobs.find(jobid);
 
     if(it == m_jobs.end()) {
-        resp->set_error_code(NORNS_ENOSUCHJOB);
+        resp->set_error_code(urd_error::no_such_job);
         goto log_and_return;
     }
 
     if(it->second->find_and_remove_process(pid, gid)) {
-        resp->set_error_code(NORNS_SUCCESS);
+        resp->set_error_code(urd_error::success);
     }
     else {
-        resp->set_error_code(NORNS_ENOSUCHPROCESS);
+        resp->set_error_code(urd_error::no_such_process);
     }
 
 log_and_return:
@@ -504,7 +501,7 @@ response_ptr urd::backend_register_handler(const request_ptr base_request) {
     auto request = utils::static_unique_ptr_cast<api::backend_register_request>(std::move(base_request));
 
     std::string nsid = request->get<0>();
-    int32_t type = request->get<1>();
+    backend_type type = request->get<1>();
     std::string mount = request->get<2>();
     int32_t quota = request->get<3>();
 
@@ -512,7 +509,7 @@ response_ptr urd::backend_register_handler(const request_ptr base_request) {
         boost::unique_lock<boost::shared_mutex> lock(m_backends_mutex);
 
         if(m_backends->count(nsid) != 0) {
-            resp->set_error_code(NORNS_EBACKENDEXISTS);
+            resp->set_error_code(urd_error::backend_exists);
         }
         else {
 
@@ -520,10 +517,10 @@ response_ptr urd::backend_register_handler(const request_ptr base_request) {
 
             if(bptr != nullptr) {
                 m_backends->emplace(std::make_pair(nsid, bptr));
-                resp->set_error_code(NORNS_SUCCESS);
+                resp->set_error_code(urd_error::success);
             }
             else {
-                resp->set_error_code(NORNS_EBADARGS);
+                resp->set_error_code(urd_error::bad_args);
             }
         }
     }
@@ -540,7 +537,7 @@ response_ptr urd::backend_update_handler(const request_ptr base_request) {
     // downcast the generic request to the concrete implementation
     auto request = utils::static_unique_ptr_cast<api::backend_update_request>(std::move(base_request));
 
-    resp->set_error_code(NORNS_SUCCESS);
+    resp->set_error_code(urd_error::success);
 
 log_and_return:
     LOGGER_INFO("UPDATE_BACKEND({}) = {}", request->to_string(), resp->to_string());
@@ -562,11 +559,11 @@ response_ptr urd::backend_remove_handler(const request_ptr base_request) {
         const auto& it = m_backends->find(nsid);
 
         if(it == m_backends->end()) {
-            resp->set_error_code(NORNS_ENOSUCHBACKEND);
+            resp->set_error_code(urd_error::no_such_backend);
         }
         else {
             m_backends->erase(it);
-            resp->set_error_code(NORNS_SUCCESS);
+            resp->set_error_code(urd_error::success);
         }
     }
 
@@ -577,7 +574,7 @@ response_ptr urd::backend_remove_handler(const request_ptr base_request) {
 response_ptr urd::unknown_request_handler(const request_ptr /*base_request*/) {
     response_ptr resp = std::make_unique<api::bad_request_response>();
 
-    resp->set_error_code(NORNS_EBADREQUEST);
+    resp->set_error_code(urd_error::bad_request);
 
     LOGGER_INFO("UNKNOWN_REQUEST() = {}", resp->to_string());
     return resp;

@@ -51,7 +51,7 @@ protected:
     uint32_t    m_quota;
 };
 
-NORNS_REGISTER_BACKEND(NORNS_BACKEND_LUSTRE, lustre);
+NORNS_REGISTER_BACKEND(backend_type::lustre, lustre);
 
 } // namespace storage
 } // namespace norns

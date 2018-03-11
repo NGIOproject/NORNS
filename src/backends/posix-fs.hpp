@@ -51,7 +51,7 @@ private:
     uint32_t    m_quota;
 };
 
-NORNS_REGISTER_BACKEND(NORNS_BACKEND_POSIX_FILESYSTEM, posix_filesystem);
+NORNS_REGISTER_BACKEND(backend_type::posix_filesystem, posix_filesystem);
 
 } // namespace storage
 } // namespace norns

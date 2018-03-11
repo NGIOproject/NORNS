@@ -70,6 +70,8 @@ namespace io {
     struct task_stats;
 }
 
+enum class urd_error;
+
 
 
 class urd {
@@ -83,9 +85,9 @@ private:
     int daemonize();
     void signal_handler(int);
 
-    norns_error_t validate_iotask_args(norns_op_t op, 
-                                       resource_info_ptr src_info, 
-                                       resource_info_ptr dst_info) const;
+    urd_error validate_iotask_args(iotask_type type, 
+                                   resource_info_ptr src_info, 
+                                   resource_info_ptr dst_info) const;
 
     response_ptr iotask_create_handler(const request_ptr req);
     response_ptr iotask_status_handler(const request_ptr req) const;

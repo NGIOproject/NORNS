@@ -33,6 +33,7 @@
 #include <memory>
 #include <boost/preprocessor/cat.hpp>
 
+#include "common.hpp"
 //#include "resources/resource-info.hpp"
 #include "resources/resource.hpp"
 
@@ -86,7 +87,9 @@ public:
     }
 
     template <typename T>
-    bool register_backend(const int32_t id, creator_function fn) {
+    bool register_backend(const backend_type type, creator_function fn) {
+
+        int32_t id = static_cast<int32_t>(type);
 
         if(m_registrar.find(id) != m_registrar.end()){
             throw std::invalid_argument("A storage backend with that name already exists!");
@@ -97,7 +100,7 @@ public:
     }
 
 private:
-    std::shared_ptr<backend> create(int32_t type, const std::string& mount, uint32_t quota) const;
+    std::shared_ptr<backend> create(const backend_type type, const std::string& mount, uint32_t quota) const;
 
 protected:
     backend_factory() {}

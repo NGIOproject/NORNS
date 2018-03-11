@@ -32,10 +32,12 @@
 #include <vector>
 #include <string>
 
-#include "norns.h"
+#include "common.hpp"
 #include "utils.hpp"
 
 namespace norns {
+
+enum class urd_error;
 
 // forward declarations
 namespace io {
@@ -46,7 +48,6 @@ namespace io {
 namespace rpc {
     class Response;
 }
-
 
 namespace api {
 
@@ -73,8 +74,8 @@ struct response {
 
     virtual ~response() {}
     virtual response_type type() const = 0;
-    virtual uint32_t error_code() const = 0;
-    virtual void set_error_code(uint32_t ecode) = 0;
+    virtual urd_error error_code() const = 0;
+    virtual void set_error_code(urd_error ecode) = 0;
     virtual std::string to_string() const = 0;
     virtual void pack_extra_info(norns::rpc::Response& r) const = 0;
 
@@ -97,16 +98,16 @@ struct response_impl : std::tuple<FieldTypes...>, response {
         return m_type;
     }
 
-    uint32_t error_code() const override {
+    urd_error error_code() const override {
         return m_error_code;
     }
 
-    void set_error_code(uint32_t ecode) override {
+    void set_error_code(urd_error ecode) override {
         m_error_code = ecode;
     }
 
     std::string to_string() const override {
-        return utils::strerror(m_error_code);
+        return utils::to_string(m_error_code);
     }
 
     void pack_extra_info(norns::rpc::Response& /*r*/) const override {
@@ -123,7 +124,8 @@ struct response_impl : std::tuple<FieldTypes...>, response {
     }
 
     response_type m_type;
-    uint32_t m_error_code;
+    urd_error m_error_code;
+
 };
 
 } // namespace detail
@@ -131,7 +133,7 @@ struct response_impl : std::tuple<FieldTypes...>, response {
 /*! Aliases for convenience */
 using iotask_create_response = detail::response_impl<
     response_type::iotask_create,
-    norns_tid_t
+    iotask_id
 >;
 
 using iotask_status_response = detail::response_impl<

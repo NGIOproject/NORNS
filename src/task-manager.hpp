@@ -31,6 +31,8 @@
 #include <memory>
 #include <unordered_map>
 
+#include "common.hpp"
+
 namespace norns {
 
 namespace io {
@@ -42,7 +44,7 @@ namespace io {
  * Since we inherit from unordered_map<T>, all its usual methods, such as 
  * count(), find(), at(), etc... can used */
 struct task_manager : 
-    public std::unordered_map<norns_tid_t, std::shared_ptr<io::task_stats>> {
+    public std::unordered_map<iotask_id, std::shared_ptr<io::task_stats>> {
 };
 
 } // namespace norns

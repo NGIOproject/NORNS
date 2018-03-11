@@ -29,6 +29,7 @@
 #define  __URD_COMMON_HPP__
 
 #include "common/make-unique.hpp"
+#include "common/types.hpp"
 #include "common/unique-ptr-cast.hpp"
 
 #endif /* __URD_COMMON_HPP__ */

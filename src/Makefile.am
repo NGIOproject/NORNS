@@ -66,6 +66,8 @@ liburd_aux_la_SOURCES = \
 	backends/remote-backend.hpp \
 	common.hpp \
 	common/make-unique.hpp \
+	common/types.cpp \
+	common/types.hpp \
 	common/unique-ptr-cast.hpp \
 	defaults.hpp \
 	io-task.cpp \

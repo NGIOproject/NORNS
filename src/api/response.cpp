@@ -81,6 +81,10 @@ norns::rpc::Response_Type encode(norns::api::response_type type) {
     }
 }
 
+constexpr ::google::protobuf::uint32 encode(norns::urd_error ecode) {
+    return static_cast<::google::protobuf::uint32>(ecode);
+}
+
 } // anonymous namespace
 
 namespace norns {
@@ -90,7 +94,7 @@ bool response::store_to_buffer(response_ptr response, std::vector<uint8_t>& buff
 
     norns::rpc::Response rpc_resp;
 
-    rpc_resp.set_error_code(response->error_code());
+    rpc_resp.set_error_code(encode(response->error_code()));
     rpc_resp.set_type(encode(response->type()));
     response->pack_extra_info(rpc_resp);
 
@@ -119,8 +123,8 @@ void iotask_create_response::pack_extra_info(norns::rpc::Response& r) const {
 
 template<>
 std::string iotask_create_response::to_string() const {
-    norns_tid_t id = this->get<0>();
-    return utils::strerror(m_error_code) + (id != 0 ? " [tid: " + std::to_string(id) + "]": "");
+    auto id = this->get<0>();
+    return utils::to_string(m_error_code) + (id != 0 ? " [tid: " + std::to_string(id) + "]": "");
 }
 
 /////////////////////////////////////////////////////////////////////////////////

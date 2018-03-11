@@ -31,20 +31,14 @@
 #include <cstdint>
 #include <memory>
 
-#include "norns.h"
+#include "common.hpp"
 #include "resources.hpp"
 #include "backends.hpp"
 
 namespace norns {
 namespace io {
 
-/*! Valid types for an I/O task */
-enum class task_type {
-    copy,
-    move,
-    unknown
-};
-
+// forward declaration
 struct task_stats;
 
 /*! Descriptor for an I/O task */
@@ -54,20 +48,20 @@ struct task {
     using resource_ptr = std::shared_ptr<data::resource>;
     using task_stats_ptr = std::shared_ptr<task_stats>;
 
-    task(norns_tid_t tid, norns_op_t type, const resource_ptr src, 
+    task(iotask_id tid, iotask_type type, const resource_ptr src, 
          const resource_ptr dst, const task_stats_ptr stats);
-    norns_tid_t id() const;
+    iotask_id id() const;
     bool is_valid() const;
     void operator()() const;
 
-    static norns_tid_t create_id(); 
+    static iotask_id create_id(); 
 
     //XXX a munge credential might be better here
     uint64_t    m_id;
     pid_t       m_pid;
     uint32_t    m_jobid;
     
-    task_type m_type;
+    iotask_type m_type;
     resource_ptr m_src;
     resource_ptr m_dst;
     task_stats_ptr m_stats;

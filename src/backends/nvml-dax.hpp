@@ -52,7 +52,7 @@ private:
     uint32_t    m_quota;
 };
 
-NORNS_REGISTER_BACKEND(NORNS_BACKEND_NVML, nvml_dax);
+NORNS_REGISTER_BACKEND(backend_type::nvml, nvml_dax);
 
 } // namespace storage
 } // namespace norns

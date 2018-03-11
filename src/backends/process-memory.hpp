@@ -48,7 +48,7 @@ public:
     std::string to_string() const;
 };
 
-NORNS_REGISTER_BACKEND(NORNS_BACKEND_PROCESS_MEMORY, process_memory);
+NORNS_REGISTER_BACKEND(backend_type::process_memory, process_memory);
 
 } // namespace storage
 } // namespace norns
