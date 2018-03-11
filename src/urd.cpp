@@ -49,6 +49,7 @@
 #include <norns-rpc.h>
 #include <norns.h>
 
+#include "common.hpp"
 #include "api.hpp"
 #include "signal-listener.hpp"
 #include "backends.hpp"
@@ -60,9 +61,6 @@
 
 
 #include "urd.hpp"
-#include "make-unique.hpp"
-#include "unique-ptr-cast.hpp"
-
 
 namespace norns {
 

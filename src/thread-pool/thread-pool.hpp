@@ -34,7 +34,7 @@
 #include <condition_variable>
 #include <utility>
 
-#include "make-unique.hpp"
+#include "common.hpp"
 #include "thread-pool-queue.hpp"
 
 namespace detail {

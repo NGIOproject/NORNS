@@ -64,6 +64,9 @@ liburd_aux_la_SOURCES = \
 	backends/process-memory.hpp \
 	backends/remote-backend.cpp \
 	backends/remote-backend.hpp \
+	common.hpp \
+	common/make-unique.hpp \
+	common/unique-ptr-cast.hpp \
 	defaults.hpp \
 	io-task.cpp \
 	io-task.hpp \
@@ -71,7 +74,6 @@ liburd_aux_la_SOURCES = \
 	io-task-stats.hpp \
 	job.hpp \
 	logger.hpp \
-	make-unique.hpp \
 	resources.hpp \
 	resources/local-path.cpp \
 	resources/local-path.hpp \
@@ -91,7 +93,6 @@ liburd_aux_la_SOURCES = \
 	thread-pool.hpp \
 	thread-pool/thread-pool.hpp \
 	thread-pool/thread-pool-queue.hpp \
-	unique-ptr-cast.hpp \
 	urd.cpp	\
 	urd.hpp	\
 	utils.cpp \

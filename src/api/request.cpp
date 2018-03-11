@@ -30,7 +30,7 @@
 #include <boost/range/adaptor/transformed.hpp>
 
 #include "norns.h"
-#include "make-unique.hpp"
+#include "common.hpp"
 #include "messages.pb.h"
 #include "backends.hpp"
 #include "resources.hpp"
