@@ -70,7 +70,7 @@ void fake_daemon::run() {
         return;
     }
 
-    config_settings settings = {
+    norns::config_settings settings = {
         "test_urd", /* progname */
         false, /* daemonize */
         true, /* use syslog */

@@ -41,6 +41,8 @@
 
 #include "job.hpp"
 
+#include "task-manager.hpp"
+
 
 
 namespace norns {
@@ -69,6 +71,7 @@ namespace io {
 }
 
 
+
 class urd {
 
 public:
@@ -84,18 +87,18 @@ private:
                                        resource_info_ptr src_info, 
                                        resource_info_ptr dst_info) const;
 
-    response_ptr create_task(const request_ptr req);
-    response_ptr check_on_task(const request_ptr req) const;
-    response_ptr ping_request(const request_ptr req);
-    response_ptr register_job(const request_ptr req);
-    response_ptr update_job(const request_ptr req);
-    response_ptr remove_job(const request_ptr req);
-    response_ptr add_process(const request_ptr req);
-    response_ptr remove_process(const request_ptr req);
-    response_ptr register_backend(const request_ptr req);
-    response_ptr update_backend(const request_ptr req);
-    response_ptr remove_backend(const request_ptr req);
-    response_ptr unknown_request(const request_ptr req);
+    response_ptr iotask_create_handler(const request_ptr req);
+    response_ptr iotask_status_handler(const request_ptr req) const;
+    response_ptr ping_handler(const request_ptr req);
+    response_ptr job_register_handler(const request_ptr req);
+    response_ptr job_update_handler(const request_ptr req);
+    response_ptr job_remove_handler(const request_ptr req);
+    response_ptr process_add_handler(const request_ptr req);
+    response_ptr process_remove_handler(const request_ptr req);
+    response_ptr backend_register_handler(const request_ptr req);
+    response_ptr backend_update_handler(const request_ptr req);
+    response_ptr backend_remove_handler(const request_ptr req);
+    response_ptr unknown_request_handler(const request_ptr req);
 
 private:
     signal_listener_ptr                    m_signal_listener;
@@ -114,8 +117,8 @@ private:
     std::unordered_map<uint32_t, std::shared_ptr<job>>    m_jobs;
     boost::shared_mutex                         m_jobs_mutex;
 
-    std::unordered_map<norns_tid_t, std::shared_ptr<io::task_stats>> m_task_manager;
-    mutable boost::shared_mutex                         m_task_manager_mutex;
+    std::unique_ptr<task_manager> m_task_manager;
+    mutable boost::shared_mutex   m_task_manager_mutex;
 };
 
 } // namespace norns 

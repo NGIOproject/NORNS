@@ -87,6 +87,7 @@ liburd_aux_la_SOURCES = \
 	settings.cpp \
 	settings.hpp \
 	signal-listener.hpp \
+	task-manager.hpp \
 	thread-pool.hpp \
 	thread-pool/thread-pool.hpp \
 	thread-pool/thread-pool-queue.hpp \
