@@ -127,8 +127,14 @@ typedef struct {
     const char* b_nsid;     /* namespace ID for this backend (e.g. nvm01, tmpfs02, ...) */
     int         b_type;     /* backend type */
     const char* b_mount;    /* mount point */
-    size_t      b_quota;    /* backend capacity (in megabytes) allocated to the job for writing */
+    size_t      b_quota;    /* backend capacity (in megabytes) for writing data */
 } norns_backend_t;
+
+/* Job access rights descriptor */
+typedef struct {
+    const char* r_nsid;     /* namespace ID */
+    size_t      r_quota;    /* job's quota */
+} norns_access_rights_t;
 
 norns_backend_t NORNS_BACKEND(const char* nsid, norns_flags_t flags, 
                               const char* mount_point, uint32_t quota);
