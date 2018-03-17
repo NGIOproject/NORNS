@@ -33,7 +33,6 @@
 
 #include "settings.hpp"
 #include "backends.hpp"
-#include "signal-listener.hpp"
 #include "logger.hpp"
 #include "api.hpp"
 
@@ -49,7 +48,6 @@ namespace norns {
 
 
 /*! Aliases for convenience */
-using signal_listener_ptr = std::unique_ptr<signal_listener>;
 using thread_pool_ptr = std::unique_ptr<thread_pool>;
 
 using api_listener = api::listener<api::message<api::request, api::response>>;
@@ -103,7 +101,6 @@ private:
     response_ptr unknown_request_handler(const request_ptr req);
 
 private:
-    signal_listener_ptr                    m_signal_listener;
     std::shared_ptr<config_settings>                    m_settings;
     thread_pool_ptr m_workers;
 

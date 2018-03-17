@@ -34,8 +34,8 @@
 #include "fake-daemon.hpp"
 
 fake_daemon::fake_daemon() {
-    extern const char* norns_api_sockfile;
-    norns_api_sockfile = "./test_urd.socket";
+    extern const char* norns_api_global_socket;
+    norns_api_global_socket = "./test_urd.global.socket";
 }
 
 fake_daemon::~fake_daemon() {
@@ -75,7 +75,9 @@ void fake_daemon::run() {
         false, /* daemonize */
         true, /* use syslog */
         "./", /* running_dir */
-        "./test_urd.socket", /* api_sockfile */
+        "./test_urd.global.socket", /* global_socket */
+        "./test_urd.control.socket", /* control_socket */
+        42000, /* remote port */
         "./test_urd.pid", /* daemon_pidfile */
         2, /* api workers */
         "./",

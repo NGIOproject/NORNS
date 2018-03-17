@@ -25,53 +25,61 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#include <unistd.h>
-#include <sys/types.h>
-#include <boost/program_options.hpp>
+#ifndef __LOCAL_ENDPOINT_HPP__
+#define __LOCAL_ENDPOINT_HPP__
 
-#include "settings.hpp"
-#include "urd.hpp"
+#include <memory>
+#include <boost/asio.hpp>
+#include <boost/filesystem.hpp>
 
-namespace bpo = boost::program_options;
+#include "api/session.hpp"
 
-int main(int argc, char* argv[]){
-    
-    bool run_in_foreground = !norns::defaults::daemonize;
+namespace ba = boost::asio;
+namespace bfs = boost::filesystem;
 
-    // declare a group of options that will be allowed only on the command line
-    bpo::options_description generic("Allowed options");
-    generic.add_options()
-        (",f", bpo::bool_switch(&run_in_foreground), "foreground operation") // check how to do flags
-        ("version,v",                                "print version string")
-        ("help,h",                                   "produce help message")
-    ;
+namespace norns {
+namespace api {
 
-    // declare a group of options that will be allowed in a config file
-    bpo::variables_map vm;
-    bpo::store(bpo::parse_command_line(argc, argv, generic), vm);
-    bpo::notify(vm);    
+template <typename Message>
+class local_endpoint {
 
-    if (vm.count("help")) {
-        std::cout << generic << "\n";
-        exit(EXIT_SUCCESS);
+    using DispatcherType = typename session<Message>::Dispatcher;
+
+public:
+    local_endpoint(const bfs::path& sockfile, ba::io_service& ios, 
+                   std::shared_ptr<DispatcherType> dispatcher) :
+        m_sockfile(sockfile),
+        m_socket(ios),
+        m_acceptor(ios, ba::local::stream_protocol::endpoint(sockfile.string())),
+        m_dispatcher(dispatcher) { }
+
+    ~local_endpoint() {
+        bfs::remove(m_sockfile);
     }
 
-    struct stat stbuf;
-    if(stat(norns::defaults::config_file, &stbuf) != 0) {
-        std::cerr << "Missing configuration file '" << norns::defaults::config_file << "'\n";
-        exit(EXIT_FAILURE);
+    void do_accept() {
+        m_acceptor.async_accept(m_socket, 
+            [this](const boost::system::error_code& ec) {
+                if(!ec) {
+                    std::make_shared<session<Message>>(
+                            std::move(m_socket),
+                            m_dispatcher
+                        )->start();
+                }
+
+                do_accept();
+            }
+        );
     }
 
-    norns::config_settings settings;
+private:
+    bfs::path m_sockfile;
+    ba::local::stream_protocol::socket m_socket;
+    ba::local::stream_protocol::acceptor m_acceptor;
+    std::shared_ptr<DispatcherType> m_dispatcher;
+};
 
-    settings.load(norns::defaults::config_file);
+} // namespace api
+} // namespace norns
 
-    settings.m_daemonize = !run_in_foreground;
-
-    norns::urd daemon;
-    daemon.configure(settings);
-
-    int status = daemon.run();
-
-    return status;
-}
+#endif /* __LOCAL_ENDPOINT_HPP__ */

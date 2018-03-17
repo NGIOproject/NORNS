@@ -324,7 +324,7 @@ connect_to_daemon(void) {
 	}
 
 	server.sun_family = AF_UNIX;
-	strncpy(server.sun_path, norns_api_sockfile, sizeof(server.sun_path));
+	strncpy(server.sun_path, norns_api_global_socket, sizeof(server.sun_path));
 	server.sun_path[sizeof(server.sun_path)-1] = '\0';
 
 	if (connect(sfd, (struct sockaddr *) &server, sizeof(struct sockaddr_un)) < 0) {

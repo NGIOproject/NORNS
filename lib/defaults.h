@@ -28,6 +28,7 @@
 #ifndef __DEFAULTS_H__
 #define  __DEFAULTS_H__
 
-extern const char* norns_api_sockfile;
+extern const char* norns_api_global_socket;
+extern const char* norns_api_control_socket;
 
 #endif /* __DEFAULTS_H__ */

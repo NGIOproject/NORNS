@@ -48,7 +48,6 @@
 
 #include "common.hpp"
 #include "api.hpp"
-#include "signal-listener.hpp"
 #include "backends.hpp"
 #include "logger.hpp"
 #include "job.hpp"
@@ -122,11 +121,12 @@ pid_t urd::daemonize() {
         exit(EXIT_FAILURE);
     }
 
-    /* Change the file mode mask */
-    umask(027); /* file creation mode to 750 */
+    /* Change the file mode creation mask */
+    umask(0);
 
-    /* Change the current working directory */
-    if(chdir(m_settings->m_running_dir.c_str()) < 0) {
+    /* ensure the process does not keep a directory in use,
+     * avoid relative paths beyond this point! */
+    if(chdir("/") < 0) {
         LOGGER_ERROR("[daemonize] chdir failed.");
         perror("Chdir");
         exit(EXIT_FAILURE);
@@ -633,33 +633,49 @@ int urd::run() {
     LOGGER_INFO("===========================");
 
     LOGGER_INFO("");
-    LOGGER_INFO("* Settings:");
-    LOGGER_INFO("    daemonize?: {}", m_settings->m_daemonize);
-    LOGGER_INFO("    running directory: {}", m_settings->m_running_dir);
-    LOGGER_INFO("    pidfile: {}", m_settings->m_daemon_pidfile);
-    LOGGER_INFO("    workers: {}", m_settings->m_workers_in_pool);
-    LOGGER_INFO("    internal storage: {}", m_settings->m_storage_path);
-    LOGGER_INFO("    internal storage capacity: {}", m_settings->m_storage_capacity);
+    LOGGER_INFO("[[ Settings ]]");
+    LOGGER_INFO("  - running as daemon?: {}", (m_settings->m_daemonize ? "yes" : "no"));
+    LOGGER_INFO("  - pidfile: {}", m_settings->m_daemon_pidfile);
+    LOGGER_INFO("  - control socket: {}", m_settings->m_control_socket);
+    LOGGER_INFO("  - global socket: {}", m_settings->m_global_socket);
+    LOGGER_INFO("  - port for remote requests: {}", m_settings->m_remote_port);
+    LOGGER_INFO("  - pidfile: {}", m_settings->m_daemon_pidfile);
+    LOGGER_INFO("  - workers: {}", m_settings->m_workers_in_pool);
+    LOGGER_INFO("");
+//    LOGGER_INFO("    - internal storage: {}", m_settings->m_storage_path);
+//    LOGGER_INFO("    - internal storage capacity: {}", m_settings->m_storage_capacity);
 
-    // signal handlers must be installed AFTER daemonizing
-    LOGGER_INFO("* Installing signal handlers...");
-    m_signal_listener = std::make_unique<signal_listener>(std::bind(&urd::signal_handler, this, std::placeholders::_1));
-
-    m_signal_listener->run();
+    LOGGER_INFO("[[ Starting up ]]");
 
     // create worker pool
-    LOGGER_INFO("* Creating workers...");
+    LOGGER_INFO("  * Creating workers...");
     m_workers = std::make_unique<thread_pool>(m_settings->m_workers_in_pool);
 
-    // create (but not start) the API listening mechanism
-    LOGGER_INFO("* Creating request listener...");
-    ::unlink(m_settings->m_ipc_sockfile.c_str());
+    LOGGER_INFO("  * Creating event listener...");
 
-    // temporarily change the umask so that the socket file can be accessed by anyone
-    mode_t old_mask = umask(0111);
+    // create (but not start) the API listener 
+    // and register handlers for each request type
+    m_api_listener = std::make_unique<api_listener>();/*m_settings->m_ipc_sockfile);*/
 
-    // create API listener and register callbacks for each request type
-    m_api_listener = std::make_unique<api_listener>(m_settings->m_ipc_sockfile);
+    boost::system::error_code ec;
+    mode_t old_mask = umask(0);
+
+    // if we find any socket files, but no pidfile was found,
+    // they are stale sockets from another run. remove them.
+    bfs::remove(m_settings->m_control_socket, ec);
+    umask(S_IXUSR | S_IRWXG | S_IRWXO); // u=rw-, g=---, o=---
+    m_api_listener->register_endpoint(m_settings->m_control_socket);
+
+    bfs::remove(m_settings->m_global_socket, ec);
+    umask(S_IXUSR | S_IXGRP | S_IXOTH); // u=rw-, g=rw-, o=rw-
+    m_api_listener->register_endpoint(m_settings->m_global_socket);
+
+    m_api_listener->register_endpoint(m_settings->m_remote_port);
+
+    // restore the umask
+    umask(old_mask);
+
+    LOGGER_INFO("  * Installing message handlers...");
 
     /* user-level functionalities */
     m_api_listener->register_callback(
@@ -711,14 +727,18 @@ int urd::run() {
             api::request_type::bad_request,
             std::bind(&urd::unknown_request_handler, this, std::placeholders::_1));
 
+    // signal handlers must be installed AFTER daemonizing
+    LOGGER_INFO("  * Installing signal handlers...");
+
+    m_api_listener->set_signal_handler(
+        std::bind(&urd::signal_handler, this, std::placeholders::_1),
+        SIGHUP, SIGTERM, SIGINT);
+
     m_backends = std::make_unique<backend_manager>();
     m_task_manager = std::make_unique<task_manager>();
 
-    // restore the umask
-    umask(old_mask);
-
-    LOGGER_INFO("Urd daemon successfully started!");
-    LOGGER_INFO("Awaiting requests...");
+    LOGGER_INFO("");
+    LOGGER_INFO("[[ Start up successful, awaiting requests... ]]");
     m_api_listener->run();
 
     LOGGER_INFO("");
@@ -737,11 +757,12 @@ int urd::run() {
 
 void urd::teardown() {
 
-    if(m_signal_listener) {
-        LOGGER_INFO("* Stopping signal listener...");
-        m_signal_listener->stop();
-        //m_signal_listener.reset();
-    }
+//XXX deprecated, signals_are now managed by api_listener
+//    if(m_signal_listener) {
+//        LOGGER_INFO("* Stopping signal listener...");
+//        m_signal_listener->stop();
+//        //m_signal_listener.reset();
+//    }
 
     if(m_api_listener) {
         LOGGER_INFO("* Stopping API listener...");

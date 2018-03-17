@@ -46,18 +46,18 @@ void config_settings::load(const std::string& filename) {
 
     m_use_syslog = defaults::use_syslog;
 
-    m_running_dir = pt.get<std::string>("settings.running_dir", "");
-
-    if(m_running_dir == ""){
+    if(m_running_dir == "") {
         m_running_dir = defaults::running_dir;
     }
 
-    m_ipc_sockfile = defaults::ipc_sockfile;
+    m_global_socket = defaults::global_socket;
+    m_control_socket = defaults::control_socket;
+    m_remote_port = defaults::remote_port;
     
     m_daemon_pidfile = pt.get<std::string>("settings.pidfile", "");
 
     if(m_daemon_pidfile == ""){
-        m_daemon_pidfile = defaults::daemon_pidfile;
+        m_daemon_pidfile = defaults::pidfile;
     }
 
     m_workers_in_pool = pt.get<int32_t>("settings.workers", 0);

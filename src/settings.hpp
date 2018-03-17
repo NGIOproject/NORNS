@@ -32,6 +32,8 @@
 #include <list>
 #include <boost/property_tree/ptree.hpp>
 
+#include <netinet/in.h>
+
 #include "defaults.hpp"
 
 namespace bpt = boost::property_tree;
@@ -62,8 +64,13 @@ struct config_settings {
     std::string        m_progname;
     bool               m_daemonize;
     bool               m_use_syslog;
+
     std::string        m_running_dir;
-    std::string        m_ipc_sockfile;
+
+    std::string        m_global_socket;
+    std::string        m_control_socket;
+    in_port_t          m_remote_port;
+
     std::string        m_daemon_pidfile;
     uint32_t           m_workers_in_pool;
     std::string        m_storage_path;     /* path to internal storage */

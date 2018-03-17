@@ -28,21 +28,23 @@
 #ifndef __DEFAULTS_HPP__
 #define __DEFAULTS_HPP__
 
-#include <thread>
-#include <list>
-#include <boost/property_tree/ptree.hpp>
+#include <cstdint>
+#include <netinet/in.h>
 
-#include "defaults.hpp"
 
+namespace norns {
 namespace defaults {
-    extern const char* progname;
-    extern const bool  daemonize;
-    extern const bool  use_syslog;
-    extern const char* running_dir;
-    extern const char* ipc_sockfile;
-    extern const char* daemon_pidfile;
-    extern const uint32_t workers_in_pool;
-    extern const char* config_file;
+    extern const char*      progname;
+    extern const bool       daemonize;
+    extern const bool       use_syslog;
+    extern const char*      running_dir;
+    extern const char*      global_socket;
+    extern const char*      control_socket;
+    extern const in_port_t  remote_port;
+    extern const char*      pidfile;
+    extern const uint32_t   workers_in_pool;
+    extern const char*      config_file;
 } // namespace defaults
+} // namespace norns
 
 #endif /* __DEFAULTS_HPP__ */
