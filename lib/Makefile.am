@@ -31,7 +31,9 @@
 
 lib_LTLIBRARIES = \
 	libnorns.la \
-	libnornsctl.la
+	libnorns_debug.la \
+	libnornsctl.la \
+	libnornsctl_debug.la
 
 include_HEADERS = \
 	$(top_srcdir)/include/norns.h
@@ -43,11 +45,14 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/rpc
 
+
 ################################################################################
-# libnorns_common.la: convenience library for libnorns and libnornsctl
+# libnorns_common.la and libnorns_common_debug.la: 
+#   convenience libraries for libnorns and libnornsctl
 ################################################################################
 noinst_LTLIBRARIES = \
-	libnorns_common.la					 
+	libnorns_common.la \
+	libnorns_common_debug.la
 
 libnorns_common_la_SOURCES = \
 	daemon-communication.c \
@@ -72,12 +77,30 @@ nodist_libnorns_common_la_SOURCES = \
 libnorns_common_la_CFLAGS = \
 	-Wall -Wextra -std=gnu99
 
-libnorns_common_la_LDFLAGS = \
-	-version-info 0:1:0
-
 libnorns_common_la_LIBADD = \
 	@PROTOBUF_C_LIBS@
 
+
+## debug version ##
+libnorns_common_debug_la_SOURCES = \
+	$(libnorns_common_la_SOURCES)
+
+nodist_libnorns_common_debug_la_SOURCES = \
+	$(nodist_libnorns_common_la_SOURCES)
+
+libnorns_common_debug_la_CFLAGS = \
+	$(libnorns_common_la_CFLAGS)
+
+libnorns_common_debug_la_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	-D__NORNS_DEBUG__ \
+	-Wp,-U_FORTIFY_SOURCE
+
+libnorns_common_debug_la_LIBADD = \
+	$(libnorns_common_la_LIBADD)
+
+
+## misc dependencies ##
 MOSTLYCLEANFILES = \
 	defaults.c \
 	messages.pb-c.c \
@@ -101,7 +124,8 @@ defaults.c: Makefile
 
 
 ################################################################################
-# libnorns.so: user library
+# libnorns.so and libnorns_debug.so: 
+#   user library
 ################################################################################
 libnorns_la_SOURCES = \
 	norns.c
@@ -114,6 +138,20 @@ libnorns_la_LDFLAGS = \
 
 libnorns_la_LIBADD = \
 	libnorns_common.la
+
+
+## debug version ##
+libnorns_debug_la_SOURCES = \
+	$(libnorns_la_SOURCES)
+
+libnorns_debug_la_CFLAGS = \
+	$(libnorns_la_CFLAGS)
+
+libnorns_debug_la_LDFLAGS = \
+	$(libnorns_la_LDFLAGS)
+	
+libnorns_debug_la_LIBADD = \
+	libnorns_common_debug.la
 
 
 ################################################################################
@@ -130,3 +168,17 @@ libnornsctl_la_LDFLAGS = \
 
 libnornsctl_la_LIBADD = \
 	libnorns_common.la
+
+
+## debug version ##
+libnornsctl_debug_la_SOURCES = \
+	$(libnornsctl_la_SOURCES)
+
+libnornsctl_debug_la_CFLAGS = \
+	$(libnornsctl_la_CFLAGS)
+
+libnornsctl_debug_la_LDFLAGS = \
+	$(libnornsctl_la_LDFLAGS)
+
+libnornsctl_debug_la_LIBADD = \
+	libnorns_common_debug.la
