@@ -63,13 +63,12 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_mnt = "/mnt/tmp0";
             const char* dst_path = "/a/b/c";
 
-            struct norns_cred cred;
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_PROCESS_MEMORY, NULL, 0);
-            norns_error_t rv = norns_register_backend(&cred, &bsrc);
+            norns_error_t rv = norns_register_backend(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
-            rv = norns_register_backend(&cred, &bdst);
+            rv = norns_register_backend(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -91,10 +90,10 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(&cred, src_nsid);
+            rv = norns_unregister_backend(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_backend(&cred, dst_nsid);
+            rv = norns_unregister_backend(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 /*
@@ -132,10 +131,9 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_mnt = "/mnt/lustre0";
             const char* dst_path = "/a/b/c";
 
-            struct norns_cred cred;
             norns_backend_t b = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 1024);
 
-            norns_error_t rv = norns_register_backend(&cred, &b);
+            norns_error_t rv = norns_register_backend(&b);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
@@ -149,7 +147,7 @@ SCENARIO("check request", "[api::norns_status]") {
                 REQUIRE(rv == NORNS_ENOSUCHBACKEND);
             }
 
-            rv = norns_unregister_backend(&cred, dst_nsid);
+            rv = norns_unregister_backend(dst_nsid);
 
             REQUIRE(rv == NORNS_SUCCESS);
         }
@@ -166,9 +164,8 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_mnt = "/mnt/lustre0";
             const char* dst_path = "/a/b/c";
 
-            struct norns_cred cred;
             norns_backend_t b = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 1024);
-            norns_error_t rv = norns_register_backend(&cred, &b);
+            norns_error_t rv = norns_register_backend(&b);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
@@ -182,7 +179,7 @@ SCENARIO("check request", "[api::norns_status]") {
                 REQUIRE(rv == NORNS_ENOSUCHBACKEND);
             }
 
-            rv = norns_unregister_backend(&cred, src_nsid);
+            rv = norns_unregister_backend(src_nsid);
 
             REQUIRE(rv == NORNS_SUCCESS);
         }
@@ -206,13 +203,12 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_mnt = "/mnt/tmp0";
             const char* dst_path = "/a/b/c";
 
-            struct norns_cred cred;
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_PROCESS_MEMORY, NULL, 0);
-            norns_error_t rv = norns_register_backend(&cred, &bsrc);
+            norns_error_t rv = norns_register_backend(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
-            rv = norns_register_backend(&cred, &bdst);
+            rv = norns_register_backend(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -227,10 +223,10 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(&cred, src_nsid);
+            rv = norns_unregister_backend(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_backend(&cred, dst_nsid);
+            rv = norns_unregister_backend(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -246,13 +242,12 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_mnt = "/mnt/tmp0";
             const char* dst_path = "/a/b/c";
 
-            struct norns_cred cred;
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_PROCESS_MEMORY, NULL, 0);
-            norns_error_t rv = norns_register_backend(&cred, &bsrc);
+            norns_error_t rv = norns_register_backend(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
-            rv = norns_register_backend(&cred, &bdst);
+            rv = norns_register_backend(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
 
@@ -268,10 +263,10 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(&cred, src_nsid);
+            rv = norns_unregister_backend(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_backend(&cred, dst_nsid);
+            rv = norns_unregister_backend(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -287,14 +282,13 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_host = "node0";
             const char* dst_path = "/a/b/c";
 
-            struct norns_cred cred;
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_PROCESS_MEMORY, NULL, 0);
-            norns_error_t rv = norns_register_backend(&cred, &bsrc);
+            norns_error_t rv = norns_register_backend(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             /*
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
-            rv = norns_register_backend(&cred, &bdst);
+            rv = norns_register_backend(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
             */
 
@@ -310,7 +304,7 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(&cred, src_nsid);
+            rv = norns_unregister_backend(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -327,13 +321,12 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_mnt = "/mnt/tmp1";
             const char* dst_path = "/a/b/c";
 
-            struct norns_cred cred;
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&cred, &bsrc);
+            norns_error_t rv = norns_register_backend(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
-            rv = norns_register_backend(&cred, &bdst);
+            rv = norns_register_backend(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -348,10 +341,10 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(&cred, src_nsid);
+            rv = norns_unregister_backend(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_backend(&cred, dst_nsid);
+            rv = norns_unregister_backend(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -367,13 +360,12 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_mnt = "/mnt/lustre";
             const char* dst_path = "/a/b/c";
 
-            struct norns_cred cred;
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&cred, &bsrc);
+            norns_error_t rv = norns_register_backend(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
-            rv = norns_register_backend(&cred, &bdst);
+            rv = norns_register_backend(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -388,10 +380,10 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(&cred, src_nsid);
+            rv = norns_unregister_backend(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_backend(&cred, dst_nsid);
+            rv = norns_unregister_backend(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -408,14 +400,13 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_host = "node1";
             const char* dst_path = "/a/b/c";
 
-            struct norns_cred cred;
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&cred, &bsrc);
+            norns_error_t rv = norns_register_backend(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             /*
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_NVML, dst_mnt, 8192);
-            rv = norns_register_backend(&cred, &bdst);
+            rv = norns_register_backend(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
             */
 
@@ -431,7 +422,7 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(&cred, src_nsid);
+            rv = norns_unregister_backend(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -448,9 +439,8 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_mnt = "/mnt/tmp";
             const char* dst_path = "/b/c/d";
 
-            struct norns_cred cred;
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_NVML, dst_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&cred, &bdst);
+            norns_error_t rv = norns_register_backend(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -464,7 +454,7 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(&cred, dst_nsid);
+            rv = norns_unregister_backend(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -481,9 +471,8 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_mnt = "/mnt/tmp";
             const char* dst_path = "/b/c/d";
 
-            struct norns_cred cred;
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&cred, &bdst);
+            norns_error_t rv = norns_register_backend(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -497,7 +486,7 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(&cred, dst_nsid);
+            rv = norns_unregister_backend(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -538,14 +527,13 @@ SCENARIO("check request", "[api::norns_status]") {
             void* dst_addr = (void*) 0xdeadbeef;
             size_t dst_size = (size_t) 42;
 
-            struct norns_cred cred;
 
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&cred, &bsrc);
+            norns_error_t rv = norns_register_backend(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_PROCESS_MEMORY, NULL, 0);
-            rv = norns_register_backend(&cred, &bdst);
+            rv = norns_register_backend(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -559,10 +547,10 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(&cred, src_nsid);
+            rv = norns_unregister_backend(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_backend(&cred, dst_nsid);
+            rv = norns_unregister_backend(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -579,14 +567,13 @@ SCENARIO("check request", "[api::norns_status]") {
             void* dst_addr = (void*) 0xdeadbeef;
             size_t dst_size = (size_t) 42;
 
-            struct norns_cred cred;
 
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_LUSTRE, src_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&cred, &bsrc);
+            norns_error_t rv = norns_register_backend(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_PROCESS_MEMORY, NULL, 0);
-            rv = norns_register_backend(&cred, &bdst);
+            rv = norns_register_backend(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -600,10 +587,10 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(&cred, src_nsid);
+            rv = norns_unregister_backend(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_backend(&cred, dst_nsid);
+            rv = norns_unregister_backend(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -620,10 +607,9 @@ SCENARIO("check request", "[api::norns_status]") {
             void* dst_addr = (void*) 0xdeadbeef;
             size_t dst_size = (size_t) 42;
 
-            struct norns_cred cred;
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_PROCESS_MEMORY, NULL, 0);
-            norns_error_t rv = norns_register_backend(&cred, &bdst);
+            norns_error_t rv = norns_register_backend(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -636,7 +622,7 @@ SCENARIO("check request", "[api::norns_status]") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
             }
 
-            rv = norns_unregister_backend(&cred, dst_nsid);
+            rv = norns_unregister_backend(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -657,13 +643,12 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_mnt = "/mnt/tmp0";
             const char* dst_path = "/a/b/c";
 
-            struct norns_cred cred;
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_PROCESS_MEMORY, NULL, 0);
-            norns_error_t rv = norns_register_backend(&cred, &bsrc);
+            norns_error_t rv = norns_register_backend(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
-            rv = norns_register_backend(&cred, &bdst);
+            rv = norns_register_backend(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -678,10 +663,10 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(&cred, src_nsid);
+            rv = norns_unregister_backend(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_backend(&cred, dst_nsid);
+            rv = norns_unregister_backend(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -697,13 +682,12 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_mnt = "/mnt/tmp0";
             const char* dst_path = "/a/b/c";
 
-            struct norns_cred cred;
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_PROCESS_MEMORY, NULL, 0);
-            norns_error_t rv = norns_register_backend(&cred, &bsrc);
+            norns_error_t rv = norns_register_backend(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
-            rv = norns_register_backend(&cred, &bdst);
+            rv = norns_register_backend(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
 
@@ -719,10 +703,10 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(&cred, src_nsid);
+            rv = norns_unregister_backend(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_backend(&cred, dst_nsid);
+            rv = norns_unregister_backend(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -738,14 +722,13 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_host = "node0";
             const char* dst_path = "/a/b/c";
 
-            struct norns_cred cred;
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_PROCESS_MEMORY, NULL, 0);
-            norns_error_t rv = norns_register_backend(&cred, &bsrc);
+            norns_error_t rv = norns_register_backend(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             /*
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
-            rv = norns_register_backend(&cred, &bdst);
+            rv = norns_register_backend(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
             */
 
@@ -761,7 +744,7 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(&cred, src_nsid);
+            rv = norns_unregister_backend(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -778,13 +761,12 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_mnt = "/mnt/tmp1";
             const char* dst_path = "/a/b/c";
 
-            struct norns_cred cred;
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&cred, &bsrc);
+            norns_error_t rv = norns_register_backend(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
-            rv = norns_register_backend(&cred, &bdst);
+            rv = norns_register_backend(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -799,10 +781,10 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(&cred, src_nsid);
+            rv = norns_unregister_backend(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_backend(&cred, dst_nsid);
+            rv = norns_unregister_backend(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -818,13 +800,12 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_mnt = "/mnt/lustre";
             const char* dst_path = "/a/b/c";
 
-            struct norns_cred cred;
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&cred, &bsrc);
+            norns_error_t rv = norns_register_backend(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
-            rv = norns_register_backend(&cred, &bdst);
+            rv = norns_register_backend(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -839,10 +820,10 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(&cred, src_nsid);
+            rv = norns_unregister_backend(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_backend(&cred, dst_nsid);
+            rv = norns_unregister_backend(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -859,14 +840,13 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_host = "node1";
             const char* dst_path = "/a/b/c";
 
-            struct norns_cred cred;
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&cred, &bsrc);
+            norns_error_t rv = norns_register_backend(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             /*
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_NVML, dst_mnt, 8192);
-            rv = norns_register_backend(&cred, &bdst);
+            rv = norns_register_backend(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
             */
 
@@ -882,7 +862,7 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(&cred, src_nsid);
+            rv = norns_unregister_backend(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -899,9 +879,8 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_mnt = "/mnt/tmp";
             const char* dst_path = "/b/c/d";
 
-            struct norns_cred cred;
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_NVML, dst_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&cred, &bdst);
+            norns_error_t rv = norns_register_backend(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -915,7 +894,7 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(&cred, dst_nsid);
+            rv = norns_unregister_backend(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -932,9 +911,8 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_mnt = "/mnt/tmp";
             const char* dst_path = "/b/c/d";
 
-            struct norns_cred cred;
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&cred, &bdst);
+            norns_error_t rv = norns_register_backend(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -948,7 +926,7 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(&cred, dst_nsid);
+            rv = norns_unregister_backend(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -989,14 +967,13 @@ SCENARIO("check request", "[api::norns_status]") {
             void* dst_addr = (void*) 0xdeadbeef;
             size_t dst_size = (size_t) 42;
 
-            struct norns_cred cred;
 
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&cred, &bsrc);
+            norns_error_t rv = norns_register_backend(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_PROCESS_MEMORY, NULL, 0);
-            rv = norns_register_backend(&cred, &bdst);
+            rv = norns_register_backend(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -1010,10 +987,10 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(&cred, src_nsid);
+            rv = norns_unregister_backend(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_backend(&cred, dst_nsid);
+            rv = norns_unregister_backend(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -1030,14 +1007,13 @@ SCENARIO("check request", "[api::norns_status]") {
             void* dst_addr = (void*) 0xdeadbeef;
             size_t dst_size = (size_t) 42;
 
-            struct norns_cred cred;
 
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_LUSTRE, src_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&cred, &bsrc);
+            norns_error_t rv = norns_register_backend(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_PROCESS_MEMORY, NULL, 0);
-            rv = norns_register_backend(&cred, &bdst);
+            rv = norns_register_backend(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -1051,10 +1027,10 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(&cred, src_nsid);
+            rv = norns_unregister_backend(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_backend(&cred, dst_nsid);
+            rv = norns_unregister_backend(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -1071,10 +1047,9 @@ SCENARIO("check request", "[api::norns_status]") {
             void* dst_addr = (void*) 0xdeadbeef;
             size_t dst_size = (size_t) 42;
 
-            struct norns_cred cred;
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_PROCESS_MEMORY, NULL, 0);
-            norns_error_t rv = norns_register_backend(&cred, &bdst);
+            norns_error_t rv = norns_register_backend(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -1087,7 +1062,7 @@ SCENARIO("check request", "[api::norns_status]") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
             }
 
-            rv = norns_unregister_backend(&cred, dst_nsid);
+            rv = norns_unregister_backend(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 #endif

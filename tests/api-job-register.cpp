@@ -43,12 +43,11 @@ SCENARIO("register job", "[api::norns_register_job]") {
 
         WHEN("a job is registered with invalid information") {
 
-            struct norns_cred cred;
             norns_job_t job = NORNS_JOB(NULL, 0, NULL, 0);
 
             const uint32_t jobid = 42;
 
-            int rv = norns_register_job(&cred, jobid, &job);
+            int rv = norns_register_job(jobid, &job);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -68,12 +67,11 @@ SCENARIO("register job", "[api::norns_register_job]") {
 
             const size_t test_nbackends = sizeof(test_backends) / sizeof(test_backends[0]);
 
-            struct norns_cred cred;
             norns_job_t job = NORNS_JOB(test_hosts, test_nhosts, test_backends, test_nbackends);
 
             const uint32_t jobid = 42;
 
-            int rv = norns_register_job(&cred, jobid, &job);
+            int rv = norns_register_job(jobid, &job);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -100,12 +98,11 @@ SCENARIO("register job", "[api::norns_register_job]") {
 
             const size_t test_nbackends = sizeof(test_backends) / sizeof(test_backends[0]);
 
-            struct norns_cred cred;
             norns_job_t job = NORNS_JOB(test_hosts, test_nhosts, test_backends, test_nbackends);
 
             const uint32_t jobid = 42;
 
-            int rv = norns_register_job(&cred, jobid, &job);
+            int rv = norns_register_job(jobid, &job);
 
             THEN("NORNS_ECONNFAILED is returned") {
                 REQUIRE(rv == NORNS_ECONNFAILED);

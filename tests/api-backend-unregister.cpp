@@ -43,9 +43,8 @@ SCENARIO("unregister backend", "[api::norns_unregister_backend]") {
 
         WHEN("a backend is unregistered with an invalid prefix") {
 
-            struct norns_cred cred;
 
-            int rv = norns_unregister_backend(&cred, NULL);
+            int rv = norns_unregister_backend(NULL);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -54,9 +53,8 @@ SCENARIO("unregister backend", "[api::norns_unregister_backend]") {
 
         WHEN("attempting to unregister a non-existing backend") {
 
-            struct norns_cred cred;
 
-            int rv = norns_unregister_backend(&cred, "b0://");
+            int rv = norns_unregister_backend("b0://");
 
             THEN("NORNS_ENOSUCHBACKEND is returned") {
                 REQUIRE(rv == NORNS_ENOSUCHBACKEND);
@@ -65,14 +63,13 @@ SCENARIO("unregister backend", "[api::norns_unregister_backend]") {
 
         WHEN("unregistering a registered backend") {
 
-            struct norns_cred cred;
             norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b0", 4096);
 
-            int rv = norns_register_backend(&cred, &b0);
+            int rv = norns_register_backend(&b0);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_backend(&cred, b0.b_nsid);
+            rv = norns_unregister_backend(b0.b_nsid);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -91,8 +88,7 @@ SCENARIO("unregister backend", "[api::norns_unregister_backend]") {
     GIVEN("a non-running urd instance") {
         WHEN("attempting to unregister a backend") {
 
-            struct norns_cred cred;
-            int rv = norns_unregister_backend(&cred, "b0://");
+            int rv = norns_unregister_backend("b0://");
 
             THEN("NORNS_ECONNFAILED is returned") {
                 REQUIRE(rv == NORNS_ECONNFAILED);

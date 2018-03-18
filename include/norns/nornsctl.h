@@ -46,13 +46,6 @@ extern "C" {
 /* will be able to successfully use these)                                */
 /**************************************************************************/
 
-/* Process credentials */
-struct norns_cred {
-    // TODO: to be completed, but at least...
-    pid_t cr_pid;    /* PID of the process */
-    gid_t cr_gid;    /* GID of the process */
-};
-
 /* Descriptor for a storage backend */
 typedef struct {
     const char* b_nsid;     /* namespace ID for this backend (e.g. nvm01, tmpfs02, ...) */
@@ -92,32 +85,32 @@ void norns_job_init(norns_job_t* job, const char** hosts, size_t nhosts,
 norns_error_t norns_ping() __THROW;
 
 /* Send a command to the daemon (e.g. stop accepting new tasks) */
-//norns_error_t norns_command(struct norns_cred* auth);
+//norns_error_t norns_command();
 
 /* Register a batch job into the system */
-norns_error_t norns_register_job(struct norns_cred* auth, uint32_t jobid, norns_job_t* job) __THROW;
+norns_error_t norns_register_job(uint32_t jobid, norns_job_t* job) __THROW;
 
 /* Update an existing batch job */
 /* XXX: At the moment this invalidates all registered processes for this job */
-norns_error_t norns_update_job(struct norns_cred* auth, uint32_t jobid, norns_job_t* job) __THROW;
+norns_error_t norns_update_job(uint32_t jobid, norns_job_t* job) __THROW;
 
 /* Remove a batch job from the system */
-norns_error_t norns_unregister_job(struct norns_cred* auth, uint32_t jobid) __THROW;
+norns_error_t norns_unregister_job(uint32_t jobid) __THROW;
 
 /* Add a process to a registered batch job */
-norns_error_t norns_add_process(struct norns_cred* auth, uint32_t jobid, uid_t uid, gid_t gid, pid_t pid) __THROW;
+norns_error_t norns_add_process(uint32_t jobid, uid_t uid, gid_t gid, pid_t pid) __THROW;
 
 /* Remove a process from a registered batch job */
-norns_error_t norns_remove_process(struct norns_cred* auth, uint32_t jobid, uid_t uid, gid_t gid, pid_t pid) __THROW;
+norns_error_t norns_remove_process(uint32_t jobid, uid_t uid, gid_t gid, pid_t pid) __THROW;
 
 /* Register a backend in the local norns server */
-norns_error_t norns_register_backend(struct norns_cred* auth, norns_backend_t* backend) __THROW;
+norns_error_t norns_register_backend(norns_backend_t* backend) __THROW;
 
 /* Update an existing backend in the local norns server */
-norns_error_t norns_register_backend(struct norns_cred* auth, norns_backend_t* backend) __THROW;
+norns_error_t norns_register_backend(norns_backend_t* backend) __THROW;
 
 /* Unregister a backend from the local norns server */
-norns_error_t norns_unregister_backend(struct norns_cred* auth, const char* prefix) __THROW;
+norns_error_t norns_unregister_backend(const char* prefix) __THROW;
 
 /* Return a string describing the error number */
 char* norns_strerror(norns_error_t errnum) __THROW;

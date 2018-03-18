@@ -43,13 +43,12 @@ SCENARIO("remove process from job", "[api::norns_remove_process]") {
 
         WHEN("a process is removed from a non-registered job") {
 
-            struct norns_cred cred;
             const uint32_t jobid = 42;
             const uid_t uid = 1001;
             const gid_t gid = 2001;
             const pid_t pid = 25401;
 
-            int rv = norns_remove_process(&cred, jobid, uid, gid, pid);
+            int rv = norns_remove_process(jobid, uid, gid, pid);
 
             THEN("NORNS_ENOSUCHJOB is returned") {
                 REQUIRE(rv == NORNS_ENOSUCHJOB);
@@ -68,18 +67,17 @@ SCENARIO("remove process from job", "[api::norns_remove_process]") {
             norns_backend_t* test_backends[] = { &b0, &b1, &b2 };
             const size_t test_nbackends = sizeof(test_backends) / sizeof(test_backends[0]);
 
-            struct norns_cred cred;
             norns_job_t job = NORNS_JOB(test_hosts, test_nhosts, test_backends, test_nbackends);
             const uint32_t jobid = 42;
             const uid_t uid = 1001;
             const gid_t gid = 2001;
             const pid_t pid = 25401;
 
-            int rv = norns_register_job(&cred, jobid, &job);
+            int rv = norns_register_job(jobid, &job);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_remove_process(&cred, jobid, uid, gid, pid);
+            rv = norns_remove_process(jobid, uid, gid, pid);
 
             THEN("NORNS_ENOSUCHPROCESS is returned") {
                 REQUIRE(rv == NORNS_ENOSUCHPROCESS);
@@ -99,22 +97,21 @@ SCENARIO("remove process from job", "[api::norns_remove_process]") {
             norns_backend_t* test_backends[] = { &b0, &b1, &b2 };
             const size_t test_nbackends = sizeof(test_backends) / sizeof(test_backends[0]);
 
-            struct norns_cred cred;
             norns_job_t job1 = NORNS_JOB(test_hosts, test_nhosts, test_backends, test_nbackends);
             const uint32_t jobid = 42;
             const uid_t uid = 1001;
             const gid_t gid = 2001;
             const pid_t pid = 25401;
 
-            int rv = norns_register_job(&cred, jobid, &job1);
+            int rv = norns_register_job(jobid, &job1);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_add_process(&cred, jobid, uid, gid, pid);
+            rv = norns_add_process(jobid, uid, gid, pid);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_remove_process(&cred, jobid, uid, gid, pid);
+            rv = norns_remove_process(jobid, uid, gid, pid);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -134,26 +131,25 @@ SCENARIO("remove process from job", "[api::norns_remove_process]") {
             norns_backend_t* test_backends[] = { &b0, &b1, &b2 };
             const size_t test_nbackends = sizeof(test_backends) / sizeof(test_backends[0]);
 
-            struct norns_cred cred;
             norns_job_t job1 = NORNS_JOB(test_hosts, test_nhosts, test_backends, test_nbackends);
             const uint32_t jobid = 42;
             const uid_t uid = 1001;
             const gid_t gid = 2001;
             const pid_t pid = 25401;
 
-            int rv = norns_register_job(&cred, jobid, &job1);
+            int rv = norns_register_job(jobid, &job1);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_add_process(&cred, jobid, uid, gid, pid);
+            rv = norns_add_process(jobid, uid, gid, pid);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_remove_process(&cred, jobid, uid, gid, pid);
+            rv = norns_remove_process(jobid, uid, gid, pid);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_remove_process(&cred, jobid, uid, gid, pid);
+            rv = norns_remove_process(jobid, uid, gid, pid);
 
             THEN("NORNS_ENOSUCHPROCESS is returned") {
                 REQUIRE(rv == NORNS_ENOSUCHPROCESS);
@@ -169,13 +165,12 @@ SCENARIO("remove process from job", "[api::norns_remove_process]") {
     GIVEN("a non-running urd instance") {
         WHEN("attempting to remove a process") {
 
-            struct norns_cred cred;
             const uint32_t jobid = 42;
             const uid_t uid = 1001;
             const gid_t gid = 2001;
             const pid_t pid = 25401;
 
-            int rv = norns_remove_process(&cred, jobid, uid, gid, pid);
+            int rv = norns_remove_process(jobid, uid, gid, pid);
 
             THEN("NORNS_ECONNFAILED is returned") {
                 REQUIRE(rv == NORNS_ECONNFAILED);

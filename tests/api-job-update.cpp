@@ -43,11 +43,10 @@ SCENARIO("update job", "[api::norns_update_job]") {
 
         WHEN("a non-registered job is updated with invalid information") {
 
-            struct norns_cred cred;
             norns_job_t job = NORNS_JOB(NULL, 0, NULL, 0);
             const uint32_t jobid = 42;
 
-            int rv = norns_update_job(&cred, jobid, &job);
+            int rv = norns_update_job(jobid, &job);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -66,11 +65,10 @@ SCENARIO("update job", "[api::norns_update_job]") {
             norns_backend_t* test_backends[] = { &b0, &b1, &b2 };
             const size_t test_nbackends = sizeof(test_backends) / sizeof(test_backends[0]);
 
-            struct norns_cred cred;
             norns_job_t job = NORNS_JOB(test_hosts, test_nhosts, test_backends, test_nbackends);
             const uint32_t jobid = 42;
 
-            int rv = norns_update_job(&cred, jobid, &job);
+            int rv = norns_update_job(jobid, &job);
 
             THEN("NORNS_ENOSUCHJOB is returned") {
                 REQUIRE(rv == NORNS_ENOSUCHJOB);
@@ -90,16 +88,15 @@ SCENARIO("update job", "[api::norns_update_job]") {
             norns_backend_t* test_backends[] = { &b0, &b1, &b2 };
             const size_t test_nbackends = sizeof(test_backends) / sizeof(test_backends[0]);
 
-            struct norns_cred cred;
             norns_job_t job1 = NORNS_JOB(test_hosts, test_nhosts, test_backends, test_nbackends);
             norns_job_t job2 = NORNS_JOB(NULL, 0, NULL, 0);
             const uint32_t jobid = 42;
 
-            int rv = norns_register_job(&cred, jobid, &job1);
+            int rv = norns_register_job(jobid, &job1);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_update_job(&cred, jobid, &job2);
+            rv = norns_update_job(jobid, &job2);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -126,14 +123,13 @@ SCENARIO("update job", "[api::norns_update_job]") {
 
             norns_job_t job1 = NORNS_JOB(test_hosts1, test_nhosts1, test_backends1, test_nbackends1);
             norns_job_t job2 = NORNS_JOB(test_hosts2, test_nhosts2, test_backends2, test_nbackends2);
-            struct norns_cred cred;
             const uint32_t jobid = 42;
 
-            int rv = norns_register_job(&cred, jobid, &job1);
+            int rv = norns_register_job(jobid, &job1);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_update_job(&cred, jobid, &job2);
+            rv = norns_update_job(jobid, &job2);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -160,12 +156,11 @@ SCENARIO("update job", "[api::norns_update_job]") {
 
             const size_t test_nbackends = sizeof(test_backends) / sizeof(test_backends[0]);
 
-            struct norns_cred cred;
             norns_job_t job = NORNS_JOB(test_hosts, test_nhosts, test_backends, test_nbackends);
 
             const uint32_t jobid = 42;
 
-            int rv = norns_update_job(&cred, jobid, &job);
+            int rv = norns_update_job(jobid, &job);
 
             THEN("NORNS_ECONNFAILED is returned") {
                 REQUIRE(rv == NORNS_ECONNFAILED);

@@ -49,88 +49,68 @@ norns_ping() {
 
 /* Register and describe a batch job */
 int 
-norns_register_job(struct norns_cred* auth, uint32_t jobid, 
-                   norns_job_t* job) {
+norns_register_job(uint32_t jobid, norns_job_t* job) {
 
-    if(auth == NULL || !validate_job(job)) {
+    if(!validate_job(job)) {
         return NORNS_EBADARGS;
     }
 
-    return send_job_request(NORNS_JOB_REGISTER, auth, jobid, job);
+    return send_job_request(NORNS_JOB_REGISTER, jobid, job);
 }
 
 /* Update an existing batch job */
 int 
-norns_update_job(struct norns_cred* auth, uint32_t jobid, 
-                 norns_job_t* job) {
+norns_update_job(uint32_t jobid, norns_job_t* job) {
 
-    if(auth == NULL || !validate_job(job)) {
+    if(!validate_job(job)) {
         return NORNS_EBADARGS;
     }
 
-    return send_job_request(NORNS_JOB_UPDATE, auth, jobid, job);
+    return send_job_request(NORNS_JOB_UPDATE, jobid, job);
 }
 
 
 /* Remove a batch job from the system */
-int norns_unregister_job(struct norns_cred* auth, uint32_t jobid) {
-
-    if(auth == NULL) {
-        return NORNS_EBADARGS;
-    }
-
-    return send_job_request(NORNS_JOB_UNREGISTER, auth, jobid, NULL);
+int norns_unregister_job(uint32_t jobid) {
+    return send_job_request(NORNS_JOB_UNREGISTER, jobid, NULL);
 }
 
 
 /* Add a process to a registered batch job */
 int 
-norns_add_process(struct norns_cred* auth, uint32_t jobid, uid_t uid,
-                  gid_t gid, pid_t pid) {
-
-    if(auth == NULL) {
-        return NORNS_EBADARGS;
-    }
-
-    return send_process_request(NORNS_PROCESS_ADD, auth, jobid, uid, gid, pid);
+norns_add_process(uint32_t jobid, uid_t uid, gid_t gid, pid_t pid) {
+    return send_process_request(NORNS_PROCESS_ADD, jobid, uid, gid, pid);
 }
 
 
 /* Remove a process from a registered batch job */
 int 
-norns_remove_process(struct norns_cred* auth, uint32_t jobid, uid_t uid,
-                     gid_t gid, pid_t pid) {
-
-    if(auth == NULL) {
-        return NORNS_EBADARGS;
-    }
-
-    return send_process_request(NORNS_PROCESS_REMOVE, auth, jobid, 
-                                uid, gid, pid);
+norns_remove_process(uint32_t jobid, uid_t uid, gid_t gid, pid_t pid) {
+    return send_process_request(NORNS_PROCESS_REMOVE, jobid, uid, gid, pid);
 }
 
 /* Register a backend in the local norns server */
 int 
-norns_register_backend(struct norns_cred* auth, norns_backend_t* backend) {
+norns_register_backend(norns_backend_t* backend) {
 
-    if(auth == NULL || !validate_backend(backend)) {
+    if(!validate_backend(backend)) {
         return NORNS_EBADARGS;
     }
 
     const char* const nsid = backend->b_nsid;
 
-    return send_backend_request(NORNS_BACKEND_REGISTER, auth, nsid, backend);
+    return send_backend_request(NORNS_BACKEND_REGISTER, nsid, backend);
 }
 
 /* Unregister a backend from the local norns server */
 int 
-norns_unregister_backend(struct norns_cred* auth, const char* nsid) {
+norns_unregister_backend(const char* nsid) {
 
-    if(auth == NULL || nsid == NULL) {
+    if(nsid == NULL) {
         return NORNS_EBADARGS;
     }
 
-    return send_backend_request(NORNS_BACKEND_UNREGISTER, auth, nsid, NULL);
+    return send_backend_request(NORNS_BACKEND_UNREGISTER, nsid, NULL);
 }
 
 norns_backend_t 
@@ -196,7 +176,7 @@ validate_job(norns_job_t* job) {
 
 norns_job_t 
 NORNS_JOB(const char** hosts, size_t nhosts, 
-                      norns_backend_t** backends, size_t nbackends) {
+          norns_backend_t** backends, size_t nbackends) {
 
     norns_job_t job;
     norns_job_init(&job, hosts, nhosts, backends, nbackends);
@@ -205,7 +185,7 @@ NORNS_JOB(const char** hosts, size_t nhosts,
 
 void 
 norns_job_init(norns_job_t* job, const char** hosts, size_t nhosts, 
-                    norns_backend_t** backends, size_t nbackends) {
+               norns_backend_t** backends, size_t nbackends) {
 
     if(job == NULL) {
         return;

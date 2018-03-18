@@ -43,9 +43,7 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
 
         WHEN("a backend is registered with invalid information") {
 
-            struct norns_cred cred;
-
-            int rv = norns_register_backend(&cred, NULL);
+            int rv = norns_register_backend(NULL);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -54,10 +52,9 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
 
         WHEN("a backend is registered with an invalid prefix") {
 
-            struct norns_cred cred;
             norns_backend_t b0 = NORNS_BACKEND(NULL, NORNS_BACKEND_NVML, "/mnt/b0", 1024);
 
-            int rv = norns_register_backend(&cred, &b0);
+            int rv = norns_register_backend(&b0);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -66,10 +63,9 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
 
         WHEN("a backend is registered with an invalid prefix") {
 
-            struct norns_cred cred;
             norns_backend_t b0 = NORNS_BACKEND("", NORNS_BACKEND_NVML, "/mnt/b0", 1024);
 
-            int rv = norns_register_backend(&cred, &b0);
+            int rv = norns_register_backend(&b0);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -79,10 +75,9 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
 #if 0
         WHEN("a backend is registered with an invalid type") {
 
-            struct norns_cred cred;
             norns_backend_t b0 = NORNS_BACKEND("b0", 42, "/mnt/b0", 1024);
 
-            int rv = norns_register_backend(&cred, &b0);
+            int rv = norns_register_backend(&b0);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -91,10 +86,9 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
 #endif
 
         WHEN("a backend is registered with an invalid mount point") {
-            struct norns_cred cred;
             norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "", 1024);
 
-            int rv = norns_register_backend(&cred, &b0);
+            int rv = norns_register_backend(&b0);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -102,10 +96,9 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
         }
 
         WHEN("a backend is registered with an invalid mount point") {
-            struct norns_cred cred;
             norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, NULL, 1024);
 
-            int rv = norns_register_backend(&cred, &b0);
+            int rv = norns_register_backend(&b0);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -113,10 +106,9 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
         }
 
         WHEN("a backend is registered with an invalid quota") {
-            struct norns_cred cred;
             norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b0", 0);
 
-            int rv = norns_register_backend(&cred, &b0);
+            int rv = norns_register_backend(&b0);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -124,10 +116,9 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
         }
 
         WHEN("a backend is registered with valid information") {
-            struct norns_cred cred;
             norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b0", 4096);
 
-            int rv = norns_register_backend(&cred, &b0);
+            int rv = norns_register_backend(&b0);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -135,15 +126,14 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
         }
 
         WHEN("attempting to register a backend with a duplicate prefix") {
-            struct norns_cred cred;
             norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b0", 4096);
             norns_backend_t b1 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b1", 4096);
 
-            int rv = norns_register_backend(&cred, &b0);
+            int rv = norns_register_backend(&b0);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_register_backend(&cred, &b1);
+            rv = norns_register_backend(&b1);
 
             THEN("NORNS_EBACKENDEXISTS is returned") {
                 REQUIRE(rv == NORNS_EBACKENDEXISTS);
@@ -160,10 +150,9 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
     GIVEN("a non-running urd instance") {
         WHEN("attempting to register a backend") {
 
-            struct norns_cred cred;
             norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b0", 1024);
 
-            int rv = norns_register_backend(&cred, &b0);
+            int rv = norns_register_backend(&b0);
 
             THEN("NORNS_ECONNFAILED is returned") {
                 REQUIRE(rv == NORNS_ECONNFAILED);

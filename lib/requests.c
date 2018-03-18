@@ -159,11 +159,8 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
         case NORNS_JOB_UPDATE:
         case NORNS_JOB_UNREGISTER:
         {
-            const struct norns_cred* auth = va_arg(ap, struct norns_cred*);
             const uint32_t jobid = va_arg(ap, uint32_t);
             const norns_job_t* job = va_arg(ap, norns_job_t*);
-
-            (void) auth;
 
             if((req_msg->type = encode_request_type(type)) < 0) {
                 goto cleanup_on_error;
@@ -187,13 +184,10 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
         case NORNS_PROCESS_ADD:
         case NORNS_PROCESS_REMOVE:
         {
-            const struct norns_cred* auth = va_arg(ap, struct norns_cred*);
             const uint32_t jobid = va_arg(ap, uint32_t);
             const uid_t uid = va_arg(ap, uid_t);
             const gid_t gid = va_arg(ap, gid_t);
             const pid_t pid = va_arg(ap, pid_t);
-
-            (void) auth;
 
             if((req_msg->type = encode_request_type(type)) < 0) {
                 goto cleanup_on_error;
@@ -218,14 +212,10 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
         case NORNS_BACKEND_UPDATE:
         case NORNS_BACKEND_UNREGISTER:
         {
-            const struct norns_cred* auth =
-                va_arg(ap, const struct norns_cred*);
             const char* const nsid =
                 va_arg(ap, const char* const);
             const norns_backend_t* backend = 
                 va_arg(ap, const norns_backend_t*);
-
-            (void) auth;
 
             if((req_msg->type = encode_request_type(type)) < 0) {
                 goto cleanup_on_error;

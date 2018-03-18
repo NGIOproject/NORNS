@@ -119,13 +119,12 @@ send_ping_request() {
 }
 
 norns_error_t
-send_job_request(norns_rpc_type_t type, struct norns_cred* auth, 
-                 uint32_t jobid, norns_job_t* job) {
+send_job_request(norns_rpc_type_t type, uint32_t jobid, norns_job_t* job) {
 
     int res;
     norns_response_t resp;
 
-    if((res = send_request(type, &resp, auth, jobid, job)) 
+    if((res = send_request(type, &resp, jobid, job)) 
             != NORNS_SUCCESS) {
         return res;
     }
@@ -139,13 +138,13 @@ send_job_request(norns_rpc_type_t type, struct norns_cred* auth,
 
 
 norns_error_t
-send_process_request(norns_rpc_type_t type, struct norns_cred* auth, 
-                     uint32_t jobid, uid_t uid, gid_t gid, pid_t pid) {
+send_process_request(norns_rpc_type_t type, uint32_t jobid, 
+                     uid_t uid, gid_t gid, pid_t pid) {
 
     int res;
     norns_response_t resp;
 
-    if((res = send_request(type, &resp, auth, jobid, uid, gid, pid)) 
+    if((res = send_request(type, &resp, jobid, uid, gid, pid)) 
             != NORNS_SUCCESS) {
         return res;
     }
@@ -158,13 +157,13 @@ send_process_request(norns_rpc_type_t type, struct norns_cred* auth,
 }
 
 norns_error_t
-send_backend_request(norns_rpc_type_t type, struct norns_cred* auth, 
-                     const char* nsid, norns_backend_t* backend) {
+send_backend_request(norns_rpc_type_t type, const char* nsid, 
+                     norns_backend_t* backend) {
 
     int res;
     norns_response_t resp;
 
-    if((res = send_request(type, &resp, auth, nsid, backend)) 
+    if((res = send_request(type, &resp, nsid, backend)) 
             != NORNS_SUCCESS) {
         return res;
     }
@@ -225,14 +224,12 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
         case NORNS_JOB_UPDATE:
         case NORNS_JOB_UNREGISTER:
         {
-            const struct norns_cred* auth = 
-                va_arg(ap, const struct norns_cred*);
             const uint32_t jobid =
                 va_arg(ap, const uint32_t);
             const norns_job_t* job =
                 va_arg(ap, const norns_job_t*);
 
-            if((res = pack_to_buffer(type, &req_buf, auth, jobid, job)) 
+            if((res = pack_to_buffer(type, &req_buf, jobid, job)) 
                     != NORNS_SUCCESS) {
                 return res;
             }
@@ -243,8 +240,6 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
         case NORNS_PROCESS_ADD:
         case NORNS_PROCESS_REMOVE:
         {
-            const struct norns_cred* auth =
-                va_arg(ap, const struct norns_cred*);
             const uint32_t jobid =
                 va_arg(ap, const uint32_t);
             const uid_t uid =
@@ -254,7 +249,7 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
             const pid_t pid =
                 va_arg(ap, const pid_t);
 
-            if((res = pack_to_buffer(type, &req_buf, auth, jobid, uid, gid, pid)) 
+            if((res = pack_to_buffer(type, &req_buf, jobid, uid, gid, pid)) 
                     != NORNS_SUCCESS) {
                 return res;
             }
@@ -266,14 +261,12 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
         case NORNS_BACKEND_UPDATE:
         case NORNS_BACKEND_UNREGISTER:
         {
-            const struct norns_cred* auth =
-                va_arg(ap, const struct norns_cred*);
             const char* const prefix =
                 va_arg(ap, const char* const);
             const norns_backend_t* backend = 
                 va_arg(ap, const norns_backend_t*);
 
-            if((res = pack_to_buffer(type, &req_buf, auth, prefix, backend)) 
+            if((res = pack_to_buffer(type, &req_buf, prefix, backend)) 
                     != NORNS_SUCCESS) {
                 return res;
             }
