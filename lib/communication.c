@@ -43,6 +43,7 @@
 #include "requests.h"
 #include "communication.h"
 #include "xmalloc.h"
+#include "log.h"
 
 static int connect_to_daemon(const char* socket_path);
 static int send_message(int conn, const msgbuffer_t* buffer);
@@ -341,6 +342,7 @@ connect_to_daemon(const char* socket_path) {
 	server.sun_path[sizeof(server.sun_path)-1] = '\0';
 
 	if (connect(sfd, (struct sockaddr *) &server, sizeof(struct sockaddr_un)) < 0) {
+	    ERR("!connect");
 	    return -1;
     }
 

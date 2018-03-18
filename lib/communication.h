@@ -28,6 +28,7 @@
 #ifndef __DAEMON_COMMUNICATION_H__
 #define __DAEMON_COMMUNICATION_H__
 
+#include "nornsctl.h"
 #include "requests.h"
 
 #pragma GCC visibility push(hidden)

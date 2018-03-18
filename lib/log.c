@@ -25,89 +25,97 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#include <stdio.h>
-#include <sys/types.h>
-#include <stdint.h>
+#include <stdbool.h>
+#include <stdarg.h>
+#include <errno.h>
 #include <unistd.h>
 #include <string.h>
-#include <stdarg.h>
-
-#include "norns.h"
-#include "nornsctl.h"
+#include <stdio.h>
 
 #include "log.h"
-#include "xmalloc.h"
-#include "communication.h"
 
-#define LIBNORNS_LOG_PREFIX "libnorns"
+static const char* log_prefix;
 
-__attribute__((constructor))
+#define MAX_LOG_MSG 8192
+#define MAX_ERROR_MSG 128
+
+void
+log_init(const char* prefix) {
+
+    static bool once = false;
+
+    if(once) {
+        return;
+    }
+
+    log_prefix = prefix;
+
+    once = true;
+}
+
 static void
-libnornsctl_init(void) {
-    log_init(LIBNORNS_LOG_PREFIX);
+log_error_helper(const char* file, int line, const char* func, 
+                 const char* suffix, const char* fmt, va_list ap) {
+
+    int saved_errno = errno;
+    char buffer[MAX_LOG_MSG];
+    char errstr[MAX_ERROR_MSG] = "";
+    unsigned cc = 0;
+    const char* sep = "";
+    int ret;
+
+    if(file != NULL) {
+
+        char* f;
+
+        while((f = strchr(file, '/')) != NULL) {
+            file = f+1;
+        }
+
+        ret = snprintf(&buffer[cc], MAX_LOG_MSG - cc,
+                "<%s>: [%s:%d %s] ", log_prefix, file, line, func);
+
+        if(ret < 0) {
+            fprintf(stderr, "vsnprintf failed");
+            goto end;
+        }
+
+        cc += (unsigned) ret;
+    }
+
+    if(fmt != NULL) {
+
+        // if fmt begins with '!', append also the system's error message
+        if(*fmt == '!') {
+            ++fmt;
+            sep = ": ";
+            strerror_r(errno, errstr, MAX_ERROR_MSG);
+        }
+
+        ret = vsnprintf(&buffer[cc], MAX_LOG_MSG - cc, fmt, ap);
+
+        if(ret < 0) {
+            fprintf(stderr, "vsnprintf failed");
+            goto end;
+        }
+
+        cc += (unsigned) ret;
+    }
+
+    snprintf(&buffer[cc], MAX_LOG_MSG - cc, "%s%s%s", sep, errstr, suffix);
+
+    fprintf(stderr, "%s", buffer);
+
+end:
+	errno = saved_errno;
 }
 
-/* Public API */
+void
+log_error(const char* file, int line, const char* func, 
+          const char* fmt, ...) {
 
-norns_iotask_t
-NORNS_IOTASK(norns_op_t optype, norns_resource_t src, norns_resource_t dst) {
-    norns_iotask_t task;
-
-    norns_iotask_init(&task, optype, &src, &dst);
-
-    return task;
-}
-
-void norns_iotask_init(norns_iotask_t* task, norns_op_t optype,
-                     norns_resource_t* src, norns_resource_t* dst) {
-
-    if(task == NULL) {
-        return;
-    }
-
-    if(src == NULL || dst == NULL) {
-        memset(task, 0, sizeof(*task));
-        return;
-    }
-
-    task->t_id = 0;
-    task->t_op = optype;
-    task->t_src = *src;
-    task->t_dst = *dst;
-}
-
-norns_error_t
-norns_submit(norns_iotask_t* task) {
-
-    if(task == NULL) {
-        return NORNS_EBADARGS;
-    }
-
-    return send_submit_request(task);
-}
-
-norns_error_t
-norns_status(norns_iotask_t* task, norns_stat_t* stats) {
-
-    if(task == NULL || stats == NULL) {
-        return NORNS_EBADARGS;
-    }
-
-    return send_status_request(task, stats);
-}
-
-
-/* wait for the completion of the I/O task associated to 'task' */
-norns_error_t
-norns_wait(norns_iotask_t* task) {
-
-    if(task == NULL) {
-        return NORNS_EBADARGS;
-    }
-
-    ///TODO
-    while(1) {
-
-    return send_status_request(task, NULL);
-    }
+    va_list ap;
+    va_start(ap, fmt);
+    log_error_helper(file, line, func, "\n", fmt, ap);
+    va_end(ap);
 }

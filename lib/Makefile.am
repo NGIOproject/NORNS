@@ -59,6 +59,7 @@ libnorns_common_la_SOURCES = \
 	communication.h \
 	defaults.h \
 	errors.c \
+	log.c \
 	requests.c \
 	requests.h \
 	resources.c \

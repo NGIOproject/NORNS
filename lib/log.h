@@ -25,89 +25,18 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#include <stdio.h>
-#include <sys/types.h>
-#include <stdint.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdarg.h>
+#ifndef __NORNS_LOG_H__
+#define __NORNS_LOG_H__ 1
 
-#include "norns.h"
-#include "nornsctl.h"
+#ifdef __NORNS_DEBUG__
+#define ERR(...)\
+    log_error(__FILE__, __LINE__, __func__, __VA_ARGS__)
+#else
+#define ERR(...)
+#endif /* __NORNS_DEBUG__ */
 
-#include "log.h"
-#include "xmalloc.h"
-#include "communication.h"
+void log_init(const char* prefix);
+void log_error(const char* file, int line, const char* func, 
+               const char* fmt, ...);
 
-#define LIBNORNS_LOG_PREFIX "libnorns"
-
-__attribute__((constructor))
-static void
-libnornsctl_init(void) {
-    log_init(LIBNORNS_LOG_PREFIX);
-}
-
-/* Public API */
-
-norns_iotask_t
-NORNS_IOTASK(norns_op_t optype, norns_resource_t src, norns_resource_t dst) {
-    norns_iotask_t task;
-
-    norns_iotask_init(&task, optype, &src, &dst);
-
-    return task;
-}
-
-void norns_iotask_init(norns_iotask_t* task, norns_op_t optype,
-                     norns_resource_t* src, norns_resource_t* dst) {
-
-    if(task == NULL) {
-        return;
-    }
-
-    if(src == NULL || dst == NULL) {
-        memset(task, 0, sizeof(*task));
-        return;
-    }
-
-    task->t_id = 0;
-    task->t_op = optype;
-    task->t_src = *src;
-    task->t_dst = *dst;
-}
-
-norns_error_t
-norns_submit(norns_iotask_t* task) {
-
-    if(task == NULL) {
-        return NORNS_EBADARGS;
-    }
-
-    return send_submit_request(task);
-}
-
-norns_error_t
-norns_status(norns_iotask_t* task, norns_stat_t* stats) {
-
-    if(task == NULL || stats == NULL) {
-        return NORNS_EBADARGS;
-    }
-
-    return send_status_request(task, stats);
-}
-
-
-/* wait for the completion of the I/O task associated to 'task' */
-norns_error_t
-norns_wait(norns_iotask_t* task) {
-
-    if(task == NULL) {
-        return NORNS_EBADARGS;
-    }
-
-    ///TODO
-    while(1) {
-
-    return send_status_request(task, NULL);
-    }
-}
+#endif /* __NORNS_LOG_H__ */

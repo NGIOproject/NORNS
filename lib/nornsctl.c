@@ -32,14 +32,23 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include "norns.h"
 #include "nornsctl.h"
 
+#include "log.h"
 #include "xmalloc.h"
 #include "communication.h"
 
+#define LIBNORNSCTL_LOG_PREFIX "libnornsctl"
+
 static bool validate_job(norns_job_t* job);
 static bool validate_backend(norns_backend_t* backend);
+
+__attribute__((constructor))
+static void
+libnornsctl_init(void) {
+    log_init(LIBNORNSCTL_LOG_PREFIX);
+}
+
 
 /* Control API */
 int
