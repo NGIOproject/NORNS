@@ -36,7 +36,7 @@
 #include "nornsctl.h"
 
 #include "xmalloc.h"
-#include "daemon-communication.h"
+#include "communication.h"
 
 static bool validate_job(norns_job_t* job);
 static bool validate_backend(norns_backend_t* backend);

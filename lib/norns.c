@@ -36,7 +36,7 @@
 #include "nornsctl.h"
 
 #include "xmalloc.h"
-#include "daemon-communication.h"
+#include "communication.h"
 
 /* Public API */
 

@@ -55,8 +55,8 @@ noinst_LTLIBRARIES = \
 	libnorns_common_debug.la
 
 libnorns_common_la_SOURCES = \
-	daemon-communication.c \
-	daemon-communication.h \
+	communication.c \
+	communication.h \
 	defaults.h \
 	errors.c \
 	requests.c \

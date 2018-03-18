@@ -41,7 +41,7 @@
 #include "defaults.h"
 #include "messages.pb-c.h"
 #include "requests.h"
-#include "daemon-communication.h"
+#include "communication.h"
 #include "xmalloc.h"
 
 static int connect_to_daemon(const char* socket_path);
