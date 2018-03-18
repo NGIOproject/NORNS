@@ -84,13 +84,13 @@ norns_error_t norns_submit(norns_iotask_t* task) __THROW;
 norns_error_t norns_wait(norns_iotask_t* task) __THROW;
 
 /* Try to cancel an asynchronous I/O task associated with task */
-ssize_t norns_cancel(norns_iotask_t* task) __THROW;
+norns_error_t norns_cancel(norns_iotask_t* task) __THROW;
 
 /* Check the status of a submitted I/O task */
 norns_error_t norns_status(norns_iotask_t* task, norns_stat_t* stats) __THROW;
 
 /* Retrieve return status associated with task */
-ssize_t norns_return(norns_iotask_t* task, norns_stat_t* stats) __THROW;
+norns_error_t norns_return(norns_iotask_t* task, norns_stat_t* stats) __THROW;
 
 /* Retrieve current status associated with task (if task is NULL, retrieve status for all running tasks) */
 //ssize_t norns_progress(norns_iotask_t* task, struct norns_iotst* statp) __THROW;
@@ -99,7 +99,7 @@ ssize_t norns_return(norns_iotask_t* task, norns_stat_t* stats) __THROW;
 //int norns_error(norns_iotask_t* task) __THROW;
 
 /* Return a string describing the error number */
-char* norns_strerror(int errnum) __THROW;
+char* norns_strerror(norns_error_t errnum) __THROW;
 
 #ifdef __cplusplus
 }
