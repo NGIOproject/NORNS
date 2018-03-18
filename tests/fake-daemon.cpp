@@ -31,11 +31,14 @@
 #endif
 
 #include <chrono>
+#include "nornsctl.h"
 #include "fake-daemon.hpp"
 
 fake_daemon::fake_daemon() {
     extern const char* norns_api_global_socket;
+    extern const char* norns_api_control_socket;
     norns_api_global_socket = "./test_urd.global.socket";
+    norns_api_control_socket = "./test_urd.control.socket";
 }
 
 fake_daemon::~fake_daemon() {

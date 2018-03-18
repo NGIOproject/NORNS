@@ -29,16 +29,13 @@
 #
 #EXTRA_DIST = messages.proto
 
-MOSTLYCLEANFILES = \
-	defaults.c \
-	messages.pb-c.c \
-	messages.pb-c.h
-
 lib_LTLIBRARIES = \
-	libnorns.la
+	libnorns.la \
+	libnornsctl.la
 
 include_HEADERS = \
 	$(top_srcdir)/include/norns.h
+	$(top_srcdir)/include/nornsctl.h
 	$(top_srcdir)/include/norns/norns_error.h
 	$(top_srcdir)/include/norns/norns_resources.h
 
@@ -46,8 +43,13 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/rpc
 
-libnorns_la_SOURCES = \
-	norns.c	\
+################################################################################
+# libnorns_common.la: convenience library for libnorns and libnornsctl
+################################################################################
+noinst_LTLIBRARIES = \
+	libnorns_common.la					 
+
+libnorns_common_la_SOURCES = \
 	daemon-communication.c \
 	daemon-communication.h \
 	defaults.h \
@@ -62,19 +64,24 @@ libnorns_la_SOURCES = \
 	$(top_srcdir)/include/norns.h \
 	$(top_srcdir)/rpc/norns-rpc.h
 
-nodist_libnorns_la_SOURCES = \
+nodist_libnorns_common_la_SOURCES = \
 	defaults.c \
 	messages.pb-c.c \
 	messages.pb-c.h
 
-libnorns_la_CFLAGS = \
+libnorns_common_la_CFLAGS = \
 	-Wall -Wextra -std=gnu99
 
-libnorns_la_LDFLAGS = \
+libnorns_common_la_LDFLAGS = \
 	-version-info 0:1:0
 
-libnorns_la_LIBADD = \
+libnorns_common_la_LIBADD = \
 	@PROTOBUF_C_LIBS@
+
+MOSTLYCLEANFILES = \
+	defaults.c \
+	messages.pb-c.c \
+	messages.pb-c.h
 
 BUILT_SOURCES = \
 	defaults.c \
@@ -91,3 +98,35 @@ defaults.c: Makefile
 
 %.pb-c.c %.pb-c.h: $(top_srcdir)/rpc/%.proto
 	$(PROTOC_C) --proto_path=$(top_srcdir)/rpc --c_out=$(builddir) $^
+
+
+################################################################################
+# libnorns.so: user library
+################################################################################
+libnorns_la_SOURCES = \
+	norns.c
+
+libnorns_la_CFLAGS = \
+	-Wall -Wextra -std=gnu99
+
+libnorns_la_LDFLAGS = \
+	-version-info 0:1:0
+
+libnorns_la_LIBADD = \
+	libnorns_common.la
+
+
+################################################################################
+# libnornsctl.so: control library
+################################################################################
+libnornsctl_la_SOURCES = \
+	nornsctl.c
+
+libnornsctl_la_CFLAGS = \
+	-Wall -Wextra -std=gnu99
+
+libnornsctl_la_LDFLAGS = \
+	-version-info 0:1:0
+
+libnornsctl_la_LIBADD = \
+	libnorns_common.la

@@ -25,46 +25,4 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-
-#include "norns.h"
-#include "nornsctl.h"
-#include "catch.hpp"
-#include "fake-daemon.hpp"
-
-// enable to test connections with an already running daemon
-//#define USE_REAL_DAEMON
-
-SCENARIO("ping request", "[api::norns_ping]") {
-    GIVEN("a running urd instance") {
-
-#ifndef USE_REAL_DAEMON
-        fake_daemon td;
-        td.run();
-#endif
-
-        WHEN("pinging urd") {
-
-            int rv = norns_ping();
-
-            THEN("NORNS_SUCCESS is returned") {
-                REQUIRE(rv == NORNS_SUCCESS);
-            }
-        }
-
-#ifndef USE_REAL_DAEMON
-        int ret = td.stop();
-        REQUIRE(ret == 0);
-#endif
-    }
-
-    GIVEN("a non-running urd instance") {
-        WHEN("pinging urd") {
-
-            int rv = norns_ping();
-
-            THEN("NORNS_ECONNFAILED is returned") {
-                REQUIRE(rv == NORNS_ECONNFAILED);
-            }
-        }
-    }
-}
+#include "norns/nornsctl.h"

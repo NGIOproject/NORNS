@@ -25,7 +25,8 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#include <norns.h>
+#include "norns.h"
+#include "nornsctl.h"
 #include <string.h>
 #include "catch.hpp"
 

@@ -34,7 +34,8 @@
 #include <errno.h>
 #include <stdarg.h>
 
-#include <norns.h>
+#include "norns.h"
+#include "nornsctl.h"
 #include <norns-rpc.h>
 
 #include "defaults.h"
@@ -43,7 +44,7 @@
 #include "daemon-communication.h"
 #include "xmalloc.h"
 
-static int connect_to_daemon(void);
+static int connect_to_daemon(const char* socket_path);
 static int send_message(int conn, const msgbuffer_t* buffer);
 static int recv_message(int conn, msgbuffer_t* buffer);
 static ssize_t recv_data(int conn, void* data, size_t size);
@@ -179,8 +180,18 @@ static int
 send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
 
     int res;
+    int conn; 
+    bool control_request = false;
     msgbuffer_t req_buf = MSGBUFFER_INIT();
     msgbuffer_t resp_buf = MSGBUFFER_INIT();
+
+    if(type == NORNS_PING             || type == NORNS_JOB_REGISTER   || 
+       type == NORNS_JOB_UPDATE       || type == NORNS_JOB_UNREGISTER || 
+       type == NORNS_PROCESS_ADD      || type == NORNS_PROCESS_REMOVE || 
+       type == NORNS_BACKEND_REGISTER || type == NORNS_BACKEND_UPDATE || 
+       type == NORNS_BACKEND_UNREGISTER) {
+        control_request = true;
+    }
 
     va_list ap;
     va_start(ap, resp);
@@ -276,7 +287,12 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
     }
 
     // connect to urd
-    int conn = connect_to_daemon();
+    if(control_request) {
+        conn = connect_to_daemon(norns_api_control_socket);
+    }
+    else {
+        conn = connect_to_daemon(norns_api_global_socket);
+    }
 
     if(conn == -1) {
         res = NORNS_ECONNFAILED;
@@ -313,7 +329,11 @@ cleanup_on_error:
 
 
 static int 
-connect_to_daemon(void) {
+connect_to_daemon(const char* socket_path) {
+
+    if(socket_path == NULL) {
+        return -1;
+    }
 
 	struct sockaddr_un server;
 
@@ -324,7 +344,7 @@ connect_to_daemon(void) {
 	}
 
 	server.sun_family = AF_UNIX;
-	strncpy(server.sun_path, norns_api_global_socket, sizeof(server.sun_path));
+	strncpy(server.sun_path, socket_path, sizeof(server.sun_path));
 	server.sun_path[sizeof(server.sun_path)-1] = '\0';
 
 	if (connect(sfd, (struct sockaddr *) &server, sizeof(struct sockaddr_un)) < 0) {

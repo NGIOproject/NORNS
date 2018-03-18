@@ -27,7 +27,8 @@
 
 #include <stdarg.h>
 
-#include <norns.h>
+#include "norns.h"
+#include "nornsctl.h"
 #include "messages.pb-c.h"
 #include "xmalloc.h"
 #include "xstring.h"

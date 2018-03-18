@@ -85,11 +85,13 @@ api_LDFLAGS = \
 	@PROTOBUF_LIBS@ \
 	-Wl,--whole-archive,$(top_builddir)/src/.libs/liburd_aux.a,--no-whole-archive \
 	$(top_builddir)/lib/libnorns.la \
+	$(top_builddir)/lib/libnornsctl.la \
 	$(END)
 
 EXTRA_api_DEPENDENCIES = \
 	$(top_builddir)/src/liburd_aux.la \
 	$(top_builddir)/lib/libnorns.la \
+	$(top_builddir)/lib/libnornsctl.la \
 	$(END)
 
 # The following produces a version of the api tests where the urd daemon 

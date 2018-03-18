@@ -26,8 +26,8 @@
  *************************************************************************/
 
 
-#if !defined(__NORNS_LIB_H__)
-#error "Never include <norns_error.h> directly; use <norns.h> instead."
+#if !defined(__NORNS_LIB_H__) && !defined(__NORNSCTL_LIB_H__)
+#error "Never include <norns_error.h> directly; use <norns.h> or <nornsctl.h> instead."
 #endif
 
 #ifndef __NORNS_ERROR_H__

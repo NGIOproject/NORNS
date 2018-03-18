@@ -35,7 +35,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 
-#include <norns.h>
+#include "norns.h"
+#include "nornsctl.h"
 #include <urd.hpp>
 #include <settings.hpp>
 

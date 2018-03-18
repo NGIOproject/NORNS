@@ -45,12 +45,6 @@
 extern "C" {
 #endif
 
-/* Process credentials */
-struct norns_cred {
-    // TODO: to be completed, but at least...
-    pid_t cr_pid;    /* PID of the process */
-    gid_t cr_gid;    /* GID of the process */
-};
 
 /* Descriptor for an I/O task */
 typedef struct {
@@ -78,19 +72,10 @@ typedef struct {
 
 /* Initialize an asynchronous I/O task */
 void norns_iotask_init(norns_iotask_t* task, norns_op_t operation,
-                       norns_resource_t* src, norns_resource_t* dst);
+                       norns_resource_t* src, norns_resource_t* dst) __THROW;
 
 norns_iotask_t NORNS_IOTASK(norns_op_t operation, norns_resource_t src, 
-                            norns_resource_t dst);
-
-// XXX deprecated
-/* Initialize a resource */
-//void norns_resource_init(norns_resource_flags_t flags, norns_resource_t* res, 
-//                         void* info);
-
-// XXX deprecated
-/* Submit an asynchronous I/O task */
-// int norns_transfer(struct norns_iotd* iotdp) __THROW;
+                            norns_resource_t dst) __THROW;
 
 /* Submit an asynchronous I/O task */
 norns_error_t norns_submit(norns_iotask_t* task) __THROW;
@@ -113,81 +98,8 @@ ssize_t norns_return(norns_iotask_t* task, norns_stat_t* stats) __THROW;
 /* Retrieve error status associated with task */
 //int norns_error(norns_iotask_t* task) __THROW;
 
-/* Check if the urd daemon is running */
-int norns_ping() __THROW;
-
-
-/**************************************************************************/
-/* Administrative API                                                     */
-/* (only authenticated processes will be able to successfully use these)  */
-/**************************************************************************/
-
-/* Storage backend descriptor */
-typedef struct {
-    const char* b_nsid;     /* namespace ID for this backend (e.g. nvm01, tmpfs02, ...) */
-    int         b_type;     /* backend type */
-    const char* b_mount;    /* mount point */
-    size_t      b_quota;    /* backend capacity (in megabytes) for writing data */
-} norns_backend_t;
-
-/* Job access rights descriptor */
-typedef struct {
-    const char* r_nsid;     /* namespace ID */
-    size_t      r_quota;    /* job's quota */
-} norns_access_rights_t;
-
-norns_backend_t NORNS_BACKEND(const char* nsid, norns_flags_t flags, 
-                              const char* mount_point, uint32_t quota);
-
-void norns_backend_init(norns_backend_t* backend, const char* nsid, 
-                        norns_flags_t flags, const char* mount_point,
-                        uint32_t quota);
-
-
-/* Batch job descriptor */
-typedef struct {
-    const char**      j_hosts;  /* NULL-terminated list of hostnames participating in the job */
-    size_t            j_nhosts; /* entries in hostname list */
-    norns_backend_t** j_backends; /* NULL-terminated list of storage backends the job is allowed to use */
-    size_t            j_nbackends; /* entries in backend list */
-} norns_job_t;
-
-norns_job_t NORNS_JOB(const char** hosts, size_t nhosts, 
-                      norns_backend_t** backends, size_t nbackends);
-
-void norns_job_init(norns_job_t* job, const char** hosts, size_t nhosts, 
-                    norns_backend_t** backends, size_t nbackends);
-
-/* Send a command to the daemon (e.g. stop accepting new tasks) */
-int norns_command(struct norns_cred* auth);
-
-/* Register a batch job into the system */
-int norns_register_job(struct norns_cred* auth, uint32_t jobid, norns_job_t* job);
-
-/* Update an existing batch job */
-/* XXX: At the moment this invalidates all registered processes for this job */
-int norns_update_job(struct norns_cred* auth, uint32_t jobid, norns_job_t* job);
-
-/* Remove a batch job from the system */
-int norns_unregister_job(struct norns_cred* auth, uint32_t jobid);
-
-/* Add a process to a registered batch job */
-int norns_add_process(struct norns_cred* auth, uint32_t jobid, uid_t uid, gid_t gid, pid_t pid);
-
-/* Remove a process from a registered batch job */
-int norns_remove_process(struct norns_cred* auth, uint32_t jobid, uid_t uid, gid_t gid, pid_t pid);
-
-/* Register a backend in the local norns server */
-int norns_register_backend(struct norns_cred* auth, norns_backend_t* backend);
-
-/* Update an existing backend in the local norns server */
-int norns_register_backend(struct norns_cred* auth, norns_backend_t* backend);
-
-/* Unregister a backend from the local norns server */
-int norns_unregister_backend(struct norns_cred* auth, const char* prefix);
-
-
-char* norns_strerror(int errnum);
+/* Return a string describing the error number */
+char* norns_strerror(int errnum) __THROW;
 
 #ifdef __cplusplus
 }
