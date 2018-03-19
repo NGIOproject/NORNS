@@ -130,7 +130,9 @@ struct test_env {
         }
     }
 
+#ifndef USE_REAL_DAEMON
     fake_daemon m_td;
+#endif
     std::set<std::string> m_backends;
     std::unordered_map<std::string, bfs::path> m_dirs;
 };
@@ -180,8 +182,11 @@ SCENARIO("copy local data", "[api::norns_submit_copy_local]") {
             }
 
             // wait until the task completes
-            // TODO: replace with norns_wait() once it's available
-            //sleep(15);
+            rv = norns_wait(&task);
+
+            THEN("NORNS_SUCCESS is returned") {
+                REQUIRE(rv == NORNS_SUCCESS);
+            }
             
         }
 

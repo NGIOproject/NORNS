@@ -40,6 +40,7 @@
 #include "communication.h"
 
 #define LIBNORNS_LOG_PREFIX "libnorns"
+#define MIN_WAIT_TIME ((useconds_t) 250*1e3)
 
 __attribute__((constructor))
 static void
@@ -101,13 +102,30 @@ norns_status(norns_iotask_t* task, norns_stat_t* stats) {
 norns_error_t
 norns_wait(norns_iotask_t* task) {
 
+    norns_error_t rv;
+    norns_stat_t stats;
+
     if(task == NULL) {
+        ERR("invalid arguments");
         return NORNS_EBADARGS;
     }
 
-    ///TODO
-    while(1) {
+    do {
+        rv = send_status_request(task, &stats);
 
-    return send_status_request(task, NULL);
-    }
+        if(rv != NORNS_SUCCESS) {
+            ERR("error waiting for request: %s", norns_strerror(rv));
+            return rv;
+        }
+
+        if(stats.st_status == NORNS_EFINISHED) {
+            return NORNS_SUCCESS;
+        }
+
+        // wait for 250 milliseconds
+        // before retrying
+        usleep(MIN_WAIT_TIME);
+    } while(true);
+
+    return NORNS_SUCCESS;
 }
