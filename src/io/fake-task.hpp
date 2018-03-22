@@ -25,8 +25,8 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#ifndef __IO_TASK_HPP__
-#define __IO_TASK_HPP__
+#ifndef __IO_FAKE_TASK_HPP__
+#define __IO_FAKE_TASK_HPP__
 
 #include <cstdint>
 #include <memory>
@@ -41,29 +41,20 @@ namespace io {
 // forward declaration
 struct task_stats;
 
-/*! Descriptor for an I/O task */
-struct task {
+/*! Descriptor for a fake I/O task that does nothing but waiting */
+struct fake_task {
 
     using backend_ptr = std::shared_ptr<storage::backend>;
     using resource_ptr = std::shared_ptr<data::resource>;
     using task_stats_ptr = std::shared_ptr<task_stats>;
 
-    task(iotask_id tid, iotask_type type, const resource_ptr src, 
-         const resource_ptr dst, const task_stats_ptr stats);
+    fake_task(iotask_id tid, const task_stats_ptr stats);
+
     iotask_id id() const;
     bool is_valid() const;
     void operator()() const;
 
-    static iotask_id create_id(); 
-
-    //XXX a munge credential might be better here
-    uint64_t    m_id;
-    pid_t       m_pid;
-    uint32_t    m_jobid;
-    
-    iotask_type m_type;
-    resource_ptr m_src;
-    resource_ptr m_dst;
+    iotask_id   m_id;
     task_stats_ptr m_stats;
 };
 
@@ -71,4 +62,4 @@ struct task {
 } // namespace io
 } // namespace norns
 
-#endif // __IO_TASK_HPP__
+#endif // __IO_FAKE_TASK_HPP__

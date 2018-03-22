@@ -52,13 +52,15 @@
 #include "logger.hpp"
 #include "job.hpp"
 #include "resources.hpp"
-#include "io-task.hpp"
-#include "io-task-stats.hpp"
-
+#include "io.hpp"
 
 #include "urd.hpp"
 
 namespace norns {
+
+urd::urd() {}
+
+urd::~urd() {}
 
 pid_t urd::daemonize() {
     /*
@@ -264,28 +266,40 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
             resource_ptr src = std::get<1>(src_rv);
             resource_ptr dst = std::get<1>(dst_rv);
 
-            // everything is ok, add the I/O task to the queue
-            tid = io::task::create_id();
-
             std::shared_ptr<io::task_stats> stats_record;
 
             // register the task in the task manager
             {
                 boost::unique_lock<boost::shared_mutex> lock(m_task_manager_mutex);
 
-                if(m_task_manager->count(tid) == 0) {
-                    auto it = m_task_manager->emplace(tid, 
-                            std::make_shared<io::task_stats>(io::task_status::pending));
-                    stats_record = it.first->second;
+                auto ret = m_task_manager->create();
+
+                if(ret) {
+                    std::tie(tid, stats_record) = *ret;
                 }
                 else {
-                    rv = urd_error::task_exists;
+                    // this can only happen if we tried to register a task
+                    // and the TID automatically generated collided with an
+                    // already running task. 
+                    // This can happen in two cases: 
+                    //   1. We end up with more than 4294967295U concurrent tasks
+                    //   2. We are not properly cleaning up dead tasks
+                    // In both cases, we want to know about it
+                    LOGGER_CRITICAL("Error when creating new task!");
+                    rv = urd_error::too_many_tasks;
                 }
             }
 
+            // everything is ok, add the I/O task to the queue
             if(stats_record != nullptr) {
-                m_workers->submit_and_forget(
-                        io::task(tid, type, src, dst, stats_record));
+                if(m_settings->m_dry_run) {
+                    m_workers->submit_and_forget(
+                            io::fake_task(tid, stats_record));
+                }
+                else {
+                    m_workers->submit_and_forget(
+                            io::task(tid, type, src, dst, stats_record));
+                }
             }
         }
         else if(std::get<0>(src_rv) != urd_error::success) {
@@ -306,7 +320,6 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
 response_ptr urd::iotask_status_handler(const request_ptr base_request) const {
 
     response_ptr resp;
-    urd_error rv = urd_error::success;
 
     // downcast the generic request to the concrete implementation
     auto request = utils::static_unique_ptr_cast<api::iotask_status_request>(std::move(base_request));
@@ -315,23 +328,23 @@ response_ptr urd::iotask_status_handler(const request_ptr base_request) const {
 
     {
         boost::shared_lock<boost::shared_mutex> lock(m_task_manager_mutex);
-
-        const auto& it = m_task_manager->find(request->get<0>());
-
-        if(it != m_task_manager->end()) {
-            stats_ptr = it->second;
-        }
-        else {
-            rv = urd_error::no_such_task;
-        }
+        stats_ptr = m_task_manager->find(request->get<0>());
     }
 
-    // *stats_ptr makes a copy of the current stats for this task in 
-    // m_task_manager so that we don't block other threads needlessly 
-    // while sending the reply
-    resp = std::make_unique<api::iotask_status_response>(
-            io::task_stats_view(*stats_ptr));
-    resp->set_error_code(rv);
+
+    if(stats_ptr != nullptr) {
+        // *stats_ptr makes a copy of the current stats for this task in 
+        // m_task_manager so that we don't block other threads needlessly 
+        // while sending the reply
+        resp = std::make_unique<api::iotask_status_response>(
+                io::task_stats_view(*stats_ptr));
+        resp->set_error_code(urd_error::success);
+    }
+    else {
+        resp = std::make_unique<api::iotask_status_response>(
+                io::task_stats_view());
+        resp->set_error_code(urd_error::no_such_task);
+    }
 
     LOGGER_CRITICAL("test: {}", utils::to_string(stats_ptr->status()));
 
@@ -635,11 +648,11 @@ int urd::run() {
     LOGGER_INFO("");
     LOGGER_INFO("[[ Settings ]]");
     LOGGER_INFO("  - running as daemon?: {}", (m_settings->m_daemonize ? "yes" : "no"));
+    LOGGER_INFO("  - dry run?: {}", (m_settings->m_dry_run ? "yes" : "no"));
     LOGGER_INFO("  - pidfile: {}", m_settings->m_daemon_pidfile);
     LOGGER_INFO("  - control socket: {}", m_settings->m_control_socket);
     LOGGER_INFO("  - global socket: {}", m_settings->m_global_socket);
     LOGGER_INFO("  - port for remote requests: {}", m_settings->m_remote_port);
-    LOGGER_INFO("  - pidfile: {}", m_settings->m_daemon_pidfile);
     LOGGER_INFO("  - workers: {}", m_settings->m_workers_in_pool);
     LOGGER_INFO("");
 //    LOGGER_INFO("    - internal storage: {}", m_settings->m_storage_path);
@@ -735,7 +748,7 @@ int urd::run() {
         SIGHUP, SIGTERM, SIGINT);
 
     m_backends = std::make_unique<backend_manager>();
-    m_task_manager = std::make_unique<task_manager>();
+    m_task_manager = std::make_unique<io::task_manager>();
 
     LOGGER_INFO("");
     LOGGER_INFO("[[ Start up successful, awaiting requests... ]]");

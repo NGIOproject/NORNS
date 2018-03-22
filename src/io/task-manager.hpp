@@ -25,59 +25,41 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
+#ifndef __TASK_MANAGER_HPP__
+#define __TASK_MANAGER_HPP__
 
-#if !defined(__NORNS_LIB_H__) && !defined(__NORNSCTL_LIB_H__)
-#error "Never include <norns_error.h> directly; use <norns.h> or <nornsctl.h> instead."
-#endif
+#include <memory>
+#include <unordered_map>
+#include <boost/optional.hpp>
 
-#ifndef __NORNS_ERROR_H__
-#define __NORNS_ERROR_H__ 1
+#include "common.hpp"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace norns {
+namespace io {
 
-#define NORNS_ERRMAX 512
+// forward declarations
+enum class task_status;
+struct task_stats;
 
-/** Error codes */
-#define NORNS_SUCCESS              0
-#define NORNS_ESNAFU              -1
-#define NORNS_EBADARGS            -2
-#define NORNS_EBADREQUEST         -3
-#define NORNS_ENOMEM              -4
+struct task_manager {
 
-/* errors about communication */
-#define NORNS_ECONNFAILED         -5
-#define NORNS_ERPCSENDFAILED      -6
-#define NORNS_ERPCRECVFAILED      -7
+    using ReturnType = 
+        std::tuple<iotask_id, std::shared_ptr<task_stats>>;
 
-/* errors about jobs */
-#define NORNS_EJOBEXISTS         -10
-#define NORNS_ENOSUCHJOB         -11
+    explicit task_manager();
 
-/* errors about processes */
-#define NORNS_EPROCESSEXISTS     -20
-#define NORNS_ENOSUCHPROCESS     -21
+    boost::optional<ReturnType> create();
 
-/* errors about backends */
-#define NORNS_EBACKENDEXISTS     -30
-#define NORNS_ENOSUCHBACKEND     -31
+    std::shared_ptr<task_stats>
+    find(iotask_id) const;
 
-/* errors about tasks */
-#define NORNS_ETASKEXISTS        -40
-#define NORNS_ENOSUCHTASK        -41
-#define NORNS_ETOOMANYTASKS      -42
+private:
+    iotask_id m_id_base = 0;
+    std::unordered_map<iotask_id, std::shared_ptr<task_stats>> m_tasks;
 
-/* task status */
-#define NORNS_EPENDING          -100
-#define NORNS_EINPROGRESS       -101
-#define NORNS_EFINISHED         -102
+};
 
-/* misc errors */
-#define NORNS_ENOTSUPPORTED     -200
+} // namespace io
+} // namespace norns
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* __NORNS_ERROR_H__ */
+#endif /* __TASK_MANAGER_HPP__ */

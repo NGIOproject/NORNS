@@ -26,7 +26,7 @@
  *************************************************************************/
 
 #include "messages.pb.h"
-#include "io-task-stats.hpp"
+#include "io.hpp"
 #include "response.hpp"
 
 namespace {

@@ -37,7 +37,7 @@ namespace defaults {
     extern const char*      progname;
     extern const bool       daemonize;
     extern const bool       use_syslog;
-    extern const char*      running_dir;
+    extern const bool       dry_run;
     extern const char*      global_socket;
     extern const char*      control_socket;
     extern const in_port_t  remote_port;

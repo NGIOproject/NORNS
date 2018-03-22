@@ -25,59 +25,49 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
+#ifndef __IO_TASK_HPP__
+#define __IO_TASK_HPP__
 
-#if !defined(__NORNS_LIB_H__) && !defined(__NORNSCTL_LIB_H__)
-#error "Never include <norns_error.h> directly; use <norns.h> or <nornsctl.h> instead."
-#endif
+#include <cstdint>
+#include <memory>
 
-#ifndef __NORNS_ERROR_H__
-#define __NORNS_ERROR_H__ 1
+#include "common.hpp"
+#include "resources.hpp"
+#include "backends.hpp"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace norns {
+namespace io {
 
-#define NORNS_ERRMAX 512
+// forward declaration
+struct task_stats;
 
-/** Error codes */
-#define NORNS_SUCCESS              0
-#define NORNS_ESNAFU              -1
-#define NORNS_EBADARGS            -2
-#define NORNS_EBADREQUEST         -3
-#define NORNS_ENOMEM              -4
+/*! Descriptor for an I/O task */
+struct task {
 
-/* errors about communication */
-#define NORNS_ECONNFAILED         -5
-#define NORNS_ERPCSENDFAILED      -6
-#define NORNS_ERPCRECVFAILED      -7
+    using backend_ptr = std::shared_ptr<storage::backend>;
+    using resource_ptr = std::shared_ptr<data::resource>;
+    using task_stats_ptr = std::shared_ptr<task_stats>;
 
-/* errors about jobs */
-#define NORNS_EJOBEXISTS         -10
-#define NORNS_ENOSUCHJOB         -11
+    task(iotask_id tid, iotask_type type, const resource_ptr src, 
+         const resource_ptr dst, const task_stats_ptr stats);
 
-/* errors about processes */
-#define NORNS_EPROCESSEXISTS     -20
-#define NORNS_ENOSUCHPROCESS     -21
+    iotask_id id() const;
+    bool is_valid() const;
+    void operator()() const;
 
-/* errors about backends */
-#define NORNS_EBACKENDEXISTS     -30
-#define NORNS_ENOSUCHBACKEND     -31
+    //XXX a munge credential might be better here
+    iotask_id   m_id;
+    pid_t       m_pid;
+    uint32_t    m_jobid;
+    
+    iotask_type m_type;
+    resource_ptr m_src;
+    resource_ptr m_dst;
+    task_stats_ptr m_stats;
+};
 
-/* errors about tasks */
-#define NORNS_ETASKEXISTS        -40
-#define NORNS_ENOSUCHTASK        -41
-#define NORNS_ETOOMANYTASKS      -42
 
-/* task status */
-#define NORNS_EPENDING          -100
-#define NORNS_EINPROGRESS       -101
-#define NORNS_EFINISHED         -102
+} // namespace io
+} // namespace norns
 
-/* misc errors */
-#define NORNS_ENOTSUPPORTED     -200
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* __NORNS_ERROR_H__ */
+#endif // __IO_TASK_HPP__

@@ -25,55 +25,41 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#ifndef __IO_TASK_STATS_HPP__
-#define __IO_TASK_STATS_HPP__
+#include <unistd.h>
+#include <system_error>
 
-#include <string>
-#include <boost/thread/shared_mutex.hpp>
+#include "logger.hpp"
+#include "fake-task.hpp"
+#include "task-stats.hpp"
 
 namespace norns {
 namespace io {
 
-/*! Valid status for an I/O task */
-enum class task_status {
-    pending,
-    in_progress,
-    finished
-};
+fake_task::fake_task(iotask_id tid, const task_stats_ptr stats)
+    : m_id(tid),
+      m_stats(stats) { }
 
-/*! Stats about a registered I/O task */
-struct task_stats {
-
-    task_stats(task_status status);
-    task_stats(const task_stats& other);
-    task_stats(task_stats&& rhs) noexcept;
-
-    task_status status() const;
-    void set_status(const task_status status);
-
-    mutable boost::shared_mutex m_mutex;
-    task_status m_status;
-};
-
-struct task_stats_view {
-
-    task_stats_view(const task_stats& stats);
-    task_stats_view(const task_stats_view& other);
-    task_stats_view(task_stats_view&& rhs) noexcept;
-
-    task_status status() const;
-
-    task_stats m_stats;
-};
-
-} // namespace io
-
-namespace utils {
-
-std::string to_string(io::task_status st);
-
+iotask_id fake_task::id() const {
+    return m_id;
 }
 
+void fake_task::operator()() const {
+    LOGGER_WARN("[{}] Starting fake I/O task", m_id);
+
+    sleep(2);
+
+    m_stats->set_status(task_status::in_progress);
+
+    LOGGER_WARN("[{}] fake I/O task \"running\"", m_id);
+
+    sleep(2);
+
+    m_stats->set_status(task_status::finished);
+
+    LOGGER_WARN("[{}] fake I/O task completed successfully", m_id);
+}
+
+} // namespace io
 } // namespace norns
 
-#endif /* __IO_TASK_STATS_HPP__ */
+

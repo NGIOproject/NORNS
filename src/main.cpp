@@ -37,11 +37,13 @@ namespace bpo = boost::program_options;
 int main(int argc, char* argv[]){
     
     bool run_in_foreground = !norns::defaults::daemonize;
+    bool dry_run = norns::defaults::dry_run;
 
     // declare a group of options that will be allowed only on the command line
     bpo::options_description generic("Allowed options");
     generic.add_options()
         (",f", bpo::bool_switch(&run_in_foreground), "foreground operation") // check how to do flags
+        ("dry-run,d", bpo::bool_switch(&dry_run),    "don't actually execute tasks") // check how to do flags
         ("version,v",                                "print version string")
         ("help,h",                                   "produce help message")
     ;
@@ -67,6 +69,7 @@ int main(int argc, char* argv[]){
     settings.load(norns::defaults::config_file);
 
     settings.m_daemonize = !run_in_foreground;
+    settings.m_dry_run = dry_run;
 
     norns::urd daemon;
     daemon.configure(settings);

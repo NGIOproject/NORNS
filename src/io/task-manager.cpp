@@ -25,28 +25,47 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#ifndef __TASK_MANAGER_HPP__
-#define __TASK_MANAGER_HPP__
+#include <boost/optional.hpp>
 
-#include <memory>
-#include <unordered_map>
-
+#include "task-manager.hpp"
+#include "task-stats.hpp"
 #include "common.hpp"
 
 namespace norns {
-
 namespace io {
-    struct task_stats;
+
+task_manager::task_manager() {}
+
+boost::optional<task_manager::ReturnType>
+task_manager::create() {
+
+    iotask_id tid = ++m_id_base;
+
+    if(m_tasks.count(tid) != 0) {
+        --m_id_base;
+        return boost::optional<ReturnType>();
+    }
+
+    auto it = m_tasks.emplace(tid, 
+            std::make_shared<task_stats>(task_status::pending));
+
+    return boost::optional<ReturnType>(
+            std::make_tuple(tid, it.first->second));
 }
 
+std::shared_ptr<task_stats>
+task_manager::find(iotask_id tid) const {
 
-/*! Class for keeping track of registered tasks and their related information. 
- * Since we inherit from unordered_map<T>, all its usual methods, such as 
- * count(), find(), at(), etc... can used */
-struct task_manager : 
-    public std::unordered_map<iotask_id, std::shared_ptr<io::task_stats>> {
-};
+    std::shared_ptr<task_stats> stats_ptr;
 
+    const auto& it = m_tasks.find(tid);
+
+    if(it != m_tasks.end()) {
+        stats_ptr = it->second;
+    }
+
+    return stats_ptr;
+}
+
+} // namespace io
 } // namespace norns
-
-#endif /* __TASK_MANAGER_HPP__ */

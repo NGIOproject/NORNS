@@ -65,7 +65,7 @@ struct config_settings {
     bool               m_daemonize;
     bool               m_use_syslog;
 
-    std::string        m_running_dir;
+    bool               m_dry_run;          /* run fake tasks (useful for testing) */
 
     std::string        m_global_socket;
     std::string        m_control_socket;

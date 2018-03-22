@@ -90,6 +90,7 @@ enum class urd_error : norns_error_t {
     /* errors about tasks */
     task_exists       = NORNS_ETASKEXISTS,
     no_such_task      = NORNS_ENOSUCHTASK,
+    too_many_tasks    = NORNS_ETOOMANYTASKS,
 };
 
 namespace utils {

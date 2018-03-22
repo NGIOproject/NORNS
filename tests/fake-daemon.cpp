@@ -77,10 +77,10 @@ void fake_daemon::run() {
         "test_urd", /* progname */
         false, /* daemonize */
         true, /* use syslog */
-        "./", /* running_dir */
+        false, /* dry run */
         "./test_urd.global.socket", /* global_socket */
         "./test_urd.control.socket", /* control_socket */
-        42000, /* remote port */
+        42002, /* remote port */
         "./test_urd.pid", /* daemon_pidfile */
         2, /* api workers */
         "./",

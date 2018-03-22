@@ -25,67 +25,58 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#include "io-task-stats.hpp"
+#ifndef __IO_TASK_STATS_HPP__
+#define __IO_TASK_STATS_HPP__
+
+#include <string>
+#include <boost/thread/shared_mutex.hpp>
 
 namespace norns {
 namespace io {
 
-task_stats::task_stats(task_status status) 
-    : m_status(status) { }
+/*! Valid status for an I/O task */
+enum class task_status {
+    undefined,
+    pending,
+    in_progress,
+    finished
+};
 
-/*! Return a copy of the current stats by locking the instance and copying 
- * its internal data. This is useful to obtain a "view" of the instance
- * in a state where all data is consistent with each other */
-task_stats::task_stats(const task_stats& other) {
-    boost::shared_lock<boost::shared_mutex> lock(m_mutex);
-    m_status = other.m_status;
-}
+/*! Stats about a registered I/O task */
+struct task_stats {
 
-task_stats::task_stats(task_stats&& rhs) noexcept 
-    : m_status(std::move(rhs.m_status)) { }
+    explicit task_stats();
+    task_stats(task_status status);
+    task_stats(const task_stats& other);
+    task_stats(task_stats&& rhs) noexcept;
 
+    task_status status() const;
+    void set_status(const task_status status);
 
-task_status task_stats::status() const {
-    boost::shared_lock<boost::shared_mutex> lock(m_mutex);
-    return m_status;
-}
+    mutable boost::shared_mutex m_mutex;
+    task_status m_status;
+};
 
-void task_stats::set_status(const task_status status) {
-    boost::unique_lock<boost::shared_mutex> lock(m_mutex);
-    m_status = status;
-}
+struct task_stats_view {
 
-task_stats_view::task_stats_view(const task_stats& stats) 
-    : m_stats(stats) { }
+    explicit task_stats_view();
+    task_stats_view(const task_stats& stats);
+    task_stats_view(const task_stats_view& other);
+    task_stats_view(task_stats_view&& rhs) noexcept;
 
-task_stats_view::task_stats_view(const task_stats_view& other)
-    : m_stats(other.m_stats) { }
+    task_status status() const;
 
-task_stats_view::task_stats_view(task_stats_view&& rhs) noexcept
-    : m_stats(std::move(rhs.m_stats)) {}
-
-task_status task_stats_view::status() const {
-    return m_stats.status();
-}
-
-
+    task_stats m_stats;
+};
 
 } // namespace io
 
 namespace utils {
 
-std::string to_string(io::task_status st) {
-    switch(st) {
-        case io::task_status::pending:
-            return "NORNS_EPENDING";
-        case io::task_status::in_progress:
-            return "NORNS_EINPROGRESS";
-        case io::task_status::finished:
-            return "NORNS_EFINISHED";
-        default:
-            return "unknown!";
-    }
+std::string to_string(io::task_status st);
+
 }
 
-} // namespace utils
 } // namespace norns
+
+#endif /* __IO_TASK_STATS_HPP__ */

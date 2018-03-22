@@ -70,10 +70,15 @@ liburd_aux_la_SOURCES = \
 	common/types.hpp \
 	common/unique-ptr-cast.hpp \
 	defaults.hpp \
-	io-task.cpp \
-	io-task.hpp \
-	io-task-stats.cpp \
-	io-task-stats.hpp \
+	io.hpp \
+	io/fake-task.cpp \
+	io/fake-task.hpp \
+	io/task.cpp \
+	io/task.hpp \
+	io/task-manager.cpp \
+	io/task-manager.hpp \
+	io/task-stats.cpp \
+	io/task-stats.hpp \
 	job.hpp \
 	logger.hpp \
 	resources.hpp \
@@ -91,7 +96,6 @@ liburd_aux_la_SOURCES = \
 	settings.cpp \
 	settings.hpp \
 	signal-listener.hpp \
-	task-manager.hpp \
 	thread-pool.hpp \
 	thread-pool/thread-pool.hpp \
 	thread-pool/thread-pool-queue.hpp \
@@ -142,7 +146,9 @@ defaults.cpp: Makefile
 	   echo "    const char* progname           = \"urd\";"; \
 	   echo "    const bool  daemonize          = true;"; \
 	   echo "    const bool  use_syslog         = false;"; \
-	   echo "    const char* running_dir        = \"/tmp\";"; \
+	   echo ""; \
+\
+	   echo "    const bool dry_run             = false;"; \
 \
 	   echo "    const char* global_socket      = \"$(localstatedir)/urd/global.socket.2\";"; \
 	   echo "    const char* control_socket     = \"$(localstatedir)/urd/control.socket.2\";"; \

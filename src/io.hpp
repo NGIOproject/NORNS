@@ -25,59 +25,14 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
+#ifndef __IO_HPP__
+#define __IO_HPP__
 
-#if !defined(__NORNS_LIB_H__) && !defined(__NORNSCTL_LIB_H__)
-#error "Never include <norns_error.h> directly; use <norns.h> or <nornsctl.h> instead."
-#endif
+#include <atomic>
 
-#ifndef __NORNS_ERROR_H__
-#define __NORNS_ERROR_H__ 1
+#include "io/task.hpp"
+#include "io/fake-task.hpp"
+#include "io/task-manager.hpp"
+#include "io/task-stats.hpp"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#define NORNS_ERRMAX 512
-
-/** Error codes */
-#define NORNS_SUCCESS              0
-#define NORNS_ESNAFU              -1
-#define NORNS_EBADARGS            -2
-#define NORNS_EBADREQUEST         -3
-#define NORNS_ENOMEM              -4
-
-/* errors about communication */
-#define NORNS_ECONNFAILED         -5
-#define NORNS_ERPCSENDFAILED      -6
-#define NORNS_ERPCRECVFAILED      -7
-
-/* errors about jobs */
-#define NORNS_EJOBEXISTS         -10
-#define NORNS_ENOSUCHJOB         -11
-
-/* errors about processes */
-#define NORNS_EPROCESSEXISTS     -20
-#define NORNS_ENOSUCHPROCESS     -21
-
-/* errors about backends */
-#define NORNS_EBACKENDEXISTS     -30
-#define NORNS_ENOSUCHBACKEND     -31
-
-/* errors about tasks */
-#define NORNS_ETASKEXISTS        -40
-#define NORNS_ENOSUCHTASK        -41
-#define NORNS_ETOOMANYTASKS      -42
-
-/* task status */
-#define NORNS_EPENDING          -100
-#define NORNS_EINPROGRESS       -101
-#define NORNS_EFINISHED         -102
-
-/* misc errors */
-#define NORNS_ENOTSUPPORTED     -200
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* __NORNS_ERROR_H__ */
+#endif /* __IO_HPP__ */

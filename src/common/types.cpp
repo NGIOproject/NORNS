@@ -95,6 +95,8 @@ std::string to_string(urd_error ecode) {
             return "NORNS_ETASKEXISTS";
         case urd_error::no_such_task:
             return "NORNS_ENOSUCHTASK";
+        case urd_error::too_many_tasks:
+            return "NORNS_ETOOMANYTASKS";
         default:
             return "UNKNOWN_ERROR";
     }

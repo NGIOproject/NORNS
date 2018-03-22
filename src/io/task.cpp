@@ -30,8 +30,8 @@
 
 #include "logger.hpp"
 #include "resources.hpp"
-#include "io-task.hpp"
-#include "io-task-stats.hpp"
+#include "task.hpp"
+#include "task-stats.hpp"
 
 namespace norns {
 namespace io {
@@ -46,11 +46,6 @@ task::task(iotask_id tid, iotask_type type, const resource_ptr src,
 
 iotask_id task::id() const {
     return m_id;
-}
-
-iotask_id task::create_id() {
-    static std::atomic<iotask_id> base(0);
-    return ++base;
 }
 
 void task::operator()() const {

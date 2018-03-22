@@ -40,7 +40,6 @@
 
 #include "job.hpp"
 
-#include "task-manager.hpp"
 
 
 
@@ -65,6 +64,7 @@ using resource_ptr = std::shared_ptr<data::resource>;
 
 // forward declarations
 namespace io {
+    struct task_manager;
     struct task_stats;
 }
 
@@ -75,6 +75,8 @@ enum class urd_error;
 class urd {
 
 public:
+    explicit urd();
+    ~urd();
     void configure(const config_settings& settings);
     int run();
     void teardown();
@@ -116,7 +118,7 @@ private:
     std::unordered_map<uint32_t, std::shared_ptr<job>>    m_jobs;
     boost::shared_mutex                         m_jobs_mutex;
 
-    std::unique_ptr<task_manager> m_task_manager;
+    std::unique_ptr<io::task_manager> m_task_manager;
     mutable boost::shared_mutex   m_task_manager_mutex;
 };
 

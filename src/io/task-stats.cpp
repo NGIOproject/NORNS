@@ -25,59 +25,73 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
+#include "task-stats.hpp"
 
-#if !defined(__NORNS_LIB_H__) && !defined(__NORNSCTL_LIB_H__)
-#error "Never include <norns_error.h> directly; use <norns.h> or <nornsctl.h> instead."
-#endif
+namespace norns {
+namespace io {
 
-#ifndef __NORNS_ERROR_H__
-#define __NORNS_ERROR_H__ 1
+task_stats::task_stats() 
+    : m_status(task_status::undefined) { }
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+task_stats::task_stats(task_status status) 
+    : m_status(status) { }
 
-#define NORNS_ERRMAX 512
-
-/** Error codes */
-#define NORNS_SUCCESS              0
-#define NORNS_ESNAFU              -1
-#define NORNS_EBADARGS            -2
-#define NORNS_EBADREQUEST         -3
-#define NORNS_ENOMEM              -4
-
-/* errors about communication */
-#define NORNS_ECONNFAILED         -5
-#define NORNS_ERPCSENDFAILED      -6
-#define NORNS_ERPCRECVFAILED      -7
-
-/* errors about jobs */
-#define NORNS_EJOBEXISTS         -10
-#define NORNS_ENOSUCHJOB         -11
-
-/* errors about processes */
-#define NORNS_EPROCESSEXISTS     -20
-#define NORNS_ENOSUCHPROCESS     -21
-
-/* errors about backends */
-#define NORNS_EBACKENDEXISTS     -30
-#define NORNS_ENOSUCHBACKEND     -31
-
-/* errors about tasks */
-#define NORNS_ETASKEXISTS        -40
-#define NORNS_ENOSUCHTASK        -41
-#define NORNS_ETOOMANYTASKS      -42
-
-/* task status */
-#define NORNS_EPENDING          -100
-#define NORNS_EINPROGRESS       -101
-#define NORNS_EFINISHED         -102
-
-/* misc errors */
-#define NORNS_ENOTSUPPORTED     -200
-
-#ifdef __cplusplus
+/*! Return a copy of the current stats by locking the instance and copying 
+ * its internal data. This is useful to obtain a "view" of the instance
+ * in a state where all data is consistent with each other */
+task_stats::task_stats(const task_stats& other) {
+    boost::shared_lock<boost::shared_mutex> lock(m_mutex);
+    m_status = other.m_status;
 }
-#endif
 
-#endif /* __NORNS_ERROR_H__ */
+task_stats::task_stats(task_stats&& rhs) noexcept 
+    : m_status(std::move(rhs.m_status)) { }
+
+
+task_status task_stats::status() const {
+    boost::shared_lock<boost::shared_mutex> lock(m_mutex);
+    return m_status;
+}
+
+void task_stats::set_status(const task_status status) {
+    boost::unique_lock<boost::shared_mutex> lock(m_mutex);
+    m_status = status;
+}
+
+
+task_stats_view::task_stats_view() { }
+
+task_stats_view::task_stats_view(const task_stats& stats) 
+    : m_stats(stats) { }
+
+task_stats_view::task_stats_view(const task_stats_view& other)
+    : m_stats(other.m_stats) { }
+
+task_stats_view::task_stats_view(task_stats_view&& rhs) noexcept
+    : m_stats(std::move(rhs.m_stats)) {}
+
+task_status task_stats_view::status() const {
+    return m_stats.status();
+}
+
+
+
+} // namespace io
+
+namespace utils {
+
+std::string to_string(io::task_status st) {
+    switch(st) {
+        case io::task_status::pending:
+            return "NORNS_EPENDING";
+        case io::task_status::in_progress:
+            return "NORNS_EINPROGRESS";
+        case io::task_status::finished:
+            return "NORNS_EFINISHED";
+        default:
+            return "unknown!";
+    }
+}
+
+} // namespace utils
+} // namespace norns

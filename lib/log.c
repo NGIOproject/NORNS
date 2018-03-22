@@ -31,6 +31,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "log.h"
 
@@ -57,12 +58,24 @@ static void
 log_error_helper(const char* file, int line, const char* func, 
                  const char* suffix, const char* fmt, va_list ap) {
 
+    FILE* outfp = stderr;
     int saved_errno = errno;
     char buffer[MAX_LOG_MSG];
     char errstr[MAX_ERROR_MSG] = "";
     unsigned cc = 0;
     const char* sep = "";
     int ret;
+
+    if(getenv("NORNS_DBG_LOG_TO_STDERR") == NULL) {
+        outfp = fopen("/dev/null", "w");
+
+        if(outfp == NULL) {
+            strerror_r(errno, errstr, MAX_ERROR_MSG);
+            fprintf(stderr, "unable to open /dev/null: %s", errstr);
+
+            return;
+        }
+    }
 
     if(file != NULL) {
 
@@ -76,7 +89,7 @@ log_error_helper(const char* file, int line, const char* func,
                 "<%s>: [%s:%d %s] ", log_prefix, file, line, func);
 
         if(ret < 0) {
-            fprintf(stderr, "vsnprintf failed");
+            fprintf(outfp, "vsnprintf failed");
             goto end;
         }
 
@@ -95,7 +108,7 @@ log_error_helper(const char* file, int line, const char* func,
         ret = vsnprintf(&buffer[cc], MAX_LOG_MSG - cc, fmt, ap);
 
         if(ret < 0) {
-            fprintf(stderr, "vsnprintf failed");
+            fprintf(outfp, "vsnprintf failed");
             goto end;
         }
 
@@ -104,7 +117,7 @@ log_error_helper(const char* file, int line, const char* func,
 
     snprintf(&buffer[cc], MAX_LOG_MSG - cc, "%s%s%s", sep, errstr, suffix);
 
-    fprintf(stderr, "%s", buffer);
+    fprintf(outfp, "%s", buffer);
 
 end:
 	errno = saved_errno;

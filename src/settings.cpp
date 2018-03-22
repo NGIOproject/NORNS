@@ -46,9 +46,7 @@ void config_settings::load(const std::string& filename) {
 
     m_use_syslog = defaults::use_syslog;
 
-    if(m_running_dir == "") {
-        m_running_dir = defaults::running_dir;
-    }
+    m_dry_run = defaults::dry_run;
 
     m_global_socket = defaults::global_socket;
     m_control_socket = defaults::control_socket;
@@ -56,7 +54,7 @@ void config_settings::load(const std::string& filename) {
     
     m_daemon_pidfile = pt.get<std::string>("settings.pidfile", "");
 
-    if(m_daemon_pidfile == ""){
+    if(m_daemon_pidfile == "") {
         m_daemon_pidfile = defaults::pidfile;
     }
 
