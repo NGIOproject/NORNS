@@ -30,10 +30,12 @@
 
 #include <memory>
 #include "backends/backend-base.hpp"
+#include "backends/process-memory.hpp"
 #include "backends/remote-backend.hpp"
 
 namespace norns {
 namespace storage {
+    static const auto process_memory_backend = std::make_shared<detail::process_memory>();
     static const auto remote_backend = std::make_shared<detail::remote_backend>();
 } // namespace storage
 } // namespace norns

@@ -33,7 +33,7 @@
 // enable to test connections with an already running daemon
 //#define USE_REAL_DAEMON
 
-SCENARIO("register backend", "[api::norns_register_backend]") {
+SCENARIO("register backend", "[api::norns_register_namespace]") {
     GIVEN("a running urd instance") {
 
 #ifndef USE_REAL_DAEMON
@@ -43,29 +43,29 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
 
         WHEN("a backend is registered with invalid information") {
 
-            int rv = norns_register_backend(NULL);
+            int rv = norns_register_namespace(NULL, NULL);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
             }
         }
 
-        WHEN("a backend is registered with an invalid prefix") {
+        WHEN("a backend is registered with an invalid nsid") {
 
-            norns_backend_t b0 = NORNS_BACKEND(NULL, NORNS_BACKEND_NVML, "/mnt/b0", 1024);
+            norns_backend_t b0 = NORNS_BACKEND(NORNS_BACKEND_NVML, "/mnt/b0", 1024);
 
-            int rv = norns_register_backend(&b0);
+            int rv = norns_register_namespace(NULL, &b0);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
             }
         }
 
-        WHEN("a backend is registered with an invalid prefix") {
+        WHEN("a backend is registered with an invalid nsid") {
 
-            norns_backend_t b0 = NORNS_BACKEND("", NORNS_BACKEND_NVML, "/mnt/b0", 1024);
+            norns_backend_t b0 = NORNS_BACKEND(NORNS_BACKEND_NVML, "/mnt/b0", 1024);
 
-            int rv = norns_register_backend(&b0);
+            int rv = norns_register_namespace("", &b0);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -77,7 +77,7 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
 
             norns_backend_t b0 = NORNS_BACKEND("b0", 42, "/mnt/b0", 1024);
 
-            int rv = norns_register_backend(&b0);
+            int rv = norns_register_namespace(&b0);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -86,9 +86,9 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
 #endif
 
         WHEN("a backend is registered with an invalid mount point") {
-            norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "", 1024);
+            norns_backend_t b0 = NORNS_BACKEND(NORNS_BACKEND_NVML, "", 1024);
 
-            int rv = norns_register_backend(&b0);
+            int rv = norns_register_namespace("b0://", &b0);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -96,9 +96,9 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
         }
 
         WHEN("a backend is registered with an invalid mount point") {
-            norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, NULL, 1024);
+            norns_backend_t b0 = NORNS_BACKEND(NORNS_BACKEND_NVML, NULL, 1024);
 
-            int rv = norns_register_backend(&b0);
+            int rv = norns_register_namespace("b0://", &b0);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -106,9 +106,9 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
         }
 
         WHEN("a backend is registered with an invalid quota") {
-            norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b0", 0);
+            norns_backend_t b0 = NORNS_BACKEND(NORNS_BACKEND_NVML, "/mnt/b0", 0);
 
-            int rv = norns_register_backend(&b0);
+            int rv = norns_register_namespace("b0://", &b0);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -116,24 +116,24 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
         }
 
         WHEN("a backend is registered with valid information") {
-            norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b0", 4096);
+            norns_backend_t b0 = NORNS_BACKEND(NORNS_BACKEND_NVML, "/mnt/b0", 4096);
 
-            int rv = norns_register_backend(&b0);
+            int rv = norns_register_namespace("b0://", &b0);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
             }
         }
 
-        WHEN("attempting to register a backend with a duplicate prefix") {
-            norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b0", 4096);
-            norns_backend_t b1 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b1", 4096);
+        WHEN("attempting to register a backend with a duplicate nsid") {
+            norns_backend_t b0 = NORNS_BACKEND(NORNS_BACKEND_NVML, "/mnt/b0", 4096);
+            norns_backend_t b1 = NORNS_BACKEND(NORNS_BACKEND_NVML, "/mnt/b1", 4096);
 
-            int rv = norns_register_backend(&b0);
+            int rv = norns_register_namespace("b0://", &b0);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_register_backend(&b1);
+            rv = norns_register_namespace("b0://", &b1);
 
             THEN("NORNS_EBACKENDEXISTS is returned") {
                 REQUIRE(rv == NORNS_EBACKENDEXISTS);
@@ -150,9 +150,9 @@ SCENARIO("register backend", "[api::norns_register_backend]") {
     GIVEN("a non-running urd instance") {
         WHEN("attempting to register a backend") {
 
-            norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b0", 1024);
+            norns_backend_t b0 = NORNS_BACKEND(NORNS_BACKEND_NVML, "/mnt/b0", 1024);
 
-            int rv = norns_register_backend(&b0);
+            int rv = norns_register_namespace("b0://", &b0);
 
             THEN("NORNS_ECONNFAILED is returned") {
                 REQUIRE(rv == NORNS_ECONNFAILED);

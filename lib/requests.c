@@ -32,29 +32,55 @@
 #include "messages.pb-c.h"
 #include "xmalloc.h"
 #include "xstring.h"
+#include "log.h"
 
 #include "requests.h"
 
 /* helpers */
-static Norns__Rpc__Request__Task* build_task_msg(const norns_iotask_t* iotdp);
-static void free_task_msg(Norns__Rpc__Request__Task* msg);
-static Norns__Rpc__Request__Backend* build_backend_msg(const norns_backend_t* backend);
-static void free_backend_msg(Norns__Rpc__Request__Backend* msg);
-static Norns__Rpc__Request__Job* build_job_msg(const norns_job_t* job);
-static void free_job_msg(Norns__Rpc__Request__Job* msg);
+static Norns__Rpc__Request__Task* 
+build_task_msg(const norns_iotask_t* iotdp);
+static void 
+free_task_msg(Norns__Rpc__Request__Task* msg);
 
-static Norns__Rpc__Request__Task__Resource* build_resource_msg(const norns_resource_t* res);
-static void free_resource_msg(Norns__Rpc__Request__Task__Resource* msg);
+static Norns__Rpc__Request__Namespace* 
+build_namespace_message(const char* nsid, const norns_backend_t* backend);
+static void 
+free_namespace_message(Norns__Rpc__Request__Namespace* msg);
 
-static Norns__Rpc__Request__Task__MemoryRegion* build_membuf_msg(const norns_memory_region_t* buf);
-static void free_membuf_msg(Norns__Rpc__Request__Task__MemoryRegion* msg);
+static Norns__Rpc__Request__Namespace__Backend* 
+build_backend_message(const norns_backend_t* backend);
+static void 
+free_backend_message(Norns__Rpc__Request__Namespace__Backend* msg);
 
-static Norns__Rpc__Request__Task__PosixPath* build_path_msg(const norns_posix_path_t* path);
-static void free_path_msg(Norns__Rpc__Request__Task__PosixPath* msg);
+static Norns__Rpc__Request__JobLimits* 
+build_job_limits_msg(const norns_job_limit_t* lim);
+static void 
+free_job_limits_msg(Norns__Rpc__Request__JobLimits* msg);
 
+static Norns__Rpc__Request__Job* 
+build_job_msg(const norns_job_t* job);
+static void 
+free_job_msg(Norns__Rpc__Request__Job* msg);
 
-static int encode_request_type(norns_rpc_type_t type);
-static norns_rpc_type_t decode_response_type(int type);
+static Norns__Rpc__Request__Task__Resource* 
+build_resource_msg(const norns_resource_t* res);
+static void 
+free_resource_msg(Norns__Rpc__Request__Task__Resource* msg);
+
+static Norns__Rpc__Request__Task__MemoryRegion* 
+build_membuf_msg(const norns_memory_region_t* buf);
+static void 
+free_membuf_msg(Norns__Rpc__Request__Task__MemoryRegion* msg);
+
+static Norns__Rpc__Request__Task__PosixPath* 
+build_path_msg(const norns_posix_path_t* path);
+static void 
+free_path_msg(Norns__Rpc__Request__Task__PosixPath* msg);
+
+static int 
+encode_request_type(norns_rpc_type_t type);
+static norns_rpc_type_t 
+decode_response_type(int type);
 
 static int 
 encode_request_type(norns_rpc_type_t type) {
@@ -75,12 +101,12 @@ encode_request_type(norns_rpc_type_t type) {
             return NORNS__RPC__REQUEST__TYPE__PROCESS_ADD;
         case NORNS_PROCESS_REMOVE:
             return NORNS__RPC__REQUEST__TYPE__PROCESS_REMOVE;
-        case NORNS_BACKEND_REGISTER:
-            return NORNS__RPC__REQUEST__TYPE__BACKEND_REGISTER;
-        case NORNS_BACKEND_UPDATE:
-            return NORNS__RPC__REQUEST__TYPE__BACKEND_UPDATE;
-        case NORNS_BACKEND_UNREGISTER:
-            return NORNS__RPC__REQUEST__TYPE__BACKEND_UNREGISTER;
+        case NORNS_NAMESPACE_REGISTER:
+            return NORNS__RPC__REQUEST__TYPE__NAMESPACE_REGISTER;
+        case NORNS_NAMESPACE_UPDATE:
+            return NORNS__RPC__REQUEST__TYPE__NAMESPACE_UPDATE;
+        case NORNS_NAMESPACE_UNREGISTER:
+            return NORNS__RPC__REQUEST__TYPE__NAMESPACE_UNREGISTER;
         default:
             return -1;
     }
@@ -105,12 +131,12 @@ decode_response_type(int norns_rpc_type) {
             return NORNS_PROCESS_ADD;
         case NORNS__RPC__RESPONSE__TYPE__PROCESS_REMOVE:
             return NORNS_PROCESS_REMOVE;
-        case NORNS__RPC__REQUEST__TYPE__BACKEND_REGISTER:
-            return NORNS_BACKEND_REGISTER;
-        case NORNS__RPC__REQUEST__TYPE__BACKEND_UPDATE:
-            return NORNS_BACKEND_UPDATE;
-        case NORNS__RPC__REQUEST__TYPE__BACKEND_UNREGISTER:
-            return NORNS_BACKEND_UNREGISTER;
+        case NORNS__RPC__REQUEST__TYPE__NAMESPACE_REGISTER:
+            return NORNS_NAMESPACE_REGISTER;
+        case NORNS__RPC__REQUEST__TYPE__NAMESPACE_UPDATE:
+            return NORNS_NAMESPACE_UPDATE;
+        case NORNS__RPC__REQUEST__TYPE__NAMESPACE_UNREGISTER:
+            return NORNS_NAMESPACE_UNREGISTER;
         case NORNS__RPC__RESPONSE__TYPE__BAD_REQUEST:
             // intentionally fall through
         default:
@@ -129,15 +155,15 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
 
     norns__rpc__request__init(req_msg);
 
+    if((req_msg->type = encode_request_type(type)) < 0) {
+        goto cleanup_on_error;
+    }
+
     switch(type) {
         case NORNS_IOTASK_SUBMIT:
         case NORNS_IOTASK_STATUS:
         {
             const norns_iotask_t* task = va_arg(ap, norns_iotask_t*);
-
-            if((req_msg->type = encode_request_type(type)) < 0) {
-                goto cleanup_on_error;
-            }
 
             if((req_msg->task = build_task_msg(task)) == NULL) {
                 goto cleanup_on_error;
@@ -148,10 +174,6 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
 
         case NORNS_PING:
         {
-
-            if((req_msg->type = encode_request_type(type)) < 0) {
-                goto cleanup_on_error;
-            }
             break;
         }
 
@@ -161,10 +183,6 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
         {
             const uint32_t jobid = va_arg(ap, uint32_t);
             const norns_job_t* job = va_arg(ap, norns_job_t*);
-
-            if((req_msg->type = encode_request_type(type)) < 0) {
-                goto cleanup_on_error;
-            }
 
             req_msg->has_jobid = true;
             req_msg->jobid = jobid;
@@ -189,10 +207,6 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
             const gid_t gid = va_arg(ap, gid_t);
             const pid_t pid = va_arg(ap, pid_t);
 
-            if((req_msg->type = encode_request_type(type)) < 0) {
-                goto cleanup_on_error;
-            }
-
             req_msg->has_jobid = true;
             req_msg->jobid = jobid;
 
@@ -208,35 +222,18 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
             break;
         }
 
-        case NORNS_BACKEND_REGISTER:
-        case NORNS_BACKEND_UPDATE:
-        case NORNS_BACKEND_UNREGISTER:
+        case NORNS_NAMESPACE_REGISTER:
+        case NORNS_NAMESPACE_UPDATE:
+        case NORNS_NAMESPACE_UNREGISTER:
         {
             const char* const nsid =
                 va_arg(ap, const char* const);
             const norns_backend_t* backend = 
                 va_arg(ap, const norns_backend_t*);
 
-            if((req_msg->type = encode_request_type(type)) < 0) {
+            if((req_msg->nspace = 
+                    build_namespace_message(nsid, backend)) == NULL) {
                 goto cleanup_on_error;
-            }
-
-            if(type == NORNS_BACKEND_UNREGISTER) {
-                req_msg->nsid = xstrdup(nsid);
-
-                if(req_msg->nsid == NULL) {
-                    goto cleanup_on_error;
-                }
-
-                req_msg->backend = NULL;
-            }
-            else {
-
-                req_msg->nsid = NULL;
-
-                if((req_msg->backend = build_backend_msg(backend)) == NULL) {
-                    goto cleanup_on_error;
-                }
             }
 
             break;
@@ -262,7 +259,13 @@ free_request_msg(Norns__Rpc__Request* req) {
 }
 
 static void
-free_backend_msg(Norns__Rpc__Request__Backend* msg) {
+free_backend_message(Norns__Rpc__Request__Namespace__Backend* msg) {
+    //TODO
+    (void) msg;
+}
+
+static void 
+free_job_limits_msg(Norns__Rpc__Request__JobLimits* msg) {
     //TODO
     (void) msg;
 }
@@ -281,45 +284,86 @@ free_job_msg(Norns__Rpc__Request__Job* msg) {
         xfree(msg->hosts);
     }
 
-    if(msg->backends != NULL) {
+    if(msg->limits != NULL) {
 
-        for(size_t i=0; i<msg->n_backends; ++i) {
-            if(msg->backends[i] != NULL) {
-                if(msg->backends[i]->mount != NULL) {
-                    xfree(msg->backends[i]->mount);
+        for(size_t i=0; i<msg->n_limits; ++i) {
+            if(msg->limits[i] != NULL) {
+                if(msg->limits[i]->nsid != NULL) {
+                    xfree(msg->limits[i]->nsid);
                 }
-                xfree(msg->backends[i]);
+                xfree(msg->limits[i]);
             }
         }
-        xfree(msg->backends);
+        xfree(msg->limits);
     }
     xfree(msg);
 }
 
-static Norns__Rpc__Request__Backend*
-build_backend_msg(const norns_backend_t* backend) {
+static Norns__Rpc__Request__Namespace* 
+build_namespace_message(const char* nsid, const norns_backend_t* backend) {
+
+    assert(nsid != NULL);
+
+    Norns__Rpc__Request__Namespace* nsmsg =
+        (Norns__Rpc__Request__Namespace*) xmalloc(sizeof(*nsmsg));
+
+    if(nsmsg == NULL) {
+        ERR("!xmalloc");
+        return NULL;
+    }
+
+    norns__rpc__request__namespace__init(nsmsg);
+
+    nsmsg->nsid = xstrdup(nsid);
+
+    if(nsmsg->nsid == NULL) {
+        ERR("!xstrdup");
+        goto error_cleanup;
+    }
+
+    if(backend != NULL) {
+        if((nsmsg->backend = build_backend_message(backend)) == NULL) {
+            goto error_cleanup;
+        }
+    }
+    else {
+        // request must be NORNS_NAMESPACE_UNREGISTER
+        nsmsg->backend = NULL;
+    }
+
+    return nsmsg;
+
+error_cleanup:
+    if(nsmsg != NULL) {
+        free_namespace_message(nsmsg);
+    }
+
+    return NULL;
+}
+
+static void 
+free_namespace_message(Norns__Rpc__Request__Namespace* msg) {
+    (void) msg;
+}
+
+static Norns__Rpc__Request__Namespace__Backend*
+build_backend_message(const norns_backend_t* backend) {
 
     assert(backend != NULL);
 
-    Norns__Rpc__Request__Backend* backendmsg = 
-        (Norns__Rpc__Request__Backend*) xmalloc(sizeof(*backendmsg));
+    Norns__Rpc__Request__Namespace__Backend* backendmsg = 
+        (Norns__Rpc__Request__Namespace__Backend*) xmalloc(sizeof(*backendmsg));
 
     if(backendmsg == NULL) {
         return NULL;
     }
 
-    norns__rpc__request__backend__init(backendmsg);
-
-    backendmsg->nsid = xstrdup(backend->b_nsid);
-
-    if(backendmsg->nsid == NULL) {
-        goto error_cleanup;
-    }
+    norns__rpc__request__namespace__backend__init(backendmsg);
 
     backendmsg->type = backend->b_type;
 
-    // b_mount might be NULL for some backends 
-    // (e.g. NORNS_BACKEND_PROCESS_MEMORY)
+    // n_mount might be NULL for some namespaces 
+    // (e.g. NORNS_NS_PROCESS_MEMORY)
     if(backend->b_mount != NULL) {
         backendmsg->mount = xstrdup(backend->b_mount);
 
@@ -331,18 +375,52 @@ build_backend_msg(const norns_backend_t* backend) {
         backendmsg->mount = NULL;
     }
 
-    backendmsg->quota = backend->b_quota;
+    backendmsg->capacity = backend->b_capacity;
 
     return backendmsg;
 
 error_cleanup:
 
     if(backendmsg != NULL) {
-        free_backend_msg(backendmsg);
+        free_backend_message(backendmsg);
     }
 
     return NULL;
 }
+
+static Norns__Rpc__Request__JobLimits* 
+build_job_limits_msg(const norns_job_limit_t* lim) {
+
+    assert(lim != NULL);
+
+    Norns__Rpc__Request__JobLimits* limmsg = 
+        (Norns__Rpc__Request__JobLimits*) xmalloc(sizeof(*limmsg));
+
+    if(limmsg == NULL) {
+        return NULL;
+    }
+
+    norns__rpc__request__job_limits__init(limmsg);
+
+    limmsg->nsid = xstrdup(lim->l_nsid);
+
+    if(limmsg->nsid == NULL) {
+        goto error_cleanup;
+    }
+
+    limmsg->quota = lim->l_quota;
+
+    return limmsg;
+
+error_cleanup:
+
+    if(limmsg != NULL) {
+        free_job_limits_msg(limmsg);
+    }
+
+    return NULL;
+}
+
 
 static Norns__Rpc__Request__Job*
 build_job_msg(const norns_job_t* job) {
@@ -378,40 +456,22 @@ build_job_msg(const norns_job_t* job) {
         }
     }
 
-    // add backends
-    jobmsg->n_backends = job->j_nbackends;
-    jobmsg->backends = 
-        xmalloc(job->j_nbackends*sizeof(Norns__Rpc__Request__Backend*));
+    // add limits
+    jobmsg->n_limits = job->j_nlimits;
+    jobmsg->limits = 
+        xmalloc(job->j_nlimits*sizeof(Norns__Rpc__Request__Namespace__Backend*));
     
-    if(jobmsg->backends == NULL){
+    if(jobmsg->limits == NULL){
         goto error_cleanup;
     }
 
-    for(size_t i=0; i<job->j_nbackends; ++i) {
+    for(size_t i=0; i<job->j_nlimits; ++i) {
 
-        jobmsg->backends[i] = build_backend_msg(job->j_backends[i]);
+        jobmsg->limits[i] = build_job_limits_msg(job->j_limits[i]);
 
-        if(jobmsg->backends[i] == NULL) {
+        if(jobmsg->limits[i] == NULL) {
             goto error_cleanup;
         }
-
-        /*
-        jobmsg->backends[i] = xmalloc(sizeof(Norns__Rpc__Request__Backend));
-
-        if(jobmsg->backends[i] == NULL) {
-            goto error_cleanup;
-        }
-
-        norns__rpc__request__backend__init(jobmsg->backends[i]);
-        jobmsg->backends[i]->type = job->j_backends[i]->b_type;
-        jobmsg->backends[i]->mount = xstrdup(job->j_backends[i]->b_mount);
-
-        if(jobmsg->backends[i]->mount == NULL) {
-            goto error_cleanup;
-        }
-
-        jobmsg->backends[i]->quota = job->j_backends[i]->b_quota;
-        */
     }
 
     return jobmsg;
@@ -436,11 +496,6 @@ build_resource_msg(const norns_resource_t* res) {
     norns__rpc__request__task__resource__init(msg);
 
     msg->type = res->r_flags;
-    msg->nsid = xstrdup(res->r_nsid);
-
-    if(msg->nsid == NULL) {
-        goto oom_cleanup;
-    }
 
     if(res->r_flags & NORNS_PROCESS_MEMORY) {
         msg->buffer = build_membuf_msg(&res->r_buffer);
@@ -519,6 +574,13 @@ build_path_msg(const norns_posix_path_t* path) {
     }
 
     norns__rpc__request__task__posix_path__init(msg);
+
+    msg->nsid = xstrdup(path->p_nsid);
+
+    if(msg->nsid == NULL) {
+        goto oom_cleanup;
+    }
+
 
     src_hostname = path->p_host;
     src_datapath = path->p_path;

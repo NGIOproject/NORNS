@@ -79,6 +79,20 @@ void task::operator()() const {
         data::buffer b(8192);
         std::size_t bytes_read = 0;
 
+        //XXX input_stream | tranform | output_stream
+        //
+        // preferred interface:
+        //
+        // for(const auto& input: input_stream) {
+        //     try {
+        //         input | output_stream;
+        //     } 
+        //     catch(...) {
+        //     }
+        // }
+        //
+        //
+        //
         while((bytes_read = input_stream->read(b)) != 0) {
 
             LOGGER_WARN("[{}] {} bytes read from {}", m_id, bytes_read, m_src->to_string());

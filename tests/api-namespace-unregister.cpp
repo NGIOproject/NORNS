@@ -33,7 +33,7 @@
 // enable to test connections with an already running daemon
 //#define USE_REAL_DAEMON
 
-SCENARIO("unregister backend", "[api::norns_unregister_backend]") {
+SCENARIO("unregister backend", "[api::norns_unregister_namespace]") {
     GIVEN("a running urd instance") {
 
 #ifndef USE_REAL_DAEMON
@@ -44,7 +44,7 @@ SCENARIO("unregister backend", "[api::norns_unregister_backend]") {
         WHEN("a backend is unregistered with an invalid prefix") {
 
 
-            int rv = norns_unregister_backend(NULL);
+            int rv = norns_unregister_namespace(NULL);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -54,7 +54,7 @@ SCENARIO("unregister backend", "[api::norns_unregister_backend]") {
         WHEN("attempting to unregister a non-existing backend") {
 
 
-            int rv = norns_unregister_backend("b0://");
+            int rv = norns_unregister_namespace("b0://");
 
             THEN("NORNS_ENOSUCHBACKEND is returned") {
                 REQUIRE(rv == NORNS_ENOSUCHBACKEND);
@@ -63,13 +63,15 @@ SCENARIO("unregister backend", "[api::norns_unregister_backend]") {
 
         WHEN("unregistering a registered backend") {
 
-            norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b0", 4096);
+            const char* nsid = "b0://";
 
-            int rv = norns_register_backend(&b0);
+            norns_backend_t b0 = NORNS_BACKEND(NORNS_BACKEND_NVML, "/mnt/b0", 4096);
+
+            int rv = norns_register_namespace(nsid, &b0);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_backend(b0.b_nsid);
+            rv = norns_unregister_namespace(nsid);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -88,7 +90,7 @@ SCENARIO("unregister backend", "[api::norns_unregister_backend]") {
     GIVEN("a non-running urd instance") {
         WHEN("attempting to unregister a backend") {
 
-            int rv = norns_unregister_backend("b0://");
+            int rv = norns_unregister_namespace("b0://");
 
             THEN("NORNS_ECONNFAILED is returned") {
                 REQUIRE(rv == NORNS_ECONNFAILED);

@@ -54,7 +54,6 @@ SCENARIO("submit request", "[api::norns_submit]") {
 
             norns_op_t task_op = NORNS_IOTASK_COPY;
             
-            const char* src_nsid = "mem://";
             void* src_addr = (void*) 0xdeadbeef;
             size_t src_size = (size_t) 42;
             
@@ -62,7 +61,7 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* dst_path = "/a/b/c";
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_MEMORY_REGION(src_nsid, src_addr, src_size), 
+                                               NORNS_MEMORY_REGION(src_addr, src_size), 
                                                NORNS_LOCAL_PATH(dst_nsid, dst_path));
 
             norns_error_t rv = norns_submit(&task);
@@ -84,9 +83,9 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* dst_mnt = "/mnt/lustre0";
             const char* dst_path = "/a/b/c";
 
-            norns_backend_t b = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 1024);
+            norns_backend_t ns = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, dst_mnt, 1024);
 
-            norns_error_t rv = norns_register_backend(&b);
+            norns_error_t rv = norns_register_namespace(dst_nsid, &ns);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
@@ -100,7 +99,7 @@ SCENARIO("submit request", "[api::norns_submit]") {
                 REQUIRE(rv == NORNS_ENOSUCHBACKEND);
             }
 
-            rv = norns_unregister_backend(dst_nsid);
+            rv = norns_unregister_namespace(dst_nsid);
 
             REQUIRE(rv == NORNS_SUCCESS);
         }
@@ -117,8 +116,8 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* dst_mnt = "/mnt/lustre0";
             const char* dst_path = "/a/b/c";
 
-            norns_backend_t b = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 1024);
-            norns_error_t rv = norns_register_backend(&b);
+            norns_backend_t ns = NORNS_BACKEND(NORNS_BACKEND_NVML, src_mnt, 1024);
+            norns_error_t rv = norns_register_namespace(src_nsid, &ns);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
@@ -132,7 +131,7 @@ SCENARIO("submit request", "[api::norns_submit]") {
                 REQUIRE(rv == NORNS_ENOSUCHBACKEND);
             }
 
-            rv = norns_unregister_backend(src_nsid);
+            rv = norns_unregister_namespace(src_nsid);
 
             REQUIRE(rv == NORNS_SUCCESS);
         }
@@ -142,11 +141,10 @@ SCENARIO("submit request", "[api::norns_submit]") {
         /* tests for NORNS_IOTASK_COPY                                                                                */
         /**************************************************************************************************************/
         /* copy from process memory to .* */
-        WHEN("submitting a request to copy from NORNS_PROCESS_MEMORY to NORNS_LOCAL_PATH") {
+        WHEN("submitting a request to copy from NORNS_MEMORY_REGION to NORNS_LOCAL_PATH") {
             
             norns_op_t task_op = NORNS_IOTASK_COPY;
             
-            const char* src_nsid = "mem://";
             void* src_addr = (void*) 0xdeadbeef;
             size_t src_size = (size_t) 42;
             
@@ -154,16 +152,12 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* dst_mnt = "/mnt/tmp0";
             const char* dst_path = "/a/b/c";
 
-            norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_PROCESS_MEMORY, NULL, 0);
-            norns_error_t rv = norns_register_backend(&bsrc);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
-            rv = norns_register_backend(&bdst);
+            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
+            norns_error_t rv = norns_register_namespace(dst_nsid, &bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_MEMORY_REGION(src_nsid, src_addr, src_size), 
+                                               NORNS_MEMORY_REGION(src_addr, src_size), 
                                                NORNS_LOCAL_PATH(dst_nsid, dst_path));
 
             rv = norns_submit(&task);
@@ -174,18 +168,14 @@ SCENARIO("submit request", "[api::norns_submit]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(src_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            rv = norns_unregister_backend(dst_nsid);
+            rv = norns_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
-        WHEN("submitting a request to copy from NORNS_PROCESS_MEMORY to NORNS_SHARED_PATH") {
+        WHEN("submitting a request to copy from NORNS_MEMORY_REGION to NORNS_SHARED_PATH") {
             
             norns_op_t task_op = NORNS_IOTASK_COPY;
             
-            const char* src_nsid = "mem://";
             void* src_addr = (void*) 0xdeadbeef;
             size_t src_size = (size_t) 42;
             
@@ -193,17 +183,13 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* dst_mnt = "/mnt/tmp0";
             const char* dst_path = "/a/b/c";
 
-            norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_PROCESS_MEMORY, NULL, 0);
-            norns_error_t rv = norns_register_backend(&bsrc);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
-            rv = norns_register_backend(&bdst);
+            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
+            norns_error_t rv = norns_register_namespace(dst_nsid, &bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_MEMORY_REGION(src_nsid, src_addr, src_size), 
+                                               NORNS_MEMORY_REGION(src_addr, src_size), 
                                                NORNS_SHARED_PATH(dst_nsid, dst_path));
 
             rv = norns_submit(&task);
@@ -214,18 +200,14 @@ SCENARIO("submit request", "[api::norns_submit]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(src_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            rv = norns_unregister_backend(dst_nsid);
+            rv = norns_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
-        WHEN("submitting a request to copy from NORNS_PROCESS_MEMORY to NORNS_REMOTE_PATH") {
+        WHEN("submitting a request to copy from NORNS_MEMORY_REGION to NORNS_REMOTE_PATH") {
             
             norns_op_t task_op = NORNS_IOTASK_COPY;
             
-            const char* src_nsid = "mem://";
             void* src_addr = (void*) 0xdeadbeef;
             size_t src_size = (size_t) 42;
             
@@ -233,21 +215,17 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* dst_host = "node0";
             const char* dst_path = "/a/b/c";
 
-            norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_PROCESS_MEMORY, NULL, 0);
-            norns_error_t rv = norns_register_backend(&bsrc);
-            REQUIRE(rv == NORNS_SUCCESS);
-
             /*
-            norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
-            rv = norns_register_backend(&bdst);
+            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
+            rv = norns_register_namespace(dst_nsid, &bdst);
             REQUIRE(rv == NORNS_SUCCESS);
             */
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_MEMORY_REGION(src_nsid, src_addr, src_size), 
+                                               NORNS_MEMORY_REGION(src_addr, src_size), 
                                                NORNS_REMOTE_PATH(dst_nsid, dst_host, dst_path));
 
-            rv = norns_submit(&task);
+            norns_error_t rv = norns_submit(&task);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -255,8 +233,6 @@ SCENARIO("submit request", "[api::norns_submit]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(src_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
         }
 
         /* copy from local path to .* */
@@ -272,12 +248,12 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* dst_mnt = "/mnt/tmp1";
             const char* dst_path = "/a/b/c";
 
-            norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&bsrc);
+            norns_backend_t bsrc = NORNS_BACKEND(NORNS_BACKEND_NVML, src_mnt, 16384);
+            norns_error_t rv = norns_register_namespace(src_nsid, &bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
-            rv = norns_register_backend(&bdst);
+            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
+            rv = norns_register_namespace(dst_nsid, &bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -292,10 +268,10 @@ SCENARIO("submit request", "[api::norns_submit]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(src_nsid);
+            rv = norns_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_backend(dst_nsid);
+            rv = norns_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -311,12 +287,12 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* dst_mnt = "/mnt/lustre";
             const char* dst_path = "/a/b/c";
 
-            norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&bsrc);
+            norns_backend_t bsrc = NORNS_BACKEND(NORNS_BACKEND_NVML, src_mnt, 16384);
+            norns_error_t rv = norns_register_namespace(src_nsid, &bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
-            rv = norns_register_backend(&bdst);
+            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
+            rv = norns_register_namespace(dst_nsid, &bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -331,10 +307,10 @@ SCENARIO("submit request", "[api::norns_submit]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(src_nsid);
+            rv = norns_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_backend(dst_nsid);
+            rv = norns_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -351,13 +327,13 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* dst_host = "node1";
             const char* dst_path = "/a/b/c";
 
-            norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&bsrc);
+            norns_backend_t bsrc = NORNS_BACKEND(NORNS_BACKEND_NVML, src_mnt, 16384);
+            norns_error_t rv = norns_register_namespace(src_nsid, &bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             /*
-            norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_NVML, dst_mnt, 8192);
-            rv = norns_register_backend(&bdst);
+            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_NVML, dst_mnt, 8192);
+            rv = norns_register_namespace(dst_nsid, &bdst);
             REQUIRE(rv == NORNS_SUCCESS);
             */
 
@@ -373,7 +349,7 @@ SCENARIO("submit request", "[api::norns_submit]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(src_nsid);
+            rv = norns_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -390,8 +366,8 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* dst_mnt = "/mnt/tmp";
             const char* dst_path = "/b/c/d";
 
-            norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_NVML, dst_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&bdst);
+            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_NVML, dst_mnt, 16384);
+            norns_error_t rv = norns_register_namespace(dst_nsid, &bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -405,7 +381,7 @@ SCENARIO("submit request", "[api::norns_submit]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(dst_nsid);
+            rv = norns_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -422,8 +398,8 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* dst_mnt = "/mnt/tmp";
             const char* dst_path = "/b/c/d";
 
-            norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&bdst);
+            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, dst_mnt, 16384);
+            norns_error_t rv = norns_register_namespace(dst_nsid, &bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -437,7 +413,7 @@ SCENARIO("submit request", "[api::norns_submit]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(dst_nsid);
+            rv = norns_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -466,7 +442,7 @@ SCENARIO("submit request", "[api::norns_submit]") {
         }
 
         /* using the process memory as destination is not allowed (yet) */
-        WHEN("submitting a request to copy from NORNS_LOCAL_PATH to NORNS_PROCESS_MEMORY") {
+        WHEN("submitting a request to copy from NORNS_LOCAL_PATH to NORNS_MEMORY_REGION") {
 
             norns_op_t task_op = NORNS_IOTASK_COPY;
 
@@ -474,22 +450,17 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* src_mnt = "/mnt/tmp";
             const char* src_path = "/a/b/c";
 
-            const char* dst_nsid = "mem://";
             void* dst_addr = (void*) 0xdeadbeef;
             size_t dst_size = (size_t) 42;
 
 
-            norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&bsrc);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_PROCESS_MEMORY, NULL, 0);
-            rv = norns_register_backend(&bdst);
+            norns_backend_t bsrc = NORNS_BACKEND(NORNS_BACKEND_NVML, src_mnt, 16384);
+            norns_error_t rv = norns_register_namespace(src_nsid, &bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
                                                NORNS_LOCAL_PATH(src_nsid, src_path), 
-                                               NORNS_MEMORY_REGION(dst_nsid, dst_addr, dst_size));
+                                               NORNS_MEMORY_REGION(dst_addr, dst_size));
 
             rv = norns_submit(&task);
 
@@ -498,15 +469,12 @@ SCENARIO("submit request", "[api::norns_submit]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(src_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            rv = norns_unregister_backend(dst_nsid);
+            rv = norns_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
         /* using the process memory as destination is not allowed (yet) */
-        WHEN("submitting a request to copy from NORNS_SHARED_PATH to NORNS_PROCESS_MEMORY") {
+        WHEN("submitting a request to copy from NORNS_SHARED_PATH to NORNS_MEMORY_REGION") {
 
             norns_op_t task_op = NORNS_IOTASK_COPY;
 
@@ -514,22 +482,17 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* src_mnt = "/mnt/lustre";
             const char* src_path = "/a/b/c";
 
-            const char* dst_nsid = "mem://";
             void* dst_addr = (void*) 0xdeadbeef;
             size_t dst_size = (size_t) 42;
 
 
-            norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_LUSTRE, src_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&bsrc);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_PROCESS_MEMORY, NULL, 0);
-            rv = norns_register_backend(&bdst);
+            norns_backend_t bsrc = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, src_mnt, 16384);
+            norns_error_t rv = norns_register_namespace(src_nsid, &bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
                                                NORNS_SHARED_PATH(src_nsid, src_path), 
-                                               NORNS_MEMORY_REGION(dst_nsid, dst_addr, dst_size));
+                                               NORNS_MEMORY_REGION(dst_addr, dst_size));
 
             rv = norns_submit(&task);
 
@@ -538,15 +501,12 @@ SCENARIO("submit request", "[api::norns_submit]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(src_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            rv = norns_unregister_backend(dst_nsid);
+            rv = norns_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
         /* using the process memory as destination is not allowed (yet) */
-        WHEN("submitting a request to copy from NORNS_REMOTE_PATH to NORNS_PROCESS_MEMORY") {
+        WHEN("submitting a request to copy from NORNS_REMOTE_PATH to NORNS_MEMORY_REGION") {
 
             norns_op_t task_op = NORNS_IOTASK_COPY;
 
@@ -554,27 +514,18 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* src_host = "node0";
             const char* src_path = "/a/b/c";
 
-            const char* dst_nsid = "mem://";
             void* dst_addr = (void*) 0xdeadbeef;
             size_t dst_size = (size_t) 42;
 
-
-            norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_PROCESS_MEMORY, NULL, 0);
-            norns_error_t rv = norns_register_backend(&bdst);
-            REQUIRE(rv == NORNS_SUCCESS);
-
             norns_iotask_t task = NORNS_IOTASK(task_op, 
                                                NORNS_REMOTE_PATH(src_nsid, src_host, src_path), 
-                                               NORNS_MEMORY_REGION(dst_nsid, dst_addr, dst_size));
+                                               NORNS_MEMORY_REGION(dst_addr, dst_size));
 
-            rv = norns_submit(&task);
+            norns_error_t rv = norns_submit(&task);
 
             THEN("NORNS_ENOTSUPPORTED is returned") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
             }
-
-            rv = norns_unregister_backend(dst_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
         }
 
 
@@ -582,11 +533,10 @@ SCENARIO("submit request", "[api::norns_submit]") {
         /* tests for NORNS_IOTASK_MOVE                                                                                */
         /**************************************************************************************************************/
         /* move from process memory to .* */
-        WHEN("submitting a request to move from NORNS_PROCESS_MEMORY to NORNS_LOCAL_PATH") {
+        WHEN("submitting a request to move from NORNS_MEMORY_REGION to NORNS_LOCAL_PATH") {
             
             norns_op_t task_op = NORNS_IOTASK_MOVE;
             
-            const char* src_nsid = "mem://";
             void* src_addr = (void*) 0xdeadbeef;
             size_t src_size = (size_t) 42;
             
@@ -594,16 +544,12 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* dst_mnt = "/mnt/tmp0";
             const char* dst_path = "/a/b/c";
 
-            norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_PROCESS_MEMORY, NULL, 0);
-            norns_error_t rv = norns_register_backend(&bsrc);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
-            rv = norns_register_backend(&bdst);
+            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
+            norns_error_t rv = norns_register_namespace(dst_nsid, &bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_MEMORY_REGION(src_nsid, src_addr, src_size), 
+                                               NORNS_MEMORY_REGION(src_addr, src_size), 
                                                NORNS_LOCAL_PATH(dst_nsid, dst_path));
 
             rv = norns_submit(&task);
@@ -614,18 +560,14 @@ SCENARIO("submit request", "[api::norns_submit]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(src_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            rv = norns_unregister_backend(dst_nsid);
+            rv = norns_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
-        WHEN("submitting a request to move from NORNS_PROCESS_MEMORY to NORNS_SHARED_PATH") {
+        WHEN("submitting a request to move from NORNS_MEMORY_REGION to NORNS_SHARED_PATH") {
             
             norns_op_t task_op = NORNS_IOTASK_MOVE;
             
-            const char* src_nsid = "mem://";
             void* src_addr = (void*) 0xdeadbeef;
             size_t src_size = (size_t) 42;
             
@@ -633,17 +575,13 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* dst_mnt = "/mnt/tmp0";
             const char* dst_path = "/a/b/c";
 
-            norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_PROCESS_MEMORY, NULL, 0);
-            norns_error_t rv = norns_register_backend(&bsrc);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
-            rv = norns_register_backend(&bdst);
+            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
+            norns_error_t rv = norns_register_namespace(dst_nsid, &bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_MEMORY_REGION(src_nsid, src_addr, src_size), 
+                                               NORNS_MEMORY_REGION(src_addr, src_size), 
                                                NORNS_SHARED_PATH(dst_nsid, dst_path));
 
             rv = norns_submit(&task);
@@ -654,18 +592,14 @@ SCENARIO("submit request", "[api::norns_submit]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(src_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            rv = norns_unregister_backend(dst_nsid);
+            rv = norns_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
-        WHEN("submitting a request to move from NORNS_PROCESS_MEMORY to NORNS_REMOTE_PATH") {
+        WHEN("submitting a request to move from NORNS_MEMORY_REGION to NORNS_REMOTE_PATH") {
             
             norns_op_t task_op = NORNS_IOTASK_MOVE;
             
-            const char* src_nsid = "mem://";
             void* src_addr = (void*) 0xdeadbeef;
             size_t src_size = (size_t) 42;
             
@@ -673,21 +607,17 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* dst_host = "node0";
             const char* dst_path = "/a/b/c";
 
-            norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_PROCESS_MEMORY, NULL, 0);
-            norns_error_t rv = norns_register_backend(&bsrc);
-            REQUIRE(rv == NORNS_SUCCESS);
-
             /*
-            norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
-            rv = norns_register_backend(&bdst);
+            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
+            rv = norns_register_namespace(dst_nsid, &bdst);
             REQUIRE(rv == NORNS_SUCCESS);
             */
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_MEMORY_REGION(src_nsid, src_addr, src_size), 
+                                               NORNS_MEMORY_REGION(src_addr, src_size), 
                                                NORNS_REMOTE_PATH(dst_nsid, dst_host, dst_path));
 
-            rv = norns_submit(&task);
+            norns_error_t rv = norns_submit(&task);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -695,8 +625,6 @@ SCENARIO("submit request", "[api::norns_submit]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(src_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
         }
 
         /* move from local path to .* */
@@ -712,12 +640,12 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* dst_mnt = "/mnt/tmp1";
             const char* dst_path = "/a/b/c";
 
-            norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&bsrc);
+            norns_backend_t bsrc = NORNS_BACKEND(NORNS_BACKEND_NVML, src_mnt, 16384);
+            norns_error_t rv = norns_register_namespace(src_nsid, &bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
-            rv = norns_register_backend(&bdst);
+            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
+            rv = norns_register_namespace(dst_nsid, &bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -732,10 +660,10 @@ SCENARIO("submit request", "[api::norns_submit]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(src_nsid);
+            rv = norns_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_backend(dst_nsid);
+            rv = norns_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -751,12 +679,12 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* dst_mnt = "/mnt/lustre";
             const char* dst_path = "/a/b/c";
 
-            norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&bsrc);
+            norns_backend_t bsrc = NORNS_BACKEND(NORNS_BACKEND_NVML, src_mnt, 16384);
+            norns_error_t rv = norns_register_namespace(src_nsid, &bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
-            rv = norns_register_backend(&bdst);
+            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
+            rv = norns_register_namespace(dst_nsid, &bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -771,10 +699,10 @@ SCENARIO("submit request", "[api::norns_submit]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(src_nsid);
+            rv = norns_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_backend(dst_nsid);
+            rv = norns_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -791,13 +719,13 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* dst_host = "node1";
             const char* dst_path = "/a/b/c";
 
-            norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&bsrc);
+            norns_backend_t bsrc = NORNS_BACKEND(NORNS_BACKEND_NVML, src_mnt, 16384);
+            norns_error_t rv = norns_register_namespace(src_nsid, &bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             /*
-            norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_NVML, dst_mnt, 8192);
-            rv = norns_register_backend(&bdst);
+            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_NVML, dst_mnt, 8192);
+            rv = norns_register_namespace(dst_nsid, &bdst);
             REQUIRE(rv == NORNS_SUCCESS);
             */
 
@@ -813,7 +741,7 @@ SCENARIO("submit request", "[api::norns_submit]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(src_nsid);
+            rv = norns_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -830,8 +758,8 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* dst_mnt = "/mnt/tmp";
             const char* dst_path = "/b/c/d";
 
-            norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_NVML, dst_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&bdst);
+            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_NVML, dst_mnt, 16384);
+            norns_error_t rv = norns_register_namespace(dst_nsid, &bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -845,7 +773,7 @@ SCENARIO("submit request", "[api::norns_submit]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(dst_nsid);
+            rv = norns_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -862,8 +790,8 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* dst_mnt = "/mnt/tmp";
             const char* dst_path = "/b/c/d";
 
-            norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&bdst);
+            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, dst_mnt, 16384);
+            norns_error_t rv = norns_register_namespace(dst_nsid, &bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -877,7 +805,7 @@ SCENARIO("submit request", "[api::norns_submit]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(dst_nsid);
+            rv = norns_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -906,7 +834,7 @@ SCENARIO("submit request", "[api::norns_submit]") {
         }
 
         /* using the process memory as destination is not allowed (yet) */
-        WHEN("submitting a request to move from NORNS_LOCAL_PATH to NORNS_PROCESS_MEMORY") {
+        WHEN("submitting a request to move from NORNS_LOCAL_PATH to NORNS_MEMORY_REGION") {
 
             norns_op_t task_op = NORNS_IOTASK_MOVE;
 
@@ -914,22 +842,17 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* src_mnt = "/mnt/tmp";
             const char* src_path = "/a/b/c";
 
-            const char* dst_nsid = "mem://";
             void* dst_addr = (void*) 0xdeadbeef;
             size_t dst_size = (size_t) 42;
 
 
-            norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&bsrc);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_PROCESS_MEMORY, NULL, 0);
-            rv = norns_register_backend(&bdst);
+            norns_backend_t bsrc = NORNS_BACKEND(NORNS_BACKEND_NVML, src_mnt, 16384);
+            norns_error_t rv = norns_register_namespace(src_nsid, &bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
                                                NORNS_LOCAL_PATH(src_nsid, src_path), 
-                                               NORNS_MEMORY_REGION(dst_nsid, dst_addr, dst_size));
+                                               NORNS_MEMORY_REGION(dst_addr, dst_size));
 
             rv = norns_submit(&task);
 
@@ -938,15 +861,12 @@ SCENARIO("submit request", "[api::norns_submit]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(src_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            rv = norns_unregister_backend(dst_nsid);
+            rv = norns_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
         /* using the process memory as destination is not allowed (yet) */
-        WHEN("submitting a request to move from NORNS_SHARED_PATH to NORNS_PROCESS_MEMORY") {
+        WHEN("submitting a request to move from NORNS_SHARED_PATH to NORNS_MEMORY_REGION") {
 
             norns_op_t task_op = NORNS_IOTASK_MOVE;
 
@@ -954,22 +874,17 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* src_mnt = "/mnt/lustre";
             const char* src_path = "/a/b/c";
 
-            const char* dst_nsid = "mem://";
             void* dst_addr = (void*) 0xdeadbeef;
             size_t dst_size = (size_t) 42;
 
 
-            norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_LUSTRE, src_mnt, 16384);
-            norns_error_t rv = norns_register_backend(&bsrc);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_PROCESS_MEMORY, NULL, 0);
-            rv = norns_register_backend(&bdst);
+            norns_backend_t bsrc = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, src_mnt, 16384);
+            norns_error_t rv = norns_register_namespace(src_nsid, &bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
                                                NORNS_SHARED_PATH(src_nsid, src_path), 
-                                               NORNS_MEMORY_REGION(dst_nsid, dst_addr, dst_size));
+                                               NORNS_MEMORY_REGION(dst_addr, dst_size));
 
             rv = norns_submit(&task);
 
@@ -978,15 +893,12 @@ SCENARIO("submit request", "[api::norns_submit]") {
             }
 
             // cleanup
-            rv = norns_unregister_backend(src_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            rv = norns_unregister_backend(dst_nsid);
+            rv = norns_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
         /* using the process memory as destination is not allowed (yet) */
-        WHEN("submitting a request to move from NORNS_REMOTE_PATH to NORNS_PROCESS_MEMORY") {
+        WHEN("submitting a request to move from NORNS_REMOTE_PATH to NORNS_MEMORY_REGION") {
 
             norns_op_t task_op = NORNS_IOTASK_MOVE;
 
@@ -994,26 +906,18 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* src_host = "node0";
             const char* src_path = "/a/b/c";
 
-            const char* dst_nsid = "mem://";
             void* dst_addr = (void*) 0xdeadbeef;
             size_t dst_size = (size_t) 42;
 
-            norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_PROCESS_MEMORY, NULL, 0);
-            norns_error_t rv = norns_register_backend(&bdst);
-            REQUIRE(rv == NORNS_SUCCESS);
-
             norns_iotask_t task = NORNS_IOTASK(task_op, 
                                                NORNS_REMOTE_PATH(src_nsid, src_host, src_path), 
-                                               NORNS_MEMORY_REGION(dst_nsid, dst_addr, dst_size));
+                                               NORNS_MEMORY_REGION(dst_addr, dst_size));
 
-            rv = norns_submit(&task);
+            norns_error_t rv = norns_submit(&task);
 
             THEN("NORNS_ENOTSUPPORTED is returned") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
             }
-
-            rv = norns_unregister_backend(dst_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
         }
 
 #ifndef USE_REAL_DAEMON

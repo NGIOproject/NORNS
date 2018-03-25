@@ -41,7 +41,7 @@
 #define LIBNORNSCTL_LOG_PREFIX "libnornsctl"
 
 static bool validate_job(norns_job_t* job);
-static bool validate_backend(norns_backend_t* backend);
+static bool validate_namespace(norns_backend_t* backend);
 
 __attribute__((constructor))
 static void
@@ -51,13 +51,13 @@ libnornsctl_init(void) {
 
 
 /* Control API */
-int
+norns_error_t
 norns_ping() {
     return send_ping_request();
 }
 
 /* Register and describe a batch job */
-int 
+norns_error_t 
 norns_register_job(uint32_t jobid, norns_job_t* job) {
 
     if(!validate_job(job)) {
@@ -68,7 +68,7 @@ norns_register_job(uint32_t jobid, norns_job_t* job) {
 }
 
 /* Update an existing batch job */
-int 
+norns_error_t 
 norns_update_job(uint32_t jobid, norns_job_t* job) {
 
     if(!validate_job(job)) {
@@ -80,96 +80,145 @@ norns_update_job(uint32_t jobid, norns_job_t* job) {
 
 
 /* Remove a batch job from the system */
-int norns_unregister_job(uint32_t jobid) {
+norns_error_t 
+norns_unregister_job(uint32_t jobid) {
     return send_job_request(NORNS_JOB_UNREGISTER, jobid, NULL);
 }
 
 
 /* Add a process to a registered batch job */
-int 
+norns_error_t 
 norns_add_process(uint32_t jobid, uid_t uid, gid_t gid, pid_t pid) {
     return send_process_request(NORNS_PROCESS_ADD, jobid, uid, gid, pid);
 }
 
 
 /* Remove a process from a registered batch job */
-int 
+norns_error_t 
 norns_remove_process(uint32_t jobid, uid_t uid, gid_t gid, pid_t pid) {
     return send_process_request(NORNS_PROCESS_REMOVE, jobid, uid, gid, pid);
 }
 
-/* Register a backend in the local norns server */
-int 
-norns_register_backend(norns_backend_t* backend) {
+/* Register a namespace in the local norns server */
+norns_error_t 
+norns_register_namespace(const char* nsid, norns_backend_t* backend) {
 
-    if(!validate_backend(backend)) {
+    if(nsid == NULL || (strncmp(nsid, "", 1) == 0) || 
+       !validate_namespace(backend)) {
         return NORNS_EBADARGS;
     }
 
-    const char* const nsid = backend->b_nsid;
-
-    return send_backend_request(NORNS_BACKEND_REGISTER, nsid, backend);
+    return send_namespace_request(NORNS_NAMESPACE_REGISTER, nsid, backend);
 }
 
-/* Unregister a backend from the local norns server */
-int 
-norns_unregister_backend(const char* nsid) {
+/* Update a namespace in the local norns server */
+norns_error_t 
+norns_update_namespace(const char* nsid, norns_backend_t* backend) {
+
+    return NORNS_ENOTSUPPORTED;
+
+    if(nsid == NULL || (strncmp(nsid, "", 1) == 0) || 
+       !validate_namespace(backend)) {
+        return NORNS_EBADARGS;
+    }
+}
+
+/* Unregister a namespace from the local norns server */
+norns_error_t 
+norns_unregister_namespace(const char* nsid) {
 
     if(nsid == NULL) {
         return NORNS_EBADARGS;
     }
 
-    return send_backend_request(NORNS_BACKEND_UNREGISTER, nsid, NULL);
+    return send_namespace_request(NORNS_NAMESPACE_UNREGISTER, nsid, NULL);
 }
 
 norns_backend_t 
-NORNS_BACKEND(const char* nsid, norns_flags_t flags, 
-              const char* mount_point, uint32_t quota) {
+NORNS_BACKEND(norns_flags_t flags, const char* mount_point, 
+                uint32_t capacity) {
 
     norns_backend_t b;
 
-    norns_backend_init(&b, nsid, flags, mount_point, quota);
+    norns_backend_init(&b, flags, mount_point, capacity);
 
     return b;
 }
 
 void 
-norns_backend_init(norns_backend_t* backend, const char* nsid, 
-                   norns_flags_t flags, const char* mount_point,
-                   uint32_t quota) {
+norns_backend_init(norns_backend_t* backend, norns_flags_t flags, 
+                     const char* mount_point, uint32_t capacity) {
 
     if(backend == NULL) {
         return;
     }
 
-    // mount_point can be NULL for certain backends
-    if(nsid == NULL) {
-        memset(backend, 0, sizeof(*backend));
+    backend->b_type = flags;
+    backend->b_mount = mount_point;
+    backend->b_capacity = capacity;
+}
+
+norns_job_limit_t NORNS_JOB_LIMIT(const char* nsid, uint32_t quota) {
+
+    norns_job_limit_t limit;
+    norns_job_limit_init(&limit, nsid, quota);
+    return limit;
+}
+
+void norns_job_limit_init(norns_job_limit_t* limit, const char* nsid, 
+                          uint32_t quota) {
+
+    if(limit == NULL) {
         return;
     }
 
-    backend->b_nsid = nsid;
-    backend->b_type = flags;
-    backend->b_mount = mount_point;
-    backend->b_quota = quota;
+    if(nsid == NULL) {
+        memset(limit, 0, sizeof(*limit));
+        return;
+    }
+
+    limit->l_nsid = nsid;
+    limit->l_quota = quota;
+}
+
+norns_job_t 
+NORNS_JOB(const char** hosts, size_t nhosts, 
+          norns_job_limit_t** limits, size_t nlimits) {
+
+    norns_job_t job;
+    norns_job_init(&job, hosts, nhosts, limits, nlimits);
+    return job;
+}
+
+void 
+norns_job_init(norns_job_t* job, const char** hosts, size_t nhosts, 
+               norns_job_limit_t** limits, size_t nlimits) {
+
+    if(job == NULL) {
+        return;
+    }
+
+    if(hosts == NULL || nhosts == 0 || limits == NULL || nlimits == 0) {
+        memset(job, 0, sizeof(*job));
+        return;
+    }
+
+    job->j_hosts = hosts;
+    job->j_nhosts = nhosts;
+    job->j_limits = limits;
+    job->j_nlimits = nlimits;
 }
 
 static bool
-validate_backend(norns_backend_t* backend) {
+validate_namespace(norns_backend_t* backend) {
 
     if(backend == NULL) {
         return false;
     }
 
-    if(backend->b_type != NORNS_BACKEND_PROCESS_MEMORY) {
-        return (backend->b_nsid != NULL) &&
-            (strncmp(backend->b_nsid, "", 1) != 0) &&
-            (backend->b_mount != NULL) &&
+    return (backend->b_mount != NULL) &&
             (strncmp(backend->b_mount, "", 1) != 0) &&
-            (backend->b_quota > 0);
-    }
-
-    return (backend->b_nsid != NULL);
+            (backend->b_capacity > 0);
 }
 
 
@@ -179,34 +228,6 @@ validate_job(norns_job_t* job) {
     return (job != NULL) && 
            (job->j_hosts != NULL) && 
            (job->j_nhosts) != 0 &&
-           (job->j_backends != NULL) && 
-           (job->j_nbackends != 0);
-}
-
-norns_job_t 
-NORNS_JOB(const char** hosts, size_t nhosts, 
-          norns_backend_t** backends, size_t nbackends) {
-
-    norns_job_t job;
-    norns_job_init(&job, hosts, nhosts, backends, nbackends);
-    return job;
-}
-
-void 
-norns_job_init(norns_job_t* job, const char** hosts, size_t nhosts, 
-               norns_backend_t** backends, size_t nbackends) {
-
-    if(job == NULL) {
-        return;
-    }
-
-    if(hosts == NULL || nhosts == 0 || backends == NULL || nbackends == 0) {
-        memset(job, 0, sizeof(*job));
-        return;
-    }
-
-    job->j_hosts = hosts;
-    job->j_nhosts = nhosts;
-    job->j_backends = backends;
-    job->j_nbackends = nbackends;
+           (job->j_limits != NULL) && 
+           (job->j_nlimits != 0);
 }

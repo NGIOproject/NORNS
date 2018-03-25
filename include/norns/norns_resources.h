@@ -52,8 +52,9 @@ typedef struct {
 
 /* Descriptor for a POSIX path */
 typedef struct {
-    const char*             p_host;     /* hostname (NULL if local) */
-    const char*             p_path;     /* path to "data" (i.e. file or directory) */
+    const char* p_nsid;  /* namespace id */
+    const char* p_host;  /* hostname (NULL if local) */
+    const char* p_path;  /* path to "data" (i.e. file or directory) */
 } norns_posix_path_t;
 
 /* Data resource descriptor */
@@ -86,14 +87,13 @@ typedef struct {
     // 5.   echofs          echofs://path/to/dir/[file]             CUSTOM
 
     norns_flags_t r_flags; /* resource type and flags */
-    const char*   r_nsid;  /* namespace id */
     union {
         norns_memory_region_t r_buffer;
         norns_posix_path_t r_posix_path;
     };
 } norns_resource_t;
 
-norns_resource_t NORNS_MEMORY_REGION(const char* nsid, void* addr, size_t size);
+norns_resource_t NORNS_MEMORY_REGION(void* addr, size_t size);
 norns_resource_t NORNS_LOCAL_PATH(const char* nsid, const char* path);
 norns_resource_t NORNS_REMOTE_PATH(const char* nsid, const char* host, const char* path);
 norns_resource_t NORNS_SHARED_PATH(const char* nsid, const char* path);

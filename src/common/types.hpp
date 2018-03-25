@@ -53,7 +53,7 @@ enum class iotask_type {
 enum class backend_type {
     nvml             = NORNS_BACKEND_NVML,
     lustre           = NORNS_BACKEND_LUSTRE,
-    process_memory   = NORNS_BACKEND_PROCESS_MEMORY,
+//    process_memory   = NORNS_BACKEND_PROCESS_MEMORY, // deprecated
     echofs           = NORNS_BACKEND_ECHOFS,
     posix_filesystem = NORNS_BACKEND_POSIX_FILESYSTEM,
     unknown

@@ -36,14 +36,13 @@ namespace data {
 /*! Memory buffer data */
 struct memory_buffer : public resource_info {
 
-    memory_buffer(std::string nsid, uint64_t address, std::size_t size);
+    memory_buffer(uint64_t address, std::size_t size);
     ~memory_buffer();
     resource_type type() const override;
     std::string nsid() const override;
     bool is_remote() const override;
     std::string to_string() const override;
 
-    std::string m_nsid;
     uint64_t m_address;
     std::size_t m_size;
 };

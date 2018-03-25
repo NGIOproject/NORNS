@@ -28,6 +28,8 @@
 #ifndef __MAKE_RESOURCE_HPP__
 #define __MAKE_RESOURCE_HPP__
 
+#include "backends.hpp"
+
 // add additional concrete implementations here
 #include "resources/local-path.hpp"
 #include "resources/memory-buffer.hpp"
@@ -38,15 +40,25 @@ namespace norns {
 namespace data {
 
 inline std::shared_ptr<resource> make_resource(std::shared_ptr<resource_info> rinfo) {
+
     switch(rinfo->type()) {
         case data::resource_type::memory_region:
-            return std::make_shared<data::memory_region_resource>(rinfo);
+        {
+            auto rsrc = std::make_shared<data::memory_region_resource>(rinfo);
+            rsrc->set_backend(storage::process_memory_backend);
+            return rsrc;
+        }
+
         case data::resource_type::local_posix_path:
             return std::make_shared<data::local_path_resource>(rinfo);
         case data::resource_type::shared_posix_path:
             return std::make_shared<data::shared_path_resource>(rinfo);
         case data::resource_type::remote_posix_path:
-            return std::make_shared<data::remote_path_resource>(rinfo);
+        {
+            auto rsrc = std::make_shared<data::remote_path_resource>(rinfo);
+            rsrc->set_backend(storage::remote_backend);
+            return rsrc;
+        }
     }
 
     // return an invalid pointer if type is not known

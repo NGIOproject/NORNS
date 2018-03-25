@@ -34,15 +34,13 @@ SCENARIO("initialize resources", "[api::norns_resource_init]") {
     GIVEN("valid resource information") {
         WHEN("initializing a memory buffer resource") {
 
-            const char* nsid = "mem://";
             void* addr = (void*) 0xdeadbeef;
             size_t size = (size_t) 42;
 
-            norns_resource_t res = NORNS_MEMORY_REGION(nsid, addr, size);
+            norns_resource_t res = NORNS_MEMORY_REGION(addr, size);
                 
             THEN("the norns_resource structure is initialized as expected") {
                 REQUIRE(res.r_flags == NORNS_PROCESS_MEMORY);
-                REQUIRE(strcmp(res.r_nsid, nsid) == 0);
                 REQUIRE(res.r_buffer.b_addr == addr);
                 REQUIRE(res.r_buffer.b_size == size);
             }
@@ -57,7 +55,7 @@ SCENARIO("initialize resources", "[api::norns_resource_init]") {
 
             THEN("the norns_resource structure is initialized as a local file") {
                 REQUIRE(res.r_flags == (NORNS_POSIX_PATH | R_LOCAL));
-                REQUIRE(strcmp(res.r_nsid, nsid) == 0);
+                REQUIRE(strcmp(res.r_posix_path.p_nsid, nsid) == 0);
                 REQUIRE(res.r_posix_path.p_host == NULL);
                 REQUIRE(strcmp(res.r_posix_path.p_path, path) == 0);
             }
@@ -72,7 +70,7 @@ SCENARIO("initialize resources", "[api::norns_resource_init]") {
 
             THEN("the norns_resource structure is initialized as a local file") {
                 REQUIRE(res.r_flags == (NORNS_POSIX_PATH | R_SHARED));
-                REQUIRE(strcmp(res.r_nsid, nsid) == 0);
+                REQUIRE(strcmp(res.r_posix_path.p_nsid, nsid) == 0);
                 REQUIRE(res.r_posix_path.p_host == NULL);
                 REQUIRE(strcmp(res.r_posix_path.p_path, path) == 0);
             }
@@ -88,7 +86,7 @@ SCENARIO("initialize resources", "[api::norns_resource_init]") {
 
             THEN("the norns_resource structure is initialized as a remote file") {
                 REQUIRE(res.r_flags == (NORNS_POSIX_PATH | R_REMOTE));
-                REQUIRE(strcmp(res.r_nsid, nsid) == 0);
+                REQUIRE(strcmp(res.r_posix_path.p_nsid, nsid) == 0);
                 REQUIRE(strcmp(res.r_posix_path.p_host, host) == 0);
                 REQUIRE(strcmp(res.r_posix_path.p_path, path) == 0);
             }

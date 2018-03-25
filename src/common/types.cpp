@@ -36,8 +36,8 @@ std::string to_string(backend_type type) {
             return "NVML";
         case backend_type::lustre:
             return "LUSTRE";
-        case backend_type::process_memory:
-            return "PROCESS_MEMORY";
+//        case backend_type::process_memory: // deprecated
+//            return "PROCESS_MEMORY";
         case backend_type::echofs:
             return "ECHOFS";
         case backend_type::posix_filesystem:

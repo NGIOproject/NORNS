@@ -74,11 +74,10 @@ SCENARIO("initialize a task with norns_iotask_init", "[api::norns_iotask_init]")
             norns_iotask_t task;
             norns_op_t task_op = NORNS_IOTASK_COPY;
 
-            const char* src_nsid = "mem://";
             void* src_addr = (void*) 0xdeadbeef;
             size_t src_size = (size_t) 42;
 
-            norns_resource_t src = NORNS_MEMORY_REGION(src_nsid, src_addr, src_size);
+            norns_resource_t src = NORNS_MEMORY_REGION(src_addr, src_size);
 
             norns_iotask_init(&task, task_op, &src, NULL);
 
@@ -94,21 +93,19 @@ SCENARIO("initialize a task with norns_iotask_init", "[api::norns_iotask_init]")
         WHEN("initializing a task with src=NORNS_PROCESS_MEMORY and dst=NORNS_POSIX_PATH | R_LOCAL") {
 
             norns_op_t task_op = NORNS_IOTASK_COPY;
-            const char* src_nsid = "mem://";
             void* src_addr = (void*) 0xdeadbeef;
             size_t src_size = (size_t) 42;
             const char* dst_nsid = "tmp://";
             const char* dst_path = "/a/b/c";
 
-            norns_resource_t src = NORNS_MEMORY_REGION(src_nsid, src_addr, src_size);
+            norns_resource_t src = NORNS_MEMORY_REGION(src_addr, src_size);
 
-            REQUIRE(strcmp(src.r_nsid, src_nsid) == 0);
             REQUIRE(src.r_buffer.b_addr == src_addr);
             REQUIRE(src.r_buffer.b_size == src_size);
 
             norns_resource_t dst = NORNS_LOCAL_PATH(dst_nsid, dst_path);
 
-            REQUIRE(strcmp(dst.r_nsid, dst_nsid) == 0);
+            REQUIRE(strcmp(dst.r_posix_path.p_nsid, dst_nsid) == 0);
             REQUIRE(dst.r_posix_path.p_host == NULL);
             REQUIRE(strcmp(dst.r_posix_path.p_path, dst_path) == 0);
 
@@ -128,22 +125,20 @@ SCENARIO("initialize a task with norns_iotask_init", "[api::norns_iotask_init]")
         WHEN("initializing a task with src=NORNS_PROCESS_MEMORY and dst=NORNS_POSIX_PATH | R_REMOTE") {
 
             norns_op_t task_op = NORNS_IOTASK_COPY;
-            const char* src_nsid = "mem://";
             void* src_addr = (void*) 0xdeadbeef;
             size_t src_size = (size_t) 42;
             const char* dst_nsid = "tmp://";
             const char* dst_host = "node0";
             const char* dst_path = "/a/b/c";
 
-            norns_resource_t src = NORNS_MEMORY_REGION(src_nsid, src_addr, src_size);
+            norns_resource_t src = NORNS_MEMORY_REGION(src_addr, src_size);
 
-            REQUIRE(strcmp(src.r_nsid, src_nsid) == 0);
             REQUIRE(src.r_buffer.b_addr == src_addr);
             REQUIRE(src.r_buffer.b_size == src_size);
 
             norns_resource_t dst = NORNS_REMOTE_PATH(dst_nsid, dst_host, dst_path);
 
-            REQUIRE(strcmp(dst.r_nsid, dst_nsid) == 0);
+            REQUIRE(strcmp(dst.r_posix_path.p_nsid, dst_nsid) == 0);
             REQUIRE(strcmp(dst.r_posix_path.p_host, dst_host) == 0);
             REQUIRE(strcmp(dst.r_posix_path.p_path, dst_path) == 0);
 
@@ -166,31 +161,28 @@ SCENARIO("initialize a task with NORNS_TASK", "[api::NORNS_TASK]") {
         WHEN("initializing a task with src=NORNS_MEMORY_REGION and dst=NORNS_LOCAL_PATH") {
 
             norns_op_t task_op = NORNS_IOTASK_COPY;
-            const char* src_nsid = "mem://";
             void* src_addr = (void*) 0xdeadbeef;
             size_t src_size = (size_t) 42;
             const char* dst_nsid = "tmp://";
             const char* dst_path = "/a/b/c";
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                           NORNS_MEMORY_REGION(src_nsid, src_addr, src_size), 
+                                           NORNS_MEMORY_REGION(src_addr, src_size), 
                                            NORNS_LOCAL_PATH(dst_nsid, dst_path));
 
             THEN("the norns_task structure is initialized as expected") {
                 REQUIRE(task.t_id == 0);
                 REQUIRE(task.t_op == task_op);
 
-                REQUIRE(strcmp(task.t_src.r_nsid, src_nsid) == 0);
                 REQUIRE(task.t_src.r_buffer.b_addr == src_addr);
 
-                REQUIRE(strcmp(task.t_dst.r_nsid, dst_nsid) == 0);
+                REQUIRE(strcmp(task.t_dst.r_posix_path.p_nsid, dst_nsid) == 0);
                 REQUIRE(strcmp(task.t_dst.r_posix_path.p_path, dst_path) == 0);
             }
         }
 
         WHEN("initializing a task with src=NORNS_PROCESS_MEMORY and dst=NORNS_REMOTE_PATH") {
             norns_op_t task_op = NORNS_IOTASK_COPY;
-            const char* src_nsid = "mem://";
             void* src_addr = (void*) 0xdeadbeef;
             size_t src_size = (size_t) 42;
             const char* dst_nsid = "tmp://";
@@ -198,17 +190,16 @@ SCENARIO("initialize a task with NORNS_TASK", "[api::NORNS_TASK]") {
             const char* dst_path = "/a/b/c";
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                           NORNS_MEMORY_REGION(src_nsid, src_addr, src_size), 
+                                           NORNS_MEMORY_REGION(src_addr, src_size), 
                                            NORNS_REMOTE_PATH(dst_nsid, dst_host, dst_path));
 
             THEN("the norns_task structure is initialized as expected") {
                 REQUIRE(task.t_id == 0);
                 REQUIRE(task.t_op == task_op);
 
-                REQUIRE(strcmp(task.t_src.r_nsid, src_nsid) == 0);
                 REQUIRE(task.t_src.r_buffer.b_addr == src_addr);
 
-                REQUIRE(strcmp(task.t_dst.r_nsid, dst_nsid) == 0);
+                REQUIRE(strcmp(task.t_dst.r_posix_path.p_nsid, dst_nsid) == 0);
                 REQUIRE(strcmp(task.t_dst.r_posix_path.p_host, dst_host) == 0);
                 REQUIRE(strcmp(task.t_dst.r_posix_path.p_path, dst_path) == 0);
             }
@@ -218,24 +209,22 @@ SCENARIO("initialize a task with NORNS_TASK", "[api::NORNS_TASK]") {
         WHEN("initializing a task with src=NORNS_MEMORY_REGION and dst=NORNS_LOCAL_PATH") {
 
             norns_op_t task_op = NORNS_IOTASK_COPY;
-            const char* src_nsid = "mem://";
             void* src_addr = (void*) 0xdeadbeef;
             size_t src_size = (size_t) 42;
             const char* dst_nsid = "tmp://";
             const char* dst_path = "/a/b/c";
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                           NORNS_MEMORY_REGION(src_nsid, src_addr, src_size), 
+                                           NORNS_MEMORY_REGION(src_addr, src_size), 
                                            NORNS_SHARED_PATH(dst_nsid, dst_path));
 
             THEN("the norns_task structure is initialized as expected") {
                 REQUIRE(task.t_id == 0);
                 REQUIRE(task.t_op == task_op);
 
-                REQUIRE(strcmp(task.t_src.r_nsid, src_nsid) == 0);
                 REQUIRE(task.t_src.r_buffer.b_addr == src_addr);
 
-                REQUIRE(strcmp(task.t_dst.r_nsid, dst_nsid) == 0);
+                REQUIRE(strcmp(task.t_dst.r_posix_path.p_nsid, dst_nsid) == 0);
                 REQUIRE(strcmp(task.t_dst.r_posix_path.p_path, dst_path) == 0);
             }
         }

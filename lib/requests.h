@@ -47,10 +47,10 @@ typedef enum {
     /* processes */
     NORNS_PROCESS_ADD,
     NORNS_PROCESS_REMOVE,
-    /* backends */
-    NORNS_BACKEND_REGISTER,
-    NORNS_BACKEND_UPDATE,
-    NORNS_BACKEND_UNREGISTER,
+    /* namespaces */
+    NORNS_NAMESPACE_REGISTER,
+    NORNS_NAMESPACE_UPDATE,
+    NORNS_NAMESPACE_UNREGISTER,
     /* other */
     NORNS_BAD_RPC
 } norns_rpc_type_t;

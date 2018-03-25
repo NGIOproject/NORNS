@@ -53,11 +53,11 @@ norns::rpc::Response_Type encode(norns::api::response_type type) {
         case response_type::process_unregister:
             return norns::rpc::Response::PROCESS_REMOVE;
         case response_type::backend_register: 
-            return norns::rpc::Response::BACKEND_REGISTER;
+            return norns::rpc::Response::NAMESPACE_REGISTER;
         case response_type::backend_update:
-            return norns::rpc::Response::BACKEND_UPDATE;
+            return norns::rpc::Response::NAMESPACE_UPDATE;
         case response_type::backend_unregister:
-            return norns::rpc::Response::BACKEND_UNREGISTER;
+            return norns::rpc::Response::NAMESPACE_UNREGISTER;
         case response_type::bad_request:
             return norns::rpc::Response::BAD_REQUEST;
         default:

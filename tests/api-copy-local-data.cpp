@@ -90,8 +90,8 @@ struct test_env {
 
         m_dirs.emplace(nsid, abs_mnt);
 
-        norns_backend_t bend = NORNS_BACKEND(nsid.c_str(), NORNS_BACKEND_POSIX_FILESYSTEM, abs_mnt.c_str(), quota);
-        norns_error_t rv = norns_register_backend(&bend);
+        norns_backend_t ns = NORNS_BACKEND(NORNS_BACKEND_POSIX_FILESYSTEM, abs_mnt.c_str(), quota);
+        norns_error_t rv = norns_register_namespace(nsid.c_str(), &ns);
         REQUIRE(rv == NORNS_SUCCESS);
 
         m_backends.emplace(nsid);
@@ -122,7 +122,7 @@ struct test_env {
 
     void teardown_backend(const std::string nsid) {
         if(m_backends.count(nsid) != 0) {
-            norns_error_t rv = norns_unregister_backend(nsid.c_str());
+            norns_error_t rv = norns_unregister_namespace(nsid.c_str());
 
             // cannot use REQUIRE here since it may throw an exception,
             // and throwing exceptions from destructors is a huge problem

@@ -63,12 +63,11 @@ norns_resource_init(norns_resource_flags_t flags, norns_resource_t* res,
 #endif
 
 inline norns_resource_t
-NORNS_MEMORY_REGION(const char* nsid, void* addr, size_t size) {
+NORNS_MEMORY_REGION(void* addr, size_t size) {
 
     norns_resource_t res;
 
     res.r_flags = NORNS_PROCESS_MEMORY;
-    res.r_nsid = nsid;
     res.r_buffer.b_addr = addr;
     res.r_buffer.b_size = size;
 
@@ -81,7 +80,7 @@ NORNS_LOCAL_PATH(const char* nsid, const char* path) {
     norns_resource_t res;
 
     res.r_flags = NORNS_POSIX_PATH | R_LOCAL;
-    res.r_nsid = nsid;
+    res.r_posix_path.p_nsid = nsid;
     res.r_posix_path.p_host = NULL;
     res.r_posix_path.p_path = path;
 
@@ -94,7 +93,7 @@ NORNS_REMOTE_PATH(const char* nsid, const char* host, const char* path) {
     norns_resource_t res;
 
     res.r_flags = NORNS_POSIX_PATH | R_REMOTE;
-    res.r_nsid = nsid;
+    res.r_posix_path.p_nsid = nsid;
     res.r_posix_path.p_host = host;
     res.r_posix_path.p_path = path;
 
@@ -107,7 +106,7 @@ NORNS_SHARED_PATH(const char* nsid, const char* path) {
     norns_resource_t res;
 
     res.r_flags = NORNS_POSIX_PATH | R_SHARED;
-    res.r_nsid = nsid;
+    res.r_posix_path.p_nsid = nsid;
     res.r_posix_path.p_host = NULL;
     res.r_posix_path.p_path = path;
 

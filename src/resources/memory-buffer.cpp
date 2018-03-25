@@ -33,9 +33,8 @@ namespace norns {
 namespace data {
 
 /*! Memory buffer data */
-memory_buffer::memory_buffer(std::string nsid, uint64_t address, std::size_t size)
-    : m_nsid(nsid),
-      m_address(address),
+memory_buffer::memory_buffer(uint64_t address, std::size_t size)
+    : m_address(address),
       m_size(size) {}
 
 memory_buffer::~memory_buffer() { }
@@ -45,7 +44,7 @@ resource_type memory_buffer::type() const {
 }
 
 std::string memory_buffer::nsid() const {
-    return m_nsid;
+    return "";
 }
 
 bool memory_buffer::is_remote() const {

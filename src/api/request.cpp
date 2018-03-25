@@ -61,8 +61,9 @@ norns::backend_type decode_backend_type(::google::protobuf::uint32 type) {
             return backend_type::nvml;
         case NORNS_BACKEND_LUSTRE:
             return backend_type::lustre;
-        case NORNS_BACKEND_PROCESS_MEMORY:
-            return backend_type::process_memory;
+//        //XXX PROCESS_MEMORY should never be received
+//        case NORNS_BACKEND_PROCESS_MEMORY: // deprecated
+//            return backend_type::process_memory;
         case NORNS_BACKEND_ECHOFS:
             return backend_type::echofs;
         case NORNS_BACKEND_POSIX_FILESYSTEM:
@@ -124,21 +125,20 @@ create_from(const norns::rpc::Request_Task_Resource& res) {
 
     if(is_valid(res)) {
         if(res.type() & NORNS_PROCESS_MEMORY) {
-            return std::make_shared<memory_buffer>(res.nsid(),
-                                                   res.buffer().address(),
+            return std::make_shared<memory_buffer>(res.buffer().address(),
                                                    res.buffer().size());
         }
         else { // NORNS_POSIX_PATH
             if(res.type() & R_LOCAL) {
-                return std::make_shared<local_path>(res.nsid(),
+                return std::make_shared<local_path>(res.path().nsid(),
                                                     res.path().datapath());
             }
             else if(res.type() & R_SHARED) {
-                return std::make_shared<shared_path>(res.nsid(),
+                return std::make_shared<shared_path>(res.path().nsid(),
                                                      res.path().datapath());
             }
             else { // R_REMOTE
-                return std::make_shared<remote_path>(res.nsid(),
+                return std::make_shared<remote_path>(res.path().nsid(),
                                                      res.path().hostname(), 
                                                      res.path().datapath());
             }
@@ -225,6 +225,10 @@ request_ptr request::create_from_buffer(const std::vector<uint8_t>& buffer, int 
                     }
 #endif
 
+                    //XXX TODO instantiate job_capabilities
+                    //and pass them to make_unique<XXX> below
+                    //instead of 'backends'
+
                     if(rpc_req.type() == norns::rpc::Request::JOB_REGISTER) {
                         return std::make_unique<job_register_request>(id, hosts, backends);
                     }
@@ -263,29 +267,38 @@ request_ptr request::create_from_buffer(const std::vector<uint8_t>& buffer, int 
                 }
                 break;
 
-            case norns::rpc::Request::BACKEND_REGISTER:
-            case norns::rpc::Request::BACKEND_UPDATE:
-                if(rpc_req.has_backend()) {
+            case norns::rpc::Request::NAMESPACE_REGISTER:
+            case norns::rpc::Request::NAMESPACE_UPDATE:
+            case norns::rpc::Request::NAMESPACE_UNREGISTER:
+                if(rpc_req.has_nspace()) {
 
-                    const auto& b = rpc_req.backend();
-                    backend_type type = ::decode_backend_type(b.type());
+                    auto nspace = rpc_req.nspace();
 
-                    if(type == backend_type::unknown) {
-                        break;
+                    if(nspace.has_backend()) {
+
+                        const auto& b = nspace.backend();
+                        backend_type type = ::decode_backend_type(b.type());
+
+                        if(type == backend_type::unknown) {
+                            break;
+                        }
+
+                        if(rpc_req.type() == norns::rpc::Request::NAMESPACE_REGISTER) {
+                            return std::make_unique<backend_register_request>(nspace.nsid(), 
+                                                                              type, 
+                                                                              b.mount(), 
+                                                                              b.capacity());
+                        }
+                        else { // rpc_req.type() == norns::rpc::Request::NAMESPACE_UPDATE
+                            return std::make_unique<backend_update_request>(nspace.nsid(), 
+                                                                            type, 
+                                                                            b.mount(), 
+                                                                            b.capacity());
+                        }
                     }
-
-                    if(rpc_req.type() == norns::rpc::Request::BACKEND_REGISTER) {
-                        return std::make_unique<backend_register_request>(b.nsid(), type, b.mount(), b.quota());
+                    else { // norns::rpc::Request::NAMESPACE_UNREGISTER
+                        return std::make_unique<backend_unregister_request>(nspace.nsid());
                     }
-                    else { // rpc_req.type() == norns::rpc::Request::BACKEND_UPDATE
-                        return std::make_unique<backend_update_request>(b.nsid(), type, b.mount(), b.quota());
-                    }
-                }
-                break;
-
-            case norns::rpc::Request::BACKEND_UNREGISTER:
-                if(rpc_req.has_nsid()) {
-                    return std::make_unique<backend_unregister_request>(rpc_req.nsid());
                 }
                 break;
         }

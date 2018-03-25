@@ -33,10 +33,11 @@
 
 namespace norns {
 namespace storage {
+namespace detail {
 
 class process_memory final : public storage::backend {
 public:
-    process_memory(const std::string& mount, uint32_t quota);
+    process_memory();
 
     std::string mount() const override;
     uint32_t quota() const override;
@@ -45,11 +46,14 @@ public:
     void read_data() const override;
     void write_data() const override;
 
-    std::string to_string() const;
+    std::string to_string() const override;
 };
 
-NORNS_REGISTER_BACKEND(backend_type::process_memory, process_memory);
+// no need to register it since it's never going to be created 
+// automatically using the factory 
+//NORNS_REGISTER_BACKEND(backend_type::process_memory, process_memory);
 
+} // namespace detail
 } // namespace storage
 } // namespace norns
 

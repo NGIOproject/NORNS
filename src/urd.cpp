@@ -230,11 +230,19 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
             return std::make_tuple(urd_error::bad_args, resource_ptr());
         }
 
-        // remote backend validation is left to the recipient
-        if(rinfo->is_remote()) {
-            rsrc->set_backend(storage::remote_backend);
+        // make_resource was able to deduce the appropriate
+        // backend from the rinfo type. 
+        // this means that it's one of the special backends
+        // such as "process_memory_backend" or "remote_backend"
+        // and that we can skip the backend lookup process
+        if(rsrc->backend() != nullptr) {
             return std::make_tuple(urd_error::success, rsrc);
         }
+
+//        // remote backend validation is left to the recipient
+//        if(rinfo->is_remote()) {
+//            return std::make_tuple(urd_error::success, rsrc);
+//        }
 
         const auto nsid = rinfo->nsid();
 

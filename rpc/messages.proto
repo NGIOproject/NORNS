@@ -13,9 +13,9 @@ message Request {
         JOB_UNREGISTER = 6;
         PROCESS_ADD = 7;
         PROCESS_REMOVE = 8;
-        BACKEND_REGISTER = 9;
-        BACKEND_UPDATE = 10;
-        BACKEND_UNREGISTER = 11;
+        NAMESPACE_REGISTER = 9;
+        NAMESPACE_UPDATE = 10;
+        NAMESPACE_UNREGISTER = 11;
     }
 
     // I/O task descriptor
@@ -27,13 +27,13 @@ message Request {
         };
 
         message PosixPath {
-            optional string hostname = 1;
-            required string datapath = 2;
+            required string nsid = 1;
+            optional string hostname = 2;
+            required string datapath = 3;
         };
 
         message Resource {
             required uint32 type = 1;
-            required string nsid = 2;
             optional MemoryRegion buffer = 3;
             optional PosixPath path = 4;
         };
@@ -47,7 +47,7 @@ message Request {
     // job descriptor
     message Job {
         repeated string hosts = 1;
-        repeated Backend backends = 2;
+        repeated JobLimits limits = 2;
     }
 
     // process descriptor
@@ -57,12 +57,24 @@ message Request {
         required int64 pid = 3;
     }
 
-    // backend descriptor
-    message Backend {
-        required int32 type = 1;
-        required string nsid = 2;
-        required string mount = 3;
-        required int32 quota = 4;
+    // namespace descriptor
+    message Namespace {
+
+        // backend descriptor
+        message Backend {
+            required int32 type = 1;
+            required string mount = 2;
+            required int32 capacity = 3;
+        }
+
+        required string nsid = 1;
+        optional Backend backend = 2;
+    }
+
+    // job limits 
+    message JobLimits {
+        required string nsid = 1;
+        required int32 quota = 2;
     }
 
     required Type type = 1;
@@ -70,8 +82,7 @@ message Request {
     optional uint32 jobid = 3;
     optional Job job = 4;
     optional Process process = 5;
-    optional string nsid = 6;
-    optional Backend backend = 7;
+    optional Namespace nspace = 6;
 }
 
 message Response {
@@ -87,9 +98,9 @@ message Response {
         JOB_UNREGISTER = 6;
         PROCESS_ADD = 7;
         PROCESS_REMOVE = 8;
-        BACKEND_REGISTER = 9;
-        BACKEND_UPDATE = 10;
-        BACKEND_UNREGISTER = 11;
+        NAMESPACE_REGISTER = 9;
+        NAMESPACE_UPDATE = 10;
+        NAMESPACE_UNREGISTER = 11;
         BAD_REQUEST = 12;
     }
 

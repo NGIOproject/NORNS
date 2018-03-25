@@ -35,11 +35,11 @@ lib_LTLIBRARIES = \
 	libnornsctl.la \
 	libnornsctl_debug.la
 
-include_HEADERS = \
-	$(top_srcdir)/include/norns.h
-	$(top_srcdir)/include/nornsctl.h
-	$(top_srcdir)/include/norns/norns_error.h
-	$(top_srcdir)/include/norns/norns_resources.h
+#include_HEADERS = \
+#	$(top_srcdir)/include/norns.h
+#	$(top_srcdir)/include/nornsctl.h
+#	$(top_srcdir)/include/norns/norns_error.h
+#	$(top_srcdir)/include/norns/norns_resources.h
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \

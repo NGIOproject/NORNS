@@ -158,13 +158,13 @@ send_process_request(norns_rpc_type_t type, uint32_t jobid,
 }
 
 norns_error_t
-send_backend_request(norns_rpc_type_t type, const char* nsid, 
-                     norns_backend_t* backend) {
+send_namespace_request(norns_rpc_type_t type, const char* nsid, 
+                       norns_backend_t* ns) {
 
     int res;
     norns_response_t resp;
 
-    if((res = send_request(type, &resp, nsid, backend)) 
+    if((res = send_request(type, &resp, nsid, ns)) 
             != NORNS_SUCCESS) {
         return res;
     }
@@ -185,11 +185,11 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
     msgbuffer_t req_buf = MSGBUFFER_INIT();
     msgbuffer_t resp_buf = MSGBUFFER_INIT();
 
-    if(type == NORNS_PING             || type == NORNS_JOB_REGISTER   || 
-       type == NORNS_JOB_UPDATE       || type == NORNS_JOB_UNREGISTER || 
-       type == NORNS_PROCESS_ADD      || type == NORNS_PROCESS_REMOVE || 
-       type == NORNS_BACKEND_REGISTER || type == NORNS_BACKEND_UPDATE || 
-       type == NORNS_BACKEND_UNREGISTER) {
+    if(type == NORNS_PING                 || type == NORNS_JOB_REGISTER     || 
+       type == NORNS_JOB_UPDATE           || type == NORNS_JOB_UNREGISTER   || 
+       type == NORNS_PROCESS_ADD          || type == NORNS_PROCESS_REMOVE   || 
+       type == NORNS_NAMESPACE_REGISTER   || type == NORNS_NAMESPACE_UPDATE || 
+       type == NORNS_NAMESPACE_UNREGISTER) {
         control_request = true;
     }
 
@@ -258,16 +258,16 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
             break;
         }
 
-        case NORNS_BACKEND_REGISTER:
-        case NORNS_BACKEND_UPDATE:
-        case NORNS_BACKEND_UNREGISTER:
+        case NORNS_NAMESPACE_REGISTER:
+        case NORNS_NAMESPACE_UPDATE:
+        case NORNS_NAMESPACE_UNREGISTER:
         {
-            const char* const prefix =
+            const char* const nsid =
                 va_arg(ap, const char* const);
             const norns_backend_t* backend = 
                 va_arg(ap, const norns_backend_t*);
 
-            if((res = pack_to_buffer(type, &req_buf, prefix, backend)) 
+            if((res = pack_to_buffer(type, &req_buf, nsid, backend)) 
                     != NORNS_SUCCESS) {
                 return res;
             }

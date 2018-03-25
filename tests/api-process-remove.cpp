@@ -60,14 +60,14 @@ SCENARIO("remove process from job", "[api::norns_remove_process]") {
             const char* test_hosts[] = { "host00", "host01" };
             const size_t test_nhosts = sizeof(test_hosts) / sizeof(test_hosts[0]);
 
-            norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b0", 1024);
-            norns_backend_t b1 = NORNS_BACKEND("b1://", NORNS_BACKEND_NVML, "/mnt/b1", 2048);
-            norns_backend_t b2 = NORNS_BACKEND("b2://", NORNS_BACKEND_NVML, "/mnt/b2", 1024);
+            norns_job_limit_t l0 = NORNS_JOB_LIMIT("b0://", 1024);
+            norns_job_limit_t l1 = NORNS_JOB_LIMIT("b1://", 2048);
+            norns_job_limit_t l2 = NORNS_JOB_LIMIT("b2://", 1024);
 
-            norns_backend_t* test_backends[] = { &b0, &b1, &b2 };
-            const size_t test_nbackends = sizeof(test_backends) / sizeof(test_backends[0]);
+            norns_job_limit_t* test_lims[] = { &l0, &l1, &l2 };
+            const size_t test_nlims = sizeof(test_lims) / sizeof(test_lims[0]);
 
-            norns_job_t job = NORNS_JOB(test_hosts, test_nhosts, test_backends, test_nbackends);
+            norns_job_t job = NORNS_JOB(test_hosts, test_nhosts, test_lims, test_nlims);
             const uint32_t jobid = 42;
             const uid_t uid = 1001;
             const gid_t gid = 2001;
@@ -90,14 +90,14 @@ SCENARIO("remove process from job", "[api::norns_remove_process]") {
             const char* test_hosts[] = { "host00", "host01" };
             const size_t test_nhosts = sizeof(test_hosts) / sizeof(test_hosts[0]);
 
-            norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b0", 1024);
-            norns_backend_t b1 = NORNS_BACKEND("b1://", NORNS_BACKEND_NVML, "/mnt/b1", 2048);
-            norns_backend_t b2 = NORNS_BACKEND("b2://", NORNS_BACKEND_NVML, "/mnt/b2", 1024);
+            norns_job_limit_t l0 = NORNS_JOB_LIMIT("b0://", 1024);
+            norns_job_limit_t l1 = NORNS_JOB_LIMIT("b1://", 2048);
+            norns_job_limit_t l2 = NORNS_JOB_LIMIT("b2://", 1024);
 
-            norns_backend_t* test_backends[] = { &b0, &b1, &b2 };
-            const size_t test_nbackends = sizeof(test_backends) / sizeof(test_backends[0]);
+            norns_job_limit_t* test_lims[] = { &l0, &l1, &l2 };
+            const size_t test_nlims = sizeof(test_lims) / sizeof(test_lims[0]);
 
-            norns_job_t job1 = NORNS_JOB(test_hosts, test_nhosts, test_backends, test_nbackends);
+            norns_job_t job1 = NORNS_JOB(test_hosts, test_nhosts, test_lims, test_nlims);
             const uint32_t jobid = 42;
             const uid_t uid = 1001;
             const gid_t gid = 2001;
@@ -124,14 +124,14 @@ SCENARIO("remove process from job", "[api::norns_remove_process]") {
             const char* test_hosts[] = { "host00", "host01" };
             const size_t test_nhosts = sizeof(test_hosts) / sizeof(test_hosts[0]);
 
-            norns_backend_t b0 = NORNS_BACKEND("b0://", NORNS_BACKEND_NVML, "/mnt/b0", 1024);
-            norns_backend_t b1 = NORNS_BACKEND("b1://", NORNS_BACKEND_NVML, "/mnt/b1", 2048);
-            norns_backend_t b2 = NORNS_BACKEND("b2://", NORNS_BACKEND_NVML, "/mnt/b2", 1024);
+            norns_job_limit_t l0 = NORNS_JOB_LIMIT("b0://", 1024);
+            norns_job_limit_t l1 = NORNS_JOB_LIMIT("b1://", 2048);
+            norns_job_limit_t l2 = NORNS_JOB_LIMIT("b2://", 1024);
 
-            norns_backend_t* test_backends[] = { &b0, &b1, &b2 };
-            const size_t test_nbackends = sizeof(test_backends) / sizeof(test_backends[0]);
+            norns_job_limit_t* test_lims[] = { &l0, &l1, &l2 };
+            const size_t test_nlims = sizeof(test_lims) / sizeof(test_lims[0]);
 
-            norns_job_t job1 = NORNS_JOB(test_hosts, test_nhosts, test_backends, test_nbackends);
+            norns_job_t job1 = NORNS_JOB(test_hosts, test_nhosts, test_lims, test_nlims);
             const uint32_t jobid = 42;
             const uid_t uid = 1001;
             const gid_t gid = 2001;

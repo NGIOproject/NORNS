@@ -30,11 +30,9 @@
 
 namespace norns {
 namespace storage {
+namespace detail {
 
-process_memory::process_memory(const std::string& mount, uint32_t quota) { 
-    (void) mount;
-    (void) quota;
-}
+process_memory::process_memory() { }
 
 std::string process_memory::mount() const {
     return "";
@@ -54,6 +52,7 @@ bool process_memory::accepts(resource_info_ptr res) const {
 }
 
 bool process_memory::contains(resource_info_ptr res) const {
+    (void) res;
     return true; //XXX do actual check
 }
 
@@ -67,6 +66,7 @@ std::string process_memory::to_string() const {
     return "PROCESS_MEMORY";
 }
 
+} // namespace detail
 } // namespace storage
 } // namespace norns
 
