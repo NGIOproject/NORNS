@@ -69,6 +69,7 @@ enum class urd_error : norns_error_t {
     bad_request       = NORNS_EBADREQUEST,
     out_of_memory     = NORNS_ENOMEM,
     not_supported     = NORNS_ENOTSUPPORTED,
+    system_error      = NORNS_ESYSTEMERROR,
     
     /* errors about communication */
     connection_failed = NORNS_ECONNFAILED,
@@ -84,8 +85,8 @@ enum class urd_error : norns_error_t {
     no_such_process   = NORNS_ENOSUCHPROCESS,
     
     /* errors about backends */
-    backend_exists    = NORNS_EBACKENDEXISTS,
-    no_such_backend   = NORNS_ENOSUCHBACKEND,
+    namespace_exists    = NORNS_ENAMESPACEEXISTS,
+    no_such_namespace   = NORNS_ENOSUCHNAMESPACE,
     
     /* errors about tasks */
     task_exists       = NORNS_ETASKEXISTS,

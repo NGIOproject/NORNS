@@ -25,37 +25,70 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#ifndef __MAKE_STREAM_HPP__
-#define __MAKE_STREAM_HPP__
+#include <algorithm>
+#include <iterator>
+#include <string>
+#include <fstream>
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
+#include "utils.hpp"
+#include "compare-files.hpp"
 
-#include <system_error>
+namespace bfs = boost::filesystem;
 
-// add additional concrete implementations here
-#include "resources/local-path.hpp"
-#include "resources/memory-buffer.hpp"
-#include "resources/shared-path.hpp"
-#include "resources/remote-path.hpp"
+bool compare_files(const bfs::path& filename1, const bfs::path& filename2) {
 
-namespace norns {
-namespace data {
+    bfs::ifstream file1(filename1, std::ifstream::ate | std::ifstream::binary);
 
-inline std::shared_ptr<stream> make_stream(std::shared_ptr<resource> rsrc, stream_type type) {
-    switch(rsrc->info()->type()) {
-        case data::resource_type::memory_region:
-            return std::make_shared<data::memory_region_stream>(rsrc);
-        case data::resource_type::local_posix_path:
-            return std::make_shared<data::local_path_stream>(rsrc, type);
-        case data::resource_type::shared_posix_path:
-            return std::make_shared<data::shared_path_stream>(rsrc);
-        case data::resource_type::remote_posix_path:
-            return std::make_shared<data::remote_path_stream>(rsrc);
+    if(!file1) {
+        throw std::invalid_argument("could not open " + filename1.string());
     }
 
-    // return an invalid pointer if type is not known
-    return std::shared_ptr<stream>();
+    bfs::ifstream file2(filename2, std::ifstream::ate | std::ifstream::binary);
+
+    if(!file2) {
+        throw std::invalid_argument("could not open " + filename2.string());
+    }
+
+    if(file1.tellg() != file2.tellg()) {
+        return false;
+    }
+
+    file1.seekg(0);
+    file2.seekg(0);
+
+    std::istreambuf_iterator<char> begin1(file1);
+    std::istreambuf_iterator<char> begin2(file2);
+    std::istreambuf_iterator<char> end;
+
+    return range_equal(begin1, end, begin2, end);
 }
 
-} // namespace data
-} // namespace norns
+bool compare_directories(const bfs::path& dirname1, const bfs::path& dirname2) {
 
-#endif /* __MAKE_STREAM_HPP__ */
+    bfs::recursive_directory_iterator it(dirname1);
+    bfs::recursive_directory_iterator end;
+
+    for(; it != end; ++it) {
+        boost::system::error_code ec;
+        const bfs::path pdst = bfs::canonical(dirname2 / bfs::relative(dirname1, *it), ec);
+
+        if(ec) {
+            return false;
+        }
+
+        if(bfs::is_directory(*it) && bfs::is_directory(pdst)) {
+            continue;
+        }
+        else if(bfs::is_directory(pdst)){
+            return false;
+        }
+
+        if(!compare_files(*it, pdst)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+

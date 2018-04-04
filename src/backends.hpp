@@ -32,6 +32,9 @@
 #include "backends/backend-base.hpp"
 #include "backends/process-memory.hpp"
 #include "backends/remote-backend.hpp"
+#include "backends/lustre-fs.hpp"
+#include "backends/posix-fs.hpp"
+#include "backends/nvml-dax.hpp"
 
 namespace norns {
 namespace storage {

@@ -25,78 +25,24 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#include "backends.hpp"
-#include "remote-path.hpp"
+#ifndef __IO_TX_LOCAL_PATH_TO_REMOTE_PATH__
+#define __IO_TX_LOCAL_PATH_TO_REMOTE_PATH__
+
+#include <system_error>
 
 namespace norns {
+
+// forward declarations
 namespace data {
-
-/*! Remote path data */
-remote_path::remote_path(std::string nsid, std::string hostname, std::string datapath)
-    : m_nsid(nsid),
-      m_hostname(hostname),
-      m_datapath(datapath) {}
-
-remote_path::~remote_path() { }
-
-resource_type remote_path::type() const {
-    return resource_type::remote_posix_path;
+struct resource;
 }
 
-std::string remote_path::nsid() const {
-    return m_nsid;
-}
+namespace io {
 
-bool remote_path::is_remote() const {
-    return true;
-}
-
-std::string remote_path::to_string() const {
-    return "REMOTE_PATH[\"" + m_hostname + "\", \"" + m_nsid + "\", \"" + m_datapath + "\"]";
-}
-
-namespace detail {
-
-remote_path_resource::resource_impl(std::shared_ptr<resource_info> base_info) :
-    m_backend(),
-    m_resource_info(std::static_pointer_cast<remote_path>(base_info)) { }
-
-std::string remote_path_resource::to_string() const {
-    return m_backend->to_string() + m_resource_info->to_string();
-}
-
-//resource_type remote_path_resource::type() const {
-//    return resource_type::remote_posix_path;
-//}
-
-std::shared_ptr<resource_info> remote_path_resource::info() const {
-    return m_resource_info;
-}
-
-std::shared_ptr<storage::backend> remote_path_resource::backend() const {
-    return m_backend;
-}
-
-void remote_path_resource::set_backend(const std::shared_ptr<storage::backend> backend) {
-    m_backend = backend;
-}
-
-/* Stream implementation */
-remote_path_stream::stream_impl(std::shared_ptr<resource> resource) {
-    (void) resource;
-}
-
-std::size_t remote_path_stream::read(buffer& b) {
-    (void) b;
-    return 0;
-}
-
-std::size_t remote_path_stream::write(const buffer& b) {
-    (void) b;
-    return 0;
-}
-
-} // namespace detail
-
-} // namespace data
+std::error_code 
+transfer_local_path_to_remote_path(const std::shared_ptr<const data::resource>& src,
+                                   const std::shared_ptr<const data::resource>& dst);
+} // namespace io
 } // namespace norns
+
+#endif /* __TX_LOCAL_PATH_TO_REMOTE_PATH__ */

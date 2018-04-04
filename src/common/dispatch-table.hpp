@@ -25,64 +25,85 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#include "resource.hpp"
+/**
+ * This file implements a dispatch table that allows clients to register 
+ * callables (i.e. lambdas, functions, functors, etc) and associate them
+ * to a user-provided key.
+ *
+ * Example:
+ *
+ *  dispatch_table<
+ *      api::request_type, 
+ *      api::request_type_hash,
+ *      response_ptr,
+ *      request_ptr
+ *          > dispatcher;
+ *
+ *  dispatcher.add(
+ *      api::request_type::job_register,
+ *      std::bind(&server::job_register, &ss, std::placeholders::_1));
+ *
+ *  for(int i=0; i<10; ++i) {
+ *      auto req = generate_request();
+ *
+ *      auto resp = dispatcher.run(req->type(), std::move(req));
+ *
+ *      ...
+ *  }
+ */
 
-#ifndef __LOCAL_PATH_HPP__
-#define __LOCAL_PATH_HPP__
+#ifndef __DISPATCH_TABLE_HPP__
+#define __DISPATCH_TABLE_HPP__
+
+#include <functional>
+#include <unordered_map>
 
 namespace norns {
-namespace data {
 
-/*! Local filesystem path data */
-struct local_path : public resource_info {
+template <typename Key, typename Hash, typename DispatchReturn, typename... DispatchArgs>
+struct dispatch_table {
 
-    local_path(std::string nsid, std::string datapath);
-    ~local_path();
-    resource_type type() const override;
-    std::string nsid() const override;
-    bool is_remote() const override;
-    std::string to_string() const override;
+    using CallableType = std::function<DispatchReturn(DispatchArgs...)>;
 
-    std::string datapath() const;
+    template <typename Callable>
+    void add(Key k, Callable&& func) {
+        m_callbacks.emplace(k, std::forward<Callable>(func));
+    }
 
-    std::string m_nsid;
-    std::string m_datapath;
+    // DispatchReturn run(Key k, const DispatchArgs&... args) {
+
+    //     if(!m_callbacks.count(k)) {
+    //         throw std::invalid_argument("Found no callback for provided key");
+    //     }
+
+    //     return m_callbacks.at(k)(std::forward<DispatchArgs>(args)...);
+    // }
+
+    CallableType get(Key k) const {
+
+        const auto& it = m_callbacks.find(k);
+
+        if(it == m_callbacks.end()) {
+            return CallableType();
+        }
+
+        return it->second;
+    }
+
+    DispatchReturn run(Key k, DispatchArgs&&... args) const {
+
+        if(!m_callbacks.count(k)) {
+            throw std::invalid_argument("Found no callback for provided key");
+        }
+
+        return m_callbacks.at(k)(std::forward<DispatchArgs>(args)...);
+    }
+
+
+
+    std::unordered_map<Key, CallableType, Hash> m_callbacks;
 };
 
-
-namespace detail {
-
-template <>
-struct resource_impl<resource_type::local_posix_path> : public resource {
-
-    resource_impl(std::shared_ptr<resource_info> base_info);
-    std::string to_string() const override;
-//    resource_type type() const override;
-    std::shared_ptr<resource_info> info() const override;
-    std::shared_ptr<storage::backend> backend() const override;
-    void set_backend(const std::shared_ptr<storage::backend> backend) override;
-
-    std::shared_ptr<storage::backend> m_backend;
-    std::shared_ptr<local_path> m_resource_info;
-};
-
-template <>
-struct stream_impl<resource_type::local_posix_path> : public data::stream {
-    stream_impl(std::shared_ptr<resource> resource, stream_type type);
-    ~stream_impl();
-    std::size_t read(buffer& b) override;
-    std::size_t write(const buffer& b) override;
-
-    int m_fd = -1;
-
-};
-
-} // namespace detail
-
-using local_path_resource = detail::resource_impl<resource_type::local_posix_path>;
-using local_path_stream = detail::stream_impl<resource_type::local_posix_path>;
-
-} // namespace data
 } // namespace norns
 
-#endif /* __LOCAL_PATH_HPP__ */
+#endif /* __DISPATCH_TABLE_HPP__ */

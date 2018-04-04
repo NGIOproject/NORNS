@@ -30,18 +30,38 @@
 #define ERR_REMAP(n) ((n) < 0 ? -(n) : (n))
 
 const char* const norns_errlist[NORNS_ERRMAX + 1] = {
+    /* misc errors */
     [ERR_REMAP(NORNS_SUCCESS)] = "Success",
     [ERR_REMAP(NORNS_ESNAFU)] = "Internal error",
     [ERR_REMAP(NORNS_EBADREQUEST)] = "Bad request",
     [ERR_REMAP(NORNS_EBADARGS)] = "Bad arguments",
     [ERR_REMAP(NORNS_ENOMEM)] = "Cannot allocate memory",
+    [ERR_REMAP(NORNS_ENOTSUPPORTED)] = "Not supported",
+    [ERR_REMAP(NORNS_ESYSTEMERROR)] = "Operating system error",
+
+    /* communication errors */
     [ERR_REMAP(NORNS_ECONNFAILED)] = "Cannot connect to daemon",
     [ERR_REMAP(NORNS_ERPCSENDFAILED)] = "Cannot send requests to daemon",
     [ERR_REMAP(NORNS_ERPCRECVFAILED)] = "Cannot receive responses from daemon",
+
+    /* job errors */
     [ERR_REMAP(NORNS_EJOBEXISTS)] = "Job already exists",
     [ERR_REMAP(NORNS_ENOSUCHJOB)] = "Job does not exist",
-    [ERR_REMAP(NORNS_ENOSUCHPROCESS)] = "Process does not exist",
 
+    /* process errors */
+    [ERR_REMAP(NORNS_EPROCESSEXISTS)] = "Process already exists",
+    [ERR_REMAP(NORNS_ENOSUCHPROCESS)] = "Process does not exist",
+    
+    /* backend errors */
+    [ERR_REMAP(NORNS_ENAMESPACEEXISTS)] = "Namespace already exists",
+    [ERR_REMAP(NORNS_ENOSUCHNAMESPACE)] = "Namespace does not exist",
+    
+    /* task errors */
+    [ERR_REMAP(NORNS_ETASKEXISTS)] = "Task already exists",
+    [ERR_REMAP(NORNS_ENOSUCHTASK)] = "Task does not exist",
+    [ERR_REMAP(NORNS_ETOOMANYTASKS)] = "Too many pending tasks",
+
+    /* fallback */
     [ERR_REMAP(NORNS_ERRMAX)] = "Unknown error",
 
 };

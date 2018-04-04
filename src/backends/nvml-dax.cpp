@@ -25,24 +25,39 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#include <sstream>
-#include <boost/foreach.hpp>
 #include "backend-base.hpp"
+#include "resources.hpp"
 #include "utils.hpp"
 #include "nvml-dax.hpp"
 
 namespace norns {
 namespace storage {
 
-nvml_dax::nvml_dax(const std::string& mount, uint32_t quota) 
+nvml_dax::nvml_dax(const bfs::path& mount, uint32_t quota) 
     : m_mount(mount), m_quota(quota) { }
 
-std::string nvml_dax::mount() const {
+bfs::path nvml_dax::mount() const {
     return m_mount;
 }
 
 uint32_t nvml_dax::quota() const {
     return m_quota;
+}
+
+backend::resource_ptr 
+nvml_dax::new_resource(const resource_info_ptr& rinfo, 
+                       const bool is_collection, 
+                       std::error_code& ec) const {
+    (void) rinfo;
+    (void) is_collection;
+    (void) ec;
+    return std::make_shared<data::local_path_resource>(shared_from_this(), ""); //XXX
+}
+
+backend::resource_ptr nvml_dax::get_resource(const resource_info_ptr& rinfo, std::error_code& ec) const {
+    (void) rinfo;
+    (void) ec;
+    return std::make_shared<data::local_path_resource>(shared_from_this(), ""); //XXX
 }
 
 bool nvml_dax::accepts(resource_info_ptr res) const {
@@ -54,22 +69,8 @@ bool nvml_dax::accepts(resource_info_ptr res) const {
     }
 }
 
-bool nvml_dax::contains(resource_info_ptr res) const {
-    return true; //XXX do actual check
-}
-
-void nvml_dax::read_data() const {
-}
-
-void nvml_dax::write_data() const {
-}
-
 std::string nvml_dax::to_string() const {
-    std::stringstream ss;
-
-    ss << "{NORNS_NVML, " << m_mount << ", " << m_quota << "}";
-
-    return ss.str();
+    return "NORNS_NVML(\"" + m_mount.string() + "\", " + std::to_string(m_quota) + ")";
 }
 
 } // namespace storage

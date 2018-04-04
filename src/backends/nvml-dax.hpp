@@ -28,31 +28,35 @@
 #ifndef __NVML_DAX_HPP__
 #define __NVML_DAX_HPP__
 
-#include <norns/norns_backends.h>
+#include <system_error>
+#include <boost/filesystem.hpp>
 
 #include "backend-base.hpp"
+
+namespace bfs = boost::filesystem;
 
 namespace norns {
 namespace storage {
 
 class nvml_dax final : public storage::backend {
 public:
-    nvml_dax(const std::string& mount, uint32_t quota);
+    nvml_dax(const bfs::path& mount, uint32_t quota);
 
-    std::string mount() const override;
+    bfs::path mount() const override;
     uint32_t quota() const override;
-    bool accepts(resource_info_ptr res) const override;
-    bool contains(resource_info_ptr res) const override;
-    void read_data() const override;
-    void write_data() const override;
-    std::string to_string() const;
+
+    resource_ptr new_resource(const resource_info_ptr& rinfo, bool is_collection, std::error_code& ec) const override final;
+    resource_ptr get_resource(const resource_info_ptr& rinfo, std::error_code& ec) const override final;
+
+    bool accepts(resource_info_ptr res) const override final;
+    std::string to_string() const final;
 
 private:
-    std::string m_mount;
-    uint32_t    m_quota;
+    bfs::path m_mount;
+    uint32_t  m_quota;
 };
 
-NORNS_REGISTER_BACKEND(backend_type::nvml, nvml_dax);
+//NORNS_REGISTER_BACKEND(backend_type::nvml, nvml_dax);
 
 } // namespace storage
 } // namespace norns

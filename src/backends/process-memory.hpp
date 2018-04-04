@@ -28,8 +28,13 @@
 #ifndef __PROCESS_MEMORY_HPP__
 #define __PROCESS_MEMORY_HPP__
 
+#include <system_error>
+#include <boost/filesystem.hpp>
+
 #include "norns/norns_backends.h"
 #include "backend-base.hpp"
+
+namespace bfs = boost::filesystem;
 
 namespace norns {
 namespace storage {
@@ -39,14 +44,14 @@ class process_memory final : public storage::backend {
 public:
     process_memory();
 
-    std::string mount() const override;
-    uint32_t quota() const override;
-    bool accepts(resource_info_ptr res) const override;
-    bool contains(resource_info_ptr res) const override;
-    void read_data() const override;
-    void write_data() const override;
+    bfs::path mount() const override final;
+    uint32_t quota() const override final;
 
-    std::string to_string() const override;
+    resource_ptr new_resource(const resource_info_ptr& rinfo, bool is_collection, std::error_code& ec) const override final;
+    resource_ptr get_resource(const resource_info_ptr& rinfo, std::error_code& ec) const override final;
+
+    bool accepts(resource_info_ptr res) const override final;
+    std::string to_string() const override final;
 };
 
 // no need to register it since it's never going to be created 

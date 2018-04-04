@@ -73,6 +73,8 @@ std::string to_string(urd_error ecode) {
             return "NORNS_ENOMEM";
         case urd_error::not_supported:
             return "NORNS_ENOTSUPPORTED";
+        case urd_error::system_error:
+            return "NORNS_ESYSTEM_ERROR";
         case urd_error::connection_failed:
             return "NORNS_ECONNFAILED";
         case urd_error::rpc_send_failed:
@@ -87,10 +89,10 @@ std::string to_string(urd_error ecode) {
             return "NORNS_EPROCESSEXISTS";
         case urd_error::no_such_process:
             return "NORNS_ENOSUCHPROCESS";
-        case urd_error::backend_exists:
-            return "NORNS_EBACKENDEXISTS";
-        case urd_error::no_such_backend:
-            return "NORNS_ENOSUCHBACKEND";
+        case urd_error::namespace_exists:
+            return "NORNS_ENAMESPACEEXISTS";
+        case urd_error::no_such_namespace:
+            return "NORNS_ENOSUCHNAMESPACE";
         case urd_error::task_exists:
             return "NORNS_ETASKEXISTS";
         case urd_error::no_such_task:

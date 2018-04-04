@@ -25,32 +25,28 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#include "fake-daemon.hpp"
-
-#include "catch.hpp"
-
-#include <chrono>
 #include "norns.h"
 #include "nornsctl.h"
-#include <urd.hpp>
-#include <settings.hpp>
-
-#include "fake-daemon.hpp"
-
-//#define USE_REAL_DAEMON
+#include "test-env.hpp"
+#include "catch.hpp"
 
 SCENARIO("submit request", "[api::norns_submit]") {
     GIVEN("a running urd instance") {
 
-#ifndef USE_REAL_DAEMON
-        fake_daemon td;
-        td.run();
-#endif
+        test_env env(
+            fake_daemon_cfg {
+                true /* dry_run? */
+            }
+        );
+
+        const char* path_tmp0 = env.create_directory("mnt/tmp0").c_str();
+        const char* path_tmp1 = env.create_directory("mnt/tmp1").c_str();
+        const char* path_lustre0 = env.create_directory("mnt/lustre0").c_str();
 
         /**************************************************************************************************************/
         /* tests for error conditions                                                                                 */
         /**************************************************************************************************************/
-        WHEN("submitting a request to copy data using unregistered backends") {
+        WHEN("submitting a request to copy data using unregistered namespaces") {
 
             norns_op_t task_op = NORNS_IOTASK_COPY;
             
@@ -66,21 +62,21 @@ SCENARIO("submit request", "[api::norns_submit]") {
 
             norns_error_t rv = norns_submit(&task);
 
-            THEN("NORNS_ENOSUCHBACKEND is returned") {
-                REQUIRE(rv == NORNS_ENOSUCHBACKEND);
+            THEN("NORNS_ENOSUCHNAMESPACE is returned") {
+                REQUIRE(rv == NORNS_ENOSUCHNAMESPACE);
             }
         }
 
-        WHEN("submitting a request to copy data using an unregistered src backend") {
+        WHEN("submitting a request to copy data using an unregistered src namespace") {
 
             norns_op_t task_op = NORNS_IOTASK_COPY;
             
             const char* src_nsid = "tmp://";
-            const char* src_mnt = "/mnt/tmp0";
+            const char* src_mnt = path_tmp0;
             const char* src_path = "/a/b/c";
             
             const char* dst_nsid = "lustre://";
-            const char* dst_mnt = "/mnt/lustre0";
+            const char* dst_mnt = path_lustre0;
             const char* dst_path = "/a/b/c";
 
             norns_backend_t ns = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, dst_mnt, 1024);
@@ -95,8 +91,8 @@ SCENARIO("submit request", "[api::norns_submit]") {
 
             rv = norns_submit(&task);
 
-            THEN("NORNS_ENOSUCHBACKEND is returned") {
-                REQUIRE(rv == NORNS_ENOSUCHBACKEND);
+            THEN("NORNS_ENOSUCHNAMESPACE is returned") {
+                REQUIRE(rv == NORNS_ENOSUCHNAMESPACE);
             }
 
             rv = norns_unregister_namespace(dst_nsid);
@@ -104,16 +100,16 @@ SCENARIO("submit request", "[api::norns_submit]") {
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
-        WHEN("submitting a request to copy data using an unregistered dst backend") {
+        WHEN("submitting a request to copy data using an unregistered dst namespace") {
 
             norns_op_t task_op = NORNS_IOTASK_COPY;
             
             const char* src_nsid = "tmp://";
-            const char* src_mnt = "/mnt/tmp0";
+            const char* src_mnt = path_tmp0;
             const char* src_path = "/a/b/c";
             
             const char* dst_nsid = "lustre://";
-            const char* dst_mnt = "/mnt/lustre0";
+            const char* dst_mnt = path_lustre0;
             const char* dst_path = "/a/b/c";
 
             norns_backend_t ns = NORNS_BACKEND(NORNS_BACKEND_NVML, src_mnt, 1024);
@@ -127,8 +123,8 @@ SCENARIO("submit request", "[api::norns_submit]") {
 
             rv = norns_submit(&task);
 
-            THEN("NORNS_ENOSUCHBACKEND is returned") {
-                REQUIRE(rv == NORNS_ENOSUCHBACKEND);
+            THEN("NORNS_ENOSUCHNAMESPACE is returned") {
+                REQUIRE(rv == NORNS_ENOSUCHNAMESPACE);
             }
 
             rv = norns_unregister_namespace(src_nsid);
@@ -149,7 +145,7 @@ SCENARIO("submit request", "[api::norns_submit]") {
             size_t src_size = (size_t) 42;
             
             const char* dst_nsid = "tmp://";
-            const char* dst_mnt = "/mnt/tmp0";
+            const char* dst_mnt = path_tmp0;
             const char* dst_path = "/a/b/c";
 
             norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
@@ -180,7 +176,7 @@ SCENARIO("submit request", "[api::norns_submit]") {
             size_t src_size = (size_t) 42;
             
             const char* dst_nsid = "tmp://";
-            const char* dst_mnt = "/mnt/tmp0";
+            const char* dst_mnt = path_tmp0;
             const char* dst_path = "/a/b/c";
 
             norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
@@ -241,11 +237,11 @@ SCENARIO("submit request", "[api::norns_submit]") {
             norns_op_t task_op = NORNS_IOTASK_COPY;
             
             const char* src_nsid = "tmp0://";
-            const char* src_mnt = "/mnt/tmp0";
+            const char* src_mnt = path_tmp0;
             const char* src_path = "/b/c/d";
             
             const char* dst_nsid = "tmp1://";
-            const char* dst_mnt = "/mnt/tmp1";
+            const char* dst_mnt = path_tmp1;
             const char* dst_path = "/a/b/c";
 
             norns_backend_t bsrc = NORNS_BACKEND(NORNS_BACKEND_NVML, src_mnt, 16384);
@@ -280,11 +276,11 @@ SCENARIO("submit request", "[api::norns_submit]") {
             norns_op_t task_op = NORNS_IOTASK_COPY;
             
             const char* src_nsid = "tmp://";
-            const char* src_mnt = "/mnt/tmp";
+            const char* src_mnt = path_tmp0;
             const char* src_path = "/b/c/d";
             
             const char* dst_nsid = "lustre://";
-            const char* dst_mnt = "/mnt/lustre";
+            const char* dst_mnt = path_lustre0;
             const char* dst_path = "/a/b/c";
 
             norns_backend_t bsrc = NORNS_BACKEND(NORNS_BACKEND_NVML, src_mnt, 16384);
@@ -319,11 +315,11 @@ SCENARIO("submit request", "[api::norns_submit]") {
             norns_op_t task_op = NORNS_IOTASK_COPY;
             
             const char* src_nsid = "tmp://";
-            const char* src_mnt = "/mnt/tmp";
+            const char* src_mnt = path_tmp0;
             const char* src_path = "/b/c/d";
             
             const char* dst_nsid = "tmp://";
-            const char* dst_mnt = "/mnt/tmp";
+            const char* dst_mnt = path_tmp0;
             const char* dst_host = "node1";
             const char* dst_path = "/a/b/c";
 
@@ -363,7 +359,7 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* src_path = "/a/b/c";
             
             const char* dst_nsid = "tmp://";
-            const char* dst_mnt = "/mnt/tmp";
+            const char* dst_mnt = path_tmp0;
             const char* dst_path = "/b/c/d";
 
             norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_NVML, dst_mnt, 16384);
@@ -395,7 +391,7 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* src_path = "/a/b/c";
 
             const char* dst_nsid = "tmp://";
-            const char* dst_mnt = "/mnt/tmp";
+            const char* dst_mnt = path_tmp0;
             const char* dst_path = "/b/c/d";
 
             norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, dst_mnt, 16384);
@@ -447,7 +443,7 @@ SCENARIO("submit request", "[api::norns_submit]") {
             norns_op_t task_op = NORNS_IOTASK_COPY;
 
             const char* src_nsid = "tmp://";
-            const char* src_mnt = "/mnt/tmp";
+            const char* src_mnt = path_tmp0;
             const char* src_path = "/a/b/c";
 
             void* dst_addr = (void*) 0xdeadbeef;
@@ -479,7 +475,7 @@ SCENARIO("submit request", "[api::norns_submit]") {
             norns_op_t task_op = NORNS_IOTASK_COPY;
 
             const char* src_nsid = "lustre://";
-            const char* src_mnt = "/mnt/lustre";
+            const char* src_mnt = path_lustre0;
             const char* src_path = "/a/b/c";
 
             void* dst_addr = (void*) 0xdeadbeef;
@@ -541,7 +537,7 @@ SCENARIO("submit request", "[api::norns_submit]") {
             size_t src_size = (size_t) 42;
             
             const char* dst_nsid = "tmp://";
-            const char* dst_mnt = "/mnt/tmp0";
+            const char* dst_mnt = path_tmp0;
             const char* dst_path = "/a/b/c";
 
             norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
@@ -572,7 +568,7 @@ SCENARIO("submit request", "[api::norns_submit]") {
             size_t src_size = (size_t) 42;
             
             const char* dst_nsid = "tmp://";
-            const char* dst_mnt = "/mnt/tmp0";
+            const char* dst_mnt = path_tmp0;
             const char* dst_path = "/a/b/c";
 
             norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
@@ -633,11 +629,11 @@ SCENARIO("submit request", "[api::norns_submit]") {
             norns_op_t task_op = NORNS_IOTASK_MOVE;
             
             const char* src_nsid = "tmp0://";
-            const char* src_mnt = "/mnt/tmp0";
+            const char* src_mnt = path_tmp0;
             const char* src_path = "/b/c/d";
             
             const char* dst_nsid = "tmp1://";
-            const char* dst_mnt = "/mnt/tmp1";
+            const char* dst_mnt = path_tmp1;
             const char* dst_path = "/a/b/c";
 
             norns_backend_t bsrc = NORNS_BACKEND(NORNS_BACKEND_NVML, src_mnt, 16384);
@@ -672,11 +668,11 @@ SCENARIO("submit request", "[api::norns_submit]") {
             norns_op_t task_op = NORNS_IOTASK_MOVE;
             
             const char* src_nsid = "tmp://";
-            const char* src_mnt = "/mnt/tmp";
+            const char* src_mnt = path_tmp0;
             const char* src_path = "/b/c/d";
             
             const char* dst_nsid = "lustre://";
-            const char* dst_mnt = "/mnt/lustre";
+            const char* dst_mnt = path_lustre0;
             const char* dst_path = "/a/b/c";
 
             norns_backend_t bsrc = NORNS_BACKEND(NORNS_BACKEND_NVML, src_mnt, 16384);
@@ -711,11 +707,11 @@ SCENARIO("submit request", "[api::norns_submit]") {
             norns_op_t task_op = NORNS_IOTASK_MOVE;
             
             const char* src_nsid = "tmp://";
-            const char* src_mnt = "/mnt/tmp";
+            const char* src_mnt = path_tmp0;
             const char* src_path = "/b/c/d";
             
             const char* dst_nsid = "tmp://";
-            const char* dst_mnt = "/mnt/tmp";
+            const char* dst_mnt = path_tmp0;
             const char* dst_host = "node1";
             const char* dst_path = "/a/b/c";
 
@@ -755,7 +751,7 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* src_path = "/a/b/c";
             
             const char* dst_nsid = "tmp://";
-            const char* dst_mnt = "/mnt/tmp";
+            const char* dst_mnt = path_tmp0;
             const char* dst_path = "/b/c/d";
 
             norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_NVML, dst_mnt, 16384);
@@ -787,7 +783,7 @@ SCENARIO("submit request", "[api::norns_submit]") {
             const char* src_path = "/a/b/c";
 
             const char* dst_nsid = "tmp://";
-            const char* dst_mnt = "/mnt/tmp";
+            const char* dst_mnt = path_tmp0;
             const char* dst_path = "/b/c/d";
 
             norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, dst_mnt, 16384);
@@ -839,7 +835,7 @@ SCENARIO("submit request", "[api::norns_submit]") {
             norns_op_t task_op = NORNS_IOTASK_MOVE;
 
             const char* src_nsid = "tmp://";
-            const char* src_mnt = "/mnt/tmp";
+            const char* src_mnt = path_tmp0;
             const char* src_path = "/a/b/c";
 
             void* dst_addr = (void*) 0xdeadbeef;
@@ -871,7 +867,7 @@ SCENARIO("submit request", "[api::norns_submit]") {
             norns_op_t task_op = NORNS_IOTASK_MOVE;
 
             const char* src_nsid = "lustre://";
-            const char* src_mnt = "/mnt/lustre";
+            const char* src_mnt = path_lustre0;
             const char* src_path = "/a/b/c";
 
             void* dst_addr = (void*) 0xdeadbeef;
@@ -919,11 +915,6 @@ SCENARIO("submit request", "[api::norns_submit]") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
             }
         }
-
-#ifndef USE_REAL_DAEMON
-        int ret = td.stop();
-        REQUIRE(ret == 0);
-#endif
     }
 
 #ifndef USE_REAL_DAEMON

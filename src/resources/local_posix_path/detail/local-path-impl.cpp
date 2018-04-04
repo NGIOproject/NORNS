@@ -25,80 +25,62 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#include <sstream>
-#include "backends.hpp"
-#include "memory-buffer.hpp"
+#include <system_error>
+#include <boost/filesystem.hpp>
+
+namespace bfs = boost::filesystem;
+
+#include "common.hpp"
+#include "resource-type.hpp"
+#include "resource.hpp"
+#include "local-path-info.hpp"
+#include "local-path-impl.hpp"
+#include "backends/posix-fs.hpp"
+#include "logger.hpp"
 
 namespace norns {
 namespace data {
-
-/*! Memory buffer data */
-memory_buffer::memory_buffer(uint64_t address, std::size_t size)
-    : m_address(address),
-      m_size(size) {}
-
-memory_buffer::~memory_buffer() { }
-
-resource_type memory_buffer::type() const {
-    return resource_type::memory_region;
-}
-
-std::string memory_buffer::nsid() const {
-    return "";
-}
-
-bool memory_buffer::is_remote() const {
-    return false;
-}
-
-std::string memory_buffer::to_string() const {
-    std::stringstream ss;
-    ss << "0x" << std::hex << m_address << "+" << "0x" << m_size;
-    return "MEMBUF[" + ss.str() + "]";
-}
-
 namespace detail {
 
-memory_region_resource::resource_impl(std::shared_ptr<resource_info> base_info) :
-    m_backend(),
-    m_resource_info(std::static_pointer_cast<memory_buffer>(base_info)) { }
+// local alias for convenience
+using local_path_resource = resource_impl<resource_type::local_posix_path>;
 
-std::string memory_region_resource::to_string() const {
-    return m_backend->to_string() + m_resource_info->to_string();
+local_path_resource::resource_impl(const std::shared_ptr<const storage::backend> parent, 
+                                   const bfs::path& name) :
+    m_namespace_name(name),
+    m_canonical_path(parent->mount() / name),
+    m_is_collection(bfs::is_directory(m_canonical_path)),
+    m_parent(std::static_pointer_cast<const storage::posix_filesystem>(std::move(parent))) { }
+
+std::string
+local_path_resource::name() const {
+    return m_namespace_name.string();
 }
 
-//resource_type memory_region_resource::type() const {
-//    return resource_type::memory_region;
-//}
-
-std::shared_ptr<resource_info> memory_region_resource::info() const {
-    return m_resource_info;
+resource_type
+local_path_resource::type() const {
+    return resource_type::local_posix_path;
 }
 
-std::shared_ptr<storage::backend> memory_region_resource::backend() const {
-    return m_backend;
+bool
+local_path_resource::is_collection() const {
+    return m_is_collection;
 }
 
-void memory_region_resource::set_backend(const std::shared_ptr<storage::backend> backend) {
-    m_backend = backend;
+const std::shared_ptr<const storage::backend>
+local_path_resource::parent() const {
+    return std::static_pointer_cast<const storage::backend>(m_parent);
 }
 
-/* Stream implementation */
-memory_region_stream::stream_impl(std::shared_ptr<resource> resource) {
-    (void) resource;
+bfs::path local_path_resource::canonical_path() const {
+    return m_canonical_path;
 }
 
-std::size_t memory_region_stream::read(buffer& b) {
-    (void) b;
-    return 0;
-}
-
-std::size_t memory_region_stream::write(const buffer& b) {
-    (void) b;
-    return 0;
+std::string
+local_path_resource::to_string() const {
+    return m_canonical_path.string();
 }
 
 } // namespace detail
-
 } // namespace data
 } // namespace norns

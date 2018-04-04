@@ -90,9 +90,14 @@ namespace detail {
 template <response_type RT, typename... FieldTypes>
 struct response_impl : std::tuple<FieldTypes...>, response {
 
-    response_impl(FieldTypes... fields) 
-        : std::tuple<FieldTypes...>(std::forward<FieldTypes>(fields)...),
+    template <typename... Args>
+    response_impl(Args... args) 
+        : std::tuple<FieldTypes...>(args...),
           m_type(RT) { }
+
+//    response_impl(FieldTypes... fields) 
+//        : std::tuple<FieldTypes...>(std::forward<FieldTypes>(fields)...),
+//          m_type(RT) { }
 
     response_type type() const override {
         return m_type;
@@ -111,6 +116,8 @@ struct response_impl : std::tuple<FieldTypes...>, response {
     }
 
     void pack_extra_info(norns::rpc::Response& /*r*/) const override {
+        // default noop implementation for specializations that
+        // don't overload it
     }
 
     template <std::size_t I>

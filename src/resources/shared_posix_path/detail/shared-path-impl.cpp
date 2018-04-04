@@ -25,47 +25,52 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#ifndef __MAKE_RESOURCE_HPP__
-#define __MAKE_RESOURCE_HPP__
+#include <system_error>
+#include <boost/filesystem.hpp>
 
-#include "backends.hpp"
+namespace bfs = boost::filesystem;
 
-// add additional concrete implementations here
-#include "resources/local-path.hpp"
-#include "resources/memory-buffer.hpp"
-#include "resources/shared-path.hpp"
-#include "resources/remote-path.hpp"
+#include "resource-type.hpp"
+#include "resource.hpp"
+#include "shared-path-info.hpp"
+#include "shared-path-impl.hpp"
+#include "backends/posix-fs.hpp"
 
 namespace norns {
 namespace data {
+namespace detail {
 
-inline std::shared_ptr<resource> make_resource(std::shared_ptr<resource_info> rinfo) {
+// local alias for convenience
+using shared_path_resource = resource_impl<resource_type::shared_posix_path>;
 
-    switch(rinfo->type()) {
-        case data::resource_type::memory_region:
-        {
-            auto rsrc = std::make_shared<data::memory_region_resource>(rinfo);
-            rsrc->set_backend(storage::process_memory_backend);
-            return rsrc;
-        }
+shared_path_resource::resource_impl(const std::shared_ptr<const storage::backend> parent, 
+                                    const bfs::path& name) :
+    m_namespace_name(name),
+    m_canonical_path(parent->mount() / name),
+    m_is_collection(bfs::is_directory(m_canonical_path)),
+    m_parent(std::static_pointer_cast<const storage::posix_filesystem>(std::move(parent))) { }
 
-        case data::resource_type::local_posix_path:
-            return std::make_shared<data::local_path_resource>(rinfo);
-        case data::resource_type::shared_posix_path:
-            return std::make_shared<data::shared_path_resource>(rinfo);
-        case data::resource_type::remote_posix_path:
-        {
-            auto rsrc = std::make_shared<data::remote_path_resource>(rinfo);
-            rsrc->set_backend(storage::remote_backend);
-            return rsrc;
-        }
-    }
-
-    // return an invalid pointer if type is not known
-    return std::shared_ptr<resource>();
+std::string shared_path_resource::name() const {
+    return m_namespace_name.string();
 }
 
+resource_type shared_path_resource::type() const {
+    return resource_type::shared_posix_path;
+}
+
+bool shared_path_resource::is_collection() const {
+    return m_is_collection;
+}
+
+const std::shared_ptr<const storage::backend>
+shared_path_resource::parent() const {
+    return std::static_pointer_cast<const storage::backend>(m_parent);
+}
+
+std::string shared_path_resource::to_string() const {
+    return "/foo/bar/baz"; // TODO
+}
+
+} // namespace detail
 } // namespace data
 } // namespace norns
-
-#endif /* __MAKE_RESOURCE_HPP__ */

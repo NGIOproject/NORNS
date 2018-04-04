@@ -77,6 +77,10 @@ public:
             //m_internal_logger->set_pattern("[%Y-%m-%d %T.%f] [%E] [%n] [%t] [%l] %v");
             m_internal_logger->set_pattern("[%Y-%m-%d %T.%f] [%n] [%t] [%l] %v");
 
+#ifdef __LOGGER_ENABLE_DEBUG__
+            enable_debug();
+#endif
+
             spdlog::drop_all();
 
             // globally register the logger so that it can be accessed 

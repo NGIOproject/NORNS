@@ -26,6 +26,7 @@
  *************************************************************************/
 
 #include "backend-base.hpp"
+#include "resources.hpp"
 #include "remote-backend.hpp"
 
 namespace norns {
@@ -34,12 +35,28 @@ namespace detail {
 
 remote_backend::remote_backend() {} 
 
-std::string remote_backend::mount() const {
+bfs::path remote_backend::mount() const {
     return "";
 }
 
 uint32_t remote_backend::quota() const {
     return 0;
+}
+
+backend::resource_ptr 
+remote_backend::new_resource(const resource_info_ptr& rinfo, 
+                             const bool is_collection,
+                             std::error_code& ec) const {
+    (void) rinfo;
+    (void) is_collection;
+    (void) ec;
+    return std::make_shared<data::remote_path_resource>(shared_from_this()); //XXX
+}
+
+backend::resource_ptr remote_backend::get_resource(const resource_info_ptr& rinfo, std::error_code& ec) const {
+    (void) rinfo;
+    (void) ec;
+    return std::make_shared<data::remote_path_resource>(shared_from_this()); //XXX
 }
 
 bool remote_backend::accepts(resource_info_ptr res) const {
@@ -51,19 +68,8 @@ bool remote_backend::accepts(resource_info_ptr res) const {
     }
 }
 
-bool remote_backend::contains(resource_info_ptr res) const {
-    (void) res;
-    return false;
-}
-
-void remote_backend::read_data() const {
-}
-
-void remote_backend::write_data() const {
-}
-
 std::string remote_backend::to_string() const {
-    return "REMOTE_BACKEND(";// + m_mount + ", " + std::to_string(m_quota) + ")";
+    return "REMOTE_BACKEND";// + m_mount + ", " + std::to_string(m_quota) + ")";
 }
 
 } // namespace detail

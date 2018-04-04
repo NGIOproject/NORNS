@@ -29,6 +29,7 @@
 #define __NORNS_RESOURCES_H__ 1
 
 #include <sys/types.h>
+#include <stdbool.h>
 #include <stdint.h>     /* For uint32_t et al. */
 
 #ifdef __cplusplus
@@ -52,9 +53,9 @@ typedef struct {
 
 /* Descriptor for a POSIX path */
 typedef struct {
-    const char* p_nsid;  /* namespace id */
-    const char* p_host;  /* hostname (NULL if local) */
-    const char* p_path;  /* path to "data" (i.e. file or directory) */
+    const char* p_nsid;   /* namespace id */
+    const char* p_host;   /* hostname (NULL if local) */
+    const char* p_path;   /* path to "data" (i.e. file or directory) */
 } norns_posix_path_t;
 
 /* Data resource descriptor */

@@ -26,6 +26,7 @@
  *************************************************************************/
 
 #include "backend-base.hpp"
+#include "resources.hpp"
 #include "process-memory.hpp"
 
 namespace norns {
@@ -34,12 +35,28 @@ namespace detail {
 
 process_memory::process_memory() { }
 
-std::string process_memory::mount() const {
+bfs::path process_memory::mount() const {
     return "";
 }
 
 uint32_t process_memory::quota() const {
     return 0;
+}
+
+backend::resource_ptr 
+process_memory::new_resource(const resource_info_ptr& rinfo, 
+                             const bool is_collection, 
+                             std::error_code& ec) const {
+    (void) rinfo;
+    (void) is_collection;
+    (void) ec;
+    return std::make_shared<data::memory_region_resource>(shared_from_this()); //XXX
+}
+
+backend::resource_ptr process_memory::get_resource(const resource_info_ptr& rinfo, std::error_code& ec) const {
+    (void) rinfo;
+    (void) ec;
+    return std::make_shared<data::memory_region_resource>(shared_from_this()); //XXX
 }
 
 bool process_memory::accepts(resource_info_ptr res) const {
@@ -49,17 +66,6 @@ bool process_memory::accepts(resource_info_ptr res) const {
         default:
             return false;
     }
-}
-
-bool process_memory::contains(resource_info_ptr res) const {
-    (void) res;
-    return true; //XXX do actual check
-}
-
-void process_memory::read_data() const {
-}
-
-void process_memory::write_data() const {
 }
 
 std::string process_memory::to_string() const {

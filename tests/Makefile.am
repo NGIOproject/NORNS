@@ -27,7 +27,7 @@
 
 AM_CPPFLAGS = -I m4
 
-TESTS = api 
+TESTS = api core
 
 check_PROGRAMS = $(TESTS) api_interactive
 
@@ -59,21 +59,14 @@ api_SOURCES = \
 	api-task-init.cpp \
 	api-task-submit.cpp \
 	api-task-status.cpp \
+	compare-files.cpp \
+	compare-files.hpp \
 	fake-daemon.cpp \
 	fake-daemon.hpp \
+	test-env.cpp \
+	test-env.hpp \
 	$(END)
 
-# NOTE: we cannot pass 'liburd_aux.la' directly to 'urd_LDFLAGS' as usual,
-# because backends rely on the initialization of several static (and 
-# unreferenced) variables to self-register, so that they can be automatically 
-# constructed. Since they are not referenced elsewhere, the linker removes
-# the variables, which makes the self-registering process not work. To avoid 
-# this, we need to link the convenience library with '-Wl,--whole-archive'
-# to force the inclusion of these symbols and then disable it with 
-# '-Wl,--no-whole-archive'. Unfortunately, the order of flags
-# cannot be controlled, which forces us to define it explicitly as
-# '-Wl,--whole-archive,.libs/liburd_aux.a,--no-whole-archive' and to include
-# several extra dependencies which would not be needed otherwise
 api_LDFLAGS = \
 	@TBB_LIBS@ \
     @BOOST_ASIO_LIB@ \
@@ -83,7 +76,7 @@ api_LDFLAGS = \
     @BOOST_SYSTEM_LIB@ \
     @BOOST_THREAD_LIB@ \
 	@PROTOBUF_LIBS@ \
-	-Wl,--whole-archive,$(top_builddir)/src/.libs/liburd_aux.a,--no-whole-archive \
+	$(top_builddir)/src/liburd_aux.la \
 	$(top_builddir)/lib/libnorns_debug.la \
 	$(top_builddir)/lib/libnornsctl_debug.la \
 	$(END)
@@ -102,3 +95,39 @@ api_interactive_CPPFLAGS = $(api_CPPFLAGS) -DUSE_REAL_DAEMON
 api_interactive_SOURCES = $(api_SOURCES)
 api_interactive_LDFLAGS = $(api_LDFLAGS)
 EXTRA_api_interactive_DEPENDENCIES = $(EXTRA_api_DEPENDENCIES)
+
+
+core_CXXFLAGS = \
+	-Wall -Wextra \
+	$(END)
+
+core_CPPFLAGS = \
+	-I$(top_srcdir)/include \
+	-I$(top_srcdir)/rpc \
+	-I$(top_srcdir)/src \
+	$(END)
+
+core_SOURCES = \
+	catch.hpp \
+	api-main.cpp \
+	utils-path-normalize.cpp \
+	$(END)
+
+core_LDFLAGS = \
+    @BOOST_ASIO_LIB@ \
+	@BOOST_LDFLAGS@	\
+	@BOOST_FILESYSTEM_LIB@ \
+    @BOOST_PROGRAM_OPTIONS_LIB@	\
+    @BOOST_SYSTEM_LIB@ \
+    @BOOST_THREAD_LIB@ \
+	@PROTOBUF_LIBS@ \
+	$(top_builddir)/src/liburd_aux.la \
+	$(top_builddir)/lib/libnorns_debug.la \
+	$(top_builddir)/lib/libnornsctl_debug.la \
+	$(END)
+
+EXTRA_core_DEPENDENCIES = \
+	$(top_builddir)/src/liburd_aux.la \
+	$(top_builddir)/lib/libnorns_debug.la \
+	$(top_builddir)/lib/libnornsctl_debug.la \
+	$(END)

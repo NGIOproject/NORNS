@@ -29,13 +29,66 @@ ACLOCAL_AMFLAGS = -I m4
 
 bin_PROGRAMS = urd
 
-################################################################################
-# build 'urd_aux.la', a convenience library so that we can build both the daemon
-# and any tests that may need it
-################################################################################
 noinst_LTLIBRARIES = \
+	liburd_resources.la \
 	liburd_aux.la
 
+################################################################################
+# build 'liburdresources_aux.la', a convenience library with all the code
+# related to data resources
+################################################################################
+liburd_resources_la_SOURCES = \
+	resources/local_posix_path/local-path.hpp \
+	resources/local_posix_path/detail/local-path-impl.cpp \
+	resources/local_posix_path/detail/local-path-impl.hpp \
+	resources/local_posix_path/detail/local-path-info.cpp \
+	resources/local_posix_path/detail/local-path-info.hpp \
+	resources/memory_buffer/memory-buffer.hpp \
+	resources/memory_buffer/detail/memory-region-impl.cpp \
+	resources/memory_buffer/detail/memory-region-impl.hpp \
+	resources/memory_buffer/detail/memory-region-info.cpp \
+	resources/memory_buffer/detail/memory-region-info.hpp \
+	resources/remote_posix_path/remote-path.hpp \
+	resources/remote_posix_path/detail/remote-path-impl.cpp \
+	resources/remote_posix_path/detail/remote-path-impl.hpp \
+	resources/remote_posix_path/detail/remote-path-info.cpp \
+	resources/remote_posix_path/detail/remote-path-info.hpp \
+	resources/resource.hpp \
+	resources/resource-info.hpp \
+	resources/resource-type.hpp \
+	resources/shared_posix_path/shared-path.hpp \
+	resources/shared_posix_path/detail/shared-path-impl.cpp \
+	resources/shared_posix_path/detail/shared-path-impl.hpp \
+	resources/shared_posix_path/detail/shared-path-info.cpp \
+	resources/shared_posix_path/detail/shared-path-info.hpp
+
+liburd_resources_la_CXXFLAGS = \
+	-std=gnu++11 -Wall -Wextra
+
+liburd_resources_la_CPPFLAGS = \
+	-DSPDLOG_ENABLE_SYSLOG \
+	@BOOST_CPPFLAGS@ \
+	-I$(top_srcdir)/include \
+	-I$(top_srcdir)/src	\
+	-I$(top_srcdir)/src/resources \
+	-I$(top_srcdir)/rpc	\
+	-I$(top_builddir)/rpc
+
+liburd_resources_la_LDFLAGS = \
+    @BOOST_ASIO_LIB@ \
+    @BOOST_FILESYSTEM_LIB@ \
+	@BOOST_LDFLAGS@	\
+    @BOOST_PROGRAM_OPTIONS_LIB@	\
+    @BOOST_SYSTEM_LIB@ \
+    @BOOST_THREAD_LIB@ \
+	@PROTOBUF_LIBS@ \
+	-pthread
+
+
+################################################################################
+# build 'liburd_aux.la', a convenience library so that we can build both the 
+# daemon and any tests that may need it
+################################################################################
 MOSTLYCLEANFILES = \
 	defaults.cpp \
 	messages.pb.cc \
@@ -79,20 +132,24 @@ liburd_aux_la_SOURCES = \
 	io/task-manager.hpp \
 	io/task-stats.cpp \
 	io/task-stats.hpp \
+	io/transferors.hpp \
+	io/transferors/local-path-to-local-path.cpp \
+	io/transferors/local-path-to-local-path.hpp \
+	io/transferors/local-path-to-shared-path.cpp \
+	io/transferors/local-path-to-shared-path.hpp \
+	io/transferors/local-path-to-remote-path.cpp \
+	io/transferors/local-path-to-remote-path.hpp \
+	io/transferors/memory-to-local-path.cpp \
+	io/transferors/memory-to-local-path.hpp \
+	io/transferors/memory-to-shared-path.cpp \
+	io/transferors/memory-to-shared-path.hpp \
+	io/transferors/memory-to-remote-path.cpp \
+	io/transferors/memory-to-remote-path.hpp \
+	io/transferor-registry.cpp \
+	io/transferor-registry.hpp \
 	job.hpp \
 	logger.hpp \
 	resources.hpp \
-	resources/local-path.cpp \
-	resources/local-path.hpp \
-	resources/make-resource.hpp \
-	resources/make-stream.hpp \
-	resources/memory-buffer.cpp \
-	resources/memory-buffer.hpp \
-	resources/remote-path.cpp \
-	resources/remote-path.hpp \
-	resources/resource.hpp \
-	resources/shared-path.cpp \
-	resources/shared-path.hpp \
 	settings.cpp \
 	settings.hpp \
 	signal-listener.hpp \
@@ -118,6 +175,7 @@ liburd_aux_la_CPPFLAGS = \
 	@BOOST_CPPFLAGS@ \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/src	\
+	-I$(top_srcdir)/src/resources \
 	-I$(top_srcdir)/rpc	\
 	-I$(top_builddir)/rpc
 
@@ -129,6 +187,7 @@ liburd_aux_la_LDFLAGS = \
     @BOOST_SYSTEM_LIB@ \
     @BOOST_THREAD_LIB@ \
 	@PROTOBUF_LIBS@ \
+	liburd_resources.la \
 	-pthread
 
 BUILT_SOURCES = \
@@ -164,6 +223,9 @@ defaults.cpp: Makefile
 %.pb.cc %.pb.h: $(top_srcdir)/rpc/%.proto
 	$(PROTOC) --proto_path=$(top_srcdir)/rpc --cpp_out=$(builddir) $^
 
+EXTRA_liburd_aux_la_DEPENDENCIES = \
+	liburd_resources.la
+
 ################################################################################
 # build 'urd', the main binary for the service daemon
 ################################################################################
@@ -182,18 +244,6 @@ urd_CPPFLAGS = \
 	-I$(top_srcdir)/rpc	\
 	-I$(top_builddir)/rpc
 
-
-# NOTE: we cannot pass 'liburd_aux.la' directly to 'urd_LDFLAGS' as usual,
-# because backends rely on the initialization of several static (and 
-# unreferenced) variables to self-register, so that they can be automatically 
-# constructed. Since they are not referenced elsewhere, the linker removes
-# the variables, which makes the self-registering process not work. To avoid 
-# this, we need to link the convenience library with '-Wl,--whole-archive'
-# to force the inclusion of these symbols and then disable it with 
-# '-Wl,--no-whole-archive'. Unfortunately, the order of flags
-# cannot be controlled, which forces us to define it explicitly as
-# '-Wl,--whole-archive,.libs/liburd_aux.a,--no-whole-archive' and to include
-# several extra dependencies which would not be needed otherwise
 urd_LDFLAGS = \
     @BOOST_ASIO_LIB@ \
     @BOOST_FILESYSTEM_LIB@ \
@@ -202,7 +252,7 @@ urd_LDFLAGS = \
     @BOOST_SYSTEM_LIB@ \
     @BOOST_THREAD_LIB@ \
 	@PROTOBUF_LIBS@ \
-	-Wl,--whole-archive,.libs/liburd_aux.a,--no-whole-archive
+	liburd_aux.la
 
 # we also need to include it as an additional dependency, since automake
 # will no longer detect it as a dependency

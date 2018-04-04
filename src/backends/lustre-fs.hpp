@@ -28,30 +28,36 @@
 #ifndef __LUSTRE_FS_HPP__
 #define __LUSTRE_FS_HPP__
 
-#include "norns/norns_backends.h"
+#include <system_error>
+#include <boost/filesystem.hpp>
+
+//#include "norns/norns_backends.h"
 #include "backend-base.hpp"
+
+namespace bfs = boost::filesystem;
 
 namespace norns {
 namespace storage {
 
 class lustre final : public storage::backend {
 public:
-    lustre(const std::string& mount, uint32_t quota);
+    lustre(const bfs::path& mount, uint32_t quota);
 
-    std::string mount() const override;
-    uint32_t quota() const override;
-    bool accepts(resource_info_ptr res) const override;
-    bool contains(resource_info_ptr res) const override;
-    void read_data() const override;
-    void write_data() const override;
-    std::string to_string() const override;
+    bfs::path mount() const override final;
+    uint32_t quota() const override final;
+
+    resource_ptr new_resource(const resource_info_ptr& rinfo, bool is_collection, std::error_code& ec) const override final;
+    resource_ptr get_resource(const resource_info_ptr& rinfo, std::error_code& ec) const override final;
+
+    bool accepts(resource_info_ptr res) const override final;
+    std::string to_string() const override final;
 
 protected:
-    std::string m_mount;
+    bfs::path m_mount;
     uint32_t    m_quota;
 };
 
-NORNS_REGISTER_BACKEND(backend_type::lustre, lustre);
+//NORNS_REGISTER_BACKEND(backend_type::lustre, lustre);
 
 } // namespace storage
 } // namespace norns

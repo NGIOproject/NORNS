@@ -26,8 +26,9 @@
  *************************************************************************/
 
 #include "messages.pb.h"
-#include "io.hpp"
+#include "io/task-stats.hpp"
 #include "response.hpp"
+#include "logger.hpp"
 
 namespace {
 
@@ -76,6 +77,8 @@ norns::rpc::Response_Type encode(norns::api::response_type type) {
             return NORNS_EINPROGRESS;
         case task_status::finished:
             return NORNS_EFINISHED;
+        case task_status::finished_with_error:
+            return NORNS_EFINISHEDWERROR;
         default:
             assert(false && "Unexpected task_status");
     }
@@ -137,6 +140,8 @@ void iotask_status_response::pack_extra_info(norns::rpc::Response& r) const {
     auto stats_msg = new norns::rpc::Response_TaskStats();
 
     stats_msg->set_status(encode(stats.status()));
+    stats_msg->set_task_error(encode(stats.error()));
+    stats_msg->set_sys_errnum(stats.sys_error().value());
     r.set_allocated_stats(stats_msg);
 
     // we don't need to free stats_msg because 

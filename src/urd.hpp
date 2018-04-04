@@ -31,6 +31,7 @@
 #include <unordered_map>
 #include <boost/thread/shared_mutex.hpp>
 
+#include "common.hpp"
 #include "settings.hpp"
 #include "backends.hpp"
 #include "logger.hpp"
@@ -62,8 +63,10 @@ using backend_manager_ptr = std::unique_ptr<backend_manager>;
 using resource_info_ptr = std::shared_ptr<data::resource_info>;
 using resource_ptr = std::shared_ptr<data::resource>;
 
+
 // forward declarations
 namespace io {
+    struct transferor_registry;
     struct task_manager;
     struct task_stats;
 }
@@ -75,7 +78,7 @@ enum class urd_error;
 class urd {
 
 public:
-    explicit urd();
+    urd();
     ~urd();
     void configure(const config_settings& settings);
     int run();
@@ -85,9 +88,13 @@ private:
     int daemonize();
     void signal_handler(int);
 
+    void init_event_handlers();
+    void init_backend_descriptors();
+    void init_conversion_handlers();
+
     urd_error validate_iotask_args(iotask_type type, 
-                                   resource_info_ptr src_info, 
-                                   resource_info_ptr dst_info) const;
+                                   const resource_info_ptr& src_info, 
+                                   const resource_info_ptr& dst_info) const;
 
     response_ptr iotask_create_handler(const request_ptr req);
     response_ptr iotask_status_handler(const request_ptr req) const;
@@ -104,6 +111,9 @@ private:
 
 private:
     std::shared_ptr<config_settings>                    m_settings;
+
+    std::unique_ptr<io::transferor_registry> m_transferor_registry;
+
     thread_pool_ptr m_workers;
 
 

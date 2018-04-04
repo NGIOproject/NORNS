@@ -29,9 +29,13 @@
 #define __IO_TASK_STATS_HPP__
 
 #include <string>
+#include <system_error>
 #include <boost/thread/shared_mutex.hpp>
 
 namespace norns {
+
+enum class urd_error;
+
 namespace io {
 
 /*! Valid status for an I/O task */
@@ -39,32 +43,47 @@ enum class task_status {
     undefined,
     pending,
     in_progress,
-    finished
+    finished,
+    finished_with_error,
 };
 
 /*! Stats about a registered I/O task */
 struct task_stats {
 
-    explicit task_stats();
-    task_stats(task_status status);
+    task_stats();
+    explicit task_stats(task_status status);
     task_stats(const task_stats& other);
     task_stats(task_stats&& rhs) noexcept;
 
+    task_stats& operator=(const task_stats& other);
+    task_stats& operator=(task_stats&& rhs) noexcept;
+
     task_status status() const;
     void set_status(const task_status status);
+    urd_error error() const;
+    void set_error(const urd_error ec);
+    std::error_code sys_error() const;
+    void set_sys_error(const std::error_code& ec);
 
     mutable boost::shared_mutex m_mutex;
     task_status m_status;
+    urd_error m_task_error;
+    std::error_code m_sys_error;
 };
 
 struct task_stats_view {
 
-    explicit task_stats_view();
-    task_stats_view(const task_stats& stats);
+    task_stats_view();
+    explicit task_stats_view(const task_stats& stats);
     task_stats_view(const task_stats_view& other);
     task_stats_view(task_stats_view&& rhs) noexcept;
 
+    task_stats_view& operator=(const task_stats_view& other);
+    task_stats_view& operator=(task_stats_view&& rhs) noexcept;
+
     task_status status() const;
+    urd_error error() const;
+    std::error_code sys_error() const;
 
     task_stats m_stats;
 };

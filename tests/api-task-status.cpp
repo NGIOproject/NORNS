@@ -25,27 +25,24 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#include "fake-daemon.hpp"
 
-#include "catch.hpp"
-
-#include <chrono>
 #include "norns.h"
 #include "nornsctl.h"
-#include <urd.hpp>
-#include <settings.hpp>
-
-#include "fake-daemon.hpp"
-
-//#define USE_REAL_DAEMON
+#include "test-env.hpp"
+#include "catch.hpp"
 
 SCENARIO("check request", "[api::norns_status]") {
     GIVEN("a running urd instance") {
 
-#ifndef USE_REAL_DAEMON
-        fake_daemon td;
-        td.run();
-#endif
+        test_env env(
+            fake_daemon_cfg {
+                true /* dry_run? */
+            }
+        );
+
+        const char* path_tmp0 = env.create_directory("mnt/tmp0").c_str();
+//        const char* path_tmp1 = env.create_directory("mnt/tmp1").c_str();
+//        const char* path_lustre0 = env.create_directory("mnt/lustre0").c_str();
 
         /**************************************************************************************************************/
         /* tests for error conditions                                                                                 */
@@ -59,7 +56,7 @@ SCENARIO("check request", "[api::norns_status]") {
             size_t src_size = (size_t) 42;
             
             const char* dst_nsid = "tmp://";
-            const char* dst_mnt = "/mnt/tmp0";
+            const char* dst_mnt = path_tmp0;
             const char* dst_path = "/a/b/c";
 
             norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
@@ -1006,11 +1003,6 @@ SCENARIO("check request", "[api::norns_status]") {
             rv = norns_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
-#endif
-
-#ifndef USE_REAL_DAEMON
-        int ret = td.stop();
-        REQUIRE(ret == 0);
 #endif
     }
 

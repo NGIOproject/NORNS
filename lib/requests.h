@@ -70,7 +70,11 @@ typedef struct {
     int r_error_code;
     union {
         size_t r_taskid;
-        norns_status_t r_status;
+        struct {
+            norns_status_t r_status;
+            norns_error_t r_task_error;
+            int r_errno;
+        };
     };
 } norns_response_t;
 

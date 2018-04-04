@@ -30,6 +30,7 @@ message Request {
             required string nsid = 1;
             optional string hostname = 2;
             required string datapath = 3;
+            required bool is_directory = 4;
         };
 
         message Resource {
@@ -106,6 +107,8 @@ message Response {
 
     message TaskStats {
         required uint32 status = 1;
+        required uint32 task_error = 2;
+        required uint32 sys_errnum = 3;
     }
 
     // most responses only need to return an error code

@@ -27,22 +27,16 @@
 
 #include "norns.h"
 #include "nornsctl.h"
+#include "test-env.hpp"
 #include "catch.hpp"
-#include "fake-daemon.hpp"
 
-// enable to test connections with an already running daemon
-//#define USE_REAL_DAEMON
-
-SCENARIO("unregister backend", "[api::norns_unregister_namespace]") {
+SCENARIO("unregister namespace", "[api::norns_unregister_namespace]") {
     GIVEN("a running urd instance") {
 
-#ifndef USE_REAL_DAEMON
-        fake_daemon td;
-        td.run();
-#endif
+        test_env env;
+        const char* path_b0 = env.create_directory("mnt/b0").c_str();
 
-        WHEN("a backend is unregistered with an invalid prefix") {
-
+        WHEN("a namespace is unregistered with an invalid prefix") {
 
             int rv = norns_unregister_namespace(NULL);
 
@@ -51,21 +45,20 @@ SCENARIO("unregister backend", "[api::norns_unregister_namespace]") {
             }
         }
 
-        WHEN("attempting to unregister a non-existing backend") {
-
+        WHEN("attempting to unregister a non-existing namespace") {
 
             int rv = norns_unregister_namespace("b0://");
 
-            THEN("NORNS_ENOSUCHBACKEND is returned") {
-                REQUIRE(rv == NORNS_ENOSUCHBACKEND);
+            THEN("NORNS_ENOSUCHNAMESPACE is returned") {
+                REQUIRE(rv == NORNS_ENOSUCHNAMESPACE);
             }
         }
 
-        WHEN("unregistering a registered backend") {
+        WHEN("unregistering a registered namespace") {
 
             const char* nsid = "b0://";
 
-            norns_backend_t b0 = NORNS_BACKEND(NORNS_BACKEND_NVML, "/mnt/b0", 4096);
+            norns_backend_t b0 = NORNS_BACKEND(NORNS_BACKEND_NVML, path_b0, 4096);
 
             int rv = norns_register_namespace(nsid, &b0);
 
@@ -78,17 +71,10 @@ SCENARIO("unregister backend", "[api::norns_unregister_namespace]") {
             }
 
         }
-
-
-#ifndef USE_REAL_DAEMON
-        int ret = td.stop();
-        REQUIRE(ret == 0);
-#endif
-
     }
 
     GIVEN("a non-running urd instance") {
-        WHEN("attempting to unregister a backend") {
+        WHEN("attempting to unregister a namespace") {
 
             int rv = norns_unregister_namespace("b0://");
 

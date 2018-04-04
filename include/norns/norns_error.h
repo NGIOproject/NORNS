@@ -59,9 +59,9 @@ extern "C" {
 #define NORNS_EPROCESSEXISTS     -20
 #define NORNS_ENOSUCHPROCESS     -21
 
-/* errors about backends */
-#define NORNS_EBACKENDEXISTS     -30
-#define NORNS_ENOSUCHBACKEND     -31
+/* errors about namespaces */
+#define NORNS_ENAMESPACEEXISTS   -30
+#define NORNS_ENOSUCHNAMESPACE   -31
 
 /* errors about tasks */
 #define NORNS_ETASKEXISTS        -40
@@ -72,9 +72,11 @@ extern "C" {
 #define NORNS_EPENDING          -100
 #define NORNS_EINPROGRESS       -101
 #define NORNS_EFINISHED         -102
+#define NORNS_EFINISHEDWERROR   -103
 
 /* misc errors */
 #define NORNS_ENOTSUPPORTED     -200
+#define NORNS_ESYSTEMERROR      -201
 
 #ifdef __cplusplus
 }

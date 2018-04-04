@@ -183,8 +183,8 @@ pid_t urd::daemonize() {
 }
 
 urd_error urd::validate_iotask_args(iotask_type type, 
-                                    const resource_info_ptr src_info,
-                                    const resource_info_ptr dst_info) const {
+                                    const resource_info_ptr& src_info,
+                                    const resource_info_ptr& dst_info) const {
 
     if(type != iotask_type::copy && type != iotask_type::move) {
         return urd_error::bad_args;
@@ -216,6 +216,7 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
     iotask_id tid = 0;
     urd_error rv = urd_error::success;
 
+#if 0
     /* Helper lambda used to construct a data::resource from a *storage::backend* and 
      * a *data::resource_info*. The function creates a *data::resource* if the provided 
      * *data::resource_info rinfo* exists in the backend and is valid, and returns it 
@@ -224,100 +225,113 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
     auto create_resource_from = [&](const resource_info_ptr rinfo) 
         -> std::tuple<urd_error, resource_ptr> {
 
-        auto rsrc = data::make_resource(rinfo);
+        std::shared_ptr<storage::backend> backend_ptr = storage::remote_backend;
+        const auto& nsid = rinfo->nsid();
 
-        if(rsrc == nullptr) {
+        // all backends must be registered except for those
+        // which are referenced by remote resources 
+        if(!rinfo->is_remote()) {
+            if(m_backends->count(nsid) == 0) {
+                return std::make_tuple(urd_error::no_such_namespace, resource_ptr());
+            }
+            backend_ptr = m_backends->at(nsid);
+
+            // check that resource is compatible with selected backend
+            if(!backend_ptr->accepts(rinfo) || !backend_ptr->contains(rinfo)) {
+                return std::make_tuple(urd_error::bad_args, resource_ptr());
+            }
+        }
+
+        std::error_code ec;
+        auto rsrc = data::make_resource(rinfo, backend_ptr, ec);
+
+        if(ec) {
+            LOGGER_ERROR("Could not create resource: {}", ec.message());
             return std::make_tuple(urd_error::bad_args, resource_ptr());
         }
 
-        // make_resource was able to deduce the appropriate
-        // backend from the rinfo type. 
-        // this means that it's one of the special backends
-        // such as "process_memory_backend" or "remote_backend"
-        // and that we can skip the backend lookup process
-        if(rsrc->backend() != nullptr) {
-            return std::make_tuple(urd_error::success, rsrc);
-        }
-
-//        // remote backend validation is left to the recipient
-//        if(rinfo->is_remote()) {
-//            return std::make_tuple(urd_error::success, rsrc);
-//        }
-
-        const auto nsid = rinfo->nsid();
-
-        // backend does not exist 
-        if(m_backends->count(nsid) == 0) {
-            return std::make_tuple(urd_error::no_such_backend, resource_ptr());
-        }
-
-        auto backend_ptr = m_backends->at(nsid);
-
-        // check that resource is compatible with selected backend
-        if(!backend_ptr->accepts(rinfo) || !backend_ptr->contains(rinfo)) {
-            return std::make_tuple(urd_error::bad_args, resource_ptr());
-        }
-
-        rsrc->set_backend(backend_ptr);
         return std::make_tuple(urd_error::success, rsrc);
     };
+#endif
 
+    //XXX move to namespace-manager?
+    auto get_backend = [&](const std::string& nsid, bool is_remote) 
+        -> std::shared_ptr<storage::backend> {
+
+        if(is_remote) {
+            return storage::remote_backend;
+        }
+
+        const auto& it = m_backends->find(nsid);
+
+        if(it != m_backends->end()) {
+            return it->second;
+        }
+
+        return std::shared_ptr<storage::backend>();
+    };
+
+    //XXX move validate() to io::
     if((rv = validate_iotask_args(type, src_info, dst_info)) 
             == urd_error::success) {
 
-        auto src_rv = create_resource_from(src_info);
-        auto dst_rv = create_resource_from(dst_info);
+        auto bsrc = get_backend(src_info->nsid(), src_info->is_remote());
+        auto bdst = get_backend(dst_info->nsid(), dst_info->is_remote());
 
-        if((std::get<0>(src_rv) == urd_error::success) && 
-           (std::get<0>(dst_rv) == urd_error::success)) {
+        if(bsrc == nullptr || bdst == nullptr) {
+            rv = urd_error::no_such_namespace;
+            goto log_and_return;
+        }
 
-            resource_ptr src = std::get<1>(src_rv);
-            resource_ptr dst = std::get<1>(dst_rv);
+        const auto& txfun = m_transferor_registry->get(src_info->type(), 
+                                                       dst_info->type());
 
-            std::shared_ptr<io::task_stats> stats_record;
+        if(txfun == nullptr) {
+            rv = urd_error::snafu; //TODO: unknown transferor
+            goto log_and_return;
+        }
 
-            // register the task in the task manager
-            {
-                boost::unique_lock<boost::shared_mutex> lock(m_task_manager_mutex);
+        std::shared_ptr<io::task_stats> stats_record;
 
-                auto ret = m_task_manager->create();
+        // register the task in the task manager
+        {
+            boost::unique_lock<boost::shared_mutex> lock(m_task_manager_mutex);
 
-                if(ret) {
-                    std::tie(tid, stats_record) = *ret;
-                }
-                else {
-                    // this can only happen if we tried to register a task
-                    // and the TID automatically generated collided with an
-                    // already running task. 
-                    // This can happen in two cases: 
-                    //   1. We end up with more than 4294967295U concurrent tasks
-                    //   2. We are not properly cleaning up dead tasks
-                    // In both cases, we want to know about it
-                    LOGGER_CRITICAL("Error when creating new task!");
-                    rv = urd_error::too_many_tasks;
-                }
+            auto ret = m_task_manager->create();
+
+            if(ret) {
+                std::tie(tid, stats_record) = *ret;
             }
-
-            // everything is ok, add the I/O task to the queue
-            if(stats_record != nullptr) {
-                if(m_settings->m_dry_run) {
-                    m_workers->submit_and_forget(
-                            io::fake_task(tid, stats_record));
-                }
-                else {
-                    m_workers->submit_and_forget(
-                            io::task(tid, type, src, dst, stats_record));
-                }
+            else {
+                // this can only happen if we tried to register a task
+                // and the TID automatically generated collided with an
+                // already running task. 
+                // This can happen in two cases: 
+                //   1. We end up with more than 4294967295U concurrent tasks
+                //   2. We are not properly cleaning up dead tasks
+                // In both cases, we want to know about it
+                LOGGER_CRITICAL("Error when creating new task!");
+                rv = urd_error::too_many_tasks;
             }
         }
-        else if(std::get<0>(src_rv) != urd_error::success) {
-            rv = std::get<0>(src_rv);
+
+        // everything is ok, add the I/O task to the queue
+        if(stats_record != nullptr) {
+            if(m_settings->m_dry_run) {
+                m_workers->submit_and_forget(
+                        io::fake_task(tid, stats_record));
+            }
+            else {
+                m_workers->submit_and_forget(
+                        io::task(tid, type, bsrc, src_info, bdst, dst_info, 
+                                 txfun, stats_record));
+            }
         }
-        else {
-            rv = std::get<0>(dst_rv);
-        }
+
+        rv = urd_error::success;
     }
 
+log_and_return:
     resp = std::make_unique<api::iotask_create_response>(tid);
     resp->set_error_code(rv);
 
@@ -327,7 +341,7 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
 
 response_ptr urd::iotask_status_handler(const request_ptr base_request) const {
 
-    response_ptr resp;
+    auto resp = std::make_unique<api::iotask_status_response>();
 
     // downcast the generic request to the concrete implementation
     auto request = utils::static_unique_ptr_cast<api::iotask_status_request>(std::move(base_request));
@@ -341,23 +355,19 @@ response_ptr urd::iotask_status_handler(const request_ptr base_request) const {
 
 
     if(stats_ptr != nullptr) {
+        resp->set_error_code(urd_error::success);
         // *stats_ptr makes a copy of the current stats for this task in 
         // m_task_manager so that we don't block other threads needlessly 
         // while sending the reply
-        resp = std::make_unique<api::iotask_status_response>(
-                io::task_stats_view(*stats_ptr));
-        resp->set_error_code(urd_error::success);
+        resp->set<0>(io::task_stats_view(*stats_ptr));
     }
     else {
-        resp = std::make_unique<api::iotask_status_response>(
-                io::task_stats_view());
         resp->set_error_code(urd_error::no_such_task);
     }
 
-    LOGGER_CRITICAL("test: {}", utils::to_string(stats_ptr->status()));
-
     LOGGER_INFO("IOTASK_STATUS({}) = {}", request->to_string(), resp->to_string());
-    return resp;
+
+    return std::move(resp);
 }
 
 
@@ -530,7 +540,7 @@ response_ptr urd::backend_register_handler(const request_ptr base_request) {
         boost::unique_lock<boost::shared_mutex> lock(m_backends_mutex);
 
         if(m_backends->count(nsid) != 0) {
-            resp->set_error_code(urd_error::backend_exists);
+            resp->set_error_code(urd_error::namespace_exists);
         }
         else {
 
@@ -546,7 +556,7 @@ response_ptr urd::backend_register_handler(const request_ptr base_request) {
         }
     }
 
-    LOGGER_INFO("REGISTER_BACKEND({}) = {}", request->to_string(), resp->to_string());
+    LOGGER_INFO("REGISTER_NAMESPACE({}) = {}", request->to_string(), resp->to_string());
     return resp;
 }
 
@@ -561,7 +571,7 @@ response_ptr urd::backend_update_handler(const request_ptr base_request) {
     resp->set_error_code(urd_error::success);
 
 log_and_return:
-    LOGGER_INFO("UPDATE_BACKEND({}) = {}", request->to_string(), resp->to_string());
+    LOGGER_INFO("UPDATE_NAMESPACE({}) = {}", request->to_string(), resp->to_string());
     return resp;
 }*/
 
@@ -580,7 +590,7 @@ response_ptr urd::backend_remove_handler(const request_ptr base_request) {
         const auto& it = m_backends->find(nsid);
 
         if(it == m_backends->end()) {
-            resp->set_error_code(urd_error::no_such_backend);
+            resp->set_error_code(urd_error::no_such_namespace);
         }
         else {
             m_backends->erase(it);
@@ -588,7 +598,7 @@ response_ptr urd::backend_remove_handler(const request_ptr base_request) {
         }
     }
 
-    LOGGER_INFO("UNREGISTER_BACKEND({}) = {}", request->to_string(), resp->to_string());
+    LOGGER_INFO("UNREGISTER_NAMESPACE({}) = {}", request->to_string(), resp->to_string());
     return resp;
 }
 
@@ -629,54 +639,13 @@ void urd::signal_handler(int signum){
     }
 }
 
-int urd::run() {
-
-    // initialize logging facilities
-    if(m_settings->m_daemonize) {
-        logger::create_global_logger(m_settings->m_progname, "syslog");
-
-        if(daemonize() != 0) {
-            /* parent clean ups and unwinds */
-            teardown();
-            return EXIT_SUCCESS;
-        }
-    } else {
-        if(m_settings->m_use_syslog) {
-            logger::create_global_logger(m_settings->m_progname, "syslog");
-        }
-        else {
-            logger::create_global_logger(m_settings->m_progname, "console color");
-        }
-    }
-
-    LOGGER_INFO("===========================");
-    LOGGER_INFO("== Starting Urd daemon   ==");
-    LOGGER_INFO("===========================");
-
-    LOGGER_INFO("");
-    LOGGER_INFO("[[ Settings ]]");
-    LOGGER_INFO("  - running as daemon?: {}", (m_settings->m_daemonize ? "yes" : "no"));
-    LOGGER_INFO("  - dry run?: {}", (m_settings->m_dry_run ? "yes" : "no"));
-    LOGGER_INFO("  - pidfile: {}", m_settings->m_daemon_pidfile);
-    LOGGER_INFO("  - control socket: {}", m_settings->m_control_socket);
-    LOGGER_INFO("  - global socket: {}", m_settings->m_global_socket);
-    LOGGER_INFO("  - port for remote requests: {}", m_settings->m_remote_port);
-    LOGGER_INFO("  - workers: {}", m_settings->m_workers_in_pool);
-    LOGGER_INFO("");
-//    LOGGER_INFO("    - internal storage: {}", m_settings->m_storage_path);
-//    LOGGER_INFO("    - internal storage capacity: {}", m_settings->m_storage_capacity);
-
-    LOGGER_INFO("[[ Starting up ]]");
-
-    // create worker pool
-    LOGGER_INFO("  * Creating workers...");
-    m_workers = std::make_unique<thread_pool>(m_settings->m_workers_in_pool);
+void urd::init_event_handlers() {
 
     LOGGER_INFO("  * Creating event listener...");
 
     // create (but not start) the API listener 
     // and register handlers for each request type
-    m_api_listener = std::make_unique<api_listener>();/*m_settings->m_ipc_sockfile);*/
+    m_api_listener = std::make_unique<api_listener>();
 
     boost::system::error_code ec;
     mode_t old_mask = umask(0);
@@ -754,9 +723,140 @@ int urd::run() {
     m_api_listener->set_signal_handler(
         std::bind(&urd::signal_handler, this, std::placeholders::_1),
         SIGHUP, SIGTERM, SIGINT);
+}
+
+void urd::init_backend_descriptors() {
+
+    // register POSIX filesystem backend
+    storage::backend_factory::get().
+        register_backend<storage::posix_filesystem>(backend_type::posix_filesystem,
+            [](const bfs::path& mount, uint32_t quota) {
+                return std::shared_ptr<storage::posix_filesystem>(
+                        new storage::posix_filesystem(mount, quota));
+            });
+
+    // register NVML-DAX filesystem backend
+    storage::backend_factory::get().
+        register_backend<storage::nvml_dax>(backend_type::nvml,
+            [](const bfs::path& mount, uint32_t quota) {
+                return std::shared_ptr<storage::nvml_dax>(
+                        new storage::nvml_dax(mount, quota));
+            });
+
+    // register Lustre backend
+    storage::backend_factory::get().
+        register_backend<storage::lustre>(backend_type::lustre,
+            [](const bfs::path& mount, uint32_t quota) {
+                return std::shared_ptr<storage::lustre>(
+                        new storage::lustre(mount, quota));
+            });
+}
+
+void urd::init_conversion_handlers() {
+
+    LOGGER_INFO("  * Installing data conversion handlers...");
+    m_transferor_registry = std::make_unique<io::transferor_registry>();
+
+    // memory region -> local path
+    m_transferor_registry->add(
+        data::resource_type::memory_region, 
+        data::resource_type::local_posix_path, 
+        &io::transfer_memory_region_to_local_path
+    );
+
+    // memory region -> shared path
+    m_transferor_registry->add(
+        data::resource_type::memory_region, 
+        data::resource_type::shared_posix_path, 
+        &io::transfer_memory_region_to_shared_path
+    );
+
+    // memory region -> remote path
+    m_transferor_registry->add(
+        data::resource_type::memory_region, 
+        data::resource_type::remote_posix_path, 
+        &io::transfer_memory_region_to_remote_path
+    );
+
+    // local path -> local path
+    m_transferor_registry->add(
+        data::resource_type::local_posix_path, 
+        data::resource_type::local_posix_path, 
+        &io::transfer_local_path_to_local_path
+    );
+
+    // local path -> shared path
+    m_transferor_registry->add(
+        data::resource_type::local_posix_path, 
+        data::resource_type::shared_posix_path, 
+        &io::transfer_local_path_to_shared_path
+    );
+
+    // local path -> remote path
+    m_transferor_registry->add(
+        data::resource_type::local_posix_path, 
+        data::resource_type::remote_posix_path, 
+        &io::transfer_local_path_to_remote_path
+    );
+}
+
+int urd::run() {
+
+    // initialize logging facilities
+    if(m_settings->m_daemonize) {
+        logger::create_global_logger(m_settings->m_progname, "syslog");
+
+        if(daemonize() != 0) {
+            /* parent clean ups and unwinds */
+            teardown();
+            return EXIT_SUCCESS;
+        }
+    } else {
+        if(m_settings->m_use_syslog) {
+            logger::create_global_logger(m_settings->m_progname, "syslog");
+        }
+        else {
+            logger::create_global_logger(m_settings->m_progname, "console color");
+        }
+    }
+
+    LOGGER_INFO("===========================");
+    LOGGER_INFO("== Starting Urd daemon   ==");
+    LOGGER_INFO("===========================");
+
+    LOGGER_INFO("");
+    LOGGER_INFO("[[ Settings ]]");
+    LOGGER_INFO("  - running as daemon?: {}", (m_settings->m_daemonize ? "yes" : "no"));
+    LOGGER_INFO("  - dry run?: {}", (m_settings->m_dry_run ? "yes" : "no"));
+    LOGGER_INFO("  - pidfile: {}", m_settings->m_daemon_pidfile);
+    LOGGER_INFO("  - control socket: {}", m_settings->m_control_socket);
+    LOGGER_INFO("  - global socket: {}", m_settings->m_global_socket);
+    LOGGER_INFO("  - port for remote requests: {}", m_settings->m_remote_port);
+    LOGGER_INFO("  - workers: {}", m_settings->m_workers_in_pool);
+    LOGGER_INFO("");
+//    LOGGER_INFO("    - internal storage: {}", m_settings->m_storage_path);
+//    LOGGER_INFO("    - internal storage capacity: {}", m_settings->m_storage_capacity);
+
+    LOGGER_INFO("[[ Starting up ]]");
+
+    // create worker pool
+    LOGGER_INFO("  * Creating workers...");
+    m_workers = std::make_unique<thread_pool>(m_settings->m_workers_in_pool);
+
+    init_event_handlers();
 
     m_backends = std::make_unique<backend_manager>();
+
+    // pre-register special backends
+    //TODO define constants
+    m_backends->emplace("[[internal::memory]]", storage::process_memory_backend);
+
     m_task_manager = std::make_unique<io::task_manager>();
+
+    init_backend_descriptors();
+
+    init_conversion_handlers();
+
 
     LOGGER_INFO("");
     LOGGER_INFO("[[ Start up successful, awaiting requests... ]]");

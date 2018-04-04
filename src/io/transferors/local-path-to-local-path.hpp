@@ -25,60 +25,24 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#include "resource.hpp"
+#ifndef __IO_TX_LOCAL_PATH_TO_LOCAL_PATH__
+#define __IO_TX_LOCAL_PATH_TO_LOCAL_PATH__
 
-#ifndef __MEMORY_BUFFER_HPP__
-#define __MEMORY_BUFFER_HPP__
+#include <system_error>
 
 namespace norns {
+
+// forward declarations
 namespace data {
+struct resource;
+}
 
-/*! Memory buffer data */
-struct memory_buffer : public resource_info {
+namespace io {
 
-    memory_buffer(uint64_t address, std::size_t size);
-    ~memory_buffer();
-    resource_type type() const override;
-    std::string nsid() const override;
-    bool is_remote() const override;
-    std::string to_string() const override;
-
-    uint64_t m_address;
-    std::size_t m_size;
-};
-
-
-
-namespace detail {
-
-template<>
-struct resource_impl<resource_type::memory_region> : public resource {
-
-    resource_impl(std::shared_ptr<resource_info> base_info);
-    std::string to_string() const override;
-    //resource_type type() const override;
-    std::shared_ptr<resource_info> info() const override;
-    std::shared_ptr<storage::backend> backend() const override;
-    void set_backend(const std::shared_ptr<storage::backend> backend) override;
-
-    std::shared_ptr<storage::backend> m_backend;
-    std::shared_ptr<memory_buffer> m_resource_info;
-};
-
-template <>
-struct stream_impl<resource_type::memory_region> : public data::stream {
-    stream_impl(std::shared_ptr<resource> resource);
-    std::size_t read(buffer& b) override;
-    std::size_t write(const buffer& b) override;
-};
-
-} // namespace detail
-
-/* typedefs for convenience */
-using memory_region_resource = detail::resource_impl<resource_type::memory_region>;
-using memory_region_stream = detail::stream_impl<resource_type::memory_region>;
-
-} // namespace data
+std::error_code 
+transfer_local_path_to_local_path(const std::shared_ptr<const data::resource>& src,
+                                  const std::shared_ptr<const data::resource>& dst);
+} // namespace io
 } // namespace norns
 
-#endif /* __MEMORY_BUFFER_HPP__ */
+#endif /* __TX_LOCAL_PATH_TO_LOCAL_PATH__ */

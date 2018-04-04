@@ -25,58 +25,44 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#include "resource.hpp"
-
-#ifndef __REMOTE_PATH_HPP__
-#define __REMOTE_PATH_HPP__
+#include "resource-type.hpp"
+#include "resource-info.hpp"
+#include "remote-path-info.hpp"
 
 namespace norns {
 namespace data {
-
-/*! Remote filesystem path data */
-struct remote_path : public resource_info {
-
-    remote_path(std::string nsid, std::string hostname, std::string datapath);
-    ~remote_path();
-    resource_type type() const override;
-    std::string nsid() const override;
-    bool is_remote() const override;
-    std::string to_string() const override;
-
-    std::string m_nsid;
-    std::string m_hostname;
-    std::string m_datapath;
-};
-
 namespace detail {
 
-template<>
-struct resource_impl<resource_type::remote_posix_path> : public resource {
+/*! Remote path data */
+remote_path_info::remote_path_info(const std::string& nsid, 
+                                   const std::string& hostname, 
+                                   const std::string& datapath)
+    : m_nsid(nsid),
+      m_hostname(hostname),
+      m_datapath(datapath) {}
 
-    resource_impl(std::shared_ptr<resource_info> base_info);
-    std::string to_string() const override;
-    //resource_type type() const override;
-    std::shared_ptr<resource_info> info() const override;
-    std::shared_ptr<storage::backend> backend() const override;
-    void set_backend(const std::shared_ptr<storage::backend> backend) override;
+remote_path_info::~remote_path_info() { }
 
-    std::shared_ptr<storage::backend> m_backend;
-    std::shared_ptr<remote_path> m_resource_info;
-};
+resource_type remote_path_info::type() const {
+    return resource_type::remote_posix_path;
+}
 
-template <>
-struct stream_impl<resource_type::remote_posix_path> : public stream {
-    stream_impl(std::shared_ptr<resource> resource);
-    std::size_t read(buffer& b) override;
-    std::size_t write(const buffer& b) override;
-};
+std::string remote_path_info::nsid() const {
+    return m_nsid;
+}
+
+bool remote_path_info::is_remote() const {
+    return true;
+}
+
+std::string remote_path_info::to_string() const {
+    return "REMOTE_PATH[\"" + m_hostname + "\", \"" + m_nsid + "\", \"" + m_datapath + "\"]";
+}
+
+std::string remote_path_info::datapath() const {
+    return m_datapath;
+}
 
 } // namespace detail
-
-using remote_path_resource = detail::resource_impl<resource_type::remote_posix_path>;
-using remote_path_stream = detail::stream_impl<resource_type::remote_posix_path>;
-
 } // namespace data
 } // namespace norns
-
-#endif /* __REMOTE_PATH_HPP__ */

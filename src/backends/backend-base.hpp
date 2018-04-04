@@ -28,48 +28,59 @@
 #ifndef __BACKEND_BASE_HPP__
 #define __BACKEND_BASE_HPP__
 
+#include <system_error>
 #include <functional>
 #include <unordered_map>
 #include <memory>
 #include <boost/preprocessor/cat.hpp>
+#include <boost/filesystem.hpp>
 
 #include "common.hpp"
 //#include "resources/resource-info.hpp"
-#include "resources/resource.hpp"
+//#include "resources/resource.hpp"
+
+namespace bfs = boost::filesystem;
 
 namespace norns {
+
+namespace data {
+    struct resource;
+    struct resource_info;
+}
+
 namespace storage {
 
-class backend {
+class backend : public std::enable_shared_from_this<backend> {
 
 protected:
+    using resource_ptr = std::shared_ptr<data::resource>;
     using resource_info_ptr = std::shared_ptr<data::resource_info>;
 
 public:
     virtual ~backend() {};
 
-    virtual std::string mount() const = 0;
+    virtual bfs::path mount() const = 0;
     virtual uint32_t quota() const = 0;
-    virtual void read_data() const = 0;
-    virtual void write_data() const = 0;
+
+    virtual resource_ptr new_resource(const resource_info_ptr& rinfo, bool is_collection, std::error_code& ec) const = 0;
+    virtual resource_ptr get_resource(const resource_info_ptr& rinfo, std::error_code& ec) const = 0;
 
     virtual bool accepts(resource_info_ptr res) const = 0;
-    virtual bool contains(resource_info_ptr res) const = 0;
 
     virtual std::string to_string() const = 0;
 
 }; // class backend
 
-#define NORNS_REGISTER_BACKEND(id, T)                                                 \
-    static bool BOOST_PP_CAT(T, __regged) =                                           \
-        storage::backend_factory::get().register_backend<T>(id,              \
-                [](const std::string& mount, uint32_t quota) {                        \
+#define NORNS_REGISTER_BACKEND(id, T)                               \
+    static bool BOOST_PP_CAT(T, __regged) =                         \
+        storage::backend_factory::get().register_backend<T>(id,     \
+                [](const bfs::path& mount, uint32_t quota) {        \
                     return std::shared_ptr<T>(new T(mount, quota)); \
                 });
 
 class backend_factory {
 
-    using creator_function = std::function<std::shared_ptr<backend>(const std::string&, uint32_t)>;
+    using creator_function = std::function<std::shared_ptr<backend>(const bfs::path&, uint32_t)>;
 
 
 public:
@@ -100,7 +111,7 @@ public:
     }
 
 private:
-    std::shared_ptr<backend> create(const backend_type type, const std::string& mount, uint32_t quota) const;
+    std::shared_ptr<backend> create(const backend_type type, const bfs::path& mount, uint32_t quota) const;
 
 protected:
     backend_factory() {}

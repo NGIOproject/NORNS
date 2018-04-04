@@ -25,77 +25,22 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#include "backends.hpp"
-#include "shared-path.hpp"
+#ifndef __SHARED_PATH_HPP__
+#define __SHARED_PATH_HPP__
+
+#include "resource-type.hpp"
+#include "resource.hpp"
+
+#include "detail/shared-path-info.hpp"
+#include "detail/shared-path-impl.hpp"
 
 namespace norns {
 namespace data {
 
-/*! Remote path data */
-shared_path::shared_path(std::string nsid, std::string datapath)
-    : m_nsid(nsid),
-      m_datapath(datapath) {}
-
-shared_path::~shared_path() { }
-
-resource_type shared_path::type() const {
-    return resource_type::shared_posix_path;
-}
-
-std::string shared_path::nsid() const {
-    return m_nsid;
-}
-
-bool shared_path::is_remote() const {
-    return false;
-}
-
-std::string shared_path::to_string() const {
-    return "SHARED_PATH[\"" + m_nsid + "\", \"" + m_datapath + "\"]";
-}
-
-namespace detail {
-
-shared_path_resource::resource_impl(std::shared_ptr<resource_info> base_info) :
-    m_backend(),
-    m_resource_info(std::static_pointer_cast<shared_path>(base_info)) { }
-
-std::string shared_path_resource::to_string() const {
-    return m_backend->to_string() + m_resource_info->to_string();
-}
-
-//resource_type shared_path_resource::type() const {
-//    return resource_type::shared_posix_path;
-//}
-
-std::shared_ptr<resource_info> shared_path_resource::info() const {
-    return m_resource_info;
-}
-
-std::shared_ptr<storage::backend> shared_path_resource::backend() const {
-    return m_backend;
-}
-
-void shared_path_resource::set_backend(const std::shared_ptr<storage::backend> backend) {
-    m_backend = backend;
-}
-
-/* Stream implementation */
-shared_path_stream::stream_impl(std::shared_ptr<resource> resource) {
-    (void) resource;
-}
-
-std::size_t shared_path_stream::read(buffer& b) {
-    (void) b;
-    return 0;
-}
-
-std::size_t shared_path_stream::write(const buffer& b) {
-    (void) b;
-    return 0;
-}
-
-} // namespace detail
+using shared_path_info = detail::shared_path_info;
+using shared_path_resource = detail::resource_impl<resource_type::shared_posix_path>;
 
 } // namespace data
 } // namespace norns
+
+#endif /* __SHARED_PATH_HPP__ */

@@ -100,5 +100,100 @@ uint64_t parse_size(const std::string& str){
     return std::round(value*factor);
 }
 
+// lexically remove any ./ and ../ components from a provided pathname
+// (adapted from boost::filesystem::path::lexically_normal())
+boost::filesystem::path lexical_normalize(const boost::filesystem::path& pathname,
+                                          bool as_directory) {
+
+    using boost::filesystem::path;
+
+    if(pathname.empty()) { 
+        return path{};
+    }
+
+    if(pathname == "/") {
+        return path{"/"};
+    }
+
+    path tmp{"/"};
+
+    for(const auto& elem : pathname) {
+        if(elem == "..") {
+            // move back on '../'
+            tmp = tmp.remove_filename();
+
+            if(tmp.empty()) {
+                tmp = "/";
+            }
+        }
+        else if(elem != "." && elem != "/") {
+            // There is a weird case in some versions of boost, where the elem is returned
+            // incorrectly for paths with 2 leading slashes:
+            //    Example: *path('//a/b/c').begin() returns '//a' instead of '/'
+            // If this happens, we extract the trailing component
+            if(elem.native().size() > 2 && 
+                    ((elem.native())[0] == '/' && (elem.native())[1] == '/')) {
+                tmp /= elem.native().substr(2);
+            }
+            else {
+                tmp /= elem;
+            }
+        }
+        // ignore './'
+    }
+
+    if(tmp != "/" && as_directory) {
+        tmp /= "/";
+    }
+
+    return tmp;
+}
+
+
 } // namespace utils
 } // namespace norns
+
+#if BOOST_VERSION <= 106000 // 1.6.0
+namespace boost { 
+namespace filesystem {
+
+template <> 
+path& path::append<path::iterator>(path::iterator begin, path::iterator end, const codecvt_type& cvt) {
+
+    (void) cvt;
+
+    for(; begin != end; ++begin)
+        *this /= *begin;
+    return *this;
+}
+
+/* Return path when appended to 'from_path' will resolve to same as 'to_path' */
+path relative(path from_path, path to_path) {
+
+    path ret;
+    from_path = absolute(from_path);
+    to_path = absolute(to_path);
+
+    path::const_iterator from_it(from_path.begin()); 
+    path::const_iterator to_it(to_path.begin());
+
+    // Find common base
+    for(path::const_iterator to_end(to_path.end()), from_end(from_path.end()); 
+        from_it != from_end && to_it != to_end && *from_it == *to_it; 
+        ++from_it, ++to_it
+       );
+
+    // Navigate backwards in directory to reach previously found base
+    for(path::const_iterator from_end(from_path.end()); from_it != from_end; ++from_it) {
+        if((*from_it) != ".")
+            ret /= "..";
+    }
+
+    // Now navigate down the directory branch
+    ret.append(to_it, to_path.end());
+    return ret;
+}
+
+} 
+} // namespace boost::filesystem
+#endif

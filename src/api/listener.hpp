@@ -31,7 +31,7 @@
 #include <boost/asio.hpp>
 #include <boost/filesystem.hpp>
 
-#include "api/dispatch-table.hpp"
+#include "common.hpp"
 #include "api/local-endpoint.hpp"
 #include "api/remote-endpoint.hpp"
 #include "api/signal-listener.hpp"

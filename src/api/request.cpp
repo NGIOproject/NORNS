@@ -119,9 +119,9 @@ create_from(const norns::rpc::Request_Task_Resource& res) {
 
     using norns::data::resource_info;
     using norns::data::memory_buffer;
-    using norns::data::local_path;
-    using norns::data::shared_path;
-    using norns::data::remote_path;
+    using norns::data::local_path_info;
+    using norns::data::shared_path_info;
+    using norns::data::remote_path_info;
 
     if(is_valid(res)) {
         if(res.type() & NORNS_PROCESS_MEMORY) {
@@ -130,17 +130,17 @@ create_from(const norns::rpc::Request_Task_Resource& res) {
         }
         else { // NORNS_POSIX_PATH
             if(res.type() & R_LOCAL) {
-                return std::make_shared<local_path>(res.path().nsid(),
-                                                    res.path().datapath());
+                return std::make_shared<local_path_info>(res.path().nsid(),
+                                                         res.path().datapath());
             }
             else if(res.type() & R_SHARED) {
-                return std::make_shared<shared_path>(res.path().nsid(),
-                                                     res.path().datapath());
+                return std::make_shared<shared_path_info>(res.path().nsid(),
+                                                          res.path().datapath());
             }
             else { // R_REMOTE
-                return std::make_shared<remote_path>(res.path().nsid(),
-                                                     res.path().hostname(), 
-                                                     res.path().datapath());
+                return std::make_shared<remote_path_info>(res.path().nsid(),
+                                                          res.path().hostname(), 
+                                                          res.path().datapath());
             }
         }
     }

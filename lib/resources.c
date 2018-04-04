@@ -27,7 +27,9 @@
 
 #include <unistd.h>
 #include <string.h>
-#include <norns.h>
+
+#include "norns.h"
+#include "log.h"
 
 #if 0
 /* Initialize a norns_resource structure according to the flags and 

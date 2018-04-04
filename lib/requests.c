@@ -565,8 +565,8 @@ free_membuf_msg(Norns__Rpc__Request__Task__MemoryRegion* msg) {
 static Norns__Rpc__Request__Task__PosixPath*
 build_path_msg(const norns_posix_path_t* path) {
 
-    const char* src_hostname = NULL;
-    const char* src_datapath = NULL;
+    const char* hostname = NULL;
+    const char* datapath = NULL;
     Norns__Rpc__Request__Task__PosixPath* msg = xmalloc(sizeof(*msg));
 
     if(msg == NULL) {
@@ -582,19 +582,19 @@ build_path_msg(const norns_posix_path_t* path) {
     }
 
 
-    src_hostname = path->p_host;
-    src_datapath = path->p_path;
+    hostname = path->p_host;
+    datapath = path->p_path;
 
-    if(src_hostname != NULL) {
-        msg->hostname = xstrdup(src_hostname);
+    if(hostname != NULL) {
+        msg->hostname = xstrdup(hostname);
 
         if(msg->hostname == NULL) {
             goto oom_cleanup;
         }
     }
 
-    if(src_datapath != NULL) {
-        msg->datapath = xstrdup(src_datapath);
+    if(datapath != NULL) {
+        msg->datapath = xstrdup(datapath);
 
         if(msg->datapath == NULL) {
             goto oom_cleanup;
@@ -770,6 +770,8 @@ unpack_from_buffer(msgbuffer_t* buf, norns_response_t* response) {
                 return NORNS_ERPCRECVFAILED;
             }
             response->r_status = rpc_resp->stats->status;
+            response->r_task_error = rpc_resp->stats->task_error;
+            response->r_errno = rpc_resp->stats->sys_errnum;
             break;
 
         default:

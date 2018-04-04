@@ -46,13 +46,13 @@ iotask_id fake_task::id() const {
 void fake_task::operator()() const {
     LOGGER_WARN("[{}] Starting fake I/O task", m_id);
 
-    sleep(2);
+    usleep(100);
 
     m_stats->set_status(task_status::in_progress);
 
     LOGGER_WARN("[{}] fake I/O task \"running\"", m_id);
 
-    sleep(2);
+    usleep(100);
 
     m_stats->set_status(task_status::finished);
 

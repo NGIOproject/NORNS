@@ -25,57 +25,50 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#include "resource.hpp"
+#ifndef __SHARED_PATH_IMPL_HPP__
+#define __SHARED_PATH_IMPL_HPP__
 
-#ifndef __SHARED_PATH_HPP__
-#define __SHARED_PATH_HPP__
+#include <string>
+#include <memory>
+#include <vector>
+#include <system_error>
+#include <boost/filesystem.hpp>
+
+namespace bfs = boost::filesystem;
 
 namespace norns {
+
+// forward declarations
+namespace storage {
+class posix_filesystem;
+}
+
 namespace data {
 
-/*! Shared filesystem path data */
-struct shared_path : public resource_info {
-    shared_path(std::string nsid, std::string datapath);
-    ~shared_path();
-    resource_type type() const override;
-    std::string nsid() const override;
-    bool is_remote() const override;
-    std::string to_string() const override;
-
-    std::string m_nsid;
-    std::string m_datapath;
-};
-
+enum class resource_type;
 
 namespace detail {
 
 template <>
 struct resource_impl<resource_type::shared_posix_path> : public resource {
 
-    resource_impl(std::shared_ptr<resource_info> base_info);
-    std::string to_string() const override;
-    //resource_type type() const override;
-    std::shared_ptr<resource_info> info() const override;
-    std::shared_ptr<storage::backend> backend() const override;
-    void set_backend(const std::shared_ptr<storage::backend> backend) override;
+    resource_impl(const std::shared_ptr<const storage::backend> parent, 
+                  const bfs::path& name);
 
-    std::shared_ptr<storage::backend> m_backend;
-    std::shared_ptr<shared_path> m_resource_info;
-};
+    std::string name() const override final;
+    resource_type type() const override final;
+    bool is_collection() const override final;
+    const std::shared_ptr<const storage::backend> parent() const override final;
+    std::string to_string() const override final;
 
-template <>
-struct stream_impl<resource_type::shared_posix_path> : public data::stream {
-    stream_impl(std::shared_ptr<resource> resource);
-    std::size_t read(buffer& b) override;
-    std::size_t write(const buffer& b) override;
+    const bfs::path m_namespace_name; // absolute pathname w.r.t. backend's mount point
+    const bfs::path m_canonical_path; // canonical pathname
+    const bool m_is_collection;
+    const std::shared_ptr<const storage::posix_filesystem> m_parent;
 };
 
 } // namespace detail
-
-using shared_path_resource = detail::resource_impl<resource_type::shared_posix_path>;
-using shared_path_stream = detail::stream_impl<resource_type::shared_posix_path>;
-
 } // namespace data
 } // namespace norns
 
-#endif /* __SHARED_PATH_HPP__ */
+#endif /* __SHARED_PATH_IMPL_HPP__ */

@@ -34,9 +34,12 @@
 #include "common.hpp"
 #include "resources.hpp"
 #include "backends.hpp"
+#include "transferor-registry.hpp"
 
 namespace norns {
 namespace io {
+
+using TransferorFunctionType = transferor_registry::CallableType;
 
 // forward declaration
 struct task_stats;
@@ -45,25 +48,35 @@ struct task_stats;
 struct task {
 
     using backend_ptr = std::shared_ptr<storage::backend>;
+    using resource_info_ptr = std::shared_ptr<data::resource_info>;
     using resource_ptr = std::shared_ptr<data::resource>;
     using task_stats_ptr = std::shared_ptr<task_stats>;
 
-    task(iotask_id tid, iotask_type type, const resource_ptr src, 
-         const resource_ptr dst, const task_stats_ptr stats);
+    task(const iotask_id tid, const iotask_type type, 
+         const backend_ptr srd_backend, const resource_info_ptr src_info,
+         const backend_ptr dst_backend, const resource_info_ptr dst_info,
+         const TransferorFunctionType& cfun, const task_stats_ptr stats);
 
     iotask_id id() const;
     bool is_valid() const;
     void operator()() const;
 
     //XXX a munge credential might be better here
-    iotask_id   m_id;
+    const iotask_id   m_id;
     pid_t       m_pid;
     uint32_t    m_jobid;
     
-    iotask_type m_type;
+    const iotask_type m_type;
+    const backend_ptr m_src_backend;
+    const resource_info_ptr m_src_info;
+    const backend_ptr m_dst_backend;
+    const resource_info_ptr m_dst_info;
+    const TransferorFunctionType m_transferor;
+
     resource_ptr m_src;
     resource_ptr m_dst;
-    task_stats_ptr m_stats;
+
+    const task_stats_ptr m_stats;
 };
 
 

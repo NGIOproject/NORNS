@@ -60,10 +60,11 @@ typedef struct {
 
 /* I/O task status descriptor */
 typedef struct {
-    norns_status_t st_status;    /* task current status */
-    norns_error_t  st_error;     /* task return value */
-    size_t         st_pending;   /* bytes pending in task */
-    size_t         st_total;     /* total bytes in task */
+    norns_status_t st_status;     /* task current status */
+    norns_error_t  st_task_error; /* task return value */
+    int            st_sys_errno;  /* errno returned if st_task_error == NORNS_ESYSTEM_ERROR */
+    size_t         st_pending;    /* bytes pending in task */
+    size_t         st_total;      /* total bytes in task */
 } norns_stat_t;
 
 /**************************************************************************/
@@ -88,15 +89,6 @@ norns_error_t norns_cancel(norns_iotask_t* task) __THROW;
 
 /* Check the status of a submitted I/O task */
 norns_error_t norns_status(norns_iotask_t* task, norns_stat_t* stats) __THROW;
-
-/* Retrieve return status associated with task */
-norns_error_t norns_return(norns_iotask_t* task, norns_stat_t* stats) __THROW;
-
-/* Retrieve current status associated with task (if task is NULL, retrieve status for all running tasks) */
-//ssize_t norns_progress(norns_iotask_t* task, struct norns_iotst* statp) __THROW;
-
-/* Retrieve error status associated with task */
-//int norns_error(norns_iotask_t* task) __THROW;
 
 /* Return a string describing the error number */
 char* norns_strerror(norns_error_t errnum) __THROW;

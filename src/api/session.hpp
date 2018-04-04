@@ -31,7 +31,7 @@
 #include <boost/asio.hpp>
 #include <boost/filesystem.hpp>
 
-#include "api/dispatch-table.hpp"
+#include "common.hpp"
 
 namespace ba = boost::asio;
 namespace bfs = boost::filesystem;

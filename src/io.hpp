@@ -28,8 +28,8 @@
 #ifndef __IO_HPP__
 #define __IO_HPP__
 
-#include <atomic>
-
+#include "io/transferor-registry.hpp"
+#include "io/transferors.hpp"
 #include "io/task.hpp"
 #include "io/fake-task.hpp"
 #include "io/task-manager.hpp"

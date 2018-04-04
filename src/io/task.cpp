@@ -30,18 +30,24 @@
 
 #include "logger.hpp"
 #include "resources.hpp"
+#include "transferors.hpp"
 #include "task.hpp"
 #include "task-stats.hpp"
 
 namespace norns {
 namespace io {
 
-task::task(iotask_id tid, iotask_type type, const resource_ptr src, 
-           const resource_ptr dst, const task_stats_ptr stats)
+task::task(const iotask_id tid, const iotask_type type, 
+           const backend_ptr src_backend, const resource_info_ptr src_info,
+           const backend_ptr dst_backend, const resource_info_ptr dst_info,
+           const TransferorFunctionType& cfun, const task_stats_ptr stats)
     : m_id(tid),
       m_type(type),
-      m_src(src),
-      m_dst(dst),
+      m_src_backend(src_backend),
+      m_src_info(src_info),
+      m_dst_backend(dst_backend),
+      m_dst_info(dst_info),
+      m_transferor(cfun),
       m_stats(stats) { }
 
 iotask_id task::id() const {
@@ -49,66 +55,56 @@ iotask_id task::id() const {
 }
 
 void task::operator()() const {
+
+    std::error_code ec;
+
+    // helper lambda for error reporting 
+    const auto log_error = [&] (const std::string& msg) {
+        m_stats->set_status(task_status::finished_with_error);
+        m_stats->set_error(urd_error::system_error);
+        m_stats->set_sys_error(ec);
+
+        std::string r_msg = "[{}] " + msg + ": {}";
+
+        LOGGER_ERROR(r_msg.c_str(), m_id, ec.message());
+        LOGGER_WARN("[{}] I/O task completed with error", m_id);
+    };
+
     LOGGER_WARN("[{}] Starting I/O task", m_id);
-    LOGGER_WARN("[{}]   FROM: {}", m_id, m_src->to_string());
-    LOGGER_WARN("[{}]     TO: {}", m_id, m_dst->to_string());
+    LOGGER_WARN("[{}]   TYPE: {}", m_id, utils::to_string(m_type));
+    LOGGER_WARN("[{}]   FROM: {}", m_id, m_src_backend->to_string());
+    LOGGER_WARN("[{}]     TO: {}", m_id, m_dst_backend->to_string());
 
     m_stats->set_status(task_status::in_progress);
 
-    // helper lambda for creating streams and reporting errors
-    auto create_stream = [&] (const resource_ptr res, data::stream_type type) 
-        -> std::shared_ptr<data::stream> {
+    auto src = m_src_backend->get_resource(m_src_info, ec);
 
-        try {
-            return data::make_stream(res, type);
-        }
-        catch(const std::system_error& error) {
-            LOGGER_ERROR("[{}] Error creating {} stream for {}: \"{}\"", 
-                    m_id, (type == data::stream_type::input ? "input" : "output"),  
-                    res->to_string(), error.code().message());
-            throw;
-        }
-    };
-
-    try {
-        auto input_stream = create_stream(m_src, data::stream_type::input);
-        auto output_stream = create_stream(m_dst, data::stream_type::output);
-
-        //XXX using something like backend->preferred_transfer_size()
-        //would be nice
-        data::buffer b(8192);
-        std::size_t bytes_read = 0;
-
-        //XXX input_stream | tranform | output_stream
-        //
-        // preferred interface:
-        //
-        // for(const auto& input: input_stream) {
-        //     try {
-        //         input | output_stream;
-        //     } 
-        //     catch(...) {
-        //     }
-        // }
-        //
-        //
-        //
-        while((bytes_read = input_stream->read(b)) != 0) {
-
-            LOGGER_WARN("[{}] {} bytes read from {}", m_id, bytes_read, m_src->to_string());
-
-            std::size_t bytes_written = output_stream->write(b);
-
-            LOGGER_WARN("[{}] {} bytes written to {}", m_id, bytes_written, m_dst->to_string());
-        }
-
-        LOGGER_WARN("[{}] I/O task completed successfully", m_id);
+    if(ec) {
+        log_error("Could not access input data " + m_src_info->to_string());
+        return;
     }
-    catch(const std::exception& ex) {
-        LOGGER_WARN("[{}] I/O task completed with error: {}", m_id, ex.what());
+
+    auto dst = m_dst_backend->new_resource(m_dst_info, src->is_collection(), ec);
+
+    if(ec) {
+        log_error("Could not create output data " + m_dst_info->to_string());
+        return;
     }
+
+    //TODO progress reporting
+    ec = m_transferor(src, dst);
+
+    //XXX should we rollback all previous changes?
+    if(ec) {
+        log_error("Conversion failed");
+        return;
+    }
+
+    LOGGER_WARN("[{}] I/O task completed successfully", m_id);
 
     m_stats->set_status(task_status::finished);
+    m_stats->set_error(urd_error::success);
+    m_stats->set_sys_error(std::make_error_code(static_cast<std::errc>(ec.value())));
 }
 
 } // namespace io

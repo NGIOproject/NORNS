@@ -34,10 +34,19 @@
 #include <urd.hpp>
 #include <settings.hpp>
 
+struct fake_daemon_cfg {
+
+    fake_daemon_cfg(bool dry_run) :
+        m_dry_run(dry_run) { }
+
+    bool m_dry_run = false;
+};
+
 struct fake_daemon {
 
     fake_daemon();
     ~fake_daemon();
+    void configure(const fake_daemon_cfg& cfg);
     void run();
     int stop();
 

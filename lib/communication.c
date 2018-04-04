@@ -59,8 +59,10 @@ send_submit_request(norns_iotask_t* task) {
     int res;
     norns_response_t resp;
 
-    // XXX add missing checks
-    if(task->t_id != 0) {
+    // XXX add missing checks: e.g. validate src resource
+    if(task->t_id != 0 || 
+       (task->t_op != NORNS_IOTASK_COPY &&
+        task->t_op != NORNS_IOTASK_MOVE )) {
         return NORNS_EBADARGS;
     }
 
@@ -98,6 +100,8 @@ send_status_request(norns_iotask_t* task, norns_stat_t* stats) {
     }
 
     stats->st_status = resp.r_status;
+    stats->st_task_error = resp.r_task_error;
+    stats->st_sys_errno = resp.r_errno;
 
     return resp.r_error_code;
 }

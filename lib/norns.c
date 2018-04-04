@@ -118,7 +118,8 @@ norns_wait(norns_iotask_t* task) {
             return rv;
         }
 
-        if(stats.st_status == NORNS_EFINISHED) {
+        if(stats.st_status == NORNS_EFINISHED || 
+           stats.st_status == NORNS_EFINISHEDWERROR) {
             return NORNS_SUCCESS;
         }
 

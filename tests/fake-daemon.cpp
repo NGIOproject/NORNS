@@ -34,6 +34,21 @@
 #include "nornsctl.h"
 #include "fake-daemon.hpp"
 
+norns::config_settings default_settings = {
+    "test_urd", /* progname */
+    false, /* daemonize */
+    true, /* use syslog */
+    false, /* dry run */
+    "./test_urd.global.socket", /* global_socket */
+    "./test_urd.control.socket", /* control_socket */
+    42002, /* remote port */
+    "./test_urd.pid", /* daemon_pidfile */
+    2, /* api workers */
+    "./",
+    42,
+    {}
+};
+
 fake_daemon::fake_daemon() {
     extern const char* norns_api_global_socket;
     extern const char* norns_api_control_socket;
@@ -45,6 +60,10 @@ fake_daemon::~fake_daemon() {
     if(m_running) {
         stop();
     }
+}
+
+void fake_daemon::configure(const fake_daemon_cfg& cfg) {
+    default_settings.m_dry_run = cfg.m_dry_run;
 }
 
 void fake_daemon::run() {
@@ -73,22 +92,7 @@ void fake_daemon::run() {
         return;
     }
 
-    norns::config_settings settings = {
-        "test_urd", /* progname */
-        false, /* daemonize */
-        true, /* use syslog */
-        false, /* dry run */
-        "./test_urd.global.socket", /* global_socket */
-        "./test_urd.control.socket", /* control_socket */
-        42002, /* remote port */
-        "./test_urd.pid", /* daemon_pidfile */
-        2, /* api workers */
-        "./",
-        42,
-        {}
-    };
-
-    m_daemon.configure(settings);
+    m_daemon.configure(default_settings);
     m_daemon.run();
     m_daemon.teardown();
 
