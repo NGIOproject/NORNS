@@ -33,7 +33,8 @@ namespace norns {
 namespace io {
 
 std::error_code
-transfer_memory_region_to_shared_path(const std::shared_ptr<const data::resource>& src,
+transfer_memory_region_to_shared_path(const auth::credentials& usr_creds,
+                                      const std::shared_ptr<const data::resource>& src,
                                       const std::shared_ptr<const data::resource>& dst) {
     (void) src;
     (void) dst;

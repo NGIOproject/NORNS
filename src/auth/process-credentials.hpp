@@ -25,27 +25,36 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#ifndef __IO_TX_MEM_TO_REMOTE_PATH__
-#define __IO_TX_MEM_TO_REMOTE_PATH__
+#ifndef __PROCESS_CREDENTIALS_HPP__
+#define __PROCESS_CREDENTIALS_HPP__
 
-#include <system_error>
-#include "auth/process-credentials.hpp"
+#include <sys/types.h>
+#include <boost/asio.hpp>
+#include <boost/optional.hpp>
+
+namespace ba = boost::asio;
 
 namespace norns {
+namespace auth {
 
-// forward declarations
-namespace data {
-struct resource;
-}
+struct credentials {
 
-namespace io {
+    static boost::optional<credentials> fetch(const ba::generic::stream_protocol::socket& socket);
 
-std::error_code
-transfer_memory_region_to_remote_path(const auth::credentials& usr_creds,
-                                      const std::shared_ptr<const data::resource>& src,
-                                      const std::shared_ptr<const data::resource>& dst);
+private:
+    credentials(pid_t pid, uid_t uid, gid_t gid);
 
-} // namespace io
+public:
+    pid_t pid() const;
+    uid_t uid() const;
+    gid_t gid() const;
+
+    pid_t m_pid;
+    uid_t m_uid;
+    gid_t m_gid;
+};
+
+} // namespace auth
 } // namespace norns
 
-#endif /* __TX_MEM_TO_REMOTE_PATH__ */
+#endif /* __PROCESS_CREDENTIALS_HPP__ */

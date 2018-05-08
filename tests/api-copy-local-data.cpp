@@ -33,7 +33,7 @@
 
 namespace bfs = boost::filesystem;
 
-SCENARIO("copy local data", "[api::norns_submit_copy_local]") {
+SCENARIO("copy local POSIX file to local POSIX file", "[api::norns_submit_copy_local_posix_files]") {
     GIVEN("a running urd instance") {
 
         test_env env;
@@ -1218,4 +1218,73 @@ SCENARIO("copy local data", "[api::norns_submit_copy_local]") {
         }
     }
 #endif
+}
+
+
+SCENARIO("copy local memory buffer to local POSIX file", "[api::norns_submit_copy_buffer_to_file]") {
+    GIVEN("a running urd instance") {
+
+        test_env env;
+
+        const char* nsid0 = "tmp0";
+        const char* dst_nsid;
+        bfs::path dst_mnt;
+
+        // create namespaces
+        std::tie(dst_nsid, dst_mnt) = env.create_namespace(nsid0, "mnt/tmp0", 16384);
+
+        // create input data buffer
+        std::vector<int> input_data(100, 42);
+        void* region_addr = input_data.data();
+        size_t region_size = input_data.size() * sizeof(int);
+
+        // output names
+        const bfs::path dst_root            = "/";
+        const bfs::path dst_subdir0         = "/output_dir0";
+        const bfs::path dst_subdir1         = "/output_dir1";
+        const bfs::path dst_file_at_root0   = "/file0"; // same basename
+        const bfs::path dst_file_at_root1   = "/file1"; // different basename
+        const bfs::path dst_file_at_subdir0 = "/a/b/c/d/file0"; // same fullname
+        const bfs::path dst_file_at_subdir1 = "/a/b/c/d/file1"; // same parents, different basename
+        const bfs::path dst_file_at_subdir2 = "/e/f/g/h/i/file0"; // different parents, same basename
+        const bfs::path dst_file_at_subdir3 = "/e/f/g/h/i/file1"; // different fullname
+
+        /**************************************************************************************************************/
+        /* tests for error conditions                                                                                 */
+        /**************************************************************************************************************/
+        //TODO
+
+        WHEN("copying a memory buffer to a local POSIX file") {
+
+            norns_op_t task_op = NORNS_IOTASK_COPY;
+
+            norns_iotask_t task = NORNS_IOTASK(task_op, 
+                                               NORNS_MEMORY_REGION(region_addr, region_size), 
+                                               NORNS_LOCAL_PATH(dst_nsid, dst_file_at_root0.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("norns_submit() returns NORNS_SUCCESS") {
+                REQUIRE(rv == NORNS_SUCCESS);
+                REQUIRE(task.t_id != 0);
+
+                // wait until the task completes
+                rv = norns_wait(&task);
+
+                THEN("norns_wait() return NORNS_SUCCESS") {
+                    REQUIRE(rv == NORNS_SUCCESS);
+
+                    THEN("Output file contains buffer data") {
+
+                        bfs::path dst = env.get_from_namespace(dst_nsid, dst_file_at_root0);
+
+                        REQUIRE(compare(input_data, dst) == true);
+                    }
+                }
+            }
+        }
+
+
+
+    }
 }

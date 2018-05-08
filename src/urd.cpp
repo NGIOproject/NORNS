@@ -208,9 +208,9 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
     // downcast the generic request to the concrete implementation
     auto request = utils::static_unique_ptr_cast<api::iotask_create_request>(std::move(base_request));
 
-    auto type = request->get<0>();
-    auto src_info = request->get<1>();
-    auto dst_info = request->get<2>();
+    const auto type = request->get<0>();
+    const auto src_info = request->get<1>();
+    const auto dst_info = request->get<2>();
 
     response_ptr resp;
     iotask_id tid = 0;
@@ -271,6 +271,13 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
         return std::shared_ptr<storage::backend>();
     };
 
+    const auto creds = request->credentials();
+
+    if(!creds) {
+        rv = urd_error::snafu; // TODO: invalid_credentials? eaccess? eperm?
+        goto log_and_return;
+    }
+
     //XXX move validate() to io::
     if((rv = validate_iotask_args(type, src_info, dst_info)) 
             == urd_error::success) {
@@ -324,7 +331,7 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
             else {
                 m_workers->submit_and_forget(
                         io::task(tid, type, bsrc, src_info, bdst, dst_info, 
-                                 txfun, stats_record));
+                                 *creds, txfun, stats_record));
             }
         }
 

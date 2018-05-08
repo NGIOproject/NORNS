@@ -32,6 +32,7 @@
 #include <boost/filesystem.hpp>
 
 #include "common.hpp"
+#include "auth/process-credentials.hpp"
 
 namespace ba = boost::asio;
 namespace bfs = boost::filesystem;
@@ -110,7 +111,19 @@ private:
                         if(!ec) {
                             Input req = m_message.decode_body(length);
 
-                            Output resp = m_dispatcher->run(req->type(), std::move(req));
+                            // if credentials were not provided in the requests payload,
+                            // the request probably originated locally. In that case, we
+                            // try to get the credentials from the local calling process 
+                            // from the connection socket. If this also fails, 
+                            // req->credentials() is set to boost::none, and it becomes
+                            // the invoked handler's responsibility to validate the request
+                            if(!req->credentials()) {
+                                req->set_credentials(
+                                        auth::credentials::fetch(m_socket));
+                            }
+
+                            Output resp = m_dispatcher->invoke(
+                                    req->type(), std::move(req));
 
                             assert(resp != nullptr);
 

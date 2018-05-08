@@ -13,4 +13,4 @@ make
 make install
 cp <build-dir>/etc/norns.service /usr/lib/systemd/system/norns.service
 
-
+sudo setcap cap_sys_ptrace,cap_chown=+ep ./urd

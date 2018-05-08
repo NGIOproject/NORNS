@@ -46,6 +46,7 @@ bool range_equal(InputIterator1 first1, InputIterator1 last1,
     return (first1 == last1) && (first2 == last2);
 }
 
+bool compare(const std::vector<int>& data, const bfs::path& file);
 bool compare_files(const bfs::path& filename1, const bfs::path& filename2);
 bool compare_directories(const bfs::path& dirname1, const bfs::path& dirname2);
 

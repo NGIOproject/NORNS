@@ -35,6 +35,7 @@
 #include "resources.hpp"
 #include "backends.hpp"
 #include "transferor-registry.hpp"
+#include "auth/process-credentials.hpp"
 
 namespace norns {
 namespace io {
@@ -55,7 +56,8 @@ struct task {
     task(const iotask_id tid, const iotask_type type, 
          const backend_ptr srd_backend, const resource_info_ptr src_info,
          const backend_ptr dst_backend, const resource_info_ptr dst_info,
-         const TransferorFunctionType& cfun, const task_stats_ptr stats);
+         const auth::credentials& creds, const TransferorFunctionType& tfun, 
+         const task_stats_ptr stats);
 
     iotask_id id() const;
     bool is_valid() const;
@@ -71,6 +73,7 @@ struct task {
     const resource_info_ptr m_src_info;
     const backend_ptr m_dst_backend;
     const resource_info_ptr m_dst_info;
+    const auth::credentials m_usr_credentials;
     const TransferorFunctionType m_transferor;
 
     resource_ptr m_src;

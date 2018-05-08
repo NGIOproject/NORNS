@@ -129,6 +129,7 @@ backend::resource_ptr posix_filesystem::get_resource(const resource_info_ptr& ri
         return backend::resource_ptr();
     }
 
+    ec = std::make_error_code(static_cast<std::errc>(0));
     return std::make_shared<data::local_path_resource>(shared_from_this(), ns_abs_subpath);
 }
 

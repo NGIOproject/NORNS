@@ -29,6 +29,7 @@
 #define __IO_TX_MEM_TO_LOCAL_PATH__
 
 #include <system_error>
+#include "auth/process-credentials.hpp"
 
 namespace norns {
 
@@ -40,7 +41,8 @@ struct resource;
 namespace io {
 
 std::error_code
-transfer_memory_region_to_local_path(const std::shared_ptr<const data::resource>& src,
+transfer_memory_region_to_local_path(const auth::credentials& usr_creds,
+                                     const std::shared_ptr<const data::resource>& src,
                                      const std::shared_ptr<const data::resource>& dst);
 
 } // namespace io

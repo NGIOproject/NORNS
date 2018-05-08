@@ -38,6 +38,7 @@ namespace data {
 
 /* aliases for convenience */
 using memory_buffer = detail::memory_region_info;
+using memory_region_info = detail::memory_region_info;
 using memory_region_resource = detail::resource_impl<resource_type::memory_region>;
 
 } // namespace data

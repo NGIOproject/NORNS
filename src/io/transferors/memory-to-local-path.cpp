@@ -25,21 +25,121 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
+#include <sys/uio.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+
+#include "utils.hpp"
 #include "logger.hpp"
 #include "resources.hpp"
 #include "memory-to-local-path.hpp"
+
+namespace {
+
+std::error_code
+copy_memory_region(pid_t pid, void* src_addr, size_t size, const bfs::path& dst) {
+
+    int out_fd = -1;
+    void* dst_addr = NULL;
+    ssize_t nbytes = -1;
+    int rv = 0;
+    struct iovec local_region, remote_region;
+
+    // create and preallocate output file
+    out_fd = ::open(dst.c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+
+    if(out_fd == -1) {
+        LOGGER_ERROR("open() error");
+        return std::make_error_code(static_cast<std::errc>(errno));
+    }
+
+    if(::fallocate(out_fd, 0, 0, size) == -1) {
+        // filesystem doesn't support fallocate(), fallback to truncate()
+        if(errno == EOPNOTSUPP) {
+            if(::ftruncate(out_fd, size) != 0) {
+                LOGGER_ERROR("ftruncate() error on {}", dst);
+                rv = errno;
+                goto cleanup_on_error;
+            }
+        }
+        LOGGER_ERROR("fallocate() error");
+        rv = errno;
+        goto cleanup_on_error;
+    }
+
+    dst_addr = ::mmap(NULL, size, PROT_WRITE, MAP_SHARED, out_fd, 0);
+
+    if(dst_addr == MAP_FAILED) {
+        LOGGER_ERROR("mmap() error");
+        rv = errno;
+        goto cleanup_on_error;
+    }
+
+    local_region.iov_base = dst_addr;
+    remote_region.iov_base = src_addr;
+    local_region.iov_len = remote_region.iov_len = size;
+
+    nbytes = ::process_vm_readv(pid, &local_region, 1, &remote_region, 1, 0);
+
+    if(nbytes == -1) {
+        LOGGER_ERROR("process_vm_readv() error");
+        rv = errno;
+        goto cleanup_on_error;
+    }
+
+    // according to the documentation, partial reads should only happen
+    // at the granularity of iovec elements. Given that we only have one
+    // element in our 'src' iovec, we should never hit this, but just in case
+    // we return an EIO
+    if(static_cast<size_t>(nbytes) < size) {
+        LOGGER_ERROR("process_vm_readv() received fewer data than expected");
+        rv = EIO;
+        goto cleanup_on_error;
+    }
+
+    // success: set rv to 0 and fall through
+    rv = 0;
+
+cleanup_on_error:
+    if(dst_addr != MAP_FAILED) {
+        munmap(dst_addr, size);
+    }
+
+    if(out_fd != -1) {
+retry_close:
+        if(close(out_fd) == -1) {
+            if(errno == EINTR) {
+                goto retry_close;
+            }
+            LOGGER_ERROR("close() error");
+            rv = errno;
+        }
+    }
+
+    return std::make_error_code(static_cast<std::errc>(rv));
+}
+
+}
 
 namespace norns {
 namespace io {
 
 std::error_code
-transfer_memory_region_to_local_path(const std::shared_ptr<const data::resource>& src,
+transfer_memory_region_to_local_path(const auth::credentials& usr_creds,
+                                     const std::shared_ptr<const data::resource>& src,
                                      const std::shared_ptr<const data::resource>& dst) {
-    (void) src;
-    (void) dst;
 
-    LOGGER_CRITICAL("COPY called!");
-    return std::make_error_code(static_cast<std::errc>(0));
+    const auto& d_src = reinterpret_cast<const data::memory_region_resource&>(*src);
+    const auto& d_dst = reinterpret_cast<const data::local_path_resource&>(*dst);
+
+    LOGGER_DEBUG("transfer: [{} {}+{}] -> {}", usr_creds.pid(), 
+                 utils::n2hexstr(d_src.address()), d_src.size(), 
+                 d_dst.canonical_path());
+
+    return ::copy_memory_region(usr_creds.pid(), 
+                                reinterpret_cast<void*>(d_src.address()), 
+                                d_src.size(),
+                                d_dst.canonical_path());
 }
 
 

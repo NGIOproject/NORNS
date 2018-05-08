@@ -70,6 +70,7 @@ do_sendfile(int in_fd, int out_fd) {
                 return static_cast<ssize_t>(-1);
             }
         }
+        return static_cast<ssize_t>(-1);
     }
 
     // copy data
@@ -166,7 +167,8 @@ namespace norns {
 namespace io {
 
 std::error_code 
-transfer_local_path_to_local_path(const std::shared_ptr<const data::resource>& src,
+transfer_local_path_to_local_path(const auth::credentials& usr_creds,
+                                  const std::shared_ptr<const data::resource>& src,
                                   const std::shared_ptr<const data::resource>& dst) {
 
     const auto& d_src = reinterpret_cast<const data::local_path_resource&>(*src);

@@ -90,7 +90,7 @@ struct dispatch_table {
         return it->second;
     }
 
-    DispatchReturn run(Key k, DispatchArgs&&... args) const {
+    DispatchReturn invoke(Key k, DispatchArgs&&... args) const {
 
         if(!m_callbacks.count(k)) {
             throw std::invalid_argument("Found no callback for provided key");

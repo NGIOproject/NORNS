@@ -33,6 +33,7 @@
 #include "transferors.hpp"
 #include "task.hpp"
 #include "task-stats.hpp"
+#include "auth/process-credentials.hpp"
 
 namespace norns {
 namespace io {
@@ -40,14 +41,16 @@ namespace io {
 task::task(const iotask_id tid, const iotask_type type, 
            const backend_ptr src_backend, const resource_info_ptr src_info,
            const backend_ptr dst_backend, const resource_info_ptr dst_info,
-           const TransferorFunctionType& cfun, const task_stats_ptr stats)
+           const auth::credentials& creds, const TransferorFunctionType& tfun, 
+           const task_stats_ptr stats)
     : m_id(tid),
       m_type(type),
       m_src_backend(src_backend),
       m_src_info(src_info),
       m_dst_backend(dst_backend),
       m_dst_info(dst_info),
-      m_transferor(cfun),
+      m_usr_credentials(creds),
+      m_transferor(tfun),
       m_stats(stats) { }
 
 iotask_id task::id() const {
@@ -92,7 +95,7 @@ void task::operator()() const {
     }
 
     //TODO progress reporting
-    ec = m_transferor(src, dst);
+    ec = m_transferor(m_usr_credentials, src, dst);
 
     //XXX should we rollback all previous changes?
     if(ec) {

@@ -42,8 +42,8 @@ CallableType transferor_registry::get(SrcType t1, DstType t2) const {
     return m_dispatcher.get(std::make_pair(t1, t2));
 }
 
-ReturnType transferor_registry::execute(SrcType t1, DstType t2, ArgType arg1, ArgType arg2) const {
-    m_dispatcher.run(std::make_pair(t1, t2), arg1, arg2);
+ReturnType transferor_registry::invoke(SrcType t1, DstType t2, CredType creds, ArgType arg1, ArgType arg2) const {
+    return m_dispatcher.invoke(std::make_pair(t1, t2), creds, arg1, arg2);
 }
 
 } // namespace io

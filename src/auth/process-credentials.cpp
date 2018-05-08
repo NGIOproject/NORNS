@@ -25,27 +25,46 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#ifndef __IO_TX_MEM_TO_REMOTE_PATH__
-#define __IO_TX_MEM_TO_REMOTE_PATH__
-
-#include <system_error>
-#include "auth/process-credentials.hpp"
+#include <sys/socket.h>
+#include "process-credentials.hpp"
 
 namespace norns {
+namespace auth {
 
-// forward declarations
-namespace data {
-struct resource;
+boost::optional<credentials> 
+credentials::fetch(const ba::generic::stream_protocol::socket& socket) {
+
+    using generic_socket = ba::generic::stream_protocol::socket;
+
+    struct ucred ucred;
+    socklen_t len = sizeof(ucred);
+
+    int sockfd = const_cast<generic_socket&>(socket).native_handle();
+
+    if(getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &ucred, &len) != -1) {
+        return credentials(ucred.pid, ucred.uid, ucred.gid);
+    }
+
+    return boost::none;
+
 }
 
-namespace io {
+credentials::credentials(pid_t pid, uid_t uid, gid_t gid) :
+    m_pid(pid),
+    m_uid(uid),
+    m_gid(gid) {}
 
-std::error_code
-transfer_memory_region_to_remote_path(const auth::credentials& usr_creds,
-                                      const std::shared_ptr<const data::resource>& src,
-                                      const std::shared_ptr<const data::resource>& dst);
+pid_t credentials::pid() const {
+    return m_pid;
+}
 
-} // namespace io
+uid_t credentials::uid() const {
+    return m_uid;
+}
+
+gid_t credentials::gid() const {
+    return m_gid;
+}
+
+} // namespace auth
 } // namespace norns
-
-#endif /* __TX_MEM_TO_REMOTE_PATH__ */

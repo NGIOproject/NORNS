@@ -62,8 +62,7 @@ public:
             [this](const boost::system::error_code& ec) {
                 if(!ec) {
                     std::make_shared<session<Message>>(
-                            std::move(m_socket),
-                            m_dispatcher
+                            std::move(m_socket), m_dispatcher
                         )->start();
                 }
 

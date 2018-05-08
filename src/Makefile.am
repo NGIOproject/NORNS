@@ -104,6 +104,8 @@ liburd_aux_la_SOURCES = \
 	api/request.cpp \
 	api/response.hpp \
 	api/response.cpp \
+	auth/process-credentials.cpp \
+	auth/process-credentials.hpp \
 	backends.hpp \
 	backends/backend-base.cpp \
 	backends/backend-base.hpp \

@@ -31,6 +31,7 @@
 #include <system_error>
 #include <utility>
 #include <boost/functional/hash.hpp>
+#include "auth/process-credentials.hpp"
 #include "common.hpp"
 
 namespace norns {
@@ -38,7 +39,6 @@ namespace norns {
 // forward declarations
 namespace data { 
 enum class resource_type;
-struct resource_element;
 }
 
 namespace io {
@@ -57,18 +57,19 @@ struct transferor_registry {
 
     using SrcType = const data::resource_type;
     using DstType = const data::resource_type;
-    //using ArgType = const data::resource_element&;
+    using CredType = const auth::credentials&;
     using ArgType = const std::shared_ptr<const data::resource>&;
     using ReturnType = std::error_code;
     using KeyType = std::pair<SrcType, DstType>;
     using KeyHash = transferor_hash;
-    using DispatcherType = dispatch_table<KeyType, KeyHash, 
-                                          ReturnType, ArgType, ArgType>;
+    using DispatcherType = dispatch_table<KeyType, KeyHash, ReturnType, 
+                                          CredType, ArgType, ArgType>;
     using CallableType = DispatcherType::CallableType;
 
     void add(SrcType t1, DstType t2, CallableType&& func);
     CallableType get(SrcType t1, DstType t2) const;
-    ReturnType execute(SrcType t1, DstType t2, ArgType arg1, ArgType arg2) const;
+    ReturnType invoke(SrcType t1, DstType t2, CredType creds, 
+                      ArgType arg1, ArgType arg2) const;
 
     DispatcherType m_dispatcher;
 };

@@ -25,6 +25,11 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <string.h>
+
 #include <algorithm>
 #include <iterator>
 #include <string>
@@ -35,6 +40,48 @@
 #include "compare-files.hpp"
 
 namespace bfs = boost::filesystem;
+
+bool compare(const std::vector<int>& data, const bfs::path& file) {
+
+    char buffer[4096];
+
+    int fd = ::open(file.c_str(), O_RDONLY);
+
+    if(fd == -1) {
+        return false;
+    }
+
+    struct stat stbuf;
+
+    if(fstat(fd, &stbuf) == -1) {
+        return false;
+    }
+
+    if(stbuf.st_size != static_cast<off_t>(data.size() * sizeof(int))) {
+        return false;
+    }
+
+    const char* pdata = reinterpret_cast<const char*>(data.data());
+
+    while(true) {
+
+        ssize_t nr = read(fd, buffer, sizeof(buffer));
+
+        if(nr <= 0) {
+            break;
+        }
+
+        if(memcmp(pdata, buffer, nr) != 0) {
+            return false;
+        }
+
+        pdata += nr;
+    }
+
+    close(fd);
+
+    return true;
+}
 
 bool compare_files(const bfs::path& filename1, const bfs::path& filename2) {
 

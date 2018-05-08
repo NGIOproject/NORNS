@@ -142,7 +142,8 @@ namespace norns {
 namespace io {
 
 std::error_code 
-transfer_local_path_to_remote_path(const std::shared_ptr<const data::resource>& src,
+transfer_local_path_to_remote_path(const auth::credentials& usr_creds,
+                                   const std::shared_ptr<const data::resource>& src,
                                    const std::shared_ptr<const data::resource>& dst) {
 
     const auto& d_src = reinterpret_cast<const data::local_path_resource&>(*src);

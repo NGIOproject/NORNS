@@ -55,8 +55,10 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <boost/optional.hpp>
 
 #include "common.hpp"
+#include "auth/process-credentials.hpp"
 
 namespace norns {
 
@@ -106,6 +108,9 @@ struct request {
 
     virtual ~request() {}
     virtual request_type type() const = 0;
+    virtual boost::optional<auth::credentials> credentials() const = 0;
+    virtual void set_credentials(boost::optional<auth::credentials>&& creds) = 0;
+    virtual void set_credentials(const boost::optional<auth::credentials>& creds) = 0;
     virtual std::string to_string() const = 0;
 
     static request_ptr create_from_buffer(const std::vector<uint8_t>& data, int size);
@@ -140,8 +145,20 @@ struct request_impl : std::tuple<FieldTypes...>, request {
         : std::tuple<FieldTypes...>(std::forward<FieldTypes>(fields)...),
           m_type(RT) { }
 
-    request_type type() const override {
+    request_type type() const override final {
         return m_type;
+    }
+
+    boost::optional<auth::credentials> credentials() const override final {
+        return m_credentials;
+    }
+
+    void set_credentials(boost::optional<auth::credentials>&& creds) override final {
+        m_credentials = creds;
+    }
+
+    void set_credentials(const boost::optional<auth::credentials>& creds) override final {
+        m_credentials = creds;
     }
 
     // this is the implementation for the generic to_string() 
@@ -157,6 +174,7 @@ struct request_impl : std::tuple<FieldTypes...>, request {
     }
 
     request_type m_type;
+    boost::optional<auth::credentials> m_credentials;
 };
 
 } // namespace detail

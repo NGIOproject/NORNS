@@ -50,13 +50,18 @@ process_memory::new_resource(const resource_info_ptr& rinfo,
     (void) rinfo;
     (void) is_collection;
     (void) ec;
-    return std::make_shared<data::memory_region_resource>(shared_from_this()); //XXX
+    return nullptr;
 }
 
-backend::resource_ptr process_memory::get_resource(const resource_info_ptr& rinfo, std::error_code& ec) const {
-    (void) rinfo;
-    (void) ec;
-    return std::make_shared<data::memory_region_resource>(shared_from_this()); //XXX
+backend::resource_ptr 
+process_memory::get_resource(const resource_info_ptr& rinfo, 
+                             std::error_code& ec) const {
+
+    const auto d_rinfo = std::static_pointer_cast<data::memory_region_info>(rinfo);
+
+    ec = std::make_error_code(static_cast<std::errc>(0));
+    return std::make_shared<data::memory_region_resource>(
+            shared_from_this(), d_rinfo->address(), d_rinfo->size());
 }
 
 bool process_memory::accepts(resource_info_ptr res) const {
