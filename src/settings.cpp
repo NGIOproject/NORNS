@@ -25,6 +25,7 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
+#include <iostream>
 #include <boost/foreach.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>

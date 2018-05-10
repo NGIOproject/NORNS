@@ -31,6 +31,7 @@
 #include <norns-rpc.h>
 #include <arpa/inet.h>
 #include <iomanip>
+#include <iostream> // for print_hex, XXX remove if not needed
 
 namespace {
 

@@ -77,14 +77,6 @@ AX_BOOST_PROGRAM_OPTIONS
 AX_BOOST_THREAD
 
 
-# check that Intel's TBB is available. some distros don't include
-PKG_CHECK_MODULES([TBB], [tbb],
-                  [],
-AC_MSG_ERROR([This software requires the development files of Intel TBB.
- * In Ubuntu/Debian: apt-get install libtbb-dev
- * In RHEL/CentOS: yum install tbb-devel])
-)
-
 # check for protobuf-c
 PKG_CHECK_MODULES([PROTOBUF_C], [libprotobuf-c >= 1.0.0])
 

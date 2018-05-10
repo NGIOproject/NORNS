@@ -28,6 +28,8 @@
 #include <string>
 #include <algorithm>
 #include <locale>
+#include <cmath>
+
 #include "utils.hpp"
 #include "norns.h"
 

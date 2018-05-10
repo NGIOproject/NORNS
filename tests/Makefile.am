@@ -68,7 +68,6 @@ api_SOURCES = \
 	$(END)
 
 api_LDFLAGS = \
-	@TBB_LIBS@ \
     @BOOST_ASIO_LIB@ \
 	@BOOST_LDFLAGS@	\
 	@BOOST_FILESYSTEM_LIB@ \

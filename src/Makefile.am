@@ -169,7 +169,6 @@ nodist_liburd_aux_la_SOURCES = \
 	messages.pb.h
 
 liburd_aux_la_CXXFLAGS = \
-	@TBB_CFLAGS@ \
 	-std=gnu++11 -Wall -Wextra
 
 liburd_aux_la_CPPFLAGS = \
@@ -235,7 +234,6 @@ urd_SOURCES = \
 	main.cpp
 
 urd_CXXFLAGS = \
-	@TBB_CFLAGS@ \
 	-std=gnu++11 -Wall -Wextra
 
 urd_CPPFLAGS = \
