@@ -27,7 +27,6 @@
 
 #include <sstream>
 #include <boost/algorithm/string/join.hpp>
-#include <boost/range/adaptor/transformed.hpp>
 
 #include "common.hpp"
 #include "messages.pb.h"
@@ -146,6 +145,23 @@ create_from(const norns::rpc::Request_Task_Resource& res) {
     }
 
     return std::shared_ptr<resource_info>();
+}
+
+std::string 
+to_string(const std::vector<std::shared_ptr<norns::storage::backend>>& blist) {
+
+    std::string str;
+
+    for(const auto& b : blist) {
+        str += b->to_string() + ", ";
+    }
+
+    if(str.length() != 0) {
+        str.pop_back();
+        str.pop_back();
+    }
+
+    return str;
 }
 
 }
@@ -321,22 +337,16 @@ std::string bad_request::to_string() const {
 template<>
 std::string job_register_request::to_string() const {
 
+    using boost::algorithm::join;
     std::stringstream ss;
 
     const auto& jobid = this->get<0>();
     const auto& hosts = this->get<1>();
     const auto& backends = this->get<2>();
 
-    using boost::algorithm::join;
-    using boost::adaptors::transformed;
-
-    auto to_string = [](const std::shared_ptr<storage::backend>& b) {
-        return b->to_string();
-    };
-
     ss << "jobid: " << jobid << ", "
        << "hosts: {" << join(hosts, ", ") << "}; "
-       << "backends: {" << join(backends | transformed(to_string), ", ");
+       << "backends: {" << ::to_string(backends) << "}";
 
     return ss.str();
 }
@@ -344,22 +354,16 @@ std::string job_register_request::to_string() const {
 template<>
 std::string job_update_request::to_string() const {
 
+    using boost::algorithm::join;
     std::stringstream ss;
 
     const auto& jobid = this->get<0>();
     const auto& hosts = this->get<1>();
     const auto& backends = this->get<2>();
 
-    using boost::algorithm::join;
-    using boost::adaptors::transformed;
-
-    auto to_string = [](const std::shared_ptr<storage::backend>& b) {
-        return b->to_string();
-    };
-
     ss << "jobid: " << jobid << ", "
        << "hosts: {" << join(hosts, ", ") << "}; "
-       << "backends: {" << join(backends | transformed(to_string), ", ");
+       << "backends: {" << ::to_string(backends) << "}";
 
     return ss.str();
 }
