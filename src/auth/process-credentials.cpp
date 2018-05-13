@@ -31,15 +31,16 @@
 namespace norns {
 namespace auth {
 
+#if 0
 boost::optional<credentials> 
-credentials::fetch(const ba::generic::stream_protocol::socket& socket) {
+credentials::fetch(const ba::ip::tcp::socket& socket) {
 
-    using generic_socket = ba::generic::stream_protocol::socket;
+    using SocketType = ba::ip::tcp::socket;
 
     struct ucred ucred;
     socklen_t len = sizeof(ucred);
 
-    int sockfd = const_cast<generic_socket&>(socket).native_handle();
+    int sockfd = const_cast<SocketType&>(socket).native_handle();
 
     if(getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &ucred, &len) != -1) {
         return credentials(ucred.pid, ucred.uid, ucred.gid);
@@ -48,6 +49,25 @@ credentials::fetch(const ba::generic::stream_protocol::socket& socket) {
     return boost::none;
 
 }
+
+boost::optional<credentials> 
+credentials::fetch(const ba::local::stream_protocol::socket& socket) {
+
+    using SocketType = ba::local::stream_protocol::socket;
+
+    struct ucred ucred;
+    socklen_t len = sizeof(ucred);
+
+    int sockfd = const_cast<SocketType&>(socket).native_handle();
+
+    if(getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &ucred, &len) != -1) {
+        return credentials(ucred.pid, ucred.uid, ucred.gid);
+    }
+
+    return boost::none;
+
+}
+#endif
 
 credentials::credentials(pid_t pid, uid_t uid, gid_t gid) :
     m_pid(pid),

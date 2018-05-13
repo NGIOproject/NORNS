@@ -43,7 +43,8 @@ namespace api {
 template <typename Message>
 class local_endpoint {
 
-    using DispatcherType = typename session<Message>::Dispatcher;
+    using SessionType = session<ba::local::stream_protocol::socket, Message>;
+    using DispatcherType = typename SessionType::Dispatcher;
 
 public:
     local_endpoint(const bfs::path& sockfile, ba::io_service& ios, 
@@ -61,7 +62,7 @@ public:
         m_acceptor.async_accept(m_socket, 
             [this](const boost::system::error_code& ec) {
                 if(!ec) {
-                    std::make_shared<session<Message>>(
+                    std::make_shared<SessionType>(
                             std::move(m_socket), m_dispatcher
                         )->start();
                 }

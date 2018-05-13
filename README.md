@@ -1,12 +1,21 @@
 Norns Data Scheduler
 ====================
 
-Dependencies:
+Build dependencies:
 
-- Intel TBB
-yum install tbb-devel
+- A c++11-conforming compiler
+- libboost-system >= 1.53
+- libboost-filesystem >= 1.53
+- libboost-program-options >= 1.53
+- libboost-thread >= 1.53
+- libprotobuf + protobuf compiler
+- libprotobuf-c + protobuf-c compiler
+
 
 - Installation in CentOS 7
+git clone git@git.ph.ed.ac.uk:nextgenio/norns.git && cd norns
+./bootstrap
+mkdir <build-dir>
 cd <build-dir>
 ./configure --prefix=<install-dir> --sysconfdir=<config-dir>
 make

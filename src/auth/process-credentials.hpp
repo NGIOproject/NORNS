@@ -39,7 +39,20 @@ namespace auth {
 
 struct credentials {
 
-    static boost::optional<credentials> fetch(const ba::generic::stream_protocol::socket& socket);
+    template <typename SocketType>
+    static boost::optional<credentials> fetch(const SocketType& socket) {
+
+        struct ucred ucred;
+        socklen_t len = sizeof(ucred);
+
+        int sockfd = const_cast<SocketType&>(socket).native_handle();
+
+        if(getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &ucred, &len) != -1) {
+            return credentials(ucred.pid, ucred.uid, ucred.gid);
+        }
+
+        return boost::none;
+    }
 
 private:
     credentials(pid_t pid, uid_t uid, gid_t gid);

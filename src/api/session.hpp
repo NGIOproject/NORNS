@@ -46,8 +46,8 @@ template <typename Message> class remote_endpoint;
 
 
 /* helper class for managing communication sessions with a client */
-template <typename Message>
-class session : public std::enable_shared_from_this<session<Message>> {
+template <typename Socket, typename Message>
+class session : public std::enable_shared_from_this<session<Socket, Message>> {
 
     friend class local_endpoint<Message>;
     friend class remote_endpoint<Message>;
@@ -63,7 +63,7 @@ class session : public std::enable_shared_from_this<session<Message>> {
     using Output = std::unique_ptr<typename Message::response_type>;
 
 public:
-    session(ba::generic::stream_protocol::socket&& socket, 
+    session(Socket&& socket, 
             std::shared_ptr<Dispatcher> dispatcher)
         : m_socket(std::move(socket)),
           m_dispatcher(dispatcher) {}
@@ -79,7 +79,8 @@ public:
 private:
     void do_read_request() {
 
-        auto self(std::enable_shared_from_this<session<Message>>::shared_from_this());
+        auto self(std::enable_shared_from_this<
+                session<Socket, Message>>::shared_from_this());
 
         std::size_t header_length = m_message.expected_length(Message::header);
 
@@ -99,7 +100,8 @@ private:
 
     void do_read_request_body() {
 
-        auto self(std::enable_shared_from_this<session<Message>>::shared_from_this());
+        auto self(std::enable_shared_from_this<
+                session<Socket, Message>>::shared_from_this());
 
         std::size_t body_length = m_message.expected_length(Message::body);
 
@@ -148,7 +150,8 @@ private:
         //Message::print_hex(m_message.buffer(Message::header));
         //Message::print_hex(m_message.buffer(Message::body));
 
-        auto self(std::enable_shared_from_this<session<Message>>::shared_from_this());
+        auto self(std::enable_shared_from_this<
+                session<Socket, Message>>::shared_from_this());
 
         ba::async_write(m_socket, buffers,
             [this, self](boost::system::error_code ec, std::size_t /*length*/){
@@ -161,7 +164,7 @@ private:
             });
     }
 
-    ba::generic::stream_protocol::socket m_socket;
+    Socket m_socket;
     Message                              m_message;
     std::shared_ptr<Dispatcher> m_dispatcher;
 };

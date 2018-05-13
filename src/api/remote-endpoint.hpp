@@ -42,7 +42,8 @@ namespace api {
 template <typename Message>
 class remote_endpoint {
 
-    using DispatcherType = typename session<Message>::Dispatcher;
+    using SessionType = session<ba::ip::tcp::socket, Message>;
+    using DispatcherType = typename SessionType::Dispatcher;
 
 public: 
     remote_endpoint(short port, ba::io_service& ios,
@@ -61,7 +62,7 @@ public:
         m_acceptor.async_accept(m_socket, 
             [this](const boost::system::error_code& ec) {
                 if(!ec) {
-                    std::make_shared<session<Message>>(
+                    std::make_shared<SessionType>(
                             std::move(m_socket),
                             m_dispatcher
                         )->start();
