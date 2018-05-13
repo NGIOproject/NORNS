@@ -67,6 +67,7 @@ using resource_ptr = std::shared_ptr<data::resource>;
 // forward declarations
 namespace io {
     struct transferor_registry;
+    struct transferor_registry2;
     struct task_manager;
     struct task_stats;
 }
@@ -90,7 +91,7 @@ private:
 
     void init_event_handlers();
     void init_backend_descriptors();
-    void init_conversion_handlers();
+    void init_transferors();
 
     urd_error validate_iotask_args(iotask_type type, 
                                    const resource_info_ptr& src_info, 
@@ -111,7 +112,6 @@ private:
 
 private:
     std::shared_ptr<config_settings>                    m_settings;
-
     std::unique_ptr<io::transferor_registry> m_transferor_registry;
 
     thread_pool_ptr m_workers;

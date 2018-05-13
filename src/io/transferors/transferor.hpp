@@ -25,40 +25,36 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#include "resources.hpp"
-#include "transferor-registry.hpp"
+#ifndef __TRANSFEROR_BASE_HPP__
+#define __TRANSFEROR_BASE_HPP__
+
+#include <system_error>
 
 namespace norns {
+
+// forward declarations
+namespace auth {
+struct credentials;
+}
+
+namespace data {
+struct resource_info;
+struct resource;
+}
+
 namespace io {
 
-bool 
-transferor_registry::add(const data::resource_type t1, 
-                          const data::resource_type t2, 
-                          std::shared_ptr<io::transferor>&& trp) {
+struct transferor {
 
-    using ValueType = std::shared_ptr<io::transferor>;
+    virtual bool validate(const std::shared_ptr<data::resource_info>& src_info,
+                          const std::shared_ptr<data::resource_info>& dst_info) const = 0;
 
-    if(m_transferors.count(std::make_pair(t1, t2)) == 0) {
-        m_transferors.emplace(std::make_pair(t1, t2), 
-                              std::forward<ValueType>(trp));
-        return true;
-    }
-
-    return false;
-}
-
-std::shared_ptr<io::transferor> 
-transferor_registry::get(const data::resource_type t1, 
-                          const data::resource_type t2) const {
-
-    using ValueType = std::shared_ptr<io::transferor>;
-
-    if(m_transferors.count(std::make_pair(t1, t2)) == 0) {
-        return ValueType();
-    }
-
-    return m_transferors.at(std::make_pair(t1, t2));
-}
+    virtual std::error_code transfer(const auth::credentials& usr_creds,
+                             const std::shared_ptr<const data::resource>& src,  
+                             const std::shared_ptr<const data::resource>& dst) const = 0;
+};
 
 } // namespace io
 } // namespace norns
+
+#endif /* __TRANSFEROR_BASE_HPP__ */

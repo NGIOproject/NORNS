@@ -273,6 +273,7 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
     const auto creds = request->credentials();
 
     if(!creds) {
+        LOGGER_CRITICAL("Request without credentials");
         rv = urd_error::snafu; // TODO: invalid_credentials? eaccess? eperm?
         goto log_and_return;
     }
@@ -289,11 +290,16 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
             goto log_and_return;
         }
 
-        const auto& txfun = m_transferor_registry->get(src_info->type(), 
+        const auto tx_ptr = m_transferor_registry->get(src_info->type(), 
                                                        dst_info->type());
 
-        if(txfun == nullptr) {
+        if(!tx_ptr) {
             rv = urd_error::snafu; //TODO: unknown transferor
+            goto log_and_return;
+        }
+
+        if(!tx_ptr->validate(src_info, dst_info)) {
+            rv = urd_error::bad_args;
             goto log_and_return;
         }
 
@@ -330,7 +336,8 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
             else {
                 m_workers->submit_and_forget(
                         io::task(tid, type, bsrc, src_info, bdst, dst_info, 
-                                 *creds, txfun, stats_record));
+                                 *creds, std::move(tx_ptr), 
+                                 std::move(stats_record)));
             }
         }
 
@@ -758,52 +765,76 @@ void urd::init_backend_descriptors() {
             });
 }
 
-void urd::init_conversion_handlers() {
+void urd::init_transferors() {
 
-    LOGGER_INFO("  * Installing data conversion handlers...");
+    LOGGER_INFO("  * Installing data transferors...");
     m_transferor_registry = std::make_unique<io::transferor_registry>();
 
     // memory region -> local path
-    m_transferor_registry->add(
+    if(!m_transferor_registry->add(
         data::resource_type::memory_region, 
         data::resource_type::local_posix_path, 
-        &io::transfer_memory_region_to_local_path
-    );
+        std::make_shared<io::memory_region_to_local_path_transferor>())) {
+
+        LOGGER_ERROR("Could not register {} to {} transferor. Ignored.", 
+                     utils::to_string(data::resource_type::memory_region),
+                     utils::to_string(data::resource_type::local_posix_path));
+    }
 
     // memory region -> shared path
-    m_transferor_registry->add(
+    if(!m_transferor_registry->add(
         data::resource_type::memory_region, 
         data::resource_type::shared_posix_path, 
-        &io::transfer_memory_region_to_shared_path
-    );
+        std::make_shared<io::memory_region_to_local_path_transferor>())) {
+
+        LOGGER_ERROR("Could not register {} to {} transferor. Ignored.", 
+                     utils::to_string(data::resource_type::memory_region),
+                     utils::to_string(data::resource_type::shared_posix_path));
+    }
 
     // memory region -> remote path
-    m_transferor_registry->add(
+    if(!m_transferor_registry->add(
         data::resource_type::memory_region, 
         data::resource_type::remote_posix_path, 
-        &io::transfer_memory_region_to_remote_path
-    );
+        std::make_shared<io::memory_region_to_local_path_transferor>())) {
+
+        LOGGER_ERROR("Could not register {} to {} transferor. Ignored.", 
+                     utils::to_string(data::resource_type::memory_region),
+                     utils::to_string(data::resource_type::remote_posix_path));
+    }
 
     // local path -> local path
-    m_transferor_registry->add(
+    if(!m_transferor_registry->add(
         data::resource_type::local_posix_path, 
         data::resource_type::local_posix_path, 
-        &io::transfer_local_path_to_local_path
-    );
+        std::make_shared<io::local_path_to_local_path_transferor>())) {
+
+        LOGGER_ERROR("Could not register {} to {} transferor. Ignored.", 
+                     utils::to_string(data::resource_type::local_posix_path),
+                     utils::to_string(data::resource_type::local_posix_path));
+    }
 
     // local path -> shared path
-    m_transferor_registry->add(
+    if(!m_transferor_registry->add(
         data::resource_type::local_posix_path, 
         data::resource_type::shared_posix_path, 
-        &io::transfer_local_path_to_shared_path
-    );
+        std::make_shared<io::local_path_to_shared_path_transferor>())) {
+
+        LOGGER_ERROR("Could not register {} to {} transferor. Ignored.", 
+                     utils::to_string(data::resource_type::local_posix_path),
+                     utils::to_string(data::resource_type::shared_posix_path));
+    }
 
     // local path -> remote path
-    m_transferor_registry->add(
+    if(!m_transferor_registry->add(
         data::resource_type::local_posix_path, 
         data::resource_type::remote_posix_path, 
-        &io::transfer_local_path_to_remote_path
-    );
+        std::make_shared<io::local_path_to_remote_path_transferor>())) {
+
+        LOGGER_ERROR("Could not register {} to {} transferor. Ignored.", 
+                     utils::to_string(data::resource_type::local_posix_path),
+                     utils::to_string(data::resource_type::remote_posix_path));
+    }
 }
 
 int urd::run() {
@@ -861,7 +892,7 @@ int urd::run() {
 
     init_backend_descriptors();
 
-    init_conversion_handlers();
+    init_transferors();
 
 
     LOGGER_INFO("");

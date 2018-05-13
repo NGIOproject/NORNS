@@ -36,126 +36,33 @@
 #include "backends/posix-fs.hpp"
 #include "local-path-to-remote-path.hpp"
 
-namespace {
-
-ssize_t
-get_filesize(int fd) {
-	struct stat st;
-
-	if(::fstat(fd, &st) != -1) {
-        return static_cast<ssize_t>(st.st_size);
-    }
-
-    return static_cast<ssize_t>(-1);
-}
-
-ssize_t
-do_sendfile(int in_fd, int out_fd) {
-	ssize_t sz = ::get_filesize(in_fd);
-
-    // provide kernel with advices on how we are going to use the data
-    if(::posix_fadvise(in_fd, 0, sz, POSIX_FADV_WILLNEED) != 0) {
-        return static_cast<ssize_t>(-1);
-    }
-
-    if(::posix_fadvise(in_fd, 0, sz, POSIX_FADV_SEQUENTIAL) != 0) {
-        return static_cast<ssize_t>(-1);
-    }
-
-    // preallocate output file
-    if(::fallocate(out_fd, 0, 0, sz) == -1) {
-        // filesystem doesn't support fallocate(), fallback to truncate()
-        if(errno == EOPNOTSUPP) {
-            if(::ftruncate(out_fd, sz) != 0) {
-                return static_cast<ssize_t>(-1);
-            }
-        }
-    }
-
-    // copy data
-	off_t offset = 0;
-	while(offset < sz) {
-		if(::sendfile(out_fd, in_fd, &offset, sz - offset) == -1) {
-			if(errno != EINTR) {
-                return static_cast<ssize_t>(-1);
-			}
-		}
-	}
-
-	return sz;
-}
-
-std::error_code
-copy_file(const bfs::path& src,  const bfs::path& dst) {
-
-    const char* src_path = src.c_str();
-    const char* dst_name = dst.c_str();
-
-    int in_fd = ::open(src_path, O_RDONLY);
-
-    if(in_fd == -1) {
-        return std::make_error_code(static_cast<std::errc>(errno));
-    }
-
-    int out_fd = ::open(dst_name, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
-
-    if(out_fd == -1) {
-        close(in_fd);
-        return std::make_error_code(static_cast<std::errc>(errno));
-    }
-
-    if(do_sendfile(in_fd, out_fd) == -1) {
-        close(in_fd);
-        close(out_fd);
-        return std::make_error_code(static_cast<std::errc>(errno));
-    }
-
-    return std::make_error_code(static_cast<std::errc>(0));
-}
-
-std::error_code
-copy_directory(const bfs::path& src, const bfs::path& dst) {
-
-    boost::system::error_code ec;
-    auto it = bfs::recursive_directory_iterator(src, ec);
-    const auto end = bfs::recursive_directory_iterator();
-
-    if(ec) {
-        return std::make_error_code(static_cast<std::errc>(ec.value()));
-    }
-
-    for(; it != end; ++it) {
-        const auto dst_path = dst / bfs::relative(src, *it);
-
-        if(auto err = ::copy_file(*it, dst_path)) {
-            return err;
-        }
-    }
-
-    return std::make_error_code(static_cast<std::errc>(0));
-}
-
-
-} // namespace
-
 namespace norns {
 namespace io {
 
+bool 
+local_path_to_remote_path_transferor::validate(
+        const std::shared_ptr<data::resource_info>& src_info,
+        const std::shared_ptr<data::resource_info>& dst_info) const {
+
+    (void) src_info;
+    (void) dst_info;
+
+    LOGGER_WARN("Validation not implemented");
+
+    return true;
+}
+
 std::error_code 
-transfer_local_path_to_remote_path(const auth::credentials& usr_creds,
-                                   const std::shared_ptr<const data::resource>& src,
-                                   const std::shared_ptr<const data::resource>& dst) {
+local_path_to_remote_path_transferor::transfer(
+        const auth::credentials& usr_creds, 
+        const std::shared_ptr<const data::resource>& src,  
+        const std::shared_ptr<const data::resource>& dst) const {
 
-    const auto& d_src = reinterpret_cast<const data::local_path_resource&>(*src);
-    const auto& d_dst = reinterpret_cast<const data::remote_path_resource&>(*dst);
+    (void) usr_creds;
+    (void) src;
+    (void) dst;
 
-#if 0
-    if(bfs::is_directory(d_src.canonical_path())) {
-        return ::copy_directory(d_src.canonical_path(), d_dst.canonical_path());
-    }
-
-    return ::copy_file(d_src.canonical_path(), d_dst.canonical_path());
-#endif
+    LOGGER_WARN("Transfer not implemented");
 
     return std::make_error_code(static_cast<std::errc>(0));
 }

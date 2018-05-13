@@ -43,6 +43,8 @@ enum class resource_type;
 
 namespace io {
 
+struct transferor;
+
 struct transferor_registry {
 
     struct transferor_hash {
@@ -55,23 +57,17 @@ struct transferor_registry {
         }
     };
 
-    using SrcType = const data::resource_type;
-    using DstType = const data::resource_type;
-    using CredType = const auth::credentials&;
-    using ArgType = const std::shared_ptr<const data::resource>&;
-    using ReturnType = std::error_code;
-    using KeyType = std::pair<SrcType, DstType>;
-    using KeyHash = transferor_hash;
-    using DispatcherType = dispatch_table<KeyType, KeyHash, ReturnType, 
-                                          CredType, ArgType, ArgType>;
-    using CallableType = DispatcherType::CallableType;
+    bool add(const data::resource_type t1, 
+             const data::resource_type t2, 
+             std::shared_ptr<io::transferor>&& tr);
+    std::shared_ptr<io::transferor> get(const data::resource_type t1, 
+                                        const data::resource_type t2) const;
 
-    void add(SrcType t1, DstType t2, CallableType&& func);
-    CallableType get(SrcType t1, DstType t2) const;
-    ReturnType invoke(SrcType t1, DstType t2, CredType creds, 
-                      ArgType arg1, ArgType arg2) const;
-
-    DispatcherType m_dispatcher;
+    std::unordered_map<std::pair<
+                            const data::resource_type, 
+                            const data::resource_type>, 
+                       std::shared_ptr<io::transferor>, 
+                       transferor_hash> m_transferors;
 };
 
 } // namespace io

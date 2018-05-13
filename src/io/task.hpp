@@ -40,10 +40,9 @@
 namespace norns {
 namespace io {
 
-using TransferorFunctionType = transferor_registry::CallableType;
-
 // forward declaration
 struct task_stats;
+struct transferor;
 
 /*! Descriptor for an I/O task */
 struct task {
@@ -51,13 +50,14 @@ struct task {
     using backend_ptr = std::shared_ptr<storage::backend>;
     using resource_info_ptr = std::shared_ptr<data::resource_info>;
     using resource_ptr = std::shared_ptr<data::resource>;
+    using transferor_ptr = std::shared_ptr<transferor>;
     using task_stats_ptr = std::shared_ptr<task_stats>;
 
     task(const iotask_id tid, const iotask_type type, 
          const backend_ptr srd_backend, const resource_info_ptr src_info,
          const backend_ptr dst_backend, const resource_info_ptr dst_info,
-         const auth::credentials& creds, const TransferorFunctionType& tfun, 
-         const task_stats_ptr stats);
+         const auth::credentials& creds, const transferor_ptr&& tx_ptr, 
+         const task_stats_ptr&& st_ptr);
 
     iotask_id id() const;
     bool is_valid() const;
@@ -74,7 +74,7 @@ struct task {
     const backend_ptr m_dst_backend;
     const resource_info_ptr m_dst_info;
     const auth::credentials m_usr_credentials;
-    const TransferorFunctionType m_transferor;
+    const transferor_ptr m_transferor;
 
     resource_ptr m_src;
     resource_ptr m_dst;

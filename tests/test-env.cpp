@@ -245,8 +245,9 @@ bfs::path test_env::create_directory(const bfs::path& dirname) {
     std::cerr << "mkdir -p " << abs_dirname << "\n";
 #endif // __DEBUG_OUTPUT__
 
-    bool res = bfs::create_directories(abs_dirname);
-    REQUIRE(res == true);
+    boost::system::error_code ec;
+    bool res = bfs::create_directories(abs_dirname, ec);
+    REQUIRE(!ec);
 
     m_dirs.emplace(abs_dirname);
 
@@ -261,8 +262,9 @@ bfs::path test_env::create_directory(const bfs::path& dirname, const bfs::path& 
     std::cerr << "mkdir -p " << abs_dirname << "\n";
 #endif // __DEBUG_OUTPUT__
 
+    boost::system::error_code ec;
     bool res = bfs::create_directories(abs_dirname);
-    REQUIRE(res == true);
+    REQUIRE(!ec);
 
     m_dirs.emplace(abs_dirname);
 

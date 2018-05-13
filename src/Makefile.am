@@ -135,6 +135,7 @@ liburd_aux_la_SOURCES = \
 	io/task-stats.cpp \
 	io/task-stats.hpp \
 	io/transferors.hpp \
+	io/transferors/transferor.hpp \
 	io/transferors/local-path-to-local-path.cpp \
 	io/transferors/local-path-to-local-path.hpp \
 	io/transferors/local-path-to-shared-path.cpp \

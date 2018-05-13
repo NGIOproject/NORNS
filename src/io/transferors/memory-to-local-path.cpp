@@ -33,6 +33,7 @@
 #include "logger.hpp"
 #include "resources.hpp"
 #include "memory-to-local-path.hpp"
+#include "auth/process-credentials.hpp"
 
 namespace {
 
@@ -44,6 +45,10 @@ copy_memory_region(pid_t pid, void* src_addr, size_t size, const bfs::path& dst)
     ssize_t nbytes = -1;
     int rv = 0;
     struct iovec local_region, remote_region;
+
+    if(bfs::is_directory(dst)) {
+        return std::make_error_code(static_cast<std::errc>(EISDIR));
+    }
 
     // create and preallocate output file
     out_fd = ::open(dst.c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
@@ -124,10 +129,32 @@ retry_close:
 namespace norns {
 namespace io {
 
-std::error_code
-transfer_memory_region_to_local_path(const auth::credentials& usr_creds,
-                                     const std::shared_ptr<const data::resource>& src,
-                                     const std::shared_ptr<const data::resource>& dst) {
+bool 
+memory_region_to_local_path_transferor::validate(
+        const std::shared_ptr<data::resource_info>& src_info,
+        const std::shared_ptr<data::resource_info>& dst_info) const {
+
+    const auto& d_src = reinterpret_cast<const data::memory_region_info&>(*src_info);
+    const auto& d_dst = reinterpret_cast<const data::local_path_info&>(*dst_info);
+
+    // region length cannot be zero
+    if(d_src.size() == 0) {
+        return false;
+    }
+
+    // we don't allow destination paths that look like directories
+    if(d_dst.datapath().back() == '/') {
+        return false;
+    }
+
+    return true;
+}
+
+std::error_code 
+memory_region_to_local_path_transferor::transfer(
+        const auth::credentials& usr_creds, 
+        const std::shared_ptr<const data::resource>& src,  
+        const std::shared_ptr<const data::resource>& dst) const {
 
     const auto& d_src = reinterpret_cast<const data::memory_region_resource&>(*src);
     const auto& d_dst = reinterpret_cast<const data::local_path_resource&>(*dst);
@@ -138,8 +165,7 @@ transfer_memory_region_to_local_path(const auth::credentials& usr_creds,
 
     return ::copy_memory_region(usr_creds.pid(), 
                                 reinterpret_cast<void*>(d_src.address()), 
-                                d_src.size(),
-                                d_dst.canonical_path());
+                                d_src.size(), d_dst.canonical_path());
 }
 
 

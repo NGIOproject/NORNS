@@ -41,8 +41,8 @@ namespace io {
 task::task(const iotask_id tid, const iotask_type type, 
            const backend_ptr src_backend, const resource_info_ptr src_info,
            const backend_ptr dst_backend, const resource_info_ptr dst_info,
-           const auth::credentials& creds, const TransferorFunctionType& tfun, 
-           const task_stats_ptr stats)
+           const auth::credentials& creds, const transferor_ptr&& tx_ptr, 
+           const task_stats_ptr&& st_ptr)
     : m_id(tid),
       m_type(type),
       m_src_backend(src_backend),
@@ -50,8 +50,8 @@ task::task(const iotask_id tid, const iotask_type type,
       m_dst_backend(dst_backend),
       m_dst_info(dst_info),
       m_usr_credentials(creds),
-      m_transferor(tfun),
-      m_stats(stats) { }
+      m_transferor(tx_ptr),
+      m_stats(st_ptr) { }
 
 iotask_id task::id() const {
     return m_id;
@@ -95,11 +95,10 @@ void task::operator()() const {
     }
 
     //TODO progress reporting
-    ec = m_transferor(m_usr_credentials, src, dst);
+    ec = m_transferor->transfer(m_usr_credentials, src, dst);
 
-    //XXX should we rollback all previous changes?
     if(ec) {
-        log_error("Conversion failed");
+        log_error("Transfer failed");
         return;
     }
 

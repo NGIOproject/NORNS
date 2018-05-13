@@ -33,6 +33,7 @@
 #include "utils.hpp"
 #include "logger.hpp"
 #include "resources.hpp"
+#include "auth/process-credentials.hpp"
 #include "backends/posix-fs.hpp"
 #include "local-path-to-local-path.hpp"
 
@@ -166,22 +167,43 @@ copy_directory(const bfs::path& src, const bfs::path& dst) {
 namespace norns {
 namespace io {
 
+bool 
+local_path_to_local_path_transferor::validate(
+        const std::shared_ptr<data::resource_info>& src_info,
+        const std::shared_ptr<data::resource_info>& dst_info) const {
+
+    (void) src_info;
+    (void) dst_info;
+
+    LOGGER_WARN("Validation not implemented");
+
+    return true;
+}
+
 std::error_code 
-transfer_local_path_to_local_path(const auth::credentials& usr_creds,
-                                  const std::shared_ptr<const data::resource>& src,
-                                  const std::shared_ptr<const data::resource>& dst) {
+local_path_to_local_path_transferor::transfer(
+        const auth::credentials& usr_creds, 
+        const std::shared_ptr<const data::resource>& src,  
+        const std::shared_ptr<const data::resource>& dst) const {
 
-    const auto& d_src = reinterpret_cast<const data::local_path_resource&>(*src);
-    const auto& d_dst = reinterpret_cast<const data::local_path_resource&>(*dst);
+    (void) usr_creds;
 
-    LOGGER_DEBUG("transfer: {} -> {}", d_src.canonical_path(), d_dst.canonical_path());
+    const auto& d_src = 
+        reinterpret_cast<const data::local_path_resource&>(*src);
+    const auto& d_dst = 
+        reinterpret_cast<const data::local_path_resource&>(*dst);
+
+    LOGGER_DEBUG("transfer: {} -> {}", 
+            d_src.canonical_path(), d_dst.canonical_path());
 
     if(bfs::is_directory(d_src.canonical_path())) {
-        return ::copy_directory(d_src.canonical_path(), d_dst.canonical_path());
+        return ::copy_directory(d_src.canonical_path(), 
+                                d_dst.canonical_path());
     }
 
     return ::copy_file(d_src.canonical_path(), d_dst.canonical_path());
 }
+
 
 } // namespace io
 } // namespace norns

@@ -32,14 +32,37 @@
 namespace norns {
 namespace io {
 
-std::error_code
-transfer_memory_region_to_shared_path(const auth::credentials& usr_creds,
-                                      const std::shared_ptr<const data::resource>& src,
-                                      const std::shared_ptr<const data::resource>& dst) {
-    (void) src;
-    (void) dst;
+bool 
+memory_region_to_shared_path_transferor::validate(
+        const std::shared_ptr<data::resource_info>& src_info,
+        const std::shared_ptr<data::resource_info>& dst_info) const {
 
-    LOGGER_CRITICAL("COPY called!");
+    const auto& d_src = reinterpret_cast<const data::memory_region_info&>(*src_info);
+    const auto& d_dst = reinterpret_cast<const data::shared_path_info&>(*dst_info);
+
+    (void) d_src;
+    (void) d_dst;
+
+    LOGGER_WARN("Validation not implemented");
+
+    return true;
+}
+
+std::error_code 
+memory_region_to_shared_path_transferor::transfer(
+        const auth::credentials& usr_creds, 
+        const std::shared_ptr<const data::resource>& src,  
+        const std::shared_ptr<const data::resource>& dst) const {
+
+    const auto& d_src = reinterpret_cast<const data::memory_region_resource&>(*src);
+    const auto& d_dst = reinterpret_cast<const data::shared_path_resource&>(*dst);
+
+    (void) usr_creds;
+    (void) d_src;
+    (void) d_dst;
+
+    LOGGER_WARN("Transfer not implemented");
+
     return std::make_error_code(static_cast<std::errc>(0));
 }
 
