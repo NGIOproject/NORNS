@@ -259,3 +259,14 @@ urd_LDFLAGS = \
 # will no longer detect it as a dependency
 EXTRA_urd_DEPENDENCIES = \
 	liburd_aux.la
+
+urd-install-exec-hook:
+	setcap cap_sys_ptrace,cap_chown=+ep $(DESTDIR)$(bindir)/urd
+
+
+
+################################################################################
+# Hooks
+################################################################################
+
+install-exec-hook: urd-install-exec-hook
