@@ -92,10 +92,10 @@ public:
         }
     }
 
-    logger(const logger& rhs) = delete;
-    logger& operator=(const logger& rhs) = delete;
-    logger(logger&& other) = default;
-    logger& operator=(logger&& other) = default;
+    logger(const logger& /*rhs*/) = delete;
+    logger& operator=(const logger& /*rhs*/) = delete;
+    logger(logger&& /*other*/) = default;
+    logger& operator=(logger&& /*other*/) = default;
 
     ~logger() {
         spdlog::drop_all();

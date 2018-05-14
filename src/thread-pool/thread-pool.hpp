@@ -43,10 +43,10 @@ class task {
 public:
     task(void) = default;
     virtual ~task(void) = default;
-    task(const task& rhs) = delete;
-    task& operator=(const task& rhs) = delete;
-    task(task&& other) = default;
-    task& operator=(task&& other) = default;
+    task(const task& /*rhs*/) = delete;
+    task& operator=(const task& /*rhs*/) = delete;
+    task(task&& /*other*/) = default;
+    task& operator=(task&& /*other*/) = default;
 
     /**
         * Run the task.
