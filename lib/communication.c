@@ -184,7 +184,7 @@ static int
 send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
 
     int res;
-    int conn; 
+    int conn = -1;
     bool control_request = false;
     msgbuffer_t req_buf = MSGBUFFER_INIT();
     msgbuffer_t resp_buf = MSGBUFFER_INIT();
@@ -321,6 +321,11 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
 
 cleanup_on_error:
     va_end(ap);
+
+    if(conn != -1) {
+        close(conn);
+    }
+
     return res;
 }
 

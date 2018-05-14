@@ -84,8 +84,7 @@ pid_t urd::daemonize() {
 
     /* Fork off the parent process */
     if((pid = fork()) < 0) {
-        LOGGER_ERROR("[daemonize] fork failed.");
-        perror("Fork");
+        LOGGER_ERROR("Failed to create child process: {}", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -170,6 +169,7 @@ pid_t urd::daemonize() {
     }
 
     close(lfp);
+    close(fd);
 
     /* Manage signals */
     signal(SIGCHLD, SIG_IGN); /* ignore child */

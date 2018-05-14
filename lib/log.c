@@ -120,6 +120,10 @@ log_error_helper(const char* file, int line, const char* func,
     fprintf(outfp, "%s", buffer);
 
 end:
+    if(outfp != stderr) {
+        fclose(outfp);
+    }
+
 	errno = saved_errno;
 }
 
