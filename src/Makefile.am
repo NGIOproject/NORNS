@@ -189,6 +189,7 @@ liburd_aux_la_LDFLAGS = \
     @BOOST_SYSTEM_LIB@ \
     @BOOST_THREAD_LIB@ \
 	@PROTOBUF_LIBS@ \
+	@YAMLCPP_LIBS@ \
 	liburd_resources.la \
 	-pthread
 

@@ -10,6 +10,7 @@ Build dependencies:
 - libboost-thread >= 1.53
 - libprotobuf + protobuf compiler >= 2.5.0
 - libprotobuf-c + protobuf-c compiler >= 1.0.2
+- libyaml-cpp >= 0.5.1
 
 
 - Installation in CentOS 7

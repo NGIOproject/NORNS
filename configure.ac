@@ -76,6 +76,8 @@ AX_BOOST_ASIO
 AX_BOOST_PROGRAM_OPTIONS
 AX_BOOST_THREAD
 
+# check for libyaml-cpp
+PKG_CHECK_MODULES([YAMLCPP], [yaml-cpp >= 0.5.1])
 
 # check for protobuf-c
 PKG_CHECK_MODULES([PROTOBUF_C], [libprotobuf-c >= 1.0.0])
