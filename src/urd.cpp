@@ -84,40 +84,50 @@ pid_t urd::daemonize() {
 
     /* Fork off the parent process */
     if((pid = fork()) < 0) {
-        LOGGER_ERROR("Failed to create child process: {}", strerror(errno));
+        LOGGER_ERRNO("Failed to create child process");
         exit(EXIT_FAILURE);
     }
 
-    /* Parent exits */
+    /* Parent returns to caller */
     if(pid != 0) {
         return pid;
     }
 
-    /* Obtain new process group */
+    /* Become a session and process group leader with no controlling tty */
     if((sid = setsid()) < 0) {
         /* Log failure */
-        LOGGER_ERROR("[daemonize] setsid failed.");
-        perror("Setsid");
+        LOGGER_ERRNO("Failed to disassociate controlling tty");
         exit(EXIT_FAILURE);
     }
 
     /* Close all descriptors */
     for(int i = getdtablesize() - 1; i >= 0; --i){
-        close(i);
+        if(close(i) != 0) {
+            LOGGER_ERRNO("Failed to close descriptor");
+            exit(EXIT_FAILURE);
+        }
     } 
 
-    /* Handle standard IO */
-    int fd = open("/dev/null", O_RDWR); /* open stdin */
+    /* Handle standard IO: discard data to/from stdin, stdout and stderr */
+    int dev_null;
 
-    if(dup(fd) == -1) { /* stdout */
-        LOGGER_ERROR("[daemonize] dup[1] failed.");
-        perror("dup");
+    if((dev_null = open("/dev/null", O_RDWR)) == -1) {
+        LOGGER_ERRNO("Failed to open \"/dev/null\"");
         exit(EXIT_FAILURE);
     }
 
-    if(dup(fd) == -1) { /* stderr */
-        LOGGER_ERROR("[daemonize] dup[2] failed.");
-        perror("dup");
+    if(dup2(dev_null, STDIN_FILENO) == -1) {
+        LOGGER_ERRNO("Failed to dup \"/dev/null\" onto stdin");
+        exit(EXIT_FAILURE);
+    }
+
+    if(dup2(dev_null, STDOUT_FILENO) == -1) {
+        LOGGER_ERRNO("Failed to dup \"/dev/null\" onto stdout");
+        exit(EXIT_FAILURE);
+    }
+
+    if(dup2(dev_null, STDERR_FILENO) == -1) {
+        LOGGER_ERRNO("Failed to dup \"/dev/null\" onto stderr");
         exit(EXIT_FAILURE);
     }
 
@@ -127,8 +137,7 @@ pid_t urd::daemonize() {
     /* ensure the process does not keep a directory in use,
      * avoid relative paths beyond this point! */
     if(chdir("/") < 0) {
-        LOGGER_ERROR("[daemonize] chdir failed.");
-        perror("Chdir");
+        LOGGER_ERRNO("Failed to change working directory to root directory");
         exit(EXIT_FAILURE);
     }
     
@@ -136,40 +145,30 @@ pid_t urd::daemonize() {
      * First instance of the daemon will lock the file so that other
      * instances understand that an instance is already running. 
      */
-
-    int lfp;
-    lfp = open(m_settings->m_daemon_pidfile.c_str(), O_RDWR|O_CREAT, 0640);
-
-    if(lfp < 0) {
-        LOGGER_ERROR("[daemonize] can not open daemon lock file");
-        perror("Can not open daemon lock file");
+    int pfd;
+    
+    if((pfd = open(m_settings->m_daemon_pidfile.c_str(), O_RDWR | O_CREAT, 0640)) == -1) {
+        LOGGER_ERRNO("Failed to create daemon lock file");
         exit(EXIT_FAILURE);
     } 
 
-    if(lockf(lfp, F_TLOCK, 0) < 0) {
-        LOGGER_ERROR("[daemonize] another instance of this daemon already running");
-        perror("Another instance of this daemon already running");
+    if(lockf(pfd, F_TLOCK, 0) < 0) {
+        LOGGER_ERRNO("Failed to acquire lock on pidfile");
+        LOGGER_ERROR("Another instance of this daemon may already be running");
         exit(EXIT_FAILURE);
     }
 
     /* record pid in lockfile */
-    char str[10];
-    size_t err_snprintf;
-    err_snprintf = snprintf(str, sizeof(str), "%d\n", getpid());
+    std::string pidstr(std::to_string(getpid()));
 
-    if(err_snprintf >= sizeof(str)) {
-        LOGGER_ERROR("[daemonize] snprintf failed");
+    if(write(pfd, pidstr.c_str(), pidstr.length()) != 
+            static_cast<ssize_t>(pidstr.length())) {
+        LOGGER_ERRNO("Failed to write pidfile");
+        exit(EXIT_FAILURE);
     }
 
-    size_t err_write;
-    err_write = write(lfp, str, strnlen(str, sizeof(str)));
-
-    if(err_write != strnlen(str, sizeof(str))) {
-        LOGGER_ERROR("[daemonize] write failed");
-    }
-
-    close(lfp);
-    close(fd);
+    close(pfd);
+    close(dev_null);
 
     /* Manage signals */
     signal(SIGCHLD, SIG_IGN); /* ignore child */
@@ -179,6 +178,7 @@ pid_t urd::daemonize() {
 //  signal(SIGHUP, signal_handler); /* catch hangup signal */
 //  signal(SIGTERM, signal_handler); /* catch kill signal */
 
+    return 0;
 }
 
 urd_error urd::validate_iotask_args(iotask_type type, 
