@@ -136,6 +136,9 @@ public:
 #define LOGGER_ERROR(...) \
     logger::get_global_logger()->error(__VA_ARGS__)
 
+#define LOGGER_ERRNO(...) \
+    logger::get_global_logger()->error_errno(__VA_ARGS__)
+
 #define LOGGER_CRITICAL(...) \
     logger::get_global_logger()->critical(__VA_ARGS__)
 
@@ -167,6 +170,22 @@ public:
     template <typename... Args>
     inline void error(const char* fmt, const Args&... args) {
         m_internal_logger->error(fmt, args...);
+    }
+
+    template <typename... Args>
+    inline void error_errno(const char* fmt, const Args&... args) {
+
+        const int saved_errno = errno;
+
+        constexpr const std::size_t MAX_ERROR_MSG = 128;
+        std::array<char, MAX_ERROR_MSG> errstr;
+
+        std::string str_fmt(fmt);
+        str_fmt += ": {}";
+
+        char* msg = strerror_r(saved_errno, errstr.data(), MAX_ERROR_MSG);
+
+        m_internal_logger->error(str_fmt.c_str(), args..., msg);
     }
 
     template <typename... Args>
