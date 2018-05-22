@@ -31,16 +31,19 @@
 #include <thread>
 #include <list>
 #include <boost/property_tree/ptree.hpp>
+#include <boost/filesystem.hpp>
 
 #include <netinet/in.h>
 
 #include "defaults.hpp"
 
 namespace bpt = boost::property_tree;
+namespace bfs = boost::filesystem;
 
 namespace norns {
+namespace config {
 
-struct config_settings {
+struct settings {
 
     struct backend {
 
@@ -78,6 +81,7 @@ struct config_settings {
     std::list<backend> m_backends;         /* list of backend descriptions */
 };
 
+} // namespace config
 } // namespace norns
 
 #endif /* __SETTINGS_HPP__ */

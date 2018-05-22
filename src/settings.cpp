@@ -30,14 +30,20 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
+#include <boost/filesystem.hpp>
+
 #include "utils.hpp"
+#include "settings/file-options.hpp" //XXX move to folder
+#include "settings/config-schema.hpp"
 #include "settings.hpp"
 
 namespace bpt = boost::property_tree;
+namespace bfs = boost::filesystem;
 
 namespace norns {
+namespace config {
 
-void config_settings::load(const std::string& filename) {
+void settings::load(const std::string& filename) {
 
     bpt::ptree pt;
 
@@ -136,5 +142,6 @@ void config_settings::load(const std::string& filename) {
 #endif
 }
 
+} // namespace config
 } // namespace norns
 

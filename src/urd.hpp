@@ -81,7 +81,7 @@ class urd {
 public:
     urd();
     ~urd();
-    void configure(const config_settings& settings);
+    void configure(const config::settings& settings);
     int run();
     void teardown();
 
@@ -111,7 +111,7 @@ private:
     response_ptr unknown_request_handler(const request_ptr req);
 
 private:
-    std::shared_ptr<config_settings>                    m_settings;
+    std::shared_ptr<config::settings>                    m_settings;
     std::unique_ptr<io::transferor_registry> m_transferor_registry;
 
     thread_pool_ptr m_workers;

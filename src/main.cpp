@@ -64,7 +64,7 @@ int main(int argc, char* argv[]){
         exit(EXIT_FAILURE);
     }
 
-    norns::config_settings settings;
+    norns::config::settings settings;
 
     settings.load(norns::defaults::config_file);
 

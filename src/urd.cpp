@@ -624,8 +624,8 @@ response_ptr urd::unknown_request_handler(const request_ptr /*base_request*/) {
     return resp;
 }
 
-void urd::configure(const config_settings& settings) {
-    m_settings = std::make_shared<config_settings>(settings);
+void urd::configure(const config::settings& settings) {
+    m_settings = std::make_shared<config::settings>(settings);
 }
 
 void urd::signal_handler(int signum){
