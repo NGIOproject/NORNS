@@ -8,8 +8,8 @@ Build dependencies:
 - libboost-filesystem >= 1.53
 - libboost-program-options >= 1.53
 - libboost-thread >= 1.53
-- libprotobuf + protobuf compiler
-- libprotobuf-c + protobuf-c compiler
+- libprotobuf + protobuf compiler >= 2.5.0
+- libprotobuf-c + protobuf-c compiler >= 1.0.2
 
 
 - Installation in CentOS 7
