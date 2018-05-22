@@ -66,10 +66,10 @@ class pool {
             : m_func(std::move(func)) {}
 
         ~task() override = default;
-        task(const task& rhs) = delete;
-        task& operator=(const task& rhs) = delete;
-        task(task&& other) = default;
-        task& operator=(task&& other) = default;
+        task(const task& /*rhs*/) = delete;
+        task& operator=(const task& /*rhs*/) = delete;
+        task(task&& /*other*/) = default;
+        task& operator=(task&& /*other*/) = default;
 
         void execute() override {
             m_func();
