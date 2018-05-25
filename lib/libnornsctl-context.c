@@ -26,107 +26,82 @@
  *************************************************************************/
 
 #include <stdio.h>
-#include <sys/types.h>
-#include <stdint.h>
-#include <unistd.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <pthread.h>
 #include <string.h>
-#include <stdarg.h>
+#include "libnornsctl-context.h"
 
-#include "norns.h"
-#include "nornsctl.h"
+static pthread_key_t libnornsctl_context_key;
 
-#include "log.h"
-#include "xmalloc.h"
-#include "communication.h"
+static int
+libnornsctl_create_context_key(void) {
 
-#define LIBNORNS_LOG_PREFIX "libnorns"
-#define MIN_WAIT_TIME ((useconds_t) 250*1e3)
+    int err = 0;
 
-__attribute__((constructor))
+    if((err = pthread_key_create(&libnornsctl_context_key, NULL)) != 0) {
+        errno = err;
+        return -1;
+    }
+
+    return 0;
+}
+
 static void
-libnornsctl_init(void) {
-    log_init(LIBNORNS_LOG_PREFIX);
+libnornsctl_delete_context_key(void) {
+    pthread_key_delete(libnornsctl_context_key);
 }
 
-/* Public API */
+void
+libnornsctl_create_context(void) {
 
-norns_iotask_t
-NORNS_IOTASK(norns_op_t optype, norns_resource_t src, norns_resource_t dst) {
-    norns_iotask_t task;
+    struct libnornsctl_context* ctx;
 
-    norns_iotask_init(&task, optype, &src, &dst);
+    if(libnornsctl_create_context_key() != 0) {
+        fprintf(stderr, "libnorns: Failed to create thread specific key: %s\n",
+                strerror(errno));
+        exit(EXIT_FAILURE);
+    }
 
-    return task;
-}
+    ctx = (struct libnornsctl_context*) pthread_getspecific(libnornsctl_context_key);
 
-void norns_iotask_init(norns_iotask_t* task, norns_op_t optype,
-                     norns_resource_t* src, norns_resource_t* dst) {
-
-    if(task == NULL) {
+    if(ctx != NULL) {
         return;
     }
 
-    if(src == NULL || dst == NULL) {
-        memset(task, 0, sizeof(*task));
-        return;
+    ctx = (struct libnornsctl_context* ) malloc(sizeof(struct libnornsctl_context));
+
+    if(ctx == NULL) {
+        fprintf(stderr, "libnorns: Failed to allocate thread specific data\n");
+        exit(EXIT_FAILURE);
     }
 
-    task->t_id = 0;
-    task->t_op = optype;
-    task->t_src = *src;
-    task->t_dst = *dst;
+    int err = pthread_setspecific(libnornsctl_context_key, ctx);
+
+    if(err != 0) {
+        fprintf(stderr, "libnorns: Failed to set thread specific data\n");
+        exit(EXIT_FAILURE);
+    }
 }
 
-norns_error_t
-norns_submit(norns_iotask_t* task) {
+struct libnornsctl_context*
+libnornsctl_get_context(void) {
 
-    if(task == NULL) {
-        return NORNS_EBADARGS;
+    struct libnornsctl_context* ctx;
+
+    ctx = (struct libnornsctl_context*) pthread_getspecific(libnornsctl_context_key);
+
+    // this can only happen if we did not call libnornsctl_create_context()
+    // before trying to access the context
+    if(ctx == NULL) {
+        fprintf(stderr, "libnorns: Failed to retrieve library context\n");
+        exit(EXIT_FAILURE);
     }
 
-    return send_submit_request(task);
+    return ctx;
 }
 
-norns_error_t
-norns_status(norns_iotask_t* task, norns_stat_t* stats) {
-
-    if(task == NULL || stats == NULL) {
-        return NORNS_EBADARGS;
-    }
-
-    return send_status_request(task, stats);
-}
-
-
-/* wait for the completion of the I/O task associated to 'task' */
-norns_error_t
-norns_wait(norns_iotask_t* task) {
-
-    norns_error_t rv;
-    norns_stat_t stats;
-
-    if(task == NULL) {
-        ERR("invalid arguments");
-        return NORNS_EBADARGS;
-    }
-
-    do {
-        rv = send_status_request(task, &stats);
-
-        if(rv != NORNS_SUCCESS) {
-            ERR("error waiting for request: %s", norns_strerror(rv));
-            return rv;
-        }
-
-        if(stats.st_status == NORNS_EFINISHED || 
-           stats.st_status == NORNS_EFINISHEDWERROR) {
-            return NORNS_SUCCESS;
-        }
-
-        // wait for 250 milliseconds
-        // before retrying
-        usleep(MIN_WAIT_TIME);
-    } while(true);
-
-    return NORNS_SUCCESS;
+void
+libnornsctl_destroy_context(void) {
+    libnornsctl_delete_context_key();
 }

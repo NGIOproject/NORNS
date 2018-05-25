@@ -27,19 +27,13 @@
 
 #include "norns.h"
 #include "nornsctl.h"
+#include "test-env.hpp"
 #include "catch.hpp"
-#include "fake-daemon.hpp"
-
-// enable to test connections with an already running daemon
-//#define USE_REAL_DAEMON
 
 SCENARIO("remove process from job", "[api::norns_remove_process]") {
     GIVEN("a running urd instance") {
 
-#ifndef USE_REAL_DAEMON
-        fake_daemon td;
-        td.run();
-#endif
+        test_env env;
 
         WHEN("a process is removed from a non-registered job") {
 
@@ -156,12 +150,10 @@ SCENARIO("remove process from job", "[api::norns_remove_process]") {
             }
         }
 
-#ifndef USE_REAL_DAEMON
-        int ret = td.stop();
-        REQUIRE(ret == 0);
-#endif
+        env.notify_success();
     }
 
+#ifndef USE_REAL_DAEMON
     GIVEN("a non-running urd instance") {
         WHEN("attempting to remove a process") {
 
@@ -177,4 +169,5 @@ SCENARIO("remove process from job", "[api::norns_remove_process]") {
             }
         }
     }
+#endif
 }

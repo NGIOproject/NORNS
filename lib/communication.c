@@ -38,6 +38,7 @@
 #include "nornsctl.h"
 #include <norns-rpc.h>
 
+#include "context-common.h"
 #include "defaults.h"
 #include "messages.pb-c.h"
 #include "requests.h"
@@ -185,17 +186,10 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
 
     int res;
     int conn = -1;
-    bool control_request = false;
     msgbuffer_t req_buf = MSGBUFFER_INIT();
     msgbuffer_t resp_buf = MSGBUFFER_INIT();
 
-    if(type == NORNS_PING                 || type == NORNS_JOB_REGISTER     || 
-       type == NORNS_JOB_UPDATE           || type == NORNS_JOB_UNREGISTER   || 
-       type == NORNS_PROCESS_ADD          || type == NORNS_PROCESS_REMOVE   || 
-       type == NORNS_NAMESPACE_REGISTER   || type == NORNS_NAMESPACE_UPDATE || 
-       type == NORNS_NAMESPACE_UNREGISTER) {
-        control_request = true;
-    }
+    libcontext_t* ctx = get_context();
 
     va_list ap;
     va_start(ap, resp);
@@ -285,12 +279,7 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
     }
 
     // connect to urd
-    if(control_request) {
-        conn = connect_to_daemon(norns_api_control_socket);
-    }
-    else {
-        conn = connect_to_daemon(norns_api_global_socket);
-    }
+    conn = connect_to_daemon(ctx->api_socket);
 
     if(conn == -1) {
         res = NORNS_ECONNFAILED;

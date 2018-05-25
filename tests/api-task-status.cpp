@@ -40,7 +40,8 @@ SCENARIO("check request", "[api::norns_status]") {
             }
         );
 
-        const char* path_tmp0 = env.create_directory("mnt/tmp0").c_str();
+        const bfs::path path_tmp0 = 
+            env.create_directory("mnt/tmp0", env.basedir());
 //        const char* path_tmp1 = env.create_directory("mnt/tmp1").c_str();
 //        const char* path_lustre0 = env.create_directory("mnt/lustre0").c_str();
 
@@ -56,7 +57,7 @@ SCENARIO("check request", "[api::norns_status]") {
             size_t src_size = (size_t) 42;
             
             const char* dst_nsid = "tmp://";
-            const char* dst_mnt = path_tmp0;
+            const char* dst_mnt = path_tmp0.c_str();
             const char* dst_path = "/a/b/c";
 
             norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
@@ -1004,6 +1005,8 @@ SCENARIO("check request", "[api::norns_status]") {
             REQUIRE(rv == NORNS_SUCCESS);
         }
 #endif
+
+        env.notify_success();
     }
 
 #ifndef USE_REAL_DAEMON

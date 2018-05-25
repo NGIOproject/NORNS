@@ -34,7 +34,7 @@
 #include "nornsctl.h"
 #include "fake-daemon.hpp"
 
-norns::config_settings default_settings = {
+norns::config::settings test_cfg(
     "test_urd", /* progname */
     false, /* daemonize */
     true, /* use syslog */
@@ -45,15 +45,14 @@ norns::config_settings default_settings = {
     "./test_urd.pid", /* daemon_pidfile */
     2, /* api workers */
     "./",
-    42,
     {}
-};
+);
 
 fake_daemon::fake_daemon() {
-    extern const char* norns_api_global_socket;
-    extern const char* norns_api_control_socket;
-    norns_api_global_socket = "./test_urd.global.socket";
-    norns_api_control_socket = "./test_urd.control.socket";
+//    extern const char* norns_api_global_socket;
+//    extern const char* norns_api_control_socket;
+//    norns_api_global_socket = "./test_urd.global.socket";
+//    norns_api_control_socket = "./test_urd.control.socket";
 }
 
 fake_daemon::~fake_daemon() {
@@ -62,8 +61,31 @@ fake_daemon::~fake_daemon() {
     }
 }
 
-void fake_daemon::configure(const fake_daemon_cfg& cfg) {
-    default_settings.m_dry_run = cfg.m_dry_run;
+void fake_daemon::configure(const bfs::path& config_file, 
+                            const fake_daemon_cfg& override_cfg) {
+
+    m_config.load_from_file(config_file);
+
+    m_config.progname() = test_cfg.progname();
+    m_config.daemonize() = test_cfg.daemonize();
+    m_config.use_syslog() = test_cfg.use_syslog();
+    m_config.dry_run() = override_cfg.m_dry_run;
+    m_config.remote_port() = test_cfg.remote_port();
+    m_config.workers_in_pool() = test_cfg.workers_in_pool();
+    m_config.config_file() = config_file;
+    m_config.default_namespaces().clear();
+}
+
+void fake_daemon::configure(const bfs::path& config_file) {
+    m_config.load_from_file(config_file);
+    m_config.progname() = test_cfg.progname();
+    m_config.daemonize() = test_cfg.daemonize();
+    m_config.use_syslog() = test_cfg.use_syslog();
+    m_config.dry_run() = test_cfg.dry_run();
+    m_config.remote_port() = test_cfg.remote_port();
+    m_config.workers_in_pool() = test_cfg.workers_in_pool();
+    m_config.config_file() = config_file;
+    m_config.default_namespaces().clear();
 }
 
 void fake_daemon::run() {
@@ -79,11 +101,19 @@ void fake_daemon::run() {
 #endif
 
         int rv;
+        int retries = 20;
 
         do {
             std::this_thread::sleep_for(std::chrono::microseconds(200));
             rv = norns_ping();
-        } while(rv != NORNS_SUCCESS);
+        } while(rv != NORNS_SUCCESS && --retries != 0);
+
+        if(retries == 0) {
+            // the daemon may be running even if we don't receive a reply,
+            // try to stop it to avoid leaving a dangling process
+            stop();
+            throw std::runtime_error("Failed to ping test daemon");
+        }
 
 #ifdef DEBUG_OUTPUT
         std::cerr << "[" << getpid() << "] daemon process ready\n";
@@ -92,7 +122,7 @@ void fake_daemon::run() {
         return;
     }
 
-    m_daemon.configure(default_settings);
+    m_daemon.configure(m_config);
     m_daemon.run();
     m_daemon.teardown();
 

@@ -25,12 +25,12 @@
 #  <http://www.gnu.org/licenses/>.                                       #
 ##########################################################################
 
-AC_INIT([Norn-s loom], [1.0], [arnau.bagocastro at bsc.es])
+AC_INIT([norns], [1.0], [alberto.miranda@bsc.es])
 AC_PREREQ([2.69])
-AC_CONFIG_SRCDIR([src/config.h.in])
+AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([build-aux])
-AC_CONFIG_HEADERS([src/config.h])
+AC_CONFIG_HEADERS([config.h])
 
 AM_INIT_AUTOMAKE([1.9 foreign subdir-objects])
 
@@ -47,9 +47,6 @@ AX_CHECK_COMPILE_FLAG([-std=c++11], [CXXFLAGS+=" -std=c++11"], [
     exit -1
 ])
 
-# Checks for libraries.I
-
-
 # check for pkg-config
 PKG_PROG_PKG_CONFIG
 
@@ -64,7 +61,35 @@ then
  * If it is installed but not in the PATH then you may want to set the PKG_CONFIG variable])
 fi
 
-# check for some BOOST libraries
+################################################################################
+### check whether tests should be built
+################################################################################
+is_enabled_build_tests="no"
+
+AC_ARG_ENABLE([tests],
+    AS_HELP_STRING([--enable-tests], [Build norns self tests]), 
+    [
+        if test x$enableval = xyes -o x$enableval = x;
+        then
+            is_enabled_build_tests="yes"
+        else if test x$enableval = xno -o x$enableval = x;
+            then
+                is_enabled_build_tests="no"
+            else
+                AC_MSG_ERROR([This option can only be given 'yes' or 'no' values])
+            fi
+        fi
+    ],
+    [ is_enabled_build_tests="no" ])
+
+AM_CONDITIONAL([BUILD_TESTS], test x$is_enabled_build_tests = xyes)
+
+
+################################################################################
+### check for dependencies
+################################################################################
+
+# check for base BOOST libraries
 AX_BOOST_BASE([1.53],, [
     AC_MSG_ERROR([
         This software requires BOOST >= 1.53, but it was not found in your system
@@ -75,6 +100,12 @@ AX_BOOST_FILESYSTEM
 AX_BOOST_ASIO
 AX_BOOST_PROGRAM_OPTIONS
 AX_BOOST_THREAD
+
+# only check for boost_regex if we are building tests
+AS_IF([test "x$is_enabled_build_tests" = "xyes"], 
+      [ AX_BOOST_REGEX 
+        AC_CONFIG_FILES(tests/Makefile)
+      ], [])
 
 # check for libyaml-cpp
 PKG_CHECK_MODULES([YAMLCPP], [yaml-cpp >= 0.5.1])
@@ -93,12 +124,24 @@ AC_CHECK_PROG([PROTOC], [protoc], [protoc])
 AS_IF([test "x${PROTOC}" == "x"],
           [AC_MSG_ERROR([ProtoBuf compiler "protoc" not found.])])
 
+
+# check for libyaml (manually since it doesn't provide a pkgconfig file)
+AC_SEARCH_LIBS([yaml_parser_initialize], [yaml], 
+               [YAML_LIBS="-lyaml"
+                AC_SUBST(YAML_LIBS)], 
+               [AC_MSG_ERROR([This software required libyaml >= 0.1.4])])
+
 # Checks for header files.
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_CHECK_HEADER_STDBOOL
 
 # Checks for library functions.
+
+
+################################################################################
+### write makefiles
+################################################################################
 AC_CONFIG_FILES([
         Makefile
         etc/Makefile
@@ -106,6 +149,5 @@ AC_CONFIG_FILES([
         include/Makefile
         lib/Makefile
         src/Makefile
-        tests/Makefile
 ])
 AC_OUTPUT

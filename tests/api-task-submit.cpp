@@ -39,9 +39,29 @@ SCENARIO("submit request", "[api::norns_submit]") {
             }
         );
 
-        const char* path_tmp0 = env.create_directory("mnt/tmp0").c_str();
-        const char* path_tmp1 = env.create_directory("mnt/tmp1").c_str();
-        const char* path_lustre0 = env.create_directory("mnt/lustre0").c_str();
+        const char* nsid0 = "tmp0";
+        const char* nsid1 = "tmp1";
+        const char* nsid3 = "lustre0";
+        bfs::path tmp0_mnt, tmp1_mnt, lustre_mnt;
+
+        // create namespaces
+        std::tie(std::ignore, tmp0_mnt) = env.create_namespace(nsid0, "mnt/tmp0", 16384);
+        std::tie(std::ignore, tmp1_mnt) = env.create_namespace(nsid1, "mnt/tmp1", 16384);
+        std::tie(std::ignore, lustre_mnt) = env.create_namespace(nsid3, "mnt/lustre0", 16384);
+        
+        // define input names
+        const char* src_host0 = "node0";
+        const bfs::path src_file0 = "/a/b/c";
+        const bfs::path src_file1 = "/b/c/d";
+        void* src_mem_addr = (void*) 0xdeadbeef;
+        const size_t src_mem_size = (size_t) 42;
+
+        // define output names
+        const char* dst_host0 = "node0";
+        const bfs::path dst_file0 = "/a/b/c";
+        const bfs::path dst_file1 = "/b/c/d";
+        void* dst_mem_addr = (void*) 0xdeadbeef;
+        const size_t dst_mem_size = (size_t) 42;
 
         /**************************************************************************************************************/
         /* tests for error conditions                                                                                 */
@@ -50,15 +70,9 @@ SCENARIO("submit request", "[api::norns_submit]") {
 
             norns_op_t task_op = NORNS_IOTASK_COPY;
             
-            void* src_addr = (void*) 0xdeadbeef;
-            size_t src_size = (size_t) 42;
-            
-            const char* dst_nsid = "tmp://";
-            const char* dst_path = "/a/b/c";
-
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_MEMORY_REGION(src_addr, src_size), 
-                                               NORNS_LOCAL_PATH(dst_nsid, dst_path));
+                                               NORNS_MEMORY_REGION(src_mem_addr, src_mem_size), 
+                                               NORNS_LOCAL_PATH("tmp2", dst_file0.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -70,66 +84,29 @@ SCENARIO("submit request", "[api::norns_submit]") {
         WHEN("submitting a request to copy data using an unregistered src namespace") {
 
             norns_op_t task_op = NORNS_IOTASK_COPY;
-            
-            const char* src_nsid = "tmp://";
-            const char* src_mnt = path_tmp0;
-            const char* src_path = "/a/b/c";
-            
-            const char* dst_nsid = "lustre://";
-            const char* dst_mnt = path_lustre0;
-            const char* dst_path = "/a/b/c";
-
-            norns_backend_t ns = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, dst_mnt, 1024);
-
-            norns_error_t rv = norns_register_namespace(dst_nsid, &ns);
-
-            REQUIRE(rv == NORNS_SUCCESS);
-
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_LOCAL_PATH(src_nsid, src_path), 
-                                               NORNS_SHARED_PATH(dst_nsid, dst_path));
+                                               NORNS_LOCAL_PATH("tmp2", src_file0.c_str()), 
+                                               NORNS_SHARED_PATH(nsid3, dst_file0.c_str()));
 
-            rv = norns_submit(&task);
+            norns_error_t rv = norns_submit(&task);
 
             THEN("NORNS_ENOSUCHNAMESPACE is returned") {
                 REQUIRE(rv == NORNS_ENOSUCHNAMESPACE);
             }
-
-            rv = norns_unregister_namespace(dst_nsid);
-
-            REQUIRE(rv == NORNS_SUCCESS);
         }
 
         WHEN("submitting a request to copy data using an unregistered dst namespace") {
 
             norns_op_t task_op = NORNS_IOTASK_COPY;
-            
-            const char* src_nsid = "tmp://";
-            const char* src_mnt = path_tmp0;
-            const char* src_path = "/a/b/c";
-            
-            const char* dst_nsid = "lustre://";
-            const char* dst_mnt = path_lustre0;
-            const char* dst_path = "/a/b/c";
-
-            norns_backend_t ns = NORNS_BACKEND(NORNS_BACKEND_NVML, src_mnt, 1024);
-            norns_error_t rv = norns_register_namespace(src_nsid, &ns);
-
-            REQUIRE(rv == NORNS_SUCCESS);
-
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_LOCAL_PATH(src_nsid, src_path), 
-                                               NORNS_SHARED_PATH(dst_nsid, dst_path));
+                                               NORNS_LOCAL_PATH(nsid0, src_file0.c_str()), 
+                                               NORNS_SHARED_PATH("tmp2", dst_file0.c_str()));
 
-            rv = norns_submit(&task);
+            norns_error_t rv = norns_submit(&task);
 
             THEN("NORNS_ENOSUCHNAMESPACE is returned") {
                 REQUIRE(rv == NORNS_ENOSUCHNAMESPACE);
             }
-
-            rv = norns_unregister_namespace(src_nsid);
-
-            REQUIRE(rv == NORNS_SUCCESS);
         }
 
 
@@ -140,86 +117,9 @@ SCENARIO("submit request", "[api::norns_submit]") {
         WHEN("submitting a request to copy from NORNS_MEMORY_REGION to NORNS_LOCAL_PATH") {
             
             norns_op_t task_op = NORNS_IOTASK_COPY;
-            
-            void* src_addr = (void*) 0xdeadbeef;
-            size_t src_size = (size_t) 42;
-            
-            const char* dst_nsid = "tmp://";
-            const char* dst_mnt = path_tmp0;
-            const char* dst_path = "/a/b/c";
-
-            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
-            norns_error_t rv = norns_register_namespace(dst_nsid, &bdst);
-            REQUIRE(rv == NORNS_SUCCESS);
-
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_MEMORY_REGION(src_addr, src_size), 
-                                               NORNS_LOCAL_PATH(dst_nsid, dst_path));
-
-            rv = norns_submit(&task);
-
-            THEN("NORNS_SUCCESS is returned") {
-                REQUIRE(rv == NORNS_SUCCESS);
-                REQUIRE(task.t_id != 0);
-            }
-
-            // cleanup
-            rv = norns_unregister_namespace(dst_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
-        }
-
-        WHEN("submitting a request to copy from NORNS_MEMORY_REGION to NORNS_SHARED_PATH") {
-            
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-            
-            void* src_addr = (void*) 0xdeadbeef;
-            size_t src_size = (size_t) 42;
-            
-            const char* dst_nsid = "tmp://";
-            const char* dst_mnt = path_tmp0;
-            const char* dst_path = "/a/b/c";
-
-            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
-            norns_error_t rv = norns_register_namespace(dst_nsid, &bdst);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-
-            norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_MEMORY_REGION(src_addr, src_size), 
-                                               NORNS_SHARED_PATH(dst_nsid, dst_path));
-
-            rv = norns_submit(&task);
-
-            THEN("NORNS_SUCCESS is returned") {
-                REQUIRE(rv == NORNS_SUCCESS);
-                REQUIRE(task.t_id != 0);
-            }
-
-            // cleanup
-            rv = norns_unregister_namespace(dst_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
-        }
-
-        WHEN("submitting a request to copy from NORNS_MEMORY_REGION to NORNS_REMOTE_PATH") {
-            
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-            
-            void* src_addr = (void*) 0xdeadbeef;
-            size_t src_size = (size_t) 42;
-            
-            const char* dst_nsid = "tmp://";
-            const char* dst_host = "node0";
-            const char* dst_path = "/a/b/c";
-
-            /*
-            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
-            rv = norns_register_namespace(dst_nsid, &bdst);
-            REQUIRE(rv == NORNS_SUCCESS);
-            */
-
-            norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_MEMORY_REGION(src_addr, src_size), 
-                                               NORNS_REMOTE_PATH(dst_nsid, dst_host, dst_path));
+                                               NORNS_MEMORY_REGION(src_mem_addr, src_mem_size), 
+                                               NORNS_LOCAL_PATH(nsid0, dst_file0.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -227,208 +127,121 @@ SCENARIO("submit request", "[api::norns_submit]") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
             }
+        }
 
-            // cleanup
+        WHEN("submitting a request to copy from NORNS_MEMORY_REGION to NORNS_SHARED_PATH") {
+            
+            norns_op_t task_op = NORNS_IOTASK_COPY;
+            norns_iotask_t task = NORNS_IOTASK(task_op, 
+                                               NORNS_MEMORY_REGION(src_mem_addr, src_mem_size), 
+                                               NORNS_SHARED_PATH(nsid0, dst_file0.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("NORNS_SUCCESS is returned") {
+                REQUIRE(rv == NORNS_SUCCESS);
+                REQUIRE(task.t_id != 0);
+            }
+        }
+
+        WHEN("submitting a request to copy from NORNS_MEMORY_REGION to NORNS_REMOTE_PATH") {
+            
+            norns_op_t task_op = NORNS_IOTASK_COPY;
+            norns_iotask_t task = NORNS_IOTASK(task_op, 
+                                               NORNS_MEMORY_REGION(src_mem_addr, src_mem_size), 
+                                               NORNS_REMOTE_PATH(nsid0, dst_host0, dst_file0.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("NORNS_SUCCESS is returned") {
+                REQUIRE(rv == NORNS_SUCCESS);
+                REQUIRE(task.t_id != 0);
+            }
         }
 
         /* copy from local path to .* */
         WHEN("submitting a request to copy from NORNS_LOCAL_PATH to NORNS_LOCAL_PATH") {
             
             norns_op_t task_op = NORNS_IOTASK_COPY;
-            
-            const char* src_nsid = "tmp0://";
-            const char* src_mnt = path_tmp0;
-            const char* src_path = "/b/c/d";
-            
-            const char* dst_nsid = "tmp1://";
-            const char* dst_mnt = path_tmp1;
-            const char* dst_path = "/a/b/c";
-
-            norns_backend_t bsrc = NORNS_BACKEND(NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(src_nsid, &bsrc);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
-            rv = norns_register_namespace(dst_nsid, &bdst);
-            REQUIRE(rv == NORNS_SUCCESS);
-
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_LOCAL_PATH(src_nsid, src_path), 
-                                               NORNS_LOCAL_PATH(dst_nsid, dst_path));
+                                               NORNS_LOCAL_PATH(nsid0, src_file1.c_str()), 
+                                               NORNS_LOCAL_PATH(nsid1, dst_file0.c_str()));
 
-            rv = norns_submit(&task);
+            norns_error_t rv = norns_submit(&task);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
             }
-
-            // cleanup
-            rv = norns_unregister_namespace(src_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            rv = norns_unregister_namespace(dst_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
         }
 
         WHEN("submitting a request to copy from NORNS_LOCAL_PATH to NORNS_SHARED_PATH") {
             
             norns_op_t task_op = NORNS_IOTASK_COPY;
-            
-            const char* src_nsid = "tmp://";
-            const char* src_mnt = path_tmp0;
-            const char* src_path = "/b/c/d";
-            
-            const char* dst_nsid = "lustre://";
-            const char* dst_mnt = path_lustre0;
-            const char* dst_path = "/a/b/c";
-
-            norns_backend_t bsrc = NORNS_BACKEND(NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(src_nsid, &bsrc);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
-            rv = norns_register_namespace(dst_nsid, &bdst);
-            REQUIRE(rv == NORNS_SUCCESS);
-
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_LOCAL_PATH(src_nsid, src_path), 
-                                               NORNS_SHARED_PATH(dst_nsid, dst_path));
+                                               NORNS_LOCAL_PATH(nsid0, src_file1.c_str()), 
+                                               NORNS_SHARED_PATH(nsid3, dst_file0.c_str()));
 
-            rv = norns_submit(&task);
+            norns_error_t rv = norns_submit(&task);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
             }
-
-            // cleanup
-            rv = norns_unregister_namespace(src_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            rv = norns_unregister_namespace(dst_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
         }
 
         WHEN("submitting a request to copy from NORNS_LOCAL_PATH to NORNS_REMOTE_PATH") {
 
             norns_op_t task_op = NORNS_IOTASK_COPY;
-            
-            const char* src_nsid = "tmp://";
-            const char* src_mnt = path_tmp0;
-            const char* src_path = "/b/c/d";
-            
-            const char* dst_nsid = "tmp://";
-            const char* dst_mnt = path_tmp0;
-            const char* dst_host = "node1";
-            const char* dst_path = "/a/b/c";
-
-            norns_backend_t bsrc = NORNS_BACKEND(NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(src_nsid, &bsrc);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            /*
-            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_NVML, dst_mnt, 8192);
-            rv = norns_register_namespace(dst_nsid, &bdst);
-            REQUIRE(rv == NORNS_SUCCESS);
-            */
-
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_LOCAL_PATH(src_nsid, src_path), 
-                                               NORNS_REMOTE_PATH(dst_nsid, dst_host, dst_path));
+                                               NORNS_LOCAL_PATH(nsid0, src_file1.c_str()), 
+                                               NORNS_REMOTE_PATH(nsid1, dst_host0, dst_file0.c_str()));
 
-            rv = norns_submit(&task);
+            norns_error_t rv = norns_submit(&task);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
             }
-
-            // cleanup
-            rv = norns_unregister_namespace(src_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
         }
 
         /* using a remote node as source is not allowed (yet) */
         WHEN("submitting a request to copy from NORNS_REMOTE_PATH to NORNS_LOCAL_PATH") {
             
             norns_op_t task_op = NORNS_IOTASK_COPY;
-            
-            const char* src_nsid = "tmp://";
-            const char* src_host = "node0";
-            const char* src_path = "/a/b/c";
-            
-            const char* dst_nsid = "tmp://";
-            const char* dst_mnt = path_tmp0;
-            const char* dst_path = "/b/c/d";
-
-            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_NVML, dst_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(dst_nsid, &bdst);
-            REQUIRE(rv == NORNS_SUCCESS);
-
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_REMOTE_PATH(src_nsid, src_host, src_path),
-                                               NORNS_LOCAL_PATH(dst_nsid, dst_path));
+                                               NORNS_REMOTE_PATH(nsid0, src_host0, src_file0.c_str()),
+                                               NORNS_LOCAL_PATH(nsid1, dst_file1.c_str()));
 
-            rv = norns_submit(&task);
+            norns_error_t rv = norns_submit(&task);
 
             THEN("NORNS_ENOTSUPPORTED is returned") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
             }
-
-            // cleanup
-            rv = norns_unregister_namespace(dst_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
         }
 
         /* using a remote node as source is not allowed (yet) */
         WHEN("submitting a request to copy from NORNS_REMOTE_PATH to NORNS_SHARED_PATH") {
 
             norns_op_t task_op = NORNS_IOTASK_COPY;
-            
-            const char* src_nsid = "tmp://";
-            const char* src_host = "node0";
-            const char* src_path = "/a/b/c";
-
-            const char* dst_nsid = "tmp://";
-            const char* dst_mnt = path_tmp0;
-            const char* dst_path = "/b/c/d";
-
-            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, dst_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(dst_nsid, &bdst);
-            REQUIRE(rv == NORNS_SUCCESS);
-
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_REMOTE_PATH(src_nsid, src_host, src_path),
-                                               NORNS_SHARED_PATH(dst_nsid, dst_path));
+                                               NORNS_REMOTE_PATH(nsid0, src_host0, src_file0.c_str()),
+                                               NORNS_SHARED_PATH(nsid1, dst_file1.c_str()));
 
-            rv = norns_submit(&task);
+            norns_error_t rv = norns_submit(&task);
 
             THEN("NORNS_ENOTSUPPORTED is returned") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
             }
-
-            // cleanup
-            rv = norns_unregister_namespace(dst_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
         }
 
         /* using a remote node as source is not allowed (yet) */
         WHEN("submitting a request to copy from NORNS_REMOTE_PATH to NORNS_REMOTE_PATH") {
 
             norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            const char* src_nsid = "tmp://";
-            const char* src_host = "node0";
-            const char* src_path = "/a/b/c";
-
-            const char* dst_nsid = "tmp://";
-            const char* dst_host = "node1";
-            const char* dst_path = "/b/c/d";
-
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_REMOTE_PATH(src_nsid, src_host, src_path),
-                                               NORNS_REMOTE_PATH(dst_nsid, dst_host, dst_path));
+                                               NORNS_REMOTE_PATH(nsid0, src_host0, src_file0.c_str()),
+                                               NORNS_REMOTE_PATH(nsid1, dst_host0, dst_file1.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -441,81 +254,39 @@ SCENARIO("submit request", "[api::norns_submit]") {
         WHEN("submitting a request to copy from NORNS_LOCAL_PATH to NORNS_MEMORY_REGION") {
 
             norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            const char* src_nsid = "tmp://";
-            const char* src_mnt = path_tmp0;
-            const char* src_path = "/a/b/c";
-
-            void* dst_addr = (void*) 0xdeadbeef;
-            size_t dst_size = (size_t) 42;
-
-
-            norns_backend_t bsrc = NORNS_BACKEND(NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(src_nsid, &bsrc);
-            REQUIRE(rv == NORNS_SUCCESS);
-
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_LOCAL_PATH(src_nsid, src_path), 
-                                               NORNS_MEMORY_REGION(dst_addr, dst_size));
+                                               NORNS_LOCAL_PATH(nsid0, src_file0.c_str()), 
+                                               NORNS_MEMORY_REGION(dst_mem_addr, dst_mem_size));
 
-            rv = norns_submit(&task);
+            norns_error_t rv = norns_submit(&task);
 
             THEN("NORNS_ENOTSUPPORTED is returned") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
             }
-
-            // cleanup
-            rv = norns_unregister_namespace(src_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
         }
 
         /* using the process memory as destination is not allowed (yet) */
         WHEN("submitting a request to copy from NORNS_SHARED_PATH to NORNS_MEMORY_REGION") {
 
             norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            const char* src_nsid = "lustre://";
-            const char* src_mnt = path_lustre0;
-            const char* src_path = "/a/b/c";
-
-            void* dst_addr = (void*) 0xdeadbeef;
-            size_t dst_size = (size_t) 42;
-
-
-            norns_backend_t bsrc = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, src_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(src_nsid, &bsrc);
-            REQUIRE(rv == NORNS_SUCCESS);
-
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_SHARED_PATH(src_nsid, src_path), 
-                                               NORNS_MEMORY_REGION(dst_addr, dst_size));
+                                               NORNS_SHARED_PATH(nsid3, src_file0.c_str()), 
+                                               NORNS_MEMORY_REGION(dst_mem_addr, dst_mem_size));
 
-            rv = norns_submit(&task);
+            norns_error_t rv = norns_submit(&task);
 
             THEN("NORNS_ENOTSUPPORTED is returned") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
             }
-
-            // cleanup
-            rv = norns_unregister_namespace(src_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
         }
 
         /* using the process memory as destination is not allowed (yet) */
         WHEN("submitting a request to copy from NORNS_REMOTE_PATH to NORNS_MEMORY_REGION") {
 
             norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            const char* src_nsid = "tmp://";
-            const char* src_host = "node0";
-            const char* src_path = "/a/b/c";
-
-            void* dst_addr = (void*) 0xdeadbeef;
-            size_t dst_size = (size_t) 42;
-
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_REMOTE_PATH(src_nsid, src_host, src_path), 
-                                               NORNS_MEMORY_REGION(dst_addr, dst_size));
+                                               NORNS_REMOTE_PATH(nsid0, src_host0, src_file0.c_str()), 
+                                               NORNS_MEMORY_REGION(dst_mem_addr, dst_mem_size));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -532,86 +303,9 @@ SCENARIO("submit request", "[api::norns_submit]") {
         WHEN("submitting a request to move from NORNS_MEMORY_REGION to NORNS_LOCAL_PATH") {
             
             norns_op_t task_op = NORNS_IOTASK_MOVE;
-            
-            void* src_addr = (void*) 0xdeadbeef;
-            size_t src_size = (size_t) 42;
-            
-            const char* dst_nsid = "tmp://";
-            const char* dst_mnt = path_tmp0;
-            const char* dst_path = "/a/b/c";
-
-            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
-            norns_error_t rv = norns_register_namespace(dst_nsid, &bdst);
-            REQUIRE(rv == NORNS_SUCCESS);
-
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_MEMORY_REGION(src_addr, src_size), 
-                                               NORNS_LOCAL_PATH(dst_nsid, dst_path));
-
-            rv = norns_submit(&task);
-
-            THEN("NORNS_SUCCESS is returned") {
-                REQUIRE(rv == NORNS_SUCCESS);
-                REQUIRE(task.t_id != 0);
-            }
-
-            // cleanup
-            rv = norns_unregister_namespace(dst_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
-        }
-
-        WHEN("submitting a request to move from NORNS_MEMORY_REGION to NORNS_SHARED_PATH") {
-            
-            norns_op_t task_op = NORNS_IOTASK_MOVE;
-            
-            void* src_addr = (void*) 0xdeadbeef;
-            size_t src_size = (size_t) 42;
-            
-            const char* dst_nsid = "tmp://";
-            const char* dst_mnt = path_tmp0;
-            const char* dst_path = "/a/b/c";
-
-            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
-            norns_error_t rv = norns_register_namespace(dst_nsid, &bdst);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-
-            norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_MEMORY_REGION(src_addr, src_size), 
-                                               NORNS_SHARED_PATH(dst_nsid, dst_path));
-
-            rv = norns_submit(&task);
-
-            THEN("NORNS_SUCCESS is returned") {
-                REQUIRE(rv == NORNS_SUCCESS);
-                REQUIRE(task.t_id != 0);
-            }
-
-            // cleanup
-            rv = norns_unregister_namespace(dst_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
-        }
-
-        WHEN("submitting a request to move from NORNS_MEMORY_REGION to NORNS_REMOTE_PATH") {
-            
-            norns_op_t task_op = NORNS_IOTASK_MOVE;
-            
-            void* src_addr = (void*) 0xdeadbeef;
-            size_t src_size = (size_t) 42;
-            
-            const char* dst_nsid = "tmp://";
-            const char* dst_host = "node0";
-            const char* dst_path = "/a/b/c";
-
-            /*
-            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
-            rv = norns_register_namespace(dst_nsid, &bdst);
-            REQUIRE(rv == NORNS_SUCCESS);
-            */
-
-            norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_MEMORY_REGION(src_addr, src_size), 
-                                               NORNS_REMOTE_PATH(dst_nsid, dst_host, dst_path));
+                                               NORNS_MEMORY_REGION(src_mem_addr, src_mem_size), 
+                                               NORNS_LOCAL_PATH(nsid1, dst_file0.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -619,208 +313,121 @@ SCENARIO("submit request", "[api::norns_submit]") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
             }
+        }
 
-            // cleanup
+        WHEN("submitting a request to move from NORNS_MEMORY_REGION to NORNS_SHARED_PATH") {
+            
+            norns_op_t task_op = NORNS_IOTASK_MOVE;
+            norns_iotask_t task = NORNS_IOTASK(task_op, 
+                                               NORNS_MEMORY_REGION(src_mem_addr, src_mem_size), 
+                                               NORNS_SHARED_PATH(nsid1, dst_file0.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("NORNS_SUCCESS is returned") {
+                REQUIRE(rv == NORNS_SUCCESS);
+                REQUIRE(task.t_id != 0);
+            }
+        }
+
+        WHEN("submitting a request to move from NORNS_MEMORY_REGION to NORNS_REMOTE_PATH") {
+            
+            norns_op_t task_op = NORNS_IOTASK_MOVE;
+            norns_iotask_t task = NORNS_IOTASK(task_op, 
+                                               NORNS_MEMORY_REGION(src_mem_addr, src_mem_size), 
+                                               NORNS_REMOTE_PATH(nsid1, dst_host0, dst_file0.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("NORNS_SUCCESS is returned") {
+                REQUIRE(rv == NORNS_SUCCESS);
+                REQUIRE(task.t_id != 0);
+            }
         }
 
         /* move from local path to .* */
         WHEN("submitting a request to move from NORNS_LOCAL_PATH to NORNS_LOCAL_PATH") {
             
             norns_op_t task_op = NORNS_IOTASK_MOVE;
-            
-            const char* src_nsid = "tmp0://";
-            const char* src_mnt = path_tmp0;
-            const char* src_path = "/b/c/d";
-            
-            const char* dst_nsid = "tmp1://";
-            const char* dst_mnt = path_tmp1;
-            const char* dst_path = "/a/b/c";
-
-            norns_backend_t bsrc = NORNS_BACKEND(NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(src_nsid, &bsrc);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
-            rv = norns_register_namespace(dst_nsid, &bdst);
-            REQUIRE(rv == NORNS_SUCCESS);
-
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_LOCAL_PATH(src_nsid, src_path), 
-                                               NORNS_LOCAL_PATH(dst_nsid, dst_path));
+                                               NORNS_LOCAL_PATH(nsid0, src_file1.c_str()), 
+                                               NORNS_LOCAL_PATH(nsid1, dst_file0.c_str()));
 
-            rv = norns_submit(&task);
+            norns_error_t rv = norns_submit(&task);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
             }
-
-            // cleanup
-            rv = norns_unregister_namespace(src_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            rv = norns_unregister_namespace(dst_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
         }
 
         WHEN("submitting a request to move from NORNS_LOCAL_PATH to NORNS_SHARED_PATH") {
             
             norns_op_t task_op = NORNS_IOTASK_MOVE;
-            
-            const char* src_nsid = "tmp://";
-            const char* src_mnt = path_tmp0;
-            const char* src_path = "/b/c/d";
-            
-            const char* dst_nsid = "lustre://";
-            const char* dst_mnt = path_lustre0;
-            const char* dst_path = "/a/b/c";
-
-            norns_backend_t bsrc = NORNS_BACKEND(NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(src_nsid, &bsrc);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
-            rv = norns_register_namespace(dst_nsid, &bdst);
-            REQUIRE(rv == NORNS_SUCCESS);
-
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_LOCAL_PATH(src_nsid, src_path), 
-                                               NORNS_SHARED_PATH(dst_nsid, dst_path));
+                                               NORNS_LOCAL_PATH(nsid0, src_file1.c_str()), 
+                                               NORNS_SHARED_PATH(nsid3, dst_file0.c_str()));
 
-            rv = norns_submit(&task);
+            norns_error_t rv = norns_submit(&task);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
             }
-
-            // cleanup
-            rv = norns_unregister_namespace(src_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            rv = norns_unregister_namespace(dst_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
         }
 
         WHEN("submitting a request to move from NORNS_LOCAL_PATH to NORNS_REMOTE_PATH") {
 
             norns_op_t task_op = NORNS_IOTASK_MOVE;
-            
-            const char* src_nsid = "tmp://";
-            const char* src_mnt = path_tmp0;
-            const char* src_path = "/b/c/d";
-            
-            const char* dst_nsid = "tmp://";
-            const char* dst_mnt = path_tmp0;
-            const char* dst_host = "node1";
-            const char* dst_path = "/a/b/c";
-
-            norns_backend_t bsrc = NORNS_BACKEND(NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(src_nsid, &bsrc);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            /*
-            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_NVML, dst_mnt, 8192);
-            rv = norns_register_namespace(dst_nsid, &bdst);
-            REQUIRE(rv == NORNS_SUCCESS);
-            */
-
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_LOCAL_PATH(src_nsid, src_path), 
-                                               NORNS_REMOTE_PATH(dst_nsid, dst_host, dst_path));
+                                               NORNS_LOCAL_PATH(nsid0, src_file1.c_str()), 
+                                               NORNS_REMOTE_PATH(nsid1, dst_host0, dst_file0.c_str()));
 
-            rv = norns_submit(&task);
+            norns_error_t rv = norns_submit(&task);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
             }
-
-            // cleanup
-            rv = norns_unregister_namespace(src_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
         }
 
         /* using a remote node as source is not allowed (yet) */
         WHEN("submitting a request to move from NORNS_REMOTE_PATH to NORNS_LOCAL_PATH") {
             
             norns_op_t task_op = NORNS_IOTASK_MOVE;
-            
-            const char* src_nsid = "tmp://";
-            const char* src_host = "node0";
-            const char* src_path = "/a/b/c";
-            
-            const char* dst_nsid = "tmp://";
-            const char* dst_mnt = path_tmp0;
-            const char* dst_path = "/b/c/d";
-
-            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_NVML, dst_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(dst_nsid, &bdst);
-            REQUIRE(rv == NORNS_SUCCESS);
-
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_REMOTE_PATH(src_nsid, src_host, src_path),
-                                               NORNS_LOCAL_PATH(dst_nsid, dst_path));
+                                               NORNS_REMOTE_PATH(nsid0, src_host0, src_file0.c_str()),
+                                               NORNS_LOCAL_PATH(nsid1, dst_file1.c_str()));
 
-            rv = norns_submit(&task);
+            norns_error_t rv = norns_submit(&task);
 
             THEN("NORNS_ENOTSUPPORTED is returned") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
             }
-
-            // cleanup
-            rv = norns_unregister_namespace(dst_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
         }
 
         /* using a remote node as source is not allowed (yet) */
         WHEN("submitting a request to move from NORNS_REMOTE_PATH to NORNS_SHARED_PATH") {
 
             norns_op_t task_op = NORNS_IOTASK_MOVE;
-            
-            const char* src_nsid = "tmp://";
-            const char* src_host = "node0";
-            const char* src_path = "/a/b/c";
-
-            const char* dst_nsid = "tmp://";
-            const char* dst_mnt = path_tmp0;
-            const char* dst_path = "/b/c/d";
-
-            norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, dst_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(dst_nsid, &bdst);
-            REQUIRE(rv == NORNS_SUCCESS);
-
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_REMOTE_PATH(src_nsid, src_host, src_path),
-                                               NORNS_SHARED_PATH(dst_nsid, dst_path));
+                                               NORNS_REMOTE_PATH(nsid0, src_host0, src_file0.c_str()),
+                                               NORNS_SHARED_PATH(nsid1, dst_file1.c_str()));
 
-            rv = norns_submit(&task);
+            norns_error_t rv = norns_submit(&task);
 
             THEN("NORNS_ENOTSUPPORTED is returned") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
             }
-
-            // cleanup
-            rv = norns_unregister_namespace(dst_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
         }
 
         /* using a remote node as source is not allowed (yet) */
         WHEN("submitting a request to move from NORNS_REMOTE_PATH to NORNS_REMOTE_PATH") {
 
             norns_op_t task_op = NORNS_IOTASK_MOVE;
-
-            const char* src_nsid = "tmp://";
-            const char* src_host = "node0";
-            const char* src_path = "/a/b/c";
-
-            const char* dst_nsid = "tmp://";
-            const char* dst_host = "node1";
-            const char* dst_path = "/b/c/d";
-
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_REMOTE_PATH(src_nsid, src_host, src_path),
-                                               NORNS_REMOTE_PATH(dst_nsid, dst_host, dst_path));
+                                               NORNS_REMOTE_PATH(nsid0, src_host0, src_file0.c_str()),
+                                               NORNS_REMOTE_PATH(nsid1, dst_host0, dst_file1.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -833,81 +440,9 @@ SCENARIO("submit request", "[api::norns_submit]") {
         WHEN("submitting a request to move from NORNS_LOCAL_PATH to NORNS_MEMORY_REGION") {
 
             norns_op_t task_op = NORNS_IOTASK_MOVE;
-
-            const char* src_nsid = "tmp://";
-            const char* src_mnt = path_tmp0;
-            const char* src_path = "/a/b/c";
-
-            void* dst_addr = (void*) 0xdeadbeef;
-            size_t dst_size = (size_t) 42;
-
-
-            norns_backend_t bsrc = NORNS_BACKEND(NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(src_nsid, &bsrc);
-            REQUIRE(rv == NORNS_SUCCESS);
-
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_LOCAL_PATH(src_nsid, src_path), 
-                                               NORNS_MEMORY_REGION(dst_addr, dst_size));
-
-            rv = norns_submit(&task);
-
-            THEN("NORNS_ENOTSUPPORTED is returned") {
-                REQUIRE(rv == NORNS_ENOTSUPPORTED);
-            }
-
-            // cleanup
-            rv = norns_unregister_namespace(src_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
-        }
-
-        /* using the process memory as destination is not allowed (yet) */
-        WHEN("submitting a request to move from NORNS_SHARED_PATH to NORNS_MEMORY_REGION") {
-
-            norns_op_t task_op = NORNS_IOTASK_MOVE;
-
-            const char* src_nsid = "lustre://";
-            const char* src_mnt = path_lustre0;
-            const char* src_path = "/a/b/c";
-
-            void* dst_addr = (void*) 0xdeadbeef;
-            size_t dst_size = (size_t) 42;
-
-
-            norns_backend_t bsrc = NORNS_BACKEND(NORNS_BACKEND_LUSTRE, src_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(src_nsid, &bsrc);
-            REQUIRE(rv == NORNS_SUCCESS);
-
-            norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_SHARED_PATH(src_nsid, src_path), 
-                                               NORNS_MEMORY_REGION(dst_addr, dst_size));
-
-            rv = norns_submit(&task);
-
-            THEN("NORNS_ENOTSUPPORTED is returned") {
-                REQUIRE(rv == NORNS_ENOTSUPPORTED);
-            }
-
-            // cleanup
-            rv = norns_unregister_namespace(src_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
-        }
-
-        /* using the process memory as destination is not allowed (yet) */
-        WHEN("submitting a request to move from NORNS_REMOTE_PATH to NORNS_MEMORY_REGION") {
-
-            norns_op_t task_op = NORNS_IOTASK_MOVE;
-
-            const char* src_nsid = "tmp://";
-            const char* src_host = "node0";
-            const char* src_path = "/a/b/c";
-
-            void* dst_addr = (void*) 0xdeadbeef;
-            size_t dst_size = (size_t) 42;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_REMOTE_PATH(src_nsid, src_host, src_path), 
-                                               NORNS_MEMORY_REGION(dst_addr, dst_size));
+                                               NORNS_LOCAL_PATH(nsid0, src_file0.c_str()), 
+                                               NORNS_MEMORY_REGION(dst_mem_addr, dst_mem_size));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -915,6 +450,38 @@ SCENARIO("submit request", "[api::norns_submit]") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
             }
         }
+
+        /* using the process memory as destination is not allowed (yet) */
+        WHEN("submitting a request to move from NORNS_SHARED_PATH to NORNS_MEMORY_REGION") {
+
+            norns_op_t task_op = NORNS_IOTASK_MOVE;
+            norns_iotask_t task = NORNS_IOTASK(task_op, 
+                                               NORNS_SHARED_PATH(nsid3, src_file0.c_str()), 
+                                               NORNS_MEMORY_REGION(dst_mem_addr, dst_mem_size));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("NORNS_ENOTSUPPORTED is returned") {
+                REQUIRE(rv == NORNS_ENOTSUPPORTED);
+            }
+        }
+
+        /* using the process memory as destination is not allowed (yet) */
+        WHEN("submitting a request to move from NORNS_REMOTE_PATH to NORNS_MEMORY_REGION") {
+
+            norns_op_t task_op = NORNS_IOTASK_MOVE;
+            norns_iotask_t task = NORNS_IOTASK(task_op, 
+                                               NORNS_REMOTE_PATH(nsid0, src_host0, src_file0.c_str()), 
+                                               NORNS_MEMORY_REGION(dst_mem_addr, dst_mem_size));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("NORNS_ENOTSUPPORTED is returned") {
+                REQUIRE(rv == NORNS_ENOTSUPPORTED);
+            }
+        }
+
+        env.notify_success();
     }
 
 #ifndef USE_REAL_DAEMON

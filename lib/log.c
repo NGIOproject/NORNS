@@ -36,12 +36,13 @@
 #include "log.h"
 
 static const char* log_prefix;
+static FILE* log_outfp;
 
 #define MAX_LOG_MSG 8192
 #define MAX_ERROR_MSG 128
 
 void
-log_init(const char* prefix) {
+log_init(const char* prefix, FILE* outfp) {
 
     static bool once = false;
 
@@ -50,15 +51,15 @@ log_init(const char* prefix) {
     }
 
     log_prefix = prefix;
+    log_outfp = outfp;
 
     once = true;
 }
 
 static void
-log_error_helper(const char* file, int line, const char* func, 
-                 const char* suffix, const char* fmt, va_list ap) {
+log_helper(const char* file, int line, const char* func, const char* prefix,
+           const char* suffix, const char* fmt, va_list ap) {
 
-    FILE* outfp = stderr;
     int saved_errno = errno;
     char buffer[MAX_LOG_MSG];
     char errstr[MAX_ERROR_MSG] = "";
@@ -66,31 +67,24 @@ log_error_helper(const char* file, int line, const char* func,
     const char* sep = "";
     int ret;
 
-    if(getenv("NORNS_DBG_LOG_TO_STDERR") == NULL) {
-        outfp = fopen("/dev/null", "w");
-
-        if(outfp == NULL) {
-            strerror_r(errno, errstr, MAX_ERROR_MSG);
-            fprintf(stderr, "unable to open /dev/null: %s", errstr);
-
-            return;
-        }
+    if(log_outfp == NULL) {
+        return;
     }
 
     if(file != NULL) {
 
         char* f;
 
-        while((f = strchr(file, '/')) != NULL) {
+        while((f = strrchr(file, '/')) != NULL) {
             file = f+1;
         }
 
-        ret = snprintf(&buffer[cc], MAX_LOG_MSG - cc,
-                "<%s>: [%s:%d %s] ", log_prefix, file, line, func);
+        ret = snprintf(&buffer[cc], MAX_LOG_MSG,
+                "<%s>: [%s:%d %s()] %s: ", log_prefix, file, line, func, prefix);
 
         if(ret < 0) {
-            fprintf(outfp, "vsnprintf failed");
-            goto end;
+            fprintf(log_outfp, "vsnprintf failed");
+            goto out;
         }
 
         cc += (unsigned) ret;
@@ -108,22 +102,17 @@ log_error_helper(const char* file, int line, const char* func,
         ret = vsnprintf(&buffer[cc], MAX_LOG_MSG - cc, fmt, ap);
 
         if(ret < 0) {
-            fprintf(outfp, "vsnprintf failed");
-            goto end;
+            fprintf(log_outfp, "vsnprintf failed");
+            goto out;
         }
 
         cc += (unsigned) ret;
     }
 
     snprintf(&buffer[cc], MAX_LOG_MSG - cc, "%s%s%s", sep, errstr, suffix);
+    fprintf(log_outfp, "%s", buffer);
 
-    fprintf(outfp, "%s", buffer);
-
-end:
-    if(outfp != stderr) {
-        fclose(outfp);
-    }
-
+out:
 	errno = saved_errno;
 }
 
@@ -133,6 +122,27 @@ log_error(const char* file, int line, const char* func,
 
     va_list ap;
     va_start(ap, fmt);
-    log_error_helper(file, line, func, "\n", fmt, ap);
+    log_helper(file, line, func, "ERROR", "\n", fmt, ap);
     va_end(ap);
+}
+
+void
+log_debug(const char* file, int line, const char* func, 
+          const char* fmt, ...) {
+
+    va_list ap;
+    va_start(ap, fmt);
+    log_helper(file, line, func, "DEBUG", "\n", fmt, ap);
+    va_end(ap);
+}
+
+void
+log_fatal(const char* file, int line, const char* func, 
+          const char* fmt, ...) {
+
+    va_list ap;
+    va_start(ap, fmt);
+    log_helper(file, line, func, "FATAL", "\n", fmt, ap);
+    va_end(ap);
+    exit(EXIT_FAILURE);
 }

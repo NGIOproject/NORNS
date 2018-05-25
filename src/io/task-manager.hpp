@@ -46,7 +46,7 @@ struct task_manager {
     using ReturnType = 
         std::tuple<iotask_id, std::shared_ptr<task_stats>>;
 
-    explicit task_manager();
+    task_manager();
 
     boost::optional<ReturnType> create();
 

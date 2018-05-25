@@ -110,6 +110,28 @@ public:
         return true;
     }
 
+    void register_alias(const std::string& alias, const backend_type type) {
+
+        if(m_registrar.count(static_cast<int32_t>(type)) == 0) {
+            throw std::invalid_argument("Failed to register alias for backend "
+                                        "plugin " + utils::to_string(type) + 
+                                        ": Unknown type");
+        }
+
+        m_aliases.emplace(alias, type);
+    }
+
+    backend_type get_type(const std::string& alias) {
+
+        const auto it = m_aliases.find(alias);
+
+        if(it == m_aliases.end()) {
+            return backend_type::unknown;
+        }
+
+        return m_aliases.at(alias);
+    }
+
 private:
     std::shared_ptr<backend> create(const backend_type type, const bfs::path& mount, uint32_t quota) const;
 
@@ -121,6 +143,7 @@ protected:
 
 private:
     std::unordered_map<int32_t, creator_function> m_registrar;
+    std::unordered_map<std::string, backend_type> m_aliases;
 
 }; // class factory
 

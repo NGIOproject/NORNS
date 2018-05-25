@@ -27,17 +27,22 @@
 
 #include <unistd.h>
 #include <sys/types.h>
+#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 
-#include "settings.hpp"
+#include "config.hpp"
 #include "urd.hpp"
 
+namespace bfs = boost::filesystem;
 namespace bpo = boost::program_options;
 
 int main(int argc, char* argv[]){
+
+    norns::config::settings cfg;
+    cfg.load_defaults();
     
-    bool run_in_foreground = !norns::defaults::daemonize;
-    bool dry_run = norns::defaults::dry_run;
+    bool run_in_foreground = !cfg.daemonize();
+    bool dry_run = cfg.dry_run();
 
     // declare a group of options that will be allowed only on the command line
     bpo::options_description generic("Allowed options");
@@ -58,23 +63,25 @@ int main(int argc, char* argv[]){
         exit(EXIT_SUCCESS);
     }
 
-    struct stat stbuf;
-    if(stat(norns::defaults::config_file, &stbuf) != 0) {
-        std::cerr << "Missing configuration file '" << norns::defaults::config_file << "'\n";
+    if(!bfs::exists(cfg.config_file())) {
+        std::cerr << "Service configuration file " << cfg.config_file() << "\n";
         exit(EXIT_FAILURE);
     }
 
-    norns::config::settings settings;
+    try {
+        cfg.load_from_file(cfg.config_file());
+    }
+    catch(const std::exception& ex) {
+        std::cerr << "Error reading config file:\n    " << ex.what() << "\n";
+        exit(EXIT_FAILURE);
+    }
 
-    settings.load(norns::defaults::config_file);
-
-    settings.m_daemonize = !run_in_foreground;
-    settings.m_dry_run = dry_run;
+    // override settings from file with command-line arguments
+    cfg.daemonize() = !run_in_foreground;
+    cfg.dry_run() = dry_run;
 
     norns::urd daemon;
-    daemon.configure(settings);
+    daemon.configure(cfg);
 
-    int status = daemon.run();
-
-    return status;
+    return daemon.run();
 }

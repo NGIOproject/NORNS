@@ -27,6 +27,10 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = etc lib include examples src tests
+SUBDIRS = etc lib include examples src
+
+if BUILD_TESTS
+SUBDIRS += tests
+endif
 
 DIST_SUBDIRS = lib examples

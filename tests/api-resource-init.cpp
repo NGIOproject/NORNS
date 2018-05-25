@@ -25,9 +25,9 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
+#include <string.h>
 #include "norns.h"
 #include "nornsctl.h"
-#include <string.h>
 #include "catch.hpp"
 
 SCENARIO("initialize resources", "[api::norns_resource_init]") {

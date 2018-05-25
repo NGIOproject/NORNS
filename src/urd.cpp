@@ -52,12 +52,14 @@
 #include "job.hpp"
 #include "resources.hpp"
 #include "io.hpp"
+#include "namespaces.hpp"
 
 #include "urd.hpp"
 
 namespace norns {
 
-urd::urd() {}
+urd::urd() :
+    m_settings(std::make_shared<config::settings>()) {}
 
 urd::~urd() {}
 
@@ -100,14 +102,6 @@ pid_t urd::daemonize() {
         exit(EXIT_FAILURE);
     }
 
-    /* Close all descriptors */
-    for(int i = getdtablesize() - 1; i >= 0; --i){
-        if(close(i) != 0) {
-            LOGGER_ERRNO("Failed to close descriptor");
-            exit(EXIT_FAILURE);
-        }
-    } 
-
     /* Handle standard IO: discard data to/from stdin, stdout and stderr */
     int dev_null;
 
@@ -147,7 +141,7 @@ pid_t urd::daemonize() {
      */
     int pfd;
     
-    if((pfd = open(m_settings->m_daemon_pidfile.c_str(), O_RDWR | O_CREAT, 0640)) == -1) {
+    if((pfd = open(m_settings->pidfile().c_str(), O_RDWR | O_CREAT, 0640)) == -1) {
         LOGGER_ERRNO("Failed to create daemon lock file");
         exit(EXIT_FAILURE);
     } 
@@ -215,61 +209,6 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
     iotask_id tid = 0;
     urd_error rv = urd_error::success;
 
-#if 0
-    /* Helper lambda used to construct a data::resource from a *storage::backend* and 
-     * a *data::resource_info*. The function creates a *data::resource* if the provided 
-     * *data::resource_info rinfo* exists in the backend and is valid, and returns it 
-     * coupled with a urd_error::success error code. Otherwise, return an appropriate error 
-     * code and a std::shared_ptr<data::resource>{nullptr} */
-    auto create_resource_from = [&](const resource_info_ptr rinfo) 
-        -> std::tuple<urd_error, resource_ptr> {
-
-        std::shared_ptr<storage::backend> backend_ptr = storage::remote_backend;
-        const auto& nsid = rinfo->nsid();
-
-        // all backends must be registered except for those
-        // which are referenced by remote resources 
-        if(!rinfo->is_remote()) {
-            if(m_backends->count(nsid) == 0) {
-                return std::make_tuple(urd_error::no_such_namespace, resource_ptr());
-            }
-            backend_ptr = m_backends->at(nsid);
-
-            // check that resource is compatible with selected backend
-            if(!backend_ptr->accepts(rinfo) || !backend_ptr->contains(rinfo)) {
-                return std::make_tuple(urd_error::bad_args, resource_ptr());
-            }
-        }
-
-        std::error_code ec;
-        auto rsrc = data::make_resource(rinfo, backend_ptr, ec);
-
-        if(ec) {
-            LOGGER_ERROR("Could not create resource: {}", ec.message());
-            return std::make_tuple(urd_error::bad_args, resource_ptr());
-        }
-
-        return std::make_tuple(urd_error::success, rsrc);
-    };
-#endif
-
-    //XXX move to namespace-manager?
-    auto get_backend = [&](const std::string& nsid, bool is_remote) 
-        -> std::shared_ptr<storage::backend> {
-
-        if(is_remote) {
-            return storage::remote_backend;
-        }
-
-        const auto& it = m_backends->find(nsid);
-
-        if(it != m_backends->end()) {
-            return it->second;
-        }
-
-        return std::shared_ptr<storage::backend>();
-    };
-
     const auto creds = request->credentials();
 
     if(!creds) {
@@ -282,10 +221,23 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
     if((rv = validate_iotask_args(type, src_info, dst_info)) 
             == urd_error::success) {
 
-        auto bsrc = get_backend(src_info->nsid(), src_info->is_remote());
-        auto bdst = get_backend(dst_info->nsid(), dst_info->is_remote());
+        std::shared_ptr<storage::backend> bsrc, bdst;
 
-        if(bsrc == nullptr || bdst == nullptr) {
+        {
+            boost::shared_lock<boost::shared_mutex> lock(m_namespace_mgr_mutex);
+
+            if(auto rv = m_namespace_mgr->find(src_info->nsid(), 
+                                               src_info->is_remote())) {
+                bsrc = *rv;
+            }
+
+            if(auto rv = m_namespace_mgr->find(dst_info->nsid(), 
+                                               dst_info->is_remote())) {
+                bdst = *rv;
+            }
+        }
+
+        if(!bsrc || !bdst) {
             rv = urd_error::no_such_namespace;
             goto log_and_return;
         }
@@ -307,9 +259,9 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
 
         // register the task in the task manager
         {
-            boost::unique_lock<boost::shared_mutex> lock(m_task_manager_mutex);
+            boost::unique_lock<boost::shared_mutex> lock(m_task_mgr_mutex);
 
-            auto ret = m_task_manager->create();
+            auto ret = m_task_mgr->create();
 
             if(ret) {
                 std::tie(tid, stats_record) = *ret;
@@ -324,12 +276,13 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
                 // In both cases, we want to know about it
                 LOGGER_CRITICAL("Error when creating new task!");
                 rv = urd_error::too_many_tasks;
+                goto log_and_return;
             }
         }
 
         // everything is ok, add the I/O task to the queue
-        if(stats_record != nullptr) {
-            if(m_settings->m_dry_run) {
+        if(stats_record) {
+            if(m_settings->dry_run()) {
                 m_workers->submit_and_forget(
                         io::fake_task(tid, stats_record));
             }
@@ -362,15 +315,15 @@ response_ptr urd::iotask_status_handler(const request_ptr base_request) const {
     std::shared_ptr<io::task_stats> stats_ptr;
 
     {
-        boost::shared_lock<boost::shared_mutex> lock(m_task_manager_mutex);
-        stats_ptr = m_task_manager->find(request->get<0>());
+        boost::shared_lock<boost::shared_mutex> lock(m_task_mgr_mutex);
+        stats_ptr = m_task_mgr->find(request->get<0>());
     }
 
 
     if(stats_ptr != nullptr) {
         resp->set_error_code(urd_error::success);
         // *stats_ptr makes a copy of the current stats for this task in 
-        // m_task_manager so that we don't block other threads needlessly 
+        // m_task_mgr so that we don't block other threads needlessly 
         // while sending the reply
         resp->set<0>(io::task_stats_view(*stats_ptr));
     }
@@ -537,7 +490,37 @@ log_and_return:
     return resp;
 }
 
-response_ptr urd::backend_register_handler(const request_ptr base_request) {
+urd_error urd::create_namespace(const config::namespace_def& nsdef) {
+
+    const auto type = storage::backend_factory::get().
+        get_type(nsdef.alias());
+
+    if(type == backend_type::unknown) {
+        return urd_error::bad_args;
+    }
+
+    return create_namespace(nsdef.nsid(), type, nsdef.mountpoint(), 
+                            nsdef.capacity());
+}
+
+urd_error urd::create_namespace(const std::string& nsid, backend_type type,
+                                const bfs::path& mount, uint32_t quota) {
+
+    boost::unique_lock<boost::shared_mutex> lock(m_namespace_mgr_mutex);
+
+    if(m_namespace_mgr->contains(nsid)) {
+        return urd_error::namespace_exists;
+    }
+
+    if(auto bptr = storage::backend_factory::create_from(type, mount, quota)) {
+        m_namespace_mgr->add(nsid, bptr);
+        return urd_error::success;
+    }
+
+    return urd_error::bad_args;
+}
+
+response_ptr urd::namespace_register_handler(const request_ptr base_request) {
 
     response_ptr resp = std::make_unique<api::backend_register_response>();
 
@@ -549,32 +532,14 @@ response_ptr urd::backend_register_handler(const request_ptr base_request) {
     std::string mount = request->get<2>();
     int32_t quota = request->get<3>();
 
-    {
-        boost::unique_lock<boost::shared_mutex> lock(m_backends_mutex);
-
-        if(m_backends->count(nsid) != 0) {
-            resp->set_error_code(urd_error::namespace_exists);
-        }
-        else {
-
-            backend_ptr bptr = storage::backend_factory::create_from(type, mount, quota);
-
-            if(bptr != nullptr) {
-                m_backends->emplace(std::make_pair(nsid, bptr));
-                resp->set_error_code(urd_error::success);
-            }
-            else {
-                resp->set_error_code(urd_error::bad_args);
-            }
-        }
-    }
+    resp->set_error_code(create_namespace(nsid, type, mount, quota));
 
     LOGGER_INFO("REGISTER_NAMESPACE({}) = {}", request->to_string(), resp->to_string());
     return resp;
 }
 
 /* XXX not supported yet
-response_ptr urd::backend_update_handler(const request_ptr base_request) {
+response_ptr urd::namespace_update_handler(const request_ptr base_request) {
 
     response_ptr resp = std::make_unique<api::backend_update_response>();
 
@@ -588,7 +553,7 @@ log_and_return:
     return resp;
 }*/
 
-response_ptr urd::backend_remove_handler(const request_ptr base_request) {
+response_ptr urd::namespace_remove_handler(const request_ptr base_request) {
 
     response_ptr resp = std::make_unique<api::backend_unregister_response>();
 
@@ -598,16 +563,13 @@ response_ptr urd::backend_remove_handler(const request_ptr base_request) {
     std::string nsid = request->get<0>();
 
     {
-        boost::unique_lock<boost::shared_mutex> lock(m_backends_mutex);
+        boost::unique_lock<boost::shared_mutex> lock(m_namespace_mgr_mutex);
 
-        const auto& it = m_backends->find(nsid);
-
-        if(it == m_backends->end()) {
-            resp->set_error_code(urd_error::no_such_namespace);
+        if(m_namespace_mgr->remove(nsid)) {
+            resp->set_error_code(urd_error::success);
         }
         else {
-            m_backends->erase(it);
-            resp->set_error_code(urd_error::success);
+            resp->set_error_code(urd_error::no_such_namespace);
         }
     }
 
@@ -626,6 +588,10 @@ response_ptr urd::unknown_request_handler(const request_ptr /*base_request*/) {
 
 void urd::configure(const config::settings& settings) {
     m_settings = std::make_shared<config::settings>(settings);
+}
+
+config::settings urd::get_configuration() const {
+    return *m_settings;
 }
 
 void urd::signal_handler(int signum){
@@ -652,33 +618,114 @@ void urd::signal_handler(int signum){
     }
 }
 
+void urd::init_logger() {
+    if(m_settings->use_syslog()) {
+        logger::create_global_logger(m_settings->progname(), "syslog");
+
+        if(!m_settings->daemonize()) {
+            std::cerr << "WARNING: Output messages redirected to syslog\n";
+        }
+    }
+    else {
+        logger::create_global_logger(m_settings->progname(), "console color");
+    }
+}
+
+void urd::init_worker_pool() {
+    LOGGER_INFO(" * Creating workers...");
+
+    try {
+        m_workers = std::make_unique<thread_pool>(m_settings->workers_in_pool());
+    }
+    catch(const std::exception& e) {
+        LOGGER_ERROR("Failed to create the worker pool. This should "
+                     "not happen under normal conditions.");
+        exit(EXIT_FAILURE);
+    }
+}
+
 void urd::init_event_handlers() {
 
-    LOGGER_INFO("  * Creating event listener...");
+    LOGGER_INFO(" * Creating event listener...");
 
     // create (but not start) the API listener 
     // and register handlers for each request type
-    m_api_listener = std::make_unique<api_listener>();
+    try {
+        m_api_listener = std::make_unique<api_listener>();
+    }
+    catch(const std::exception& e) {
+        LOGGER_ERROR("Failed to create the event listener. This should "
+                     "not happen under normal conditions.");
+        exit(EXIT_FAILURE);
+    }
 
     boost::system::error_code ec;
-    mode_t old_mask = umask(0);
+    mode_t old_mask = ::umask(0);
 
-    // if we find any socket files, but no pidfile was found,
-    // they are stale sockets from another run. remove them.
-    bfs::remove(m_settings->m_control_socket, ec);
-    umask(S_IXUSR | S_IRWXG | S_IRWXO); // u=rw-, g=---, o=---
-    m_api_listener->register_endpoint(m_settings->m_control_socket);
+    // setup socket for control API
+    // (note that if we find any socket files at this point, where no pidfile 
+    // was found during initialization, they must be stale sockets from 
+    // another run. Just remove them).
+    if(bfs::exists(m_settings->control_socket())) {
+        bfs::remove(m_settings->control_socket(), ec);
 
-    bfs::remove(m_settings->m_global_socket, ec);
-    umask(S_IXUSR | S_IXGRP | S_IXOTH); // u=rw-, g=rw-, o=rw-
-    m_api_listener->register_endpoint(m_settings->m_global_socket);
+        if(ec) {
+            LOGGER_ERROR("Failed to remove stale control API socket: {}", 
+                    ec.message());
+            teardown();
+            exit(EXIT_FAILURE);
+        }
+    }
 
-    m_api_listener->register_endpoint(m_settings->m_remote_port);
+    ::umask(S_IXUSR | S_IRWXG | S_IRWXO); // u=rw-, g=---, o=---
+
+    try {
+        m_api_listener->register_endpoint(m_settings->control_socket());
+    }
+    catch(const std::exception& e) {
+        LOGGER_ERROR("Failed to create control API socket: {}", e.what());
+        teardown();
+        exit(EXIT_FAILURE);
+    }
+
+    // setup socket for user API
+    if(bfs::exists(m_settings->global_socket())) {
+        bfs::remove(m_settings->global_socket(), ec);
+
+        if(ec) {
+            LOGGER_ERROR("Failed to remove stale user API socket: {}", 
+                    ec.message());
+            teardown();
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    ::umask(S_IXUSR | S_IXGRP | S_IXOTH); // u=rw-, g=rw-, o=rw-
+
+    try {
+        m_api_listener->register_endpoint(m_settings->global_socket());
+    }
+    catch(const std::exception& e) {
+        LOGGER_ERROR("Failed to create user API socket: {}", e.what());
+        teardown();
+        exit(EXIT_FAILURE);
+    }
+
+    // setup socket for remote connections
+    try {
+        m_api_listener->register_endpoint(m_settings->remote_port());
+    }
+    catch(const std::exception& e) {
+        LOGGER_ERROR("Failed to create socket for remote connections: {}",
+                e.what());
+        teardown();
+        exit(EXIT_FAILURE);
+    }
 
     // restore the umask
-    umask(old_mask);
+    ::umask(old_mask);
 
-    LOGGER_INFO("  * Installing message handlers...");
+    LOGGER_INFO(" * Installing message handlers...");
 
     /* user-level functionalities */
     m_api_listener->register_callback(
@@ -716,31 +763,67 @@ void urd::init_event_handlers() {
 
     m_api_listener->register_callback(
             api::request_type::backend_register,
-            std::bind(&urd::backend_register_handler, this, std::placeholders::_1));
+            std::bind(&urd::namespace_register_handler, this, std::placeholders::_1));
 
 /*    m_api_listener->register_callback(
             api::request_type::backend_update,
-            std::bind(&urd::backend_update_handler, this, std::placeholders::_1));*/
+            std::bind(&urd::namespace_update_handler, this, std::placeholders::_1));*/
 
     m_api_listener->register_callback(
             api::request_type::backend_unregister,
-            std::bind(&urd::backend_remove_handler, this, std::placeholders::_1));
+            std::bind(&urd::namespace_remove_handler, this, std::placeholders::_1));
 
     m_api_listener->register_callback(
             api::request_type::bad_request,
             std::bind(&urd::unknown_request_handler, this, std::placeholders::_1));
 
     // signal handlers must be installed AFTER daemonizing
-    LOGGER_INFO("  * Installing signal handlers...");
+    LOGGER_INFO(" * Installing signal handlers...");
 
     m_api_listener->set_signal_handler(
         std::bind(&urd::signal_handler, this, std::placeholders::_1),
         SIGHUP, SIGTERM, SIGINT);
 }
 
-void urd::init_backend_descriptors() {
+void urd::init_namespace_manager() {
 
-    // register POSIX filesystem backend
+    LOGGER_INFO(" * Creating namespace manager...");
+
+    try {
+        m_namespace_mgr = std::make_unique<ns::namespace_manager>();
+    }
+    catch(const std::exception& e) {
+        LOGGER_ERROR("Failed to create the namespace manager. This should "
+                     "not happen under normal conditions.");
+        exit(EXIT_FAILURE);
+    }
+
+    // pre-register special backends
+    //TODO define constants
+    if(!m_namespace_mgr->add("[[internal::memory]]", 
+                             storage::process_memory_backend)) {
+        LOGGER_ERROR("Failed to register internal memory namespace");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void urd::init_task_manager() {
+
+    LOGGER_INFO(" * Creating task manager...");
+
+    try {
+        m_task_mgr = std::make_unique<io::task_manager>();
+    }
+    catch(const std::exception& e) {
+        LOGGER_ERROR("Failed to create the task manager. This should "
+                     "not happen under normal conditions.");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void urd::load_backend_plugins() {
+
+    // register POSIX filesystem backend plugin
     storage::backend_factory::get().
         register_backend<storage::posix_filesystem>(backend_type::posix_filesystem,
             [](const bfs::path& mount, uint32_t quota) {
@@ -748,7 +831,12 @@ void urd::init_backend_descriptors() {
                         new storage::posix_filesystem(mount, quota));
             });
 
-    // register NVML-DAX filesystem backend
+    storage::backend_factory::get().
+        register_alias("POSIX/LOCAL", backend_type::posix_filesystem);
+    storage::backend_factory::get().
+        register_alias("POSIX/SHARED", backend_type::posix_filesystem);
+
+    // register NVML-DAX filesystem backend plugin
     storage::backend_factory::get().
         register_backend<storage::nvml_dax>(backend_type::nvml,
             [](const bfs::path& mount, uint32_t quota) {
@@ -756,155 +844,165 @@ void urd::init_backend_descriptors() {
                         new storage::nvml_dax(mount, quota));
             });
 
-    // register Lustre backend
+    storage::backend_factory::get().
+        register_alias("NVML", backend_type::nvml);
+
+    // register Lustre backend plugin
     storage::backend_factory::get().
         register_backend<storage::lustre>(backend_type::lustre,
             [](const bfs::path& mount, uint32_t quota) {
                 return std::shared_ptr<storage::lustre>(
                         new storage::lustre(mount, quota));
             });
+    storage::backend_factory::get().
+        register_alias("Lustre", backend_type::lustre);
 }
 
-void urd::init_transferors() {
+void urd::load_transfer_plugins() {
 
-    LOGGER_INFO("  * Installing data transferors...");
-    m_transferor_registry = std::make_unique<io::transferor_registry>();
+    LOGGER_INFO(" * Loading data transfer plugins...");
+
+    try {
+        m_transferor_registry = std::make_unique<io::transferor_registry>();
+    }
+    catch(const std::exception& e) {
+        LOGGER_ERROR("Failed to create transfer plugin registry. This should "
+                     "not happen under normal conditions.");
+        exit(EXIT_FAILURE);
+    }
+
+    const auto load_plugin = [&](const data::resource_type t1, 
+                                 const data::resource_type t2, 
+                          std::shared_ptr<io::transferor>&& trp) {
+
+        if(!m_transferor_registry->add(t1, t2, 
+                    std::forward<std::shared_ptr<io::transferor>>(trp))) {
+
+            LOGGER_WARN("    Failed to load transfer plugin ({} to {}):\n"
+                        "    Another plugin was already registered for this "
+                        "    combination (Plugin ignored)",
+                        utils::to_string(t1), utils::to_string(t2));
+            return;
+        }
+
+        LOGGER_INFO("    Loaded transfer plugin ({} to {})", 
+                    utils::to_string(t1), utils::to_string(t2));
+    };
 
     // memory region -> local path
-    if(!m_transferor_registry->add(
-        data::resource_type::memory_region, 
-        data::resource_type::local_posix_path, 
-        std::make_shared<io::memory_region_to_local_path_transferor>())) {
-
-        LOGGER_ERROR("Could not register {} to {} transferor. Ignored.", 
-                     utils::to_string(data::resource_type::memory_region),
-                     utils::to_string(data::resource_type::local_posix_path));
-    }
+    load_plugin(data::resource_type::memory_region, 
+                data::resource_type::local_posix_path, 
+                std::make_shared<io::memory_region_to_local_path_transferor>());
 
     // memory region -> shared path
-    if(!m_transferor_registry->add(
-        data::resource_type::memory_region, 
-        data::resource_type::shared_posix_path, 
-        std::make_shared<io::memory_region_to_local_path_transferor>())) {
-
-        LOGGER_ERROR("Could not register {} to {} transferor. Ignored.", 
-                     utils::to_string(data::resource_type::memory_region),
-                     utils::to_string(data::resource_type::shared_posix_path));
-    }
+    load_plugin(data::resource_type::memory_region, 
+                data::resource_type::shared_posix_path, 
+                std::make_shared<io::memory_region_to_local_path_transferor>());
 
     // memory region -> remote path
-    if(!m_transferor_registry->add(
-        data::resource_type::memory_region, 
-        data::resource_type::remote_posix_path, 
-        std::make_shared<io::memory_region_to_local_path_transferor>())) {
-
-        LOGGER_ERROR("Could not register {} to {} transferor. Ignored.", 
-                     utils::to_string(data::resource_type::memory_region),
-                     utils::to_string(data::resource_type::remote_posix_path));
-    }
+    load_plugin(data::resource_type::memory_region, 
+                data::resource_type::remote_posix_path, 
+                std::make_shared<io::memory_region_to_local_path_transferor>());
 
     // local path -> local path
-    if(!m_transferor_registry->add(
-        data::resource_type::local_posix_path, 
-        data::resource_type::local_posix_path, 
-        std::make_shared<io::local_path_to_local_path_transferor>())) {
-
-        LOGGER_ERROR("Could not register {} to {} transferor. Ignored.", 
-                     utils::to_string(data::resource_type::local_posix_path),
-                     utils::to_string(data::resource_type::local_posix_path));
-    }
+    load_plugin(data::resource_type::local_posix_path, 
+                data::resource_type::local_posix_path, 
+                std::make_shared<io::local_path_to_local_path_transferor>());
 
     // local path -> shared path
-    if(!m_transferor_registry->add(
-        data::resource_type::local_posix_path, 
-        data::resource_type::shared_posix_path, 
-        std::make_shared<io::local_path_to_shared_path_transferor>())) {
-
-        LOGGER_ERROR("Could not register {} to {} transferor. Ignored.", 
-                     utils::to_string(data::resource_type::local_posix_path),
-                     utils::to_string(data::resource_type::shared_posix_path));
-    }
+    load_plugin(data::resource_type::local_posix_path, 
+                data::resource_type::shared_posix_path, 
+                std::make_shared<io::local_path_to_shared_path_transferor>());
 
     // local path -> remote path
-    if(!m_transferor_registry->add(
-        data::resource_type::local_posix_path, 
-        data::resource_type::remote_posix_path, 
-        std::make_shared<io::local_path_to_remote_path_transferor>())) {
+    load_plugin(data::resource_type::local_posix_path, 
+                data::resource_type::remote_posix_path, 
+                std::make_shared<io::local_path_to_remote_path_transferor>());
+}
 
-        LOGGER_ERROR("Could not register {} to {} transferor. Ignored.", 
-                     utils::to_string(data::resource_type::local_posix_path),
-                     utils::to_string(data::resource_type::remote_posix_path));
+void urd::load_default_namespaces() {
+
+    LOGGER_INFO(" * Loading default namespaces...");
+
+    for(const auto& nsdef: m_settings->default_namespaces()) {
+        if(create_namespace(nsdef) != urd_error::success) {
+            LOGGER_WARN("    Failed to load namespace \"{}://\" -> {} "
+                        "of type {}: Ignored", nsdef.nsid(), 
+                        nsdef.mountpoint(), nsdef.alias());
+            continue;
+        }
+        LOGGER_INFO("    Loaded namespace \"{}://\" -> {} (type: {})", 
+                    nsdef.nsid(), nsdef.mountpoint(), nsdef.alias());
     }
+}
+
+void urd::print_greeting() {
+    const char greeting[] = "Starting {} daemon (pid {})";
+    const auto gsep = std::string(sizeof(greeting) - 4 + 
+                                  m_settings->progname().size() + 
+                                  std::to_string(getpid()).size(), '=');
+
+    LOGGER_INFO("{}", gsep);
+    LOGGER_INFO(greeting, m_settings->progname(), getpid());
+    LOGGER_INFO("{}", gsep);
+}
+
+void urd::print_configuration() {
+    LOGGER_INFO("");
+    LOGGER_INFO("[[ Configuration ]]");
+    LOGGER_INFO("  - running as daemon?: {}", (m_settings->daemonize() ? "yes" : "no"));
+    LOGGER_INFO("  - dry run?: {}", (m_settings->dry_run() ? "yes" : "no"));
+    LOGGER_INFO("  - pidfile: {}", m_settings->pidfile());
+    LOGGER_INFO("  - control socket: {}", m_settings->control_socket());
+    LOGGER_INFO("  - global socket: {}", m_settings->global_socket());
+    LOGGER_INFO("  - port for remote requests: {}", m_settings->remote_port());
+    LOGGER_INFO("  - workers: {}", m_settings->workers_in_pool());
+    LOGGER_INFO("");
+}
+
+void urd::print_farewell() {
+    const char farewell[] = "Stopping {} daemon (pid {})";
+    const auto fsep = std::string(sizeof(farewell) - 4 + 
+                                  m_settings->progname().size() + 
+                                  std::to_string(getpid()).size(), '=');
+
+    LOGGER_INFO("{}", fsep);
+    LOGGER_INFO(farewell, m_settings->progname(), getpid());
+    LOGGER_INFO("{}", fsep);
 }
 
 int urd::run() {
 
     // initialize logging facilities
-    if(m_settings->m_daemonize) {
-        logger::create_global_logger(m_settings->m_progname, "syslog");
+    init_logger();
 
-        if(daemonize() != 0) {
-            /* parent clean ups and unwinds */
-            teardown();
-            return EXIT_SUCCESS;
-        }
-    } else {
-        if(m_settings->m_use_syslog) {
-            logger::create_global_logger(m_settings->m_progname, "syslog");
-        }
-        else {
-            logger::create_global_logger(m_settings->m_progname, "console color");
-        }
+    // daemonize if needed
+    if(m_settings->daemonize() && daemonize() != 0) {
+        /* parent clean ups and exits, child continues */
+        teardown();
+        return EXIT_SUCCESS;
     }
 
-    LOGGER_INFO("===========================");
-    LOGGER_INFO("== Starting Urd daemon   ==");
-    LOGGER_INFO("===========================");
-
-    LOGGER_INFO("");
-    LOGGER_INFO("[[ Settings ]]");
-    LOGGER_INFO("  - running as daemon?: {}", (m_settings->m_daemonize ? "yes" : "no"));
-    LOGGER_INFO("  - dry run?: {}", (m_settings->m_dry_run ? "yes" : "no"));
-    LOGGER_INFO("  - pidfile: {}", m_settings->m_daemon_pidfile);
-    LOGGER_INFO("  - control socket: {}", m_settings->m_control_socket);
-    LOGGER_INFO("  - global socket: {}", m_settings->m_global_socket);
-    LOGGER_INFO("  - port for remote requests: {}", m_settings->m_remote_port);
-    LOGGER_INFO("  - workers: {}", m_settings->m_workers_in_pool);
-    LOGGER_INFO("");
-//    LOGGER_INFO("    - internal storage: {}", m_settings->m_storage_path);
-//    LOGGER_INFO("    - internal storage capacity: {}", m_settings->m_storage_capacity);
+    // print useful information
+    print_greeting();
+    print_configuration();
 
     LOGGER_INFO("[[ Starting up ]]");
 
-    // create worker pool
-    LOGGER_INFO("  * Creating workers...");
-    m_workers = std::make_unique<thread_pool>(m_settings->m_workers_in_pool);
-
+    init_worker_pool();
     init_event_handlers();
-
-    m_backends = std::make_unique<backend_manager>();
-
-    // pre-register special backends
-    //TODO define constants
-    m_backends->emplace("[[internal::memory]]", storage::process_memory_backend);
-
-    m_task_manager = std::make_unique<io::task_manager>();
-
-    init_backend_descriptors();
-
-    init_transferors();
-
+    init_namespace_manager();
+    init_task_manager();
+    load_backend_plugins();
+    load_transfer_plugins();
+    load_default_namespaces();
 
     LOGGER_INFO("");
     LOGGER_INFO("[[ Start up successful, awaiting requests... ]]");
+
     m_api_listener->run();
 
-    LOGGER_INFO("");
-    LOGGER_INFO("===========================");
-    LOGGER_INFO("== Stopping Urd daemon   ==");
-    LOGGER_INFO("===========================");
-    LOGGER_INFO("");
-
+    print_farewell();
     teardown();
 
     LOGGER_INFO("");
@@ -931,7 +1029,15 @@ void urd::teardown() {
     api_listener::cleanup();
 
     if(m_settings) {
-        ::unlink(m_settings->m_daemon_pidfile.c_str());
+        boost::system::error_code ec;
+
+        bfs::remove(m_settings->pidfile(), ec);
+
+        if(ec) {
+            LOGGER_ERROR("Failed to remove pidfile {}: {}", 
+                    m_settings->pidfile(), ec.message());
+        }
+
         m_settings.reset();
     }
 

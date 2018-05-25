@@ -1199,6 +1199,8 @@ SCENARIO("copy local POSIX file to local POSIX file", "[api::norns_submit_copy_l
                 }
             }
         }
+
+        env.notify_success();
     }
 
 #ifndef USE_REAL_DAEMON
@@ -1493,5 +1495,7 @@ SCENARIO("copy local memory buffer to local POSIX file", "[api::norns_submit_cop
                 REQUIRE(rv == NORNS_EBADARGS);
             }
         }
+
+        env.notify_success();
     }
 }

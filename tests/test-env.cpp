@@ -30,42 +30,85 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/uuid_generators.hpp>
+#include <boost/regex.hpp>
 
 #include "catch.hpp"
 #include "test-env.hpp"
 #include "norns.h"
 #include "nornsctl.h"
+#include "config-template.hpp"
 
 //#define __DEBUG_OUTPUT__
 
 namespace bfs = boost::filesystem;
 
-test_env::test_env(bool cleanup) :
-    m_cleanup(cleanup),
-    m_uid(boost::uuids::to_string(boost::uuids::random_generator()())) {
+namespace {
 
-    m_base_dir = bfs::absolute(bfs::current_path() / m_uid);
-    bool res = bfs::create_directory(m_base_dir);
-    REQUIRE(res == true);
-
-//    std::cerr << "create " << m_base_dir << "\n";
+std::string generate_testid() {
+    const auto seed = boost::uuids::to_string(boost::uuids::random_generator()());
+    return std::string("test_") + seed.substr(0, 8);
+}
 
 #ifndef USE_REAL_DAEMON
-    m_td.run();
+bfs::path create_config_file(const bfs::path& basedir) {
+
+    const bfs::path cfgdir = basedir / "config";
+    bool res = bfs::create_directory(cfgdir);
+    REQUIRE(res == true);
+
+    const bfs::path config_file = cfgdir / "test.conf";
+    bfs::ofstream outf(config_file);
+    outf << boost::regex_replace(config_file::cftemplate,
+                              boost::regex("@localstatedir@"),
+                              cfgdir.string());
+    outf.close();
+
+    return config_file;
+}
+
+bfs::path patch_libraries(const bfs::path& basedir) {
+
+    const auto config_file = create_config_file(basedir);
+
+    int rv = ::setenv("NORNS_CONFIG_FILE", config_file.c_str(), 1);
+    REQUIRE(rv != -1);
+
+    libnorns_reload_config_file();
+    libnornsctl_reload_config_file();
+
+    return config_file;
+}
 #endif
 
 }
 
-test_env::test_env(const fake_daemon_cfg& cfg, bool cleanup) : 
-    m_cleanup(cleanup),
-    m_uid(boost::uuids::to_string(boost::uuids::random_generator()())),
+test_env::test_env() :
+    m_test_succeeded(false),
+    m_uid(generate_testid()),
     m_base_dir(bfs::absolute(bfs::current_path() / m_uid)) {
 
     bool res = bfs::create_directory(m_base_dir);
     REQUIRE(res == true);
 
 #ifndef USE_REAL_DAEMON
-    m_td.configure(cfg);
+    const auto config_file = patch_libraries(m_base_dir);
+    m_td.configure(config_file);
+    m_td.run();
+#endif
+
+}
+
+test_env::test_env(const fake_daemon_cfg& cfg) : 
+    m_test_succeeded(false),
+    m_uid(generate_testid()),
+    m_base_dir(bfs::absolute(bfs::current_path() / m_uid)) {
+
+    bool res = bfs::create_directory(m_base_dir);
+    REQUIRE(res == true);
+
+#ifndef USE_REAL_DAEMON
+    const auto config_file = patch_libraries(m_base_dir);
+    m_td.configure(config_file, cfg);
     m_td.run();
 #else
     (void) cfg;
@@ -73,6 +116,27 @@ test_env::test_env(const fake_daemon_cfg& cfg, bool cleanup) :
 
 }
 
+bfs::path test_env::basedir() const {
+    return m_base_dir;
+}
+
+void test_env::cleanup() {
+
+    if(m_unacessible_paths.size() != 0) {
+        for(const auto& p : m_unacessible_paths) {
+            bfs::permissions(p, bfs::add_perms | bfs::all_all);
+        }
+    }
+
+    if(m_dirs.size() != 0) {
+        for(const auto& dir : m_dirs) {
+            bfs::remove_all(dir);
+        }
+        m_dirs.clear();
+    }
+
+    bfs::remove_all(m_base_dir);
+}
 
 test_env::~test_env() {
 
@@ -85,27 +149,18 @@ test_env::~test_env() {
         m_namespaces.clear();
     }
 
-    if(m_unacessible_paths.size() != 0) {
-        for(const auto& p : m_unacessible_paths) {
-            bfs::permissions(p, bfs::add_perms | bfs::all_all);
-        }
-    }
-
-    if(m_cleanup && m_dirs.size() != 0) {
-        for(const auto& dir : m_dirs) {
-            bfs::remove_all(dir);
-        }
-        m_dirs.clear();
-    }
-
 #ifndef USE_REAL_DAEMON
     int ret = m_td.stop();
     //REQUIRE(ret == 0);
 #endif
 
-    if(m_cleanup) {
-        bfs::remove_all(m_base_dir);
+    if(m_test_succeeded) {
+        cleanup();
     }
+}
+
+void test_env::notify_success() {
+    m_test_succeeded = true;
 }
 
 std::tuple<const char*, bfs::path> test_env::create_namespace(std::string nsid, bfs::path mnt, size_t quota) {
@@ -229,29 +284,6 @@ bfs::path test_env::create_symlink(const bfs::path& target_name,
     REQUIRE(!ec);
 
     return abs_link_name;
-}
-
-
-//XXX deprecated
-bfs::path test_env::create_directory(const bfs::path& dirname) {
-
-    if(!dirname.is_relative()) {
-        throw std::invalid_argument("dirname must be relative!");
-    }
-
-    auto abs_dirname = bfs::absolute(m_base_dir / dirname);
-
-#ifdef __DEBUG_OUTPUT__
-    std::cerr << "mkdir -p " << abs_dirname << "\n";
-#endif // __DEBUG_OUTPUT__
-
-    boost::system::error_code ec;
-    bool res = bfs::create_directories(abs_dirname, ec);
-    REQUIRE(!ec);
-
-    m_dirs.emplace(abs_dirname);
-
-    return abs_dirname;
 }
 
 bfs::path test_env::create_directory(const bfs::path& dirname, const bfs::path& parent) {

@@ -36,6 +36,10 @@
 #include "norns_types.h"
 #include "norns_error.h"
 
+#ifdef __NORNS_DEBUG__
+#include "norns_debug.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

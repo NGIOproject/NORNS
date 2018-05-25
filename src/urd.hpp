@@ -32,7 +32,7 @@
 #include <boost/thread/shared_mutex.hpp>
 
 #include "common.hpp"
-#include "settings.hpp"
+#include "config.hpp"
 #include "backends.hpp"
 #include "logger.hpp"
 #include "api.hpp"
@@ -57,8 +57,7 @@ using request_ptr = std::unique_ptr<api::request>;
 using response_ptr = std::unique_ptr<api::response>;
 
 using backend_ptr = std::shared_ptr<storage::backend>;
-using backend_manager = std::unordered_map<std::string, backend_ptr>;
-using backend_manager_ptr = std::unique_ptr<backend_manager>;
+using namespace_manager = std::unordered_map<std::string, backend_ptr>;
 
 using resource_info_ptr = std::shared_ptr<data::resource_info>;
 using resource_ptr = std::shared_ptr<data::resource>;
@@ -67,9 +66,12 @@ using resource_ptr = std::shared_ptr<data::resource>;
 // forward declarations
 namespace io {
     struct transferor_registry;
-    struct transferor_registry2;
     struct task_manager;
     struct task_stats;
+}
+
+namespace ns {
+    struct namespace_manager;
 }
 
 enum class urd_error;
@@ -82,6 +84,7 @@ public:
     urd();
     ~urd();
     void configure(const config::settings& settings);
+    config::settings get_configuration() const;
     int run();
     void teardown();
 
@@ -89,9 +92,17 @@ private:
     int daemonize();
     void signal_handler(int);
 
+    void init_logger();
+    void init_worker_pool();
     void init_event_handlers();
-    void init_backend_descriptors();
-    void init_transferors();
+    void init_namespace_manager();
+    void init_task_manager();
+    void load_backend_plugins();
+    void load_transfer_plugins();
+    void load_default_namespaces();
+    void print_greeting();
+    void print_configuration();
+    void print_farewell();
 
     urd_error validate_iotask_args(iotask_type type, 
                                    const resource_info_ptr& src_info, 
@@ -105,10 +116,15 @@ private:
     response_ptr job_remove_handler(const request_ptr req);
     response_ptr process_add_handler(const request_ptr req);
     response_ptr process_remove_handler(const request_ptr req);
-    response_ptr backend_register_handler(const request_ptr req);
-    response_ptr backend_update_handler(const request_ptr req);
-    response_ptr backend_remove_handler(const request_ptr req);
+    response_ptr namespace_register_handler(const request_ptr req);
+    response_ptr namespace_update_handler(const request_ptr req);
+    response_ptr namespace_remove_handler(const request_ptr req);
     response_ptr unknown_request_handler(const request_ptr req);
+
+    // TODO: add helpers for remove and update
+    urd_error create_namespace(const config::namespace_def& nsdef);
+    urd_error create_namespace(const std::string& nsid, backend_type type,
+                               const bfs::path& mount, uint32_t quota);
 
 private:
     std::shared_ptr<config::settings>                    m_settings;
@@ -119,17 +135,16 @@ private:
 
 
     api_listener_ptr                                    m_api_listener;
-//    std::list<std::shared_ptr<storage::backend>>        m_backends;
 
-    backend_manager_ptr m_backends;
-    boost::shared_mutex m_backends_mutex;
+    std::unique_ptr<ns::namespace_manager> m_namespace_mgr;
+    mutable boost::shared_mutex m_namespace_mgr_mutex;
 
 
     std::unordered_map<uint32_t, std::shared_ptr<job>>    m_jobs;
     boost::shared_mutex                         m_jobs_mutex;
 
-    std::unique_ptr<io::task_manager> m_task_manager;
-    mutable boost::shared_mutex   m_task_manager_mutex;
+    std::unique_ptr<io::task_manager> m_task_mgr;
+    mutable boost::shared_mutex  m_task_mgr_mutex;
 };
 
 } // namespace norns 

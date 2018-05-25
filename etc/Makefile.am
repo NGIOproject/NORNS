@@ -25,7 +25,7 @@
 #  <http://www.gnu.org/licenses/>.                                       #
 ##########################################################################
 
-ETC_FILES = norns.service
+ETC_FILES=norns.service norns.conf
 
 CLEANFILES=$(ETC_FILES)
 
@@ -33,10 +33,15 @@ edit = sed \
         -e 's|@bindir[@]|$(bindir)|g' \
 		-e 's|@libdir[@]|$(libdir)|g' \
 		-e 's|@sbindir[@]|$(sbindir)|g' \
-		-e 's|@sysconfdir[@]|$(sysconfdir)|g'
+		-e 's|@sysconfdir[@]|$(sysconfdir)|g' \
+		-e 's|@localstatedir[@]|$(localstatedir)|g'
 
 
-noinst_DATA=$(ETC_FILES)
+#noinst_DATA=$(ETC_FILES)
+sysconf_DATA=$(ETC_FILES)
 
 norns.service: Makefile $(srcdir)/norns.service.in
 	$(edit) $(srcdir)/norns.service.in > norns.service
+
+norns.conf: Makefile $(srcdir)/norns.conf.in
+	$(edit) $(srcdir)/norns.conf.in > norns.conf

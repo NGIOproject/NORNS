@@ -34,7 +34,7 @@ SCENARIO("unregister namespace", "[api::norns_unregister_namespace]") {
     GIVEN("a running urd instance") {
 
         test_env env;
-        const char* path_b0 = env.create_directory("mnt/b0").c_str();
+        const bfs::path path_b0 = env.create_directory("mnt/b0", env.basedir());
 
         WHEN("a namespace is unregistered with an invalid prefix") {
 
@@ -58,7 +58,8 @@ SCENARIO("unregister namespace", "[api::norns_unregister_namespace]") {
 
             const char* nsid = "b0://";
 
-            norns_backend_t b0 = NORNS_BACKEND(NORNS_BACKEND_NVML, path_b0, 4096);
+            norns_backend_t b0 = 
+                NORNS_BACKEND(NORNS_BACKEND_NVML, path_b0.c_str(), 4096);
 
             int rv = norns_register_namespace(nsid, &b0);
 
@@ -71,8 +72,11 @@ SCENARIO("unregister namespace", "[api::norns_unregister_namespace]") {
             }
 
         }
+
+        env.notify_success();
     }
 
+#ifndef USE_REAL_DAEMON
     GIVEN("a non-running urd instance") {
         WHEN("attempting to unregister a namespace") {
 
@@ -83,4 +87,5 @@ SCENARIO("unregister namespace", "[api::norns_unregister_namespace]") {
             }
         }
     }
+#endif
 }

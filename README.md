@@ -8,14 +8,16 @@ Build dependencies:
 - libboost-filesystem >= 1.53
 - libboost-program-options >= 1.53
 - libboost-thread >= 1.53
+- libboost-regex >= 1.53 (only if self tests are also built)
 - libprotobuf + protobuf compiler >= 2.5.0
 - libprotobuf-c + protobuf-c compiler >= 1.0.2
 - libyaml-cpp >= 0.5.1
+- libyaml >= 0.1.4
 
 
 - Installation in CentOS 7
 git clone git@git.ph.ed.ac.uk:nextgenio/norns.git && cd norns
-./bootstrap
+./bootstrap.sh
 mkdir <build-dir>
 cd <build-dir>
 ./configure --prefix=<install-dir> --sysconfdir=<config-dir>

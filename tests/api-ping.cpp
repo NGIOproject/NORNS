@@ -30,17 +30,12 @@
 #include "nornsctl.h"
 #include "catch.hpp"
 #include "fake-daemon.hpp"
-
-// enable to test connections with an already running daemon
-//#define USE_REAL_DAEMON
+#include "test-env.hpp"
 
 SCENARIO("ping request", "[api::norns_ping]") {
     GIVEN("a running urd instance") {
 
-#ifndef USE_REAL_DAEMON
-        fake_daemon td;
-        td.run();
-#endif
+        test_env env;
 
         WHEN("pinging urd") {
 
@@ -51,12 +46,10 @@ SCENARIO("ping request", "[api::norns_ping]") {
             }
         }
 
-#ifndef USE_REAL_DAEMON
-        int ret = td.stop();
-        REQUIRE(ret == 0);
-#endif
+        env.notify_success();
     }
 
+#ifndef USE_REAL_DAEMON
     GIVEN("a non-running urd instance") {
         WHEN("pinging urd") {
 
@@ -67,4 +60,5 @@ SCENARIO("ping request", "[api::norns_ping]") {
             }
         }
     }
+#endif
 }

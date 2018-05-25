@@ -38,15 +38,15 @@ namespace utils {
 
 uint64_t parse_size(const std::string& str){
 
-    const uint64_t B_FACTOR = 1;
-    const uint64_t KB_FACTOR = 1e3;
-    const uint64_t KiB_FACTOR = (1 << 10);
-    const uint64_t MB_FACTOR = 1e6;
-    const uint64_t MiB_FACTOR = (1 << 20);
-    const uint64_t GB_FACTOR = 1e9;
-    const uint64_t GiB_FACTOR = (1 << 30);
+    constexpr const uint64_t B_FACTOR = 1;
+    constexpr const uint64_t KB_FACTOR = 1e3;
+    constexpr const uint64_t KiB_FACTOR = (1 << 10);
+    constexpr const uint64_t MB_FACTOR = 1e6;
+    constexpr const uint64_t MiB_FACTOR = (1 << 20);
+    constexpr const uint64_t GB_FACTOR = 1e9;
+    constexpr const uint64_t GiB_FACTOR = (1 << 30);
 
-    std::pair<std::string, uint64_t> conversions[] = {
+    const std::pair<const std::string, const uint64_t> conversions[] = {
         {"GiB", GiB_FACTOR},
         {"GB",  GB_FACTOR},
         {"G",   GB_FACTOR},

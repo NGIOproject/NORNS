@@ -27,19 +27,13 @@
 
 #include "norns.h"
 #include "nornsctl.h"
+#include "test-env.hpp"
 #include "catch.hpp"
-#include "fake-daemon.hpp"
-
-// enable to test connections with an already running daemon
-//#define USE_REAL_DAEMON
 
 SCENARIO("update job", "[api::norns_update_job]") {
     GIVEN("a running urd instance") {
 
-#ifndef USE_REAL_DAEMON
-        fake_daemon td;
-        td.run();
-#endif
+        test_env env;
 
         WHEN("a non-registered job is updated with invalid information") {
 
@@ -136,12 +130,10 @@ SCENARIO("update job", "[api::norns_update_job]") {
             }
         }
 
-#ifndef USE_REAL_DAEMON
-        int ret = td.stop();
-        REQUIRE(ret == 0);
-#endif
+        env.notify_success();
     }
 
+#ifndef USE_REAL_DAEMON
     GIVEN("a non-running urd instance") {
         WHEN("attempting to update a job") {
 
@@ -167,4 +159,5 @@ SCENARIO("update job", "[api::norns_update_job]") {
             }
         }
     }
+#endif
 }

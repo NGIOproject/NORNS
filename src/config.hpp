@@ -25,63 +25,11 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#ifndef __SETTINGS_HPP__
-#define __SETTINGS_HPP__
+#ifndef __NORNS_CONFIG_HPP__
+#define __NORNS_CONFIG_HPP__
 
-#include <thread>
-#include <list>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/filesystem.hpp>
+#include "config/defaults.hpp"
+#include "config/settings.hpp"
 
-#include <netinet/in.h>
 
-#include "defaults.hpp"
-
-namespace bpt = boost::property_tree;
-namespace bfs = boost::filesystem;
-
-namespace norns {
-namespace config {
-
-struct settings {
-
-    struct backend {
-
-        backend(const std::string& name, const std::string& type, const std::string& description, 
-                const uint64_t capacity, const bpt::ptree& options)
-            : m_name(name),
-              m_type(type),
-              m_description(description),
-              m_capacity(capacity),
-              m_options(options) { }
-
-        const std::string m_name;
-        const std::string m_type;
-        const std::string m_description;
-        const uint64_t    m_capacity;
-        const bpt::ptree  m_options;
-    };
-
-    void load(const std::string& filename);
-
-    std::string        m_progname;
-    bool               m_daemonize;
-    bool               m_use_syslog;
-
-    bool               m_dry_run;          /* run fake tasks (useful for testing) */
-
-    std::string        m_global_socket;
-    std::string        m_control_socket;
-    in_port_t          m_remote_port;
-
-    std::string        m_daemon_pidfile;
-    uint32_t           m_workers_in_pool;
-    std::string        m_storage_path;     /* path to internal storage */
-    uint64_t           m_storage_capacity; /* internal storage's max capacity */
-    std::list<backend> m_backends;         /* list of backend descriptions */
-};
-
-} // namespace config
-} // namespace norns
-
-#endif /* __SETTINGS_HPP__ */
+#endif /* __NORNS_CONFIG_HPP__ */

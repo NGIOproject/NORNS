@@ -33,6 +33,7 @@
 #include <boost/filesystem.hpp>
 
 #include "api/session.hpp"
+#include "logger.hpp"
 
 namespace ba = boost::asio;
 namespace bfs = boost::filesystem;
@@ -55,7 +56,13 @@ public:
         m_dispatcher(dispatcher) { }
 
     ~local_endpoint() {
-        bfs::remove(m_sockfile);
+        boost::system::error_code ec;
+        bfs::remove(m_sockfile, ec);
+
+        if(ec) {
+            LOGGER_ERROR("Failed to remove sockfile {}: {}", 
+                    m_sockfile, ec.message());
+        }
     }
 
     void do_accept() {

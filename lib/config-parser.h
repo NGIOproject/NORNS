@@ -25,26 +25,18 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#ifndef __DEFAULTS_HPP__
-#define __DEFAULTS_HPP__
+#ifndef __CONF_PARSER_H__
+#define __CONF_PARSER_H__
 
-#include <cstdint>
-#include <netinet/in.h>
+#include <unistd.h>
 
+struct kvpair {
+    const char* key;
+    const char* val; 
+};
 
-namespace norns {
-namespace defaults {
-    extern const char*      progname;
-    extern const bool       daemonize;
-    extern const bool       use_syslog;
-    extern const bool       dry_run;
-    extern const char*      global_socket;
-    extern const char*      control_socket;
-    extern const in_port_t  remote_port;
-    extern const char*      pidfile;
-    extern const uint32_t   workers_in_pool;
-    extern const char*      config_file;
-} // namespace defaults
-} // namespace norns
+int parse_config_file(const char* config_file, struct kvpair valid_opts[],
+                      size_t num_valid_opts);
 
-#endif /* __DEFAULTS_HPP__ */
+#endif /* __CONF_PARSER_H__ */
+

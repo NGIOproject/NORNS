@@ -31,24 +31,92 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdarg.h>
+#include <stdlib.h>
+#include <errno.h>
 
 #include "nornsctl.h"
+#include "libnornsctl-context.h"
 
+#include "config-parser.h"
 #include "log.h"
 #include "xmalloc.h"
+#include "xstring.h"
 #include "communication.h"
+#include "defaults.h"
 
 #define LIBNORNSCTL_LOG_PREFIX "libnornsctl"
 
 static bool validate_job(norns_job_t* job);
 static bool validate_namespace(norns_backend_t* backend);
 
+static void
+load_config_file(void) {
+
+    const char* config_file = NULL;
+
+    if((config_file = getenv("NORNS_CONFIG_FILE")) == NULL) {
+        config_file = norns_default_config_file;
+    }
+
+    DBG("Loading configuration file \"%s\"", config_file);
+
+    if(access(config_file, R_OK) == -1) {
+        FATAL("!Failed to access norns configuration file");
+    }
+
+    struct kvpair valid_opts[] = {
+        { "global_socket",  NULL },
+    };
+
+    size_t num_valid_opts = sizeof(valid_opts) / sizeof(valid_opts[0]);
+
+    if(parse_config_file(config_file, valid_opts, num_valid_opts) != 0) {
+        FATAL("Failed to parse norns configuration file"); 
+    }
+
+    struct libnornsctl_context* ctx = libnornsctl_get_context();
+
+    if(ctx == NULL) {
+        FATAL("Failed to retrieve library context");
+    }
+    
+    ctx->config_file = xstrdup(config_file);
+    ctx->api_socket = xstrdup(valid_opts[0].val);
+
+    xfree(valid_opts[0].val);
+}
+
 __attribute__((constructor))
 static void
 libnornsctl_init(void) {
-    log_init(LIBNORNSCTL_LOG_PREFIX);
+
+    FILE* logfp = stderr;
+
+#ifdef __NORNS_DEBUG__
+    // parse relevant environment variables
+    if(getenv("NORNS_DEBUG_OUTPUT_TO_STDERR") == NULL) {
+        logfp = NULL;
+    }
+#endif
+
+    log_init(LIBNORNSCTL_LOG_PREFIX, logfp);
+    libnornsctl_create_context();
+    load_config_file();
 }
 
+__attribute__((destructor))
+static void
+libnornsctl_fini(void) {
+    libnornsctl_destroy_context();
+}
+
+#ifdef __NORNS_DEBUG__
+void
+libnornsctl_reload_config_file(void) {
+    DBG("Reloading configuration file");
+    load_config_file();
+}
+#endif
 
 /* Control API */
 norns_error_t

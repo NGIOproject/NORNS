@@ -32,7 +32,7 @@
 #include <sys/wait.h>
 
 #include <urd.hpp>
-#include <settings.hpp>
+#include <config.hpp>
 
 struct fake_daemon_cfg {
 
@@ -46,13 +46,15 @@ struct fake_daemon {
 
     fake_daemon();
     ~fake_daemon();
-    void configure(const fake_daemon_cfg& cfg);
+    void configure(const bfs::path& config_file, const fake_daemon_cfg& override_cfg);
+    void configure(const bfs::path& config_file);
     void run();
     int stop();
 
     pid_t m_pid = 0;
     bool m_running = false;
     norns::urd m_daemon;
+    norns::config::settings m_config;
 };
 
 #endif /* __FAKE_DAEMON_HPP__ */

@@ -44,17 +44,17 @@ namespace bfs = boost::filesystem;
 
 struct test_env {
 
-    test_env(bool cleanup=true);
-    test_env(const fake_daemon_cfg& cfg, bool cleanup=true);
+    test_env();
+    test_env(const fake_daemon_cfg& cfg);
     ~test_env();
+
+    bfs::path basedir() const;
 
     std::tuple<const char*, bfs::path> create_namespace(std::string nsid, bfs::path mnt, size_t quota);
     bfs::path add_to_namespace(const std::string& nsid, const bfs::path& dirname);
     bfs::path add_to_namespace(const std::string& nsid, const bfs::path& filename, std::size_t size);
     bfs::path add_to_namespace(const std::string& nsid, const bfs::path& src, const bfs::path& linkname);
     bfs::path get_from_namespace(const std::string& nsid, const bfs::path& name) const;
-    // NOTE: dirname must be relative to the CWD
-    bfs::path create_directory(const bfs::path& dirname) __attribute__((deprecated));
     bfs::path create_directory(const bfs::path& dirname, const bfs::path& parent);
     bfs::path create_file(const bfs::path& name, const bfs::path& parent, std::size_t size);
     bfs::path create_symlink(const bfs::path& src_name, const bfs::path& link_name, const bfs::path& parent);
@@ -63,13 +63,17 @@ struct test_env {
 
     void teardown_namespace(const std::string nsid);
 
-    bool m_cleanup;
+    void notify_success();
+    void cleanup();
+
+    bool m_test_succeeded;
     std::string m_uid;
     bfs::path m_base_dir;
 
 #ifndef USE_REAL_DAEMON
     fake_daemon m_td;
 #endif
+
     std::set<bfs::path> m_dirs;
     std::unordered_map<std::string, bfs::path> m_namespaces;
     std::vector<bfs::path> m_unacessible_paths;

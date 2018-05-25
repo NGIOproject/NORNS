@@ -41,6 +41,10 @@
 #include "norns_backends.h"
 #include "norns_resources.h"
 
+#ifdef __NORNS_DEBUG__
+#include "norns_debug.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

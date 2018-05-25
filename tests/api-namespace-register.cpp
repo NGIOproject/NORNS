@@ -34,8 +34,8 @@ SCENARIO("register namespace", "[api::norns_register_namespace]") {
     GIVEN("a running urd instance") {
 
         test_env env;
-        const char* path_b0 = env.create_directory("mnt/b0").c_str();
-        const char* path_b1 = env.create_directory("mnt/b1").c_str();
+        const bfs::path path_b0 = env.create_directory("mnt/b0", env.basedir()); 
+        const bfs::path path_b1 = env.create_directory("mnt/b0", env.basedir()); 
 
         WHEN("a namespace is registered with invalid information") {
 
@@ -48,7 +48,8 @@ SCENARIO("register namespace", "[api::norns_register_namespace]") {
 
         WHEN("a namespace is registered with an invalid nsid") {
 
-            norns_backend_t b0 = NORNS_BACKEND(NORNS_BACKEND_NVML, path_b0, 1024);
+            norns_backend_t b0 = 
+                NORNS_BACKEND(NORNS_BACKEND_NVML, path_b0.c_str(), 1024);
 
             int rv = norns_register_namespace(NULL, &b0);
 
@@ -59,7 +60,8 @@ SCENARIO("register namespace", "[api::norns_register_namespace]") {
 
         WHEN("a namespace is registered with an invalid nsid") {
 
-            norns_backend_t b0 = NORNS_BACKEND(NORNS_BACKEND_NVML, path_b0, 1024);
+            norns_backend_t b0 = 
+                NORNS_BACKEND(NORNS_BACKEND_NVML, path_b0.c_str(), 1024);
 
             int rv = norns_register_namespace("", &b0);
 
@@ -102,7 +104,8 @@ SCENARIO("register namespace", "[api::norns_register_namespace]") {
         }
 
         WHEN("a namespace is registered with an invalid quota") {
-            norns_backend_t b0 = NORNS_BACKEND(NORNS_BACKEND_NVML, path_b0, 0);
+            norns_backend_t b0 = 
+                NORNS_BACKEND(NORNS_BACKEND_NVML, path_b0.c_str(), 0);
 
             int rv = norns_register_namespace("b0://", &b0);
 
@@ -112,7 +115,8 @@ SCENARIO("register namespace", "[api::norns_register_namespace]") {
         }
 
         WHEN("a namespace is registered with valid information") {
-            norns_backend_t b0 = NORNS_BACKEND(NORNS_BACKEND_NVML, path_b0, 4096);
+            norns_backend_t b0 = 
+                NORNS_BACKEND(NORNS_BACKEND_NVML, path_b0.c_str(), 4096);
 
             int rv = norns_register_namespace("b0://", &b0);
 
@@ -122,8 +126,10 @@ SCENARIO("register namespace", "[api::norns_register_namespace]") {
         }
 
         WHEN("attempting to register a namespace with a duplicate nsid") {
-            norns_backend_t b0 = NORNS_BACKEND(NORNS_BACKEND_NVML, path_b0, 4096);
-            norns_backend_t b1 = NORNS_BACKEND(NORNS_BACKEND_NVML, path_b1, 4096);
+            norns_backend_t b0 = 
+                NORNS_BACKEND(NORNS_BACKEND_NVML, path_b0.c_str(), 4096);
+            norns_backend_t b1 = 
+                NORNS_BACKEND(NORNS_BACKEND_NVML, path_b1.c_str(), 4096);
 
             int rv = norns_register_namespace("b0://", &b0);
 
@@ -135,8 +141,11 @@ SCENARIO("register namespace", "[api::norns_register_namespace]") {
                 REQUIRE(rv == NORNS_ENAMESPACEEXISTS);
             }
         }
+
+        env.notify_success();
     }
 
+#ifndef USE_REAL_DAEMON
     GIVEN("a non-running urd instance") {
         WHEN("attempting to register a namespace") {
 
@@ -149,4 +158,5 @@ SCENARIO("register namespace", "[api::norns_register_namespace]") {
             }
         }
     }
+#endif
 }
