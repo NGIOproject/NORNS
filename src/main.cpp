@@ -64,7 +64,7 @@ int main(int argc, char* argv[]){
     }
 
     if(!bfs::exists(cfg.config_file())) {
-        std::cerr << "Service configuration file " << cfg.config_file() << "\n";
+        std::cerr << "Failed to access service configuration file " << cfg.config_file() << "\n";
         exit(EXIT_FAILURE);
     }
 
