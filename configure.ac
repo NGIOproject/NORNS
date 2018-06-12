@@ -39,6 +39,10 @@ AC_PROG_AWK
 AC_PROG_CXX
 AC_PROG_CC
 
+AC_PATH_PROG([FILE], [file])
+AS_IF([test "x${FILE}" == "x"],
+      [AC_MSG_ERROR([The file utility was not found in $PATH. Please install it and rerun.])])
+
 LT_INIT
 
 # check that c++11 is supported by the compiler
