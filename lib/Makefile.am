@@ -80,7 +80,8 @@ libnorns_common_la_CFLAGS = \
 
 libnorns_common_la_LIBADD = \
 	@PROTOBUF_C_LIBS@ \
-	@YAML_LIBS@
+	@YAML_LIBS@ \
+	-lpthread
 
 
 
