@@ -30,7 +30,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 17
+#serial 18
 
 AC_DEFUN([AX_BOOST_ASIO],
 [
@@ -39,15 +39,15 @@ AC_DEFUN([AX_BOOST_ASIO],
                    [use the ASIO library from boost - it is possible to specify a certain library for the linker
                         e.g. --with-boost-asio=boost_system-gcc41-mt-1_34 ]),
         [
-        if test "$withval" = "no"; then
-            want_boost="no"
-        elif test "$withval" = "yes"; then
-            want_boost="yes"
-            ax_boost_user_asio_lib=""
-        else
-            want_boost="yes"
-        ax_boost_user_asio_lib="$withval"
-        fi
+            if test "$withval" = "no"; then
+                want_boost="no"
+            elif test "$withval" = "yes"; then
+                want_boost="yes"
+                ax_boost_user_asio_lib=""
+            else
+                want_boost="yes"
+            ax_boost_user_asio_lib="$withval"
+            fi
         ],
         [want_boost="yes"]
     )
@@ -62,7 +62,7 @@ AC_DEFUN([AX_BOOST_ASIO],
         LDFLAGS="$LDFLAGS $BOOST_LDFLAGS"
         export LDFLAGS
 
-        AC_CACHE_CHECK(whether the Boost::ASIO library is available,
+        AC_CACHE_CHECK(whether the Boost::ASIO library headers are available,
                        ax_cv_boost_asio,
         [AC_LANG_PUSH([C++])
          AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ @%:@include <boost/asio.hpp>
@@ -79,32 +79,37 @@ AC_DEFUN([AX_BOOST_ASIO],
                              ax_cv_boost_asio=yes, ax_cv_boost_asio=no)
          AC_LANG_POP([C++])
         ])
+
         if test "x$ax_cv_boost_asio" = "xyes"; then
+            ax_lib=""
             AC_DEFINE(HAVE_BOOST_ASIO,,[define if the Boost::ASIO library is available])
             BN=boost_system
             BOOSTLIBDIR=`echo $BOOST_LDFLAGS | sed -e 's/@<:@^\/@:>@*//'`
             if test "x$ax_boost_user_asio_lib" = "x"; then
-                for ax_lib in `ls $BOOSTLIBDIR/libboost_system*.so* $BOOSTLIBDIR/libboost_system*.dylib* $BOOSTLIBDIR/libboost_system*.a* 2>/dev/null | sed 's,.*/,,' | sed -e 's;^lib\(boost_system.*\)\.so.*$;\1;' -e 's;^lib\(boost_system.*\)\.dylib.*$;\1;' -e 's;^lib\(boost_system.*\)\.a.*$;\1;' ` ; do
+                for ax_lib in `ls $BOOSTLIBDIR/libboost_system*.so* $BOOSTLIBDIR/libboost_system*.dylib* $BOOSTLIBDIR/libboost_system*.a* 2>/dev/null | sed 's,.*/,,' | sed -e 's;^lib\(boost_system.*\)\.so.*$;\1;' -e 's;^lib\(boost_system.*\)\.dylib.*$;\1;' -e 's;^lib\(boost_system.*\)\.a.*$;\1;' ` ; 
+                do
+                    AC_MSG_NOTICE([checking whether the Boost::ASIO library is available...])
                     AC_CHECK_LIB($ax_lib, main, [BOOST_ASIO_LIB="-l$ax_lib" AC_SUBST(BOOST_ASIO_LIB) link_thread="yes" break],
                                  [link_thread="no"])
                 done
             else
-               for ax_lib in $ax_boost_user_asio_lib $BN-$ax_boost_user_asio_lib; do
-                      AC_CHECK_LIB($ax_lib, main,
-                                   [BOOST_ASIO_LIB="-l$ax_lib" AC_SUBST(BOOST_ASIO_LIB) link_asio="yes" break],
-                                   [link_asio="no"])
-                  done
-
+                for ax_lib in $ax_boost_user_asio_lib $BN-$ax_boost_user_asio_lib; 
+                do
+                    AC_MSG_NOTICE([checking whether the Boost::ASIO library is available...])
+                    AC_CHECK_LIB($ax_lib, main,
+                                 [BOOST_ASIO_LIB="-l$ax_lib" AC_SUBST(BOOST_ASIO_LIB) link_asio="yes" break],
+                                 [link_asio="no"])
+                done
             fi
             if test "x$ax_lib" = "x"; then
-                AC_MSG_ERROR(Could not find a version of the library!)
+                AC_MSG_ERROR([Could not find a version of the Boost::ASIO library!])
             fi
             if test "x$link_asio" = "xno"; then
-                AC_MSG_ERROR(Could not link against $ax_lib !)
+                AC_MSG_ERROR([Could not link against [$ax_lib] !])
             fi
         fi
 
         CPPFLAGS="$CPPFLAGS_SAVED"
-    LDFLAGS="$LDFLAGS_SAVED"
+        LDFLAGS="$LDFLAGS_SAVED"
     fi
 ])
