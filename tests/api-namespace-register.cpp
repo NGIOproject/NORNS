@@ -30,7 +30,7 @@
 #include "test-env.hpp"
 #include "catch.hpp"
 
-SCENARIO("register namespace", "[api::norns_register_namespace]") {
+SCENARIO("register namespace", "[api::nornsctl_register_namespace]") {
     GIVEN("a running urd instance") {
 
         test_env env;
@@ -39,7 +39,7 @@ SCENARIO("register namespace", "[api::norns_register_namespace]") {
 
         WHEN("a namespace is registered with invalid information") {
 
-            int rv = norns_register_namespace(NULL, NULL);
+            int rv = nornsctl_register_namespace(NULL, NULL);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -51,7 +51,7 @@ SCENARIO("register namespace", "[api::norns_register_namespace]") {
             norns_backend_t b0 = 
                 NORNS_BACKEND(NORNS_BACKEND_NVML, path_b0.c_str(), 1024);
 
-            int rv = norns_register_namespace(NULL, &b0);
+            int rv = nornsctl_register_namespace(NULL, &b0);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -63,7 +63,7 @@ SCENARIO("register namespace", "[api::norns_register_namespace]") {
             norns_backend_t b0 = 
                 NORNS_BACKEND(NORNS_BACKEND_NVML, path_b0.c_str(), 1024);
 
-            int rv = norns_register_namespace("", &b0);
+            int rv = nornsctl_register_namespace("", &b0);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -75,7 +75,7 @@ SCENARIO("register namespace", "[api::norns_register_namespace]") {
 
             norns_backend_t b0 = NORNS_BACKEND("b0", 42, path_b0, 1024);
 
-            int rv = norns_register_namespace(&b0);
+            int rv = nornsctl_register_namespace(&b0);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -86,7 +86,7 @@ SCENARIO("register namespace", "[api::norns_register_namespace]") {
         WHEN("a namespace is registered with an invalid mount point") {
             norns_backend_t b0 = NORNS_BACKEND(NORNS_BACKEND_NVML, "", 1024);
 
-            int rv = norns_register_namespace("b0://", &b0);
+            int rv = nornsctl_register_namespace("b0://", &b0);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -96,7 +96,7 @@ SCENARIO("register namespace", "[api::norns_register_namespace]") {
         WHEN("a namespace is registered with an invalid mount point") {
             norns_backend_t b0 = NORNS_BACKEND(NORNS_BACKEND_NVML, NULL, 1024);
 
-            int rv = norns_register_namespace("b0://", &b0);
+            int rv = nornsctl_register_namespace("b0://", &b0);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -107,7 +107,7 @@ SCENARIO("register namespace", "[api::norns_register_namespace]") {
             norns_backend_t b0 = 
                 NORNS_BACKEND(NORNS_BACKEND_NVML, path_b0.c_str(), 0);
 
-            int rv = norns_register_namespace("b0://", &b0);
+            int rv = nornsctl_register_namespace("b0://", &b0);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -118,7 +118,7 @@ SCENARIO("register namespace", "[api::norns_register_namespace]") {
             norns_backend_t b0 = 
                 NORNS_BACKEND(NORNS_BACKEND_NVML, path_b0.c_str(), 4096);
 
-            int rv = norns_register_namespace("b0://", &b0);
+            int rv = nornsctl_register_namespace("b0://", &b0);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -131,11 +131,11 @@ SCENARIO("register namespace", "[api::norns_register_namespace]") {
             norns_backend_t b1 = 
                 NORNS_BACKEND(NORNS_BACKEND_NVML, path_b1.c_str(), 4096);
 
-            int rv = norns_register_namespace("b0://", &b0);
+            int rv = nornsctl_register_namespace("b0://", &b0);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_register_namespace("b0://", &b1);
+            rv = nornsctl_register_namespace("b0://", &b1);
 
             THEN("NORNS_ENAMESPACEEXISTS is returned") {
                 REQUIRE(rv == NORNS_ENAMESPACEEXISTS);
@@ -151,7 +151,7 @@ SCENARIO("register namespace", "[api::norns_register_namespace]") {
 
             norns_backend_t b0 = NORNS_BACKEND(NORNS_BACKEND_NVML, "mnt/foo", 1024);
 
-            int rv = norns_register_namespace("b0://", &b0);
+            int rv = nornsctl_register_namespace("b0://", &b0);
 
             THEN("NORNS_ECONNFAILED is returned") {
                 REQUIRE(rv == NORNS_ECONNFAILED);

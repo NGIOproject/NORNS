@@ -30,7 +30,7 @@
 #include "test-env.hpp"
 #include "catch.hpp"
 
-SCENARIO("unregister namespace", "[api::norns_unregister_namespace]") {
+SCENARIO("unregister namespace", "[api::nornsctl_unregister_namespace]") {
     GIVEN("a running urd instance") {
 
         test_env env;
@@ -38,7 +38,7 @@ SCENARIO("unregister namespace", "[api::norns_unregister_namespace]") {
 
         WHEN("a namespace is unregistered with an invalid prefix") {
 
-            int rv = norns_unregister_namespace(NULL);
+            int rv = nornsctl_unregister_namespace(NULL);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -47,7 +47,7 @@ SCENARIO("unregister namespace", "[api::norns_unregister_namespace]") {
 
         WHEN("attempting to unregister a non-existing namespace") {
 
-            int rv = norns_unregister_namespace("b0://");
+            int rv = nornsctl_unregister_namespace("b0://");
 
             THEN("NORNS_ENOSUCHNAMESPACE is returned") {
                 REQUIRE(rv == NORNS_ENOSUCHNAMESPACE);
@@ -61,11 +61,11 @@ SCENARIO("unregister namespace", "[api::norns_unregister_namespace]") {
             norns_backend_t b0 = 
                 NORNS_BACKEND(NORNS_BACKEND_NVML, path_b0.c_str(), 4096);
 
-            int rv = norns_register_namespace(nsid, &b0);
+            int rv = nornsctl_register_namespace(nsid, &b0);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_namespace(nsid);
+            rv = nornsctl_unregister_namespace(nsid);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -80,7 +80,7 @@ SCENARIO("unregister namespace", "[api::norns_unregister_namespace]") {
     GIVEN("a non-running urd instance") {
         WHEN("attempting to unregister a namespace") {
 
-            int rv = norns_unregister_namespace("b0://");
+            int rv = nornsctl_unregister_namespace("b0://");
 
             THEN("NORNS_ECONNFAILED is returned") {
                 REQUIRE(rv == NORNS_ECONNFAILED);

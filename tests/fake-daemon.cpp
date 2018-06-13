@@ -105,7 +105,7 @@ void fake_daemon::run() {
 
         do {
             std::this_thread::sleep_for(std::chrono::microseconds(200));
-            rv = norns_ping();
+            rv = nornsctl_ping();
         } while(rv != NORNS_SUCCESS && --retries != 0);
 
         if(retries == 0) {

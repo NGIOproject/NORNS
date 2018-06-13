@@ -88,35 +88,35 @@ void norns_job_init(norns_job_t* job, const char** hosts, size_t nhosts,
                     norns_job_limit_t** limits, size_t nlimits) __THROW;
 
 /* Check if the urd daemon is running */
-norns_error_t norns_ping() __THROW;
+norns_error_t nornsctl_ping() __THROW;
 
 /* Send a command to the daemon (e.g. stop accepting new tasks) */
 //norns_error_t norns_command();
 
 /* Register a batch job into the system */
-norns_error_t norns_register_job(uint32_t jobid, norns_job_t* job) __THROW;
+norns_error_t nornsctl_register_job(uint32_t jobid, norns_job_t* job) __THROW;
 
 /* Update an existing batch job */
 /* XXX: At the moment this invalidates all registered processes for this job */
-norns_error_t norns_update_job(uint32_t jobid, norns_job_t* job) __THROW;
+norns_error_t nornsctl_update_job(uint32_t jobid, norns_job_t* job) __THROW;
 
 /* Remove a batch job from the system */
-norns_error_t norns_unregister_job(uint32_t jobid) __THROW;
+norns_error_t nornsctl_unregister_job(uint32_t jobid) __THROW;
 
 /* Add a process to a registered batch job */
-norns_error_t norns_add_process(uint32_t jobid, uid_t uid, gid_t gid, pid_t pid) __THROW;
+norns_error_t nornsctl_add_process(uint32_t jobid, uid_t uid, gid_t gid, pid_t pid) __THROW;
 
 /* Remove a process from a registered batch job */
-norns_error_t norns_remove_process(uint32_t jobid, uid_t uid, gid_t gid, pid_t pid) __THROW;
+norns_error_t nornsctl_remove_process(uint32_t jobid, uid_t uid, gid_t gid, pid_t pid) __THROW;
 
 /* Register a namespace in the local norns server */
-norns_error_t norns_register_namespace(const char* nsid, norns_backend_t* backend) __THROW;
+norns_error_t nornsctl_register_namespace(const char* nsid, norns_backend_t* backend) __THROW;
 
 /* Update an existing namespace in the local norns server */
-norns_error_t norns_update_namespace(const char* nsid, norns_backend_t* backend) __THROW;
+norns_error_t nornsctl_update_namespace(const char* nsid, norns_backend_t* backend) __THROW;
 
 /* Unregister a namespace from the local norns server */
-norns_error_t norns_unregister_namespace(const char* nsid) __THROW;
+norns_error_t nornsctl_unregister_namespace(const char* nsid) __THROW;
 
 /* Return a string describing the error number */
 char* norns_strerror(norns_error_t errnum) __THROW;

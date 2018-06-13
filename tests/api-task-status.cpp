@@ -61,7 +61,7 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_path = "/a/b/c";
 
             norns_backend_t bdst = NORNS_BACKEND(NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
-            norns_error_t rv = norns_register_namespace(dst_nsid, &bdst);
+            norns_error_t rv = nornsctl_register_namespace(dst_nsid, &bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -83,7 +83,7 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_namespace(dst_nsid);
+            rv = nornsctl_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 /*
@@ -122,7 +122,7 @@ SCENARIO("check request", "[api::norns_status]") {
 
             norns_backend_t ns = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 1024);
 
-            norns_error_t rv = norns_register_namespace(&b);
+            norns_error_t rv = nornsctl_register_namespace(&b);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
@@ -136,7 +136,7 @@ SCENARIO("check request", "[api::norns_status]") {
                 REQUIRE(rv == NORNS_ENOSUCHBACKEND);
             }
 
-            rv = norns_unregister_namespace(dst_nsid);
+            rv = nornsctl_unregister_namespace(dst_nsid);
 
             REQUIRE(rv == NORNS_SUCCESS);
         }
@@ -154,7 +154,7 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_path = "/a/b/c";
 
             norns_backend_t ns = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 1024);
-            norns_error_t rv = norns_register_namespace(&b);
+            norns_error_t rv = nornsctl_register_namespace(&b);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
@@ -168,7 +168,7 @@ SCENARIO("check request", "[api::norns_status]") {
                 REQUIRE(rv == NORNS_ENOSUCHBACKEND);
             }
 
-            rv = norns_unregister_namespace(src_nsid);
+            rv = nornsctl_unregister_namespace(src_nsid);
 
             REQUIRE(rv == NORNS_SUCCESS);
         }
@@ -193,7 +193,7 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_path = "/a/b/c";
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
-            norns_error_t rv = norns_register_namespace(&bdst);
+            norns_error_t rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -208,10 +208,10 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_namespace(src_nsid);
+            rv = nornsctl_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_namespace(dst_nsid);
+            rv = nornsctl_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -228,7 +228,7 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_path = "/a/b/c";
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
-            norns_error_t rv = norns_register_namespace(&bdst);
+            norns_error_t rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
 
@@ -244,10 +244,10 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_namespace(src_nsid);
+            rv = nornsctl_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_namespace(dst_nsid);
+            rv = nornsctl_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -265,7 +265,7 @@ SCENARIO("check request", "[api::norns_status]") {
 
             /*
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
-            norns_error_t rv = norns_register_namespace(&bdst);
+            norns_error_t rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
             */
 
@@ -281,7 +281,7 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_namespace(src_nsid);
+            rv = nornsctl_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -299,11 +299,11 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_path = "/a/b/c";
 
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(&bsrc);
+            norns_error_t rv = nornsctl_register_namespace(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
-            rv = norns_register_namespace(&bdst);
+            rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -318,10 +318,10 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_namespace(src_nsid);
+            rv = nornsctl_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_namespace(dst_nsid);
+            rv = nornsctl_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -338,11 +338,11 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_path = "/a/b/c";
 
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(&bsrc);
+            norns_error_t rv = nornsctl_register_namespace(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
-            rv = norns_register_namespace(&bdst);
+            rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -357,10 +357,10 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_namespace(src_nsid);
+            rv = nornsctl_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_namespace(dst_nsid);
+            rv = nornsctl_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -378,12 +378,12 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_path = "/a/b/c";
 
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(&bsrc);
+            norns_error_t rv = nornsctl_register_namespace(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             /*
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_NVML, dst_mnt, 8192);
-            rv = norns_register_namespace(&bdst);
+            rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
             */
 
@@ -399,7 +399,7 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_namespace(src_nsid);
+            rv = nornsctl_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -417,7 +417,7 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_path = "/b/c/d";
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_NVML, dst_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(&bdst);
+            norns_error_t rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -431,7 +431,7 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_namespace(dst_nsid);
+            rv = nornsctl_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -449,7 +449,7 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_path = "/b/c/d";
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(&bdst);
+            norns_error_t rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -463,7 +463,7 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_namespace(dst_nsid);
+            rv = nornsctl_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -506,7 +506,7 @@ SCENARIO("check request", "[api::norns_status]") {
 
 
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(&bsrc);
+            norns_error_t rv = nornsctl_register_namespace(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -520,10 +520,10 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_namespace(src_nsid);
+            rv = nornsctl_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_namespace(dst_nsid);
+            rv = nornsctl_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -542,7 +542,7 @@ SCENARIO("check request", "[api::norns_status]") {
 
 
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_LUSTRE, src_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(&bsrc);
+            norns_error_t rv = nornsctl_register_namespace(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -556,10 +556,10 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_namespace(src_nsid);
+            rv = nornsctl_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_namespace(dst_nsid);
+            rv = nornsctl_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -586,7 +586,7 @@ SCENARIO("check request", "[api::norns_status]") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
             }
 
-            rv = norns_unregister_namespace(dst_nsid);
+            rv = nornsctl_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -608,7 +608,7 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_path = "/a/b/c";
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
-            norns_error_t rv = norns_register_namespace(&bdst);
+            norns_error_t rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -623,10 +623,10 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_namespace(src_nsid);
+            rv = nornsctl_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_namespace(dst_nsid);
+            rv = nornsctl_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -643,7 +643,7 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_path = "/a/b/c";
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
-            rv = norns_register_namespace(&bdst);
+            rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
 
@@ -659,10 +659,10 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_namespace(src_nsid);
+            rv = nornsctl_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_namespace(dst_nsid);
+            rv = nornsctl_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -680,7 +680,7 @@ SCENARIO("check request", "[api::norns_status]") {
 
             /*
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
-            rv = norns_register_namespace(&bdst);
+            rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
             */
 
@@ -696,7 +696,7 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_namespace(src_nsid);
+            rv = nornsctl_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -714,11 +714,11 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_path = "/a/b/c";
 
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(&bsrc);
+            norns_error_t rv = nornsctl_register_namespace(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
-            rv = norns_register_namespace(&bdst);
+            rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -733,10 +733,10 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_namespace(src_nsid);
+            rv = nornsctl_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_namespace(dst_nsid);
+            rv = nornsctl_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -753,11 +753,11 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_path = "/a/b/c";
 
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(&bsrc);
+            norns_error_t rv = nornsctl_register_namespace(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 8192);
-            rv = norns_register_namespace(&bdst);
+            rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -772,10 +772,10 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_namespace(src_nsid);
+            rv = nornsctl_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_namespace(dst_nsid);
+            rv = nornsctl_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -793,12 +793,12 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_path = "/a/b/c";
 
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(&bsrc);
+            norns_error_t rv = nornsctl_register_namespace(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             /*
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_NVML, dst_mnt, 8192);
-            rv = norns_register_namespace(&bdst);
+            rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
             */
 
@@ -814,7 +814,7 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_namespace(src_nsid);
+            rv = nornsctl_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -832,7 +832,7 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_path = "/b/c/d";
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_NVML, dst_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(&bdst);
+            norns_error_t rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -846,7 +846,7 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_namespace(dst_nsid);
+            rv = nornsctl_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -864,7 +864,7 @@ SCENARIO("check request", "[api::norns_status]") {
             const char* dst_path = "/b/c/d";
 
             norns_backend_t bdst = NORNS_BACKEND(dst_nsid, NORNS_BACKEND_LUSTRE, dst_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(&bdst);
+            norns_error_t rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -878,7 +878,7 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_namespace(dst_nsid);
+            rv = nornsctl_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -921,7 +921,7 @@ SCENARIO("check request", "[api::norns_status]") {
 
 
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_NVML, src_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(&bsrc);
+            norns_error_t rv = nornsctl_register_namespace(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -935,10 +935,10 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_namespace(src_nsid);
+            rv = nornsctl_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_namespace(dst_nsid);
+            rv = nornsctl_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -957,7 +957,7 @@ SCENARIO("check request", "[api::norns_status]") {
 
 
             norns_backend_t bsrc = NORNS_BACKEND(src_nsid, NORNS_BACKEND_LUSTRE, src_mnt, 16384);
-            norns_error_t rv = norns_register_namespace(&bsrc);
+            norns_error_t rv = nornsctl_register_namespace(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
             norns_iotask_t task = NORNS_IOTASK(task_op, 
@@ -971,10 +971,10 @@ SCENARIO("check request", "[api::norns_status]") {
             }
 
             // cleanup
-            rv = norns_unregister_namespace(src_nsid);
+            rv = nornsctl_unregister_namespace(src_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_namespace(dst_nsid);
+            rv = nornsctl_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 
@@ -1001,7 +1001,7 @@ SCENARIO("check request", "[api::norns_status]") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
             }
 
-            rv = norns_unregister_namespace(dst_nsid);
+            rv = nornsctl_unregister_namespace(dst_nsid);
             REQUIRE(rv == NORNS_SUCCESS);
         }
 #endif

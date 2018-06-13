@@ -120,13 +120,13 @@ libnornsctl_reload_config_file(void) {
 
 /* Control API */
 norns_error_t
-norns_ping() {
+nornsctl_ping() {
     return send_ping_request();
 }
 
 /* Register and describe a batch job */
 norns_error_t 
-norns_register_job(uint32_t jobid, norns_job_t* job) {
+nornsctl_register_job(uint32_t jobid, norns_job_t* job) {
 
     if(!validate_job(job)) {
         return NORNS_EBADARGS;
@@ -137,7 +137,7 @@ norns_register_job(uint32_t jobid, norns_job_t* job) {
 
 /* Update an existing batch job */
 norns_error_t 
-norns_update_job(uint32_t jobid, norns_job_t* job) {
+nornsctl_update_job(uint32_t jobid, norns_job_t* job) {
 
     if(!validate_job(job)) {
         return NORNS_EBADARGS;
@@ -149,27 +149,27 @@ norns_update_job(uint32_t jobid, norns_job_t* job) {
 
 /* Remove a batch job from the system */
 norns_error_t 
-norns_unregister_job(uint32_t jobid) {
+nornsctl_unregister_job(uint32_t jobid) {
     return send_job_request(NORNS_JOB_UNREGISTER, jobid, NULL);
 }
 
 
 /* Add a process to a registered batch job */
 norns_error_t 
-norns_add_process(uint32_t jobid, uid_t uid, gid_t gid, pid_t pid) {
+nornsctl_add_process(uint32_t jobid, uid_t uid, gid_t gid, pid_t pid) {
     return send_process_request(NORNS_PROCESS_ADD, jobid, uid, gid, pid);
 }
 
 
 /* Remove a process from a registered batch job */
 norns_error_t 
-norns_remove_process(uint32_t jobid, uid_t uid, gid_t gid, pid_t pid) {
+nornsctl_remove_process(uint32_t jobid, uid_t uid, gid_t gid, pid_t pid) {
     return send_process_request(NORNS_PROCESS_REMOVE, jobid, uid, gid, pid);
 }
 
 /* Register a namespace in the local norns server */
 norns_error_t 
-norns_register_namespace(const char* nsid, norns_backend_t* backend) {
+nornsctl_register_namespace(const char* nsid, norns_backend_t* backend) {
 
     if(nsid == NULL || (strncmp(nsid, "", 1) == 0) || 
        !validate_namespace(backend)) {
@@ -181,7 +181,7 @@ norns_register_namespace(const char* nsid, norns_backend_t* backend) {
 
 /* Update a namespace in the local norns server */
 norns_error_t 
-norns_update_namespace(const char* nsid, norns_backend_t* backend) {
+nornsctl_update_namespace(const char* nsid, norns_backend_t* backend) {
 
     return NORNS_ENOTSUPPORTED;
 
@@ -193,7 +193,7 @@ norns_update_namespace(const char* nsid, norns_backend_t* backend) {
 
 /* Unregister a namespace from the local norns server */
 norns_error_t 
-norns_unregister_namespace(const char* nsid) {
+nornsctl_unregister_namespace(const char* nsid) {
 
     if(nsid == NULL) {
         return NORNS_EBADARGS;

@@ -30,7 +30,7 @@
 #include "test-env.hpp"
 #include "catch.hpp"
 
-SCENARIO("unregister job", "[api::norns_unregister_job]") {
+SCENARIO("unregister job", "[api::nornsctl_unregister_job]") {
     GIVEN("a running urd instance") {
 
         test_env env;
@@ -39,7 +39,7 @@ SCENARIO("unregister job", "[api::norns_unregister_job]") {
 
             const uint32_t jobid = 42;
 
-            int rv = norns_unregister_job(jobid);
+            int rv = nornsctl_unregister_job(jobid);
 
             THEN("NORNS_ENOSUCHJOB is returned") {
                 REQUIRE(rv == NORNS_ENOSUCHJOB);
@@ -48,7 +48,7 @@ SCENARIO("unregister job", "[api::norns_unregister_job]") {
 
         WHEN("a registered job is unregistered") {
 
-            /* valid information for norns_register_job */
+            /* valid information for nornsctl_register_job */
             const char* test_hosts[] = { "host00", "host01" };
             const size_t test_nhosts = sizeof(test_hosts) / sizeof(test_hosts[0]);
 
@@ -62,11 +62,11 @@ SCENARIO("unregister job", "[api::norns_unregister_job]") {
             norns_job_t job = NORNS_JOB(test_hosts, test_nhosts, test_lims, test_nlims);
             const uint32_t jobid = 42;
 
-            int rv = norns_register_job(jobid, &job);
+            int rv = nornsctl_register_job(jobid, &job);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_job(jobid);
+            rv = nornsctl_unregister_job(jobid);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -75,7 +75,7 @@ SCENARIO("unregister job", "[api::norns_unregister_job]") {
 
         WHEN("a registered job is updated and unregistered") {
 
-            /* valid information for norns_register_job */
+            /* valid information for nornsctl_register_job */
             const char* test_hosts1[] = { "host00", "host01" };
             const char* test_hosts2[] = { "host02", "host03", "host04" };
             const size_t test_nhosts1 = sizeof(test_hosts1) / sizeof(test_hosts1[0]);
@@ -95,15 +95,15 @@ SCENARIO("unregister job", "[api::norns_unregister_job]") {
             norns_job_t job2 = NORNS_JOB(test_hosts2, test_nhosts2, test_backends2, test_nbackends2);
             const uint32_t jobid = 42;
 
-            int rv = norns_register_job(jobid, &job1);
+            int rv = nornsctl_register_job(jobid, &job1);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_update_job(jobid, &job2);
+            rv = nornsctl_update_job(jobid, &job2);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_job(jobid);
+            rv = nornsctl_unregister_job(jobid);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -119,7 +119,7 @@ SCENARIO("unregister job", "[api::norns_unregister_job]") {
 
             const uint32_t jobid = 42;
 
-            int rv = norns_unregister_job(jobid);
+            int rv = nornsctl_unregister_job(jobid);
 
             THEN("NORNS_ECONNFAILED is returned") {
                 REQUIRE(rv == NORNS_ECONNFAILED);

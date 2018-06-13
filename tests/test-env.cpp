@@ -169,7 +169,7 @@ std::tuple<const char*, bfs::path> test_env::create_namespace(std::string nsid, 
 
     norns_backend_t ns = NORNS_BACKEND(NORNS_BACKEND_POSIX_FILESYSTEM, 
                                        abs_dir.c_str(), quota);
-    norns_error_t rv = norns_register_namespace(nsid.c_str(), &ns);
+    norns_error_t rv = nornsctl_register_namespace(nsid.c_str(), &ns);
     REQUIRE(rv == NORNS_SUCCESS);
 
     m_namespaces.emplace(nsid, abs_dir);
@@ -310,7 +310,7 @@ void test_env::remove_access(const bfs::path& p) {
 
 void test_env::teardown_namespace(const std::string nsid) {
     if(m_namespaces.count(nsid) != 0) {
-        norns_error_t rv = norns_unregister_namespace(nsid.c_str());
+        norns_error_t rv = nornsctl_unregister_namespace(nsid.c_str());
 
         // cannot use REQUIRE here since it may throw an exception,
         // and throwing exceptions from destructors is a huge problem

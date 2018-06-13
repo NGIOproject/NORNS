@@ -30,7 +30,7 @@
 #include "test-env.hpp"
 #include "catch.hpp"
 
-SCENARIO("register job", "[api::norns_register_job]") {
+SCENARIO("register job", "[api::nornsctl_register_job]") {
     GIVEN("a running urd instance") {
 
         test_env env;
@@ -41,7 +41,7 @@ SCENARIO("register job", "[api::norns_register_job]") {
 
             const uint32_t jobid = 42;
 
-            int rv = norns_register_job(jobid, &job);
+            int rv = nornsctl_register_job(jobid, &job);
 
             THEN("NORNS_EBADARGS is returned") {
                 REQUIRE(rv == NORNS_EBADARGS);
@@ -65,7 +65,7 @@ SCENARIO("register job", "[api::norns_register_job]") {
 
             const uint32_t jobid = 42;
 
-            int rv = norns_register_job(jobid, &job);
+            int rv = nornsctl_register_job(jobid, &job);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -94,7 +94,7 @@ SCENARIO("register job", "[api::norns_register_job]") {
 
             const uint32_t jobid = 42;
 
-            int rv = norns_register_job(jobid, &job);
+            int rv = nornsctl_register_job(jobid, &job);
 
             THEN("NORNS_ECONNFAILED is returned") {
                 REQUIRE(rv == NORNS_ECONNFAILED);

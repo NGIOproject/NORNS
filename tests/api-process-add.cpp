@@ -30,7 +30,7 @@
 #include "test-env.hpp"
 #include "catch.hpp"
 
-SCENARIO("add process to job", "[api::norns_add_process]") {
+SCENARIO("add process to job", "[api::nornsctl_add_process]") {
     GIVEN("a running urd instance") {
 
         test_env env;
@@ -42,7 +42,7 @@ SCENARIO("add process to job", "[api::norns_add_process]") {
             const gid_t gid = 2001;
             const pid_t pid = 25401;
 
-            int rv = norns_add_process(jobid, uid, gid, pid);
+            int rv = nornsctl_add_process(jobid, uid, gid, pid);
 
             THEN("NORNS_ENOSUCHJOB is returned") {
                 REQUIRE(rv == NORNS_ENOSUCHJOB);
@@ -51,7 +51,7 @@ SCENARIO("add process to job", "[api::norns_add_process]") {
 
         WHEN("a process is added to a registered job") {
 
-            /* valid information for norns_register_job */
+            /* valid information for nornsctl_register_job */
             const char* test_hosts[] = { "host00", "host01" };
             const size_t test_nhosts = sizeof(test_hosts) / sizeof(test_hosts[0]);
 
@@ -68,11 +68,11 @@ SCENARIO("add process to job", "[api::norns_add_process]") {
             const gid_t gid = 2001;
             const pid_t pid = 25401;
 
-            int rv = norns_register_job(jobid, &job);
+            int rv = nornsctl_register_job(jobid, &job);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_add_process(jobid, uid, gid, pid);
+            rv = nornsctl_add_process(jobid, uid, gid, pid);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -81,7 +81,7 @@ SCENARIO("add process to job", "[api::norns_add_process]") {
 
         WHEN("a process is added to a registered job that has been updated with valid information") {
 
-            /* valid information for norns_register_job */
+            /* valid information for nornsctl_register_job */
             const char* test_hosts1[] = { "host00", "host01" };
             const char* test_hosts2[] = { "host02", "host03", "host04" };
             const size_t test_nhosts1 = sizeof(test_hosts1) / sizeof(test_hosts1[0]);
@@ -104,15 +104,15 @@ SCENARIO("add process to job", "[api::norns_add_process]") {
             const gid_t gid = 2001;
             const pid_t pid = 25401;
 
-            int rv = norns_register_job(jobid, &job1);
+            int rv = nornsctl_register_job(jobid, &job1);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_update_job(jobid, &job2);
+            rv = nornsctl_update_job(jobid, &job2);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_add_process(jobid, uid, gid, pid);
+            rv = nornsctl_add_process(jobid, uid, gid, pid);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -121,7 +121,7 @@ SCENARIO("add process to job", "[api::norns_add_process]") {
 
         WHEN("a process is added to a registered job that has been unregistered") {
 
-            /* valid information for norns_register_job */
+            /* valid information for nornsctl_register_job */
             const char* test_hosts[] = { "host00", "host01" };
             const size_t test_nhosts = sizeof(test_hosts) / sizeof(test_hosts[0]);
 
@@ -138,15 +138,15 @@ SCENARIO("add process to job", "[api::norns_add_process]") {
             const gid_t gid = 2001;
             const pid_t pid = 25401;
 
-            int rv = norns_register_job(jobid, &job);
+            int rv = nornsctl_register_job(jobid, &job);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_unregister_job(jobid);
+            rv = nornsctl_unregister_job(jobid);
 
             REQUIRE(rv == NORNS_SUCCESS);
 
-            rv = norns_add_process(jobid, uid, gid, pid);
+            rv = nornsctl_add_process(jobid, uid, gid, pid);
 
             THEN("NORNS_ENOSUCHJOB is returned") {
                 REQUIRE(rv == NORNS_ENOSUCHJOB);
@@ -165,7 +165,7 @@ SCENARIO("add process to job", "[api::norns_add_process]") {
             const gid_t gid = 2001;
             const pid_t pid = 25401;
 
-            int rv = norns_add_process(jobid, uid, gid, pid);
+            int rv = nornsctl_add_process(jobid, uid, gid, pid);
 
             THEN("NORNS_ECONNFAILED is returned") {
                 REQUIRE(rv == NORNS_ECONNFAILED);

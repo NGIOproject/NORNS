@@ -32,14 +32,14 @@
 #include "fake-daemon.hpp"
 #include "test-env.hpp"
 
-SCENARIO("ping request", "[api::norns_ping]") {
+SCENARIO("ping request", "[api::nornsctl_ping]") {
     GIVEN("a running urd instance") {
 
         test_env env;
 
         WHEN("pinging urd") {
 
-            int rv = norns_ping();
+            int rv = nornsctl_ping();
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -53,7 +53,7 @@ SCENARIO("ping request", "[api::norns_ping]") {
     GIVEN("a non-running urd instance") {
         WHEN("pinging urd") {
 
-            int rv = norns_ping();
+            int rv = nornsctl_ping();
 
             THEN("NORNS_ECONNFAILED is returned") {
                 REQUIRE(rv == NORNS_ECONNFAILED);
