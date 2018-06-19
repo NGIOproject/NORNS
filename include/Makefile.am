@@ -36,8 +36,7 @@ nornsinclude_HEADERS = \
 	norns/norns_debug.h \
 	norns/norns_error.h \
 	norns/norns_resources.h \
-	norns/norns_types.h \
-	norns/norns_debug.h
+	norns/norns_types.h
 
 include_HEADERS = \
 	norns.h \

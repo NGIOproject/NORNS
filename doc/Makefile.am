@@ -27,14 +27,22 @@
 
 include $(top_srcdir)/config/Make-inc.mk
 
-ETC_FILES=norns.service norns.conf
+man5_MANS = \
+	norns.conf.5
 
-sysconf_DATA=$(ETC_FILES)
+man8_MANS = \
+	urd.8
 
-norns.service: Makefile $(srcdir)/norns.service.in
-	$(subst) $(srcdir)/norns.service.in > norns.service
+%.5: $(srcdir)/%.5.in
+	$(subst) "$^" > "$(builddir)/$@"
 
-norns.conf: Makefile $(srcdir)/norns.conf.in
-	$(subst) $(srcdir)/norns.conf.in > norns.conf
+%.8: $(srcdir)/%.8.in
+	$(subst) "$^" > "$(builddir)/$@"
 
-CLEANFILES=$(ETC_FILES)
+EXTRA_DIST = \
+	$(man5_MANS) \
+	$(man8_MANS)
+
+CLEANFILES= \
+	$(man5_MANS) \
+	$(man8_MANS)

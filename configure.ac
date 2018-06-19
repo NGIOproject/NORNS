@@ -25,7 +25,13 @@
 #  <http://www.gnu.org/licenses/>.                                       #
 ##########################################################################
 
-AC_INIT([norns], [1.0], [alberto.miranda@bsc.es])
+AC_INIT(m4_esyscmd_s([awk -F ':[ \t]+' '$1 ~ /^ *Name$/ {gsub(" ", "", $2); print $2; exit}' ./META ]), 
+        m4_esyscmd_s([awk -F ':[ \t]+' '$1 ~ /^ *Version$/ {gsub(" ", "", $2); print $2; exit}' ./META ]), 
+        m4_esyscmd_s([awk -F ':[ \t]+' '$1 ~ /^ *Bugs$/ {gsub(" ", "", $2); print $2; exit}' ./META ]), 
+        [],
+        [],
+        )
+X_AC_NORNS_META
 AC_PREREQ([2.69])
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_MACRO_DIR([m4])
@@ -36,8 +42,10 @@ AM_INIT_AUTOMAKE([1.9 foreign subdir-objects])
 
 # Checks for programs.
 AC_PROG_AWK
+AC_PROG_SED
 AC_PROG_CXX
 AC_PROG_CC
+AC_PROG_CPP
 
 AC_PATH_PROG([FILE], [file])
 AS_IF([test "x${FILE}" == "x"],
@@ -148,6 +156,7 @@ AC_CHECK_HEADER_STDBOOL
 ################################################################################
 AC_CONFIG_FILES([
         Makefile
+        doc/Makefile
         etc/Makefile
         examples/Makefile
         include/Makefile

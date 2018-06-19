@@ -273,7 +273,7 @@ EXTRA_urd_DEPENDENCIES = \
 	liburd_aux.la
 
 urd-install-exec-hook:
-	setcap cap_sys_ptrace,cap_chown=+ep $(DESTDIR)$(bindir)/urd
+	-setcap cap_sys_ptrace,cap_chown=+ep $(DESTDIR)$(bindir)/urd
 
 
 

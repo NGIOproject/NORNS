@@ -93,7 +93,7 @@ EXTRA_api_DEPENDENCIES = \
 BUILT_SOURCES = \
 	config-template.cpp
 
-edit = sed \
+edit = $(SED) \
 		-e 's|\"|\\"|g'  \
 		-e 's|^|    "|g' \
 		-e 's|$$|\\n"|g'
