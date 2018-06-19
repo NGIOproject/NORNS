@@ -58,8 +58,8 @@ SCENARIO("unregister namespace", "[api::nornsctl_unregister_namespace]") {
 
             const char* nsid = "b0://";
 
-            norns_backend_t b0 = 
-                NORNS_BACKEND(NORNS_BACKEND_NVML, path_b0.c_str(), 4096);
+            nornsctl_backend_t b0 = 
+                NORNSCTL_BACKEND(NORNS_BACKEND_NVML, path_b0.c_str(), 4096);
 
             int rv = nornsctl_register_namespace(nsid, &b0);
 

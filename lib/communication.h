@@ -39,7 +39,7 @@ norns_error_t send_job_request(norns_rpc_type_t type, uint32_t jobid,
 norns_error_t send_process_request(norns_rpc_type_t type, uint32_t jobid, 
                                    uid_t uid, gid_t gid, pid_t pid);
 norns_error_t send_namespace_request(norns_rpc_type_t type, const char* nsid, 
-                                     norns_backend_t* backend);
+                                     nornsctl_backend_t* backend);
 norns_error_t send_ping_request();
 
 #pragma GCC visibility pop

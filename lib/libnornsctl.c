@@ -47,7 +47,7 @@
 #define LIBNORNSCTL_LOG_PREFIX "libnornsctl"
 
 static bool validate_job(norns_job_t* job);
-static bool validate_namespace(norns_backend_t* backend);
+static bool validate_namespace(nornsctl_backend_t* backend);
 
 static void
 load_config_file(void) {
@@ -169,7 +169,7 @@ nornsctl_remove_process(uint32_t jobid, uid_t uid, gid_t gid, pid_t pid) {
 
 /* Register a namespace in the local norns server */
 norns_error_t 
-nornsctl_register_namespace(const char* nsid, norns_backend_t* backend) {
+nornsctl_register_namespace(const char* nsid, nornsctl_backend_t* backend) {
 
     if(nsid == NULL || (strncmp(nsid, "", 1) == 0) || 
        !validate_namespace(backend)) {
@@ -181,7 +181,7 @@ nornsctl_register_namespace(const char* nsid, norns_backend_t* backend) {
 
 /* Update a namespace in the local norns server */
 norns_error_t 
-nornsctl_update_namespace(const char* nsid, norns_backend_t* backend) {
+nornsctl_update_namespace(const char* nsid, nornsctl_backend_t* backend) {
 
     return NORNS_ENOTSUPPORTED;
 
@@ -202,20 +202,20 @@ nornsctl_unregister_namespace(const char* nsid) {
     return send_namespace_request(NORNS_NAMESPACE_UNREGISTER, nsid, NULL);
 }
 
-norns_backend_t 
-NORNS_BACKEND(norns_flags_t flags, const char* mount_point, 
+nornsctl_backend_t 
+NORNSCTL_BACKEND(norns_flags_t flags, const char* mount_point, 
                 uint32_t capacity) {
 
-    norns_backend_t b;
+    nornsctl_backend_t b;
 
-    norns_backend_init(&b, flags, mount_point, capacity);
+    nornsctl_backend_init(&b, flags, mount_point, capacity);
 
     return b;
 }
 
 void 
-norns_backend_init(norns_backend_t* backend, norns_flags_t flags, 
-                     const char* mount_point, uint32_t capacity) {
+nornsctl_backend_init(nornsctl_backend_t* backend, norns_flags_t flags, 
+                      const char* mount_point, uint32_t capacity) {
 
     if(backend == NULL) {
         return;
@@ -278,7 +278,7 @@ norns_job_init(norns_job_t* job, const char** hosts, size_t nhosts,
 }
 
 static bool
-validate_namespace(norns_backend_t* backend) {
+validate_namespace(nornsctl_backend_t* backend) {
 
     if(backend == NULL) {
         return false;

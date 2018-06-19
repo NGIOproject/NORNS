@@ -43,12 +43,12 @@ static void
 free_task_msg(Norns__Rpc__Request__Task* msg);
 
 static Norns__Rpc__Request__Namespace* 
-build_namespace_message(const char* nsid, const norns_backend_t* backend);
+build_namespace_message(const char* nsid, const nornsctl_backend_t* backend);
 static void 
 free_namespace_message(Norns__Rpc__Request__Namespace* msg);
 
 static Norns__Rpc__Request__Namespace__Backend* 
-build_backend_message(const norns_backend_t* backend);
+build_backend_message(const nornsctl_backend_t* backend);
 static void 
 free_backend_message(Norns__Rpc__Request__Namespace__Backend* msg);
 
@@ -228,8 +228,8 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
         {
             const char* const nsid =
                 va_arg(ap, const char* const);
-            const norns_backend_t* backend = 
-                va_arg(ap, const norns_backend_t*);
+            const nornsctl_backend_t* backend = 
+                va_arg(ap, const nornsctl_backend_t*);
 
             if((req_msg->nspace = 
                     build_namespace_message(nsid, backend)) == NULL) {
@@ -300,7 +300,7 @@ free_job_msg(Norns__Rpc__Request__Job* msg) {
 }
 
 static Norns__Rpc__Request__Namespace* 
-build_namespace_message(const char* nsid, const norns_backend_t* backend) {
+build_namespace_message(const char* nsid, const nornsctl_backend_t* backend) {
 
     assert(nsid != NULL);
 
@@ -347,7 +347,7 @@ free_namespace_message(Norns__Rpc__Request__Namespace* msg) {
 }
 
 static Norns__Rpc__Request__Namespace__Backend*
-build_backend_message(const norns_backend_t* backend) {
+build_backend_message(const nornsctl_backend_t* backend) {
 
     assert(backend != NULL);
 

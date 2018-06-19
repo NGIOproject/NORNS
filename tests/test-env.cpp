@@ -167,7 +167,7 @@ std::tuple<const char*, bfs::path> test_env::create_namespace(std::string nsid, 
 
     auto abs_dir = create_directory(mnt, m_base_dir);
 
-    norns_backend_t ns = NORNS_BACKEND(NORNS_BACKEND_POSIX_FILESYSTEM, 
+    nornsctl_backend_t ns = NORNSCTL_BACKEND(NORNS_BACKEND_POSIX_FILESYSTEM, 
                                        abs_dir.c_str(), quota);
     norns_error_t rv = nornsctl_register_namespace(nsid.c_str(), &ns);
     REQUIRE(rv == NORNS_SUCCESS);

@@ -48,8 +48,8 @@ SCENARIO("register namespace", "[api::nornsctl_register_namespace]") {
 
         WHEN("a namespace is registered with an invalid nsid") {
 
-            norns_backend_t b0 = 
-                NORNS_BACKEND(NORNS_BACKEND_NVML, path_b0.c_str(), 1024);
+            nornsctl_backend_t b0 = 
+                NORNSCTL_BACKEND(NORNS_BACKEND_NVML, path_b0.c_str(), 1024);
 
             int rv = nornsctl_register_namespace(NULL, &b0);
 
@@ -60,8 +60,8 @@ SCENARIO("register namespace", "[api::nornsctl_register_namespace]") {
 
         WHEN("a namespace is registered with an invalid nsid") {
 
-            norns_backend_t b0 = 
-                NORNS_BACKEND(NORNS_BACKEND_NVML, path_b0.c_str(), 1024);
+            nornsctl_backend_t b0 = 
+                NORNSCTL_BACKEND(NORNS_BACKEND_NVML, path_b0.c_str(), 1024);
 
             int rv = nornsctl_register_namespace("", &b0);
 
@@ -73,7 +73,7 @@ SCENARIO("register namespace", "[api::nornsctl_register_namespace]") {
 #if 0
         WHEN("a namespace is registered with an invalid type") {
 
-            norns_backend_t b0 = NORNS_BACKEND("b0", 42, path_b0, 1024);
+            nornsctl_backend_t b0 = NORNSCTL_BACKEND("b0", 42, path_b0, 1024);
 
             int rv = nornsctl_register_namespace(&b0);
 
@@ -84,7 +84,7 @@ SCENARIO("register namespace", "[api::nornsctl_register_namespace]") {
 #endif
 
         WHEN("a namespace is registered with an invalid mount point") {
-            norns_backend_t b0 = NORNS_BACKEND(NORNS_BACKEND_NVML, "", 1024);
+            nornsctl_backend_t b0 = NORNSCTL_BACKEND(NORNS_BACKEND_NVML, "", 1024);
 
             int rv = nornsctl_register_namespace("b0://", &b0);
 
@@ -94,7 +94,7 @@ SCENARIO("register namespace", "[api::nornsctl_register_namespace]") {
         }
 
         WHEN("a namespace is registered with an invalid mount point") {
-            norns_backend_t b0 = NORNS_BACKEND(NORNS_BACKEND_NVML, NULL, 1024);
+            nornsctl_backend_t b0 = NORNSCTL_BACKEND(NORNS_BACKEND_NVML, NULL, 1024);
 
             int rv = nornsctl_register_namespace("b0://", &b0);
 
@@ -104,8 +104,8 @@ SCENARIO("register namespace", "[api::nornsctl_register_namespace]") {
         }
 
         WHEN("a namespace is registered with an invalid quota") {
-            norns_backend_t b0 = 
-                NORNS_BACKEND(NORNS_BACKEND_NVML, path_b0.c_str(), 0);
+            nornsctl_backend_t b0 = 
+                NORNSCTL_BACKEND(NORNS_BACKEND_NVML, path_b0.c_str(), 0);
 
             int rv = nornsctl_register_namespace("b0://", &b0);
 
@@ -115,8 +115,8 @@ SCENARIO("register namespace", "[api::nornsctl_register_namespace]") {
         }
 
         WHEN("a namespace is registered with valid information") {
-            norns_backend_t b0 = 
-                NORNS_BACKEND(NORNS_BACKEND_NVML, path_b0.c_str(), 4096);
+            nornsctl_backend_t b0 = 
+                NORNSCTL_BACKEND(NORNS_BACKEND_NVML, path_b0.c_str(), 4096);
 
             int rv = nornsctl_register_namespace("b0://", &b0);
 
@@ -126,10 +126,10 @@ SCENARIO("register namespace", "[api::nornsctl_register_namespace]") {
         }
 
         WHEN("attempting to register a namespace with a duplicate nsid") {
-            norns_backend_t b0 = 
-                NORNS_BACKEND(NORNS_BACKEND_NVML, path_b0.c_str(), 4096);
-            norns_backend_t b1 = 
-                NORNS_BACKEND(NORNS_BACKEND_NVML, path_b1.c_str(), 4096);
+            nornsctl_backend_t b0 = 
+                NORNSCTL_BACKEND(NORNS_BACKEND_NVML, path_b0.c_str(), 4096);
+            nornsctl_backend_t b1 = 
+                NORNSCTL_BACKEND(NORNS_BACKEND_NVML, path_b1.c_str(), 4096);
 
             int rv = nornsctl_register_namespace("b0://", &b0);
 
@@ -149,7 +149,7 @@ SCENARIO("register namespace", "[api::nornsctl_register_namespace]") {
     GIVEN("a non-running urd instance") {
         WHEN("attempting to register a namespace") {
 
-            norns_backend_t b0 = NORNS_BACKEND(NORNS_BACKEND_NVML, "mnt/foo", 1024);
+            nornsctl_backend_t b0 = NORNSCTL_BACKEND(NORNS_BACKEND_NVML, "mnt/foo", 1024);
 
             int rv = nornsctl_register_namespace("b0://", &b0);
 

@@ -164,7 +164,7 @@ send_process_request(norns_rpc_type_t type, uint32_t jobid,
 
 norns_error_t
 send_namespace_request(norns_rpc_type_t type, const char* nsid, 
-                       norns_backend_t* ns) {
+                       nornsctl_backend_t* ns) {
 
     int res;
     norns_response_t resp;
@@ -262,8 +262,8 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
         {
             const char* const nsid =
                 va_arg(ap, const char* const);
-            const norns_backend_t* backend = 
-                va_arg(ap, const norns_backend_t*);
+            const nornsctl_backend_t* backend = 
+                va_arg(ap, const nornsctl_backend_t*);
 
             if((res = pack_to_buffer(type, &req_buf, nsid, backend)) 
                     != NORNS_SUCCESS) {

@@ -55,7 +55,7 @@ typedef struct {
     int         b_type;     /* namespace type */
     const char* b_mount;    /* mount point */
     uint32_t    b_capacity; /* namespace capacity (in megabytes) for writing data */
-} norns_backend_t;
+} nornsctl_backend_t;
 
 /* Descriptor for a batch job limits w.r.t. a namespace */
 typedef struct {
@@ -71,11 +71,13 @@ typedef struct {
     size_t              j_nlimits;  /* entries in limits list */
 } norns_job_t;
 
-norns_backend_t NORNS_BACKEND(norns_flags_t flags, const char* mount_point, 
-                              uint32_t capacity) __THROW;
+nornsctl_backend_t 
+NORNSCTL_BACKEND(norns_flags_t flags, const char* mount_point, 
+                 uint32_t capacity) __THROW;
 
-void norns_backend_init(norns_backend_t* backend, norns_flags_t flags, 
-                        const char* mount_point, uint32_t capacity) __THROW;
+void 
+nornsctl_backend_init(nornsctl_backend_t* backend, norns_flags_t flags, 
+                      const char* mount_point, uint32_t capacity) __THROW;
 
 norns_job_limit_t NORNS_JOB_LIMIT(const char* nsid, uint32_t quota) __THROW;
 
@@ -110,10 +112,10 @@ norns_error_t nornsctl_add_process(uint32_t jobid, uid_t uid, gid_t gid, pid_t p
 norns_error_t nornsctl_remove_process(uint32_t jobid, uid_t uid, gid_t gid, pid_t pid) __THROW;
 
 /* Register a namespace in the local norns server */
-norns_error_t nornsctl_register_namespace(const char* nsid, norns_backend_t* backend) __THROW;
+norns_error_t nornsctl_register_namespace(const char* nsid, nornsctl_backend_t* backend) __THROW;
 
 /* Update an existing namespace in the local norns server */
-norns_error_t nornsctl_update_namespace(const char* nsid, norns_backend_t* backend) __THROW;
+norns_error_t nornsctl_update_namespace(const char* nsid, nornsctl_backend_t* backend) __THROW;
 
 /* Unregister a namespace from the local norns server */
 norns_error_t nornsctl_unregister_namespace(const char* nsid) __THROW;
