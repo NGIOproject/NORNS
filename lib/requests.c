@@ -53,12 +53,12 @@ static void
 free_backend_message(Norns__Rpc__Request__Namespace__Backend* msg);
 
 static Norns__Rpc__Request__JobLimits* 
-build_job_limits_msg(const norns_job_limit_t* lim);
+build_job_limits_msg(const nornsctl_job_limit_t* lim);
 static void 
 free_job_limits_msg(Norns__Rpc__Request__JobLimits* msg);
 
 static Norns__Rpc__Request__Job* 
-build_job_msg(const norns_job_t* job);
+build_job_msg(const nornsctl_job_t* job);
 static void 
 free_job_msg(Norns__Rpc__Request__Job* msg);
 
@@ -182,7 +182,7 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
         case NORNS_JOB_UNREGISTER:
         {
             const uint32_t jobid = va_arg(ap, uint32_t);
-            const norns_job_t* job = va_arg(ap, norns_job_t*);
+            const nornsctl_job_t* job = va_arg(ap, nornsctl_job_t*);
 
             req_msg->has_jobid = true;
             req_msg->jobid = jobid;
@@ -389,7 +389,7 @@ error_cleanup:
 }
 
 static Norns__Rpc__Request__JobLimits* 
-build_job_limits_msg(const norns_job_limit_t* lim) {
+build_job_limits_msg(const nornsctl_job_limit_t* lim) {
 
     assert(lim != NULL);
 
@@ -423,7 +423,7 @@ error_cleanup:
 
 
 static Norns__Rpc__Request__Job*
-build_job_msg(const norns_job_t* job) {
+build_job_msg(const nornsctl_job_t* job) {
 
     assert(job != NULL);
 

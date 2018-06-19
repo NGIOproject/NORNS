@@ -125,7 +125,7 @@ send_ping_request() {
 }
 
 norns_error_t
-send_job_request(norns_rpc_type_t type, uint32_t jobid, norns_job_t* job) {
+send_job_request(norns_rpc_type_t type, uint32_t jobid, nornsctl_job_t* job) {
 
     int res;
     norns_response_t resp;
@@ -225,8 +225,8 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
         {
             const uint32_t jobid =
                 va_arg(ap, const uint32_t);
-            const norns_job_t* job =
-                va_arg(ap, const norns_job_t*);
+            const nornsctl_job_t* job =
+                va_arg(ap, const nornsctl_job_t*);
 
             if((res = pack_to_buffer(type, &req_buf, jobid, job)) 
                     != NORNS_SUCCESS) {

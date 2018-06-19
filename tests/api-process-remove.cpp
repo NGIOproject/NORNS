@@ -54,14 +54,14 @@ SCENARIO("remove process from job", "[api::nornsctl_remove_process]") {
             const char* test_hosts[] = { "host00", "host01" };
             const size_t test_nhosts = sizeof(test_hosts) / sizeof(test_hosts[0]);
 
-            norns_job_limit_t l0 = NORNS_JOB_LIMIT("b0://", 1024);
-            norns_job_limit_t l1 = NORNS_JOB_LIMIT("b1://", 2048);
-            norns_job_limit_t l2 = NORNS_JOB_LIMIT("b2://", 1024);
+            nornsctl_job_limit_t l0 = NORNSCTL_JOB_LIMIT("b0://", 1024);
+            nornsctl_job_limit_t l1 = NORNSCTL_JOB_LIMIT("b1://", 2048);
+            nornsctl_job_limit_t l2 = NORNSCTL_JOB_LIMIT("b2://", 1024);
 
-            norns_job_limit_t* test_lims[] = { &l0, &l1, &l2 };
+            nornsctl_job_limit_t* test_lims[] = { &l0, &l1, &l2 };
             const size_t test_nlims = sizeof(test_lims) / sizeof(test_lims[0]);
 
-            norns_job_t job = NORNS_JOB(test_hosts, test_nhosts, test_lims, test_nlims);
+            nornsctl_job_t job = NORNSCTL_JOB(test_hosts, test_nhosts, test_lims, test_nlims);
             const uint32_t jobid = 42;
             const uid_t uid = 1001;
             const gid_t gid = 2001;
@@ -84,14 +84,14 @@ SCENARIO("remove process from job", "[api::nornsctl_remove_process]") {
             const char* test_hosts[] = { "host00", "host01" };
             const size_t test_nhosts = sizeof(test_hosts) / sizeof(test_hosts[0]);
 
-            norns_job_limit_t l0 = NORNS_JOB_LIMIT("b0://", 1024);
-            norns_job_limit_t l1 = NORNS_JOB_LIMIT("b1://", 2048);
-            norns_job_limit_t l2 = NORNS_JOB_LIMIT("b2://", 1024);
+            nornsctl_job_limit_t l0 = NORNSCTL_JOB_LIMIT("b0://", 1024);
+            nornsctl_job_limit_t l1 = NORNSCTL_JOB_LIMIT("b1://", 2048);
+            nornsctl_job_limit_t l2 = NORNSCTL_JOB_LIMIT("b2://", 1024);
 
-            norns_job_limit_t* test_lims[] = { &l0, &l1, &l2 };
+            nornsctl_job_limit_t* test_lims[] = { &l0, &l1, &l2 };
             const size_t test_nlims = sizeof(test_lims) / sizeof(test_lims[0]);
 
-            norns_job_t job1 = NORNS_JOB(test_hosts, test_nhosts, test_lims, test_nlims);
+            nornsctl_job_t job1 = NORNSCTL_JOB(test_hosts, test_nhosts, test_lims, test_nlims);
             const uint32_t jobid = 42;
             const uid_t uid = 1001;
             const gid_t gid = 2001;
@@ -118,14 +118,14 @@ SCENARIO("remove process from job", "[api::nornsctl_remove_process]") {
             const char* test_hosts[] = { "host00", "host01" };
             const size_t test_nhosts = sizeof(test_hosts) / sizeof(test_hosts[0]);
 
-            norns_job_limit_t l0 = NORNS_JOB_LIMIT("b0://", 1024);
-            norns_job_limit_t l1 = NORNS_JOB_LIMIT("b1://", 2048);
-            norns_job_limit_t l2 = NORNS_JOB_LIMIT("b2://", 1024);
+            nornsctl_job_limit_t l0 = NORNSCTL_JOB_LIMIT("b0://", 1024);
+            nornsctl_job_limit_t l1 = NORNSCTL_JOB_LIMIT("b1://", 2048);
+            nornsctl_job_limit_t l2 = NORNSCTL_JOB_LIMIT("b2://", 1024);
 
-            norns_job_limit_t* test_lims[] = { &l0, &l1, &l2 };
+            nornsctl_job_limit_t* test_lims[] = { &l0, &l1, &l2 };
             const size_t test_nlims = sizeof(test_lims) / sizeof(test_lims[0]);
 
-            norns_job_t job1 = NORNS_JOB(test_hosts, test_nhosts, test_lims, test_nlims);
+            nornsctl_job_t job1 = NORNSCTL_JOB(test_hosts, test_nhosts, test_lims, test_nlims);
             const uint32_t jobid = 42;
             const uid_t uid = 1001;
             const gid_t gid = 2001;

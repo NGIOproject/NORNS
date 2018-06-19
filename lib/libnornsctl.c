@@ -46,7 +46,7 @@
 
 #define LIBNORNSCTL_LOG_PREFIX "libnornsctl"
 
-static bool validate_job(norns_job_t* job);
+static bool validate_job(nornsctl_job_t* job);
 static bool validate_namespace(nornsctl_backend_t* backend);
 
 static void
@@ -126,7 +126,7 @@ nornsctl_ping() {
 
 /* Register and describe a batch job */
 norns_error_t 
-nornsctl_register_job(uint32_t jobid, norns_job_t* job) {
+nornsctl_register_job(uint32_t jobid, nornsctl_job_t* job) {
 
     if(!validate_job(job)) {
         return NORNS_EBADARGS;
@@ -137,7 +137,7 @@ nornsctl_register_job(uint32_t jobid, norns_job_t* job) {
 
 /* Update an existing batch job */
 norns_error_t 
-nornsctl_update_job(uint32_t jobid, norns_job_t* job) {
+nornsctl_update_job(uint32_t jobid, nornsctl_job_t* job) {
 
     if(!validate_job(job)) {
         return NORNS_EBADARGS;
@@ -226,15 +226,15 @@ nornsctl_backend_init(nornsctl_backend_t* backend, norns_flags_t flags,
     backend->b_capacity = capacity;
 }
 
-norns_job_limit_t NORNS_JOB_LIMIT(const char* nsid, uint32_t quota) {
+nornsctl_job_limit_t NORNSCTL_JOB_LIMIT(const char* nsid, uint32_t quota) {
 
-    norns_job_limit_t limit;
-    norns_job_limit_init(&limit, nsid, quota);
+    nornsctl_job_limit_t limit;
+    nornsctl_job_limit_init(&limit, nsid, quota);
     return limit;
 }
 
-void norns_job_limit_init(norns_job_limit_t* limit, const char* nsid, 
-                          uint32_t quota) {
+void nornsctl_job_limit_init(nornsctl_job_limit_t* limit, const char* nsid, 
+                             uint32_t quota) {
 
     if(limit == NULL) {
         return;
@@ -249,18 +249,18 @@ void norns_job_limit_init(norns_job_limit_t* limit, const char* nsid,
     limit->l_quota = quota;
 }
 
-norns_job_t 
-NORNS_JOB(const char** hosts, size_t nhosts, 
-          norns_job_limit_t** limits, size_t nlimits) {
+nornsctl_job_t 
+NORNSCTL_JOB(const char** hosts, size_t nhosts, 
+          nornsctl_job_limit_t** limits, size_t nlimits) {
 
-    norns_job_t job;
-    norns_job_init(&job, hosts, nhosts, limits, nlimits);
+    nornsctl_job_t job;
+    nornsctl_job_init(&job, hosts, nhosts, limits, nlimits);
     return job;
 }
 
 void 
-norns_job_init(norns_job_t* job, const char** hosts, size_t nhosts, 
-               norns_job_limit_t** limits, size_t nlimits) {
+nornsctl_job_init(nornsctl_job_t* job, const char** hosts, size_t nhosts, 
+               nornsctl_job_limit_t** limits, size_t nlimits) {
 
     if(job == NULL) {
         return;
@@ -291,7 +291,7 @@ validate_namespace(nornsctl_backend_t* backend) {
 
 
 static bool
-validate_job(norns_job_t* job) {
+validate_job(nornsctl_job_t* job) {
 
     return (job != NULL) && 
            (job->j_hosts != NULL) && 
