@@ -33,7 +33,7 @@
 #endif
 
 #include <sys/types.h>
-#include "norns_types.h"
+#include "nornsctl_types.h"
 #include "norns_error.h"
 
 #ifdef __NORNS_DEBUG__
@@ -72,43 +72,60 @@ typedef struct {
 } nornsctl_job_t;
 
 nornsctl_backend_t 
-NORNSCTL_BACKEND(norns_flags_t flags, const char* mount_point, 
+NORNSCTL_BACKEND(nornsctl_backend_flags_t flags, 
+                 const char* mount_point, 
                  uint32_t capacity) __THROW;
 
 void 
-nornsctl_backend_init(nornsctl_backend_t* backend, norns_flags_t flags, 
-                      const char* mount_point, uint32_t capacity) __THROW;
+nornsctl_backend_init(nornsctl_backend_t* backend, 
+                      nornsctl_backend_flags_t flags, 
+                      const char* mount_point, 
+                      uint32_t capacity) __THROW;
 
 nornsctl_job_limit_t 
-NORNSCTL_JOB_LIMIT(const char* nsid, uint32_t quota) __THROW;
+NORNSCTL_JOB_LIMIT(const char* nsid, 
+                   uint32_t quota) __THROW;
 
 void 
 nornsctl_job_limit_init(nornsctl_job_limit_t* limit, 
-                        const char* nsid, uint32_t quota) __THROW;
+                        const char* nsid, 
+                        uint32_t quota) __THROW;
 
 nornsctl_job_t 
-NORNSCTL_JOB(const char** hosts, size_t nhosts, 
-             nornsctl_job_limit_t** limits, size_t nlimits) __THROW;
+NORNSCTL_JOB(const char** hosts, 
+             size_t nhosts, 
+             nornsctl_job_limit_t** limits, 
+             size_t nlimits) __THROW;
 
 void 
-nornsctl_job_init(nornsctl_job_t* job, const char** hosts, size_t nhosts, 
-                  nornsctl_job_limit_t** limits, size_t nlimits) __THROW;
+nornsctl_job_init(nornsctl_job_t* job, 
+                  const char** hosts, 
+                  size_t nhosts, 
+                  nornsctl_job_limit_t** limits, 
+                  size_t nlimits) __THROW;
 
-/* Check if the urd daemon is running */
+/* Check if the service daemon is running */
 norns_error_t 
 nornsctl_ping(void) __THROW;
 
-/* Send a command to the daemon (e.g. stop accepting new tasks) */
-//norns_error_t norns_command();
+/* Send a command to the service daemon */
+norns_error_t
+nornsctl_send_command(nornsctl_command_t command, 
+                      void* args) __THROW;
+
+norns_error_t
+nornsctl_status(void) __THROW;
 
 /* Register a batch job into the system */
 norns_error_t 
-nornsctl_register_job(uint32_t jobid, nornsctl_job_t* job) __THROW;
+nornsctl_register_job(uint32_t jobid, 
+                      nornsctl_job_t* job) __THROW;
 
 /* Update an existing batch job */
 /* XXX: At the moment this invalidates all registered processes for this job */
 norns_error_t 
-nornsctl_update_job(uint32_t jobid, nornsctl_job_t* job) __THROW;
+nornsctl_update_job(uint32_t jobid, 
+                    nornsctl_job_t* job) __THROW;
 
 /* Remove a batch job from the system */
 norns_error_t 
@@ -116,19 +133,27 @@ nornsctl_unregister_job(uint32_t jobid) __THROW;
 
 /* Add a process to a registered batch job */
 norns_error_t 
-nornsctl_add_process(uint32_t jobid, uid_t uid, gid_t gid, pid_t pid) __THROW;
+nornsctl_add_process(uint32_t jobid, 
+                     uid_t uid, 
+                     gid_t gid, 
+                     pid_t pid) __THROW;
 
 /* Remove a process from a registered batch job */
 norns_error_t 
-nornsctl_remove_process(uint32_t jobid, uid_t uid, gid_t gid, pid_t pid) __THROW;
+nornsctl_remove_process(uint32_t jobid, 
+                        uid_t uid, 
+                        gid_t gid, 
+                        pid_t pid) __THROW;
 
 /* Register a namespace in the local norns server */
 norns_error_t 
-nornsctl_register_namespace(const char* nsid, nornsctl_backend_t* backend) __THROW;
+nornsctl_register_namespace(const char* nsid, 
+                            nornsctl_backend_t* backend) __THROW;
 
 /* Update an existing namespace in the local norns server */
 norns_error_t 
-nornsctl_update_namespace(const char* nsid, nornsctl_backend_t* backend) __THROW;
+nornsctl_update_namespace(const char* nsid, 
+                          nornsctl_backend_t* backend) __THROW;
 
 /* Unregister a namespace from the local norns server */
 norns_error_t 
@@ -136,7 +161,7 @@ nornsctl_unregister_namespace(const char* nsid) __THROW;
 
 /* Return a string describing the error number */
 char* 
-norns_strerror(norns_error_t errnum) __THROW;
+nornsctl_strerror(norns_error_t errnum) __THROW;
 
 #ifdef __cplusplus
 }
