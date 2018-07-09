@@ -37,7 +37,7 @@
 #include "logger.hpp"
 #include "api.hpp"
 
-#include "thread-pool.hpp"
+#include "io/thread-pool.hpp"
 
 #include "job.hpp"
 
