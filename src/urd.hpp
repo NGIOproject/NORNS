@@ -37,8 +37,6 @@
 #include "logger.hpp"
 #include "api.hpp"
 
-#include "io/thread-pool.hpp"
-
 #include "job.hpp"
 
 
@@ -48,8 +46,6 @@ namespace norns {
 
 
 /*! Aliases for convenience */
-using thread_pool_ptr = std::unique_ptr<thread_pool>;
-
 using api_listener = api::listener<api::message<api::request, api::response>>;
 using api_listener_ptr = std::unique_ptr<api_listener>;
 
@@ -93,7 +89,6 @@ private:
     void signal_handler(int);
 
     void init_logger();
-    void init_worker_pool();
     void init_event_handlers();
     void init_namespace_manager();
     void init_task_manager();
@@ -129,10 +124,6 @@ private:
 private:
     std::shared_ptr<config::settings>                    m_settings;
     std::unique_ptr<io::transferor_registry> m_transferor_registry;
-
-    thread_pool_ptr m_workers;
-
-
 
     api_listener_ptr                                    m_api_listener;
 

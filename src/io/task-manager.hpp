@@ -31,6 +31,10 @@
 #include <memory>
 #include <unordered_map>
 #include <boost/optional.hpp>
+#include "thread-pool.hpp"
+
+#include "task.hpp"
+#include "fake-task.hpp"
 
 #include "common.hpp"
 
@@ -46,16 +50,51 @@ struct task_manager {
     using ReturnType = 
         std::tuple<iotask_id, std::shared_ptr<task_stats>>;
 
-    task_manager();
+    task_manager(uint32_t nrunners, bool dry_run);
 
-    boost::optional<ReturnType> create();
+    template <typename... Args>
+    boost::optional<iotask_id>
+    create(Args&&... args) {
+
+        auto ret = register_task();
+
+        if(!ret) {
+            return boost::none;
+        }
+
+        iotask_id tid;
+        std::shared_ptr<io::task_stats> stats_record;
+
+        std::tie(tid, stats_record) = *ret;
+
+        if(!m_dry_run) {
+            m_runners.submit_and_forget(
+                    io::task(tid, std::forward<Args>(args)...,
+                                std::move(stats_record)));
+            
+            return tid;
+        }
+
+        m_runners.submit_and_forget(
+                io::fake_task(tid, std::move(stats_record)));
+
+        return tid;
+    }
 
     std::shared_ptr<task_stats>
     find(iotask_id) const;
 
+    void 
+    stop_all_tasks();
+
+private:
+    boost::optional<ReturnType> register_task();
+
 private:
     iotask_id m_id_base = 0;
-    std::unordered_map<iotask_id, std::shared_ptr<task_stats>> m_tasks;
+    bool m_dry_run;
+    std::unordered_map<iotask_id, std::shared_ptr<task_stats>> m_task_info;
+    thread_pool m_runners;
 
 };
 

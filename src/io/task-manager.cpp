@@ -34,19 +34,21 @@
 namespace norns {
 namespace io {
 
-task_manager::task_manager() {}
+task_manager::task_manager(uint32_t nrunners, bool dry_run) :
+    m_dry_run(dry_run),
+    m_runners(nrunners) {}
 
 boost::optional<task_manager::ReturnType>
-task_manager::create() {
+task_manager::register_task() {
 
     iotask_id tid = ++m_id_base;
 
-    if(m_tasks.count(tid) != 0) {
+    if(m_task_info.count(tid) != 0) {
         --m_id_base;
         return boost::optional<ReturnType>();
     }
 
-    auto it = m_tasks.emplace(tid, 
+    auto it = m_task_info.emplace(tid, 
             std::make_shared<task_stats>(task_status::pending));
 
     return boost::optional<ReturnType>(
@@ -58,13 +60,18 @@ task_manager::find(iotask_id tid) const {
 
     std::shared_ptr<task_stats> stats_ptr;
 
-    const auto& it = m_tasks.find(tid);
+    const auto& it = m_task_info.find(tid);
 
-    if(it != m_tasks.end()) {
+    if(it != m_task_info.end()) {
         stats_ptr = it->second;
     }
 
     return stats_ptr;
+}
+
+void
+task_manager::stop_all_tasks() {
+    m_runners.stop();
 }
 
 } // namespace io

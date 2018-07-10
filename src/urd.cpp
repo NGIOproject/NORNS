@@ -255,45 +255,24 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
             goto log_and_return;
         }
 
-        std::shared_ptr<io::task_stats> stats_record;
+        const auto ret = m_task_mgr->create(type, bsrc, src_info, bdst, 
+                                            dst_info, *creds, 
+                                            std::move(tx_ptr)); 
 
-        // register the task in the task manager
-        {
-            boost::unique_lock<boost::shared_mutex> lock(m_task_mgr_mutex);
-
-            auto ret = m_task_mgr->create();
-
-            if(ret) {
-                std::tie(tid, stats_record) = *ret;
-            }
-            else {
-                // this can only happen if we tried to register a task
-                // and the TID automatically generated collided with an
-                // already running task. 
-                // This can happen in two cases: 
-                //   1. We end up with more than 4294967295U concurrent tasks
-                //   2. We are not properly cleaning up dead tasks
-                // In both cases, we want to know about it
-                LOGGER_CRITICAL("Error when creating new task!");
-                rv = urd_error::too_many_tasks;
-                goto log_and_return;
-            }
+        if(!ret) {
+            // this can only happen if we tried to register a task
+            // and the TID automatically generated collided with an
+            // already running task. 
+            // This can happen in two cases: 
+            //   1. We end up with more than 4294967295U concurrent tasks
+            //   2. We are not properly cleaning up dead tasks
+            // In both cases, we want to know about it
+            LOGGER_CRITICAL("Error when creating new task!");
+            rv = urd_error::too_many_tasks;
+            goto log_and_return;
         }
 
-        // everything is ok, add the I/O task to the queue
-        if(stats_record) {
-            if(m_settings->dry_run()) {
-                m_workers->submit_and_forget(
-                        io::fake_task(tid, stats_record));
-            }
-            else {
-                m_workers->submit_and_forget(
-                        io::task(tid, type, bsrc, src_info, bdst, dst_info, 
-                                 *creds, std::move(tx_ptr), 
-                                 std::move(stats_record)));
-            }
-        }
-
+        tid = *ret;
         rv = urd_error::success;
     }
 
@@ -631,19 +610,6 @@ void urd::init_logger() {
     }
 }
 
-void urd::init_worker_pool() {
-    LOGGER_INFO(" * Creating workers...");
-
-    try {
-        m_workers = std::make_unique<thread_pool>(m_settings->workers_in_pool());
-    }
-    catch(const std::exception& e) {
-        LOGGER_ERROR("Failed to create the worker pool. This should "
-                     "not happen under normal conditions.");
-        exit(EXIT_FAILURE);
-    }
-}
-
 void urd::init_event_handlers() {
 
     LOGGER_INFO(" * Creating event listener...");
@@ -812,7 +778,8 @@ void urd::init_task_manager() {
     LOGGER_INFO(" * Creating task manager...");
 
     try {
-        m_task_mgr = std::make_unique<io::task_manager>();
+        m_task_mgr = std::make_unique<io::task_manager>(m_settings->workers_in_pool(),
+                                                        m_settings->dry_run());
     }
     catch(const std::exception& e) {
         LOGGER_ERROR("Failed to create the task manager. This should "
@@ -989,10 +956,9 @@ int urd::run() {
 
     LOGGER_INFO("[[ Starting up ]]");
 
-    init_worker_pool();
+    init_task_manager();
     init_event_handlers();
     init_namespace_manager();
-    init_task_manager();
     load_backend_plugins();
     load_transfer_plugins();
     load_default_namespaces();
@@ -1041,11 +1007,10 @@ void urd::teardown() {
         m_settings.reset();
     }
 
-    //m_workers.reset();
-    if(m_workers) {
-        LOGGER_INFO("* Stopping worker threads...");
-        m_workers->stop();
-        m_workers.reset();
+    if(m_task_mgr) {
+        LOGGER_INFO("* Stopping task manager...");
+        m_task_mgr->stop_all_tasks();
+        m_task_mgr.reset();
     }
 }
 
