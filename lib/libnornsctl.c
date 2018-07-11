@@ -120,8 +120,29 @@ libnornsctl_reload_config_file(void) {
 
 /* Control API */
 norns_error_t
-nornsctl_ping() {
+nornsctl_ping(void) {
     return send_ping_request();
+}
+
+norns_error_t
+nornsctl_send_command(nornsctl_command_t command, 
+                      void* args) {
+    // TODO
+    (void) command;
+    (void) args;
+
+    return NORNS_SUCCESS;
+}
+
+norns_error_t
+nornsctl_status(nornsctl_stat_t* stats) {
+
+    if(stats == NULL) {
+        ERR("invalid arguments");
+        return NORNS_EBADARGS;
+    }
+
+    return send_control_status_request(stats);
 }
 
 /* Register and describe a batch job */

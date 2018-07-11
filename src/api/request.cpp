@@ -213,6 +213,9 @@ request_ptr request::create_from_buffer(const std::vector<uint8_t>& buffer, int 
             case norns::rpc::Request::PING:
                 return std::make_unique<ping_request>();
 
+            case norns::rpc::Request::CTL_STATUS:
+                return std::make_unique<ctl_status_request>();
+
             case norns::rpc::Request::JOB_REGISTER:
             case norns::rpc::Request::JOB_UPDATE:
 

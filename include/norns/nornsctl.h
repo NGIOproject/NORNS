@@ -71,6 +71,21 @@ typedef struct {
     size_t                 j_nlimits;  /* entries in limits list */
 } nornsctl_job_t;
 
+/* Global task status descriptor */
+typedef struct {
+    /* Number of active tasks */
+    size_t st_active_tasks;
+
+    /* Number of pending tasks */
+    size_t st_pending_tasks;
+
+    /* E.T.A. in seconds for active tasks
+     *
+     * This value is computed as the max of alls ETAs for all currently 
+     * active tasks */
+    size_t st_eta;
+} nornsctl_stat_t;
+
 nornsctl_backend_t 
 NORNSCTL_BACKEND(nornsctl_backend_flags_t flags, 
                  const char* mount_point, 
@@ -114,7 +129,7 @@ nornsctl_send_command(nornsctl_command_t command,
                       void* args) __THROW;
 
 norns_error_t
-nornsctl_status(void) __THROW;
+nornsctl_status(nornsctl_stat_t* stats) __THROW;
 
 /* Register a batch job into the system */
 norns_error_t 

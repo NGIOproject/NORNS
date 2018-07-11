@@ -51,13 +51,15 @@ enum class task_status {
 struct task_stats {
 
     task_stats();
-    explicit task_stats(task_status status);
+    task_stats(task_status status, std::size_t total_bytes);
     task_stats(const task_stats& other);
     task_stats(task_stats&& rhs) noexcept;
 
     task_stats& operator=(const task_stats& other);
     task_stats& operator=(task_stats&& rhs) noexcept;
 
+    std::size_t pending_bytes() const;
+    std::size_t total_bytes() const;
     task_status status() const;
     void set_status(const task_status status);
     urd_error error() const;
@@ -67,6 +69,8 @@ struct task_stats {
 
     mutable boost::shared_mutex m_mutex;
     task_status m_status;
+    std::size_t m_total_bytes;
+    std::size_t m_pending_bytes;
     urd_error m_task_error;
     std::error_code m_sys_error;
 };

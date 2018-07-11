@@ -77,6 +77,7 @@ namespace api {
 enum class request_type { 
     iotask_create,
     iotask_status,
+    ctl_status,
     ping,
     job_register, 
     job_update,
@@ -254,6 +255,10 @@ using backend_update_request = detail::request_impl<
 using backend_unregister_request = detail::request_impl<
     request_type::backend_unregister, 
     std::string
+>;
+
+using ctl_status_request = detail::request_impl<
+    request_type::ctl_status
 >;
 
 } // namespace api

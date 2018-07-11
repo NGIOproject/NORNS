@@ -196,6 +196,11 @@ urd_error urd::validate_iotask_args(iotask_type type,
     return urd_error::success;
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+//                 handlers for user requests
+///////////////////////////////////////////////////////////////////////////////
+
 response_ptr urd::iotask_create_handler(const request_ptr base_request) {
 
     // downcast the generic request to the concrete implementation
@@ -255,9 +260,14 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
             goto log_and_return;
         }
 
-        const auto ret = m_task_mgr->create(type, bsrc, src_info, bdst, 
-                                            dst_info, *creds, 
-                                            std::move(tx_ptr)); 
+        boost::optional<iotask_id> ret;
+
+        // register the task in the task manager
+        {
+            boost::unique_lock<boost::shared_mutex> lock(m_task_mgr_mutex);
+            ret = m_task_mgr->create(type, bsrc, src_info, bdst, dst_info, 
+                                     *creds, std::move(tx_ptr)); 
+        }
 
         if(!ret) {
             // this can only happen if we tried to register a task
@@ -283,6 +293,7 @@ log_and_return:
     LOGGER_INFO("IOTASK_CREATE({}) = {}", request->to_string(), resp->to_string());
     return resp;
 }
+
 
 response_ptr urd::iotask_status_handler(const request_ptr base_request) const {
 
@@ -315,6 +326,10 @@ response_ptr urd::iotask_status_handler(const request_ptr base_request) const {
     return std::move(resp);
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+//                 handlers for control requests
+///////////////////////////////////////////////////////////////////////////////
 
 response_ptr urd::ping_handler(const request_ptr /*base_request*/) {
     response_ptr resp = std::make_unique<api::ping_response>();
@@ -556,6 +571,21 @@ response_ptr urd::namespace_remove_handler(const request_ptr base_request) {
     return resp;
 }
 
+response_ptr urd::ctl_status_handler(const request_ptr /*base_request*/) {
+
+    response_ptr resp = std::make_unique<api::ctl_status_response>();
+
+    {
+        boost::unique_lock<boost::shared_mutex> lock(m_task_mgr_mutex);
+        m_task_mgr->summarize();
+    }
+
+    resp->set_error_code(urd_error::success);
+
+    LOGGER_INFO("GLOBAL_STATUS() = {}", resp->to_string());
+    return resp;
+}
+
 response_ptr urd::unknown_request_handler(const request_ptr /*base_request*/) {
     response_ptr resp = std::make_unique<api::bad_request_response>();
 
@@ -738,6 +768,10 @@ void urd::init_event_handlers() {
     m_api_listener->register_callback(
             api::request_type::backend_unregister,
             std::bind(&urd::namespace_remove_handler, this, std::placeholders::_1));
+
+    m_api_listener->register_callback(
+            api::request_type::ctl_status,
+            std::bind(&urd::ctl_status_handler, this, std::placeholders::_1));
 
     m_api_listener->register_callback(
             api::request_type::bad_request,

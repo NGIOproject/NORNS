@@ -1027,3 +1027,62 @@ SCENARIO("check request", "[api::norns_status]") {
     }
 #endif
 }
+
+
+SCENARIO("check requests", "[api::nornsctl_status]") {
+    GIVEN("a running urd instance") {
+
+        test_env env(
+            fake_daemon_cfg {
+                true /* dry_run? */
+            }
+        );
+
+        const char* dst_nsid;
+        const char* dst_path = "/a/b/c";
+        bfs::path dst_mnt;
+        // create namespaces
+        std::tie(dst_nsid, dst_mnt) = env.create_namespace("tmp0", "mnt/tmp0", 16384);
+
+        const bfs::path path_tmp0 = 
+            env.create_directory("mnt/tmp0", env.basedir());
+
+        WHEN("checking the status of all requests") {
+            
+            norns_op_t task_op = NORNS_IOTASK_COPY;
+            
+            void* src_addr = (void*) 0xdeadbeef;
+            size_t src_size = (size_t) 42;
+            
+            const char* dst_mnt = path_tmp0.c_str();
+
+            const size_t ntasks = 10;
+            norns_iotask_t tasks[ntasks];
+
+            for(size_t i=0; i<ntasks; ++i) {
+                tasks[i] = NORNS_IOTASK(task_op, 
+                                        NORNS_MEMORY_REGION(src_addr, src_size), 
+                                        NORNS_LOCAL_PATH(dst_nsid, dst_path));
+
+                norns_error_t rv = norns_submit(&tasks[i]);
+                REQUIRE(rv == NORNS_SUCCESS);
+                REQUIRE(tasks[i].t_id == i + 1);
+            }
+
+            nornsctl_stat_t stats;
+            norns_error_t rv = nornsctl_status(&stats);
+
+            // norns_stat_t stats;
+            // rv = norns_status(&task, &stats);
+
+            // THEN("NORNS_SUCCESS is returned and task status is valid") {
+            //     REQUIRE(rv == NORNS_SUCCESS);
+            //     REQUIRE((stats.st_status == NORNS_EPENDING ||
+            //              stats.st_status == NORNS_EINPROGRESS ||
+            //              stats.st_status == NORNS_EFINISHED));
+            // }
+        }
+
+        env.notify_success();
+    }
+}

@@ -38,6 +38,8 @@ typedef enum {
     NORNS_IOTASK_SUBMIT,
     NORNS_IOTASK_STATUS,
 
+    NORNSCTL_STATUS,
+
     NORNS_PING,
 
     /* jobs */

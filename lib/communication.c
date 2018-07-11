@@ -108,6 +108,29 @@ send_status_request(norns_iotask_t* task, norns_stat_t* stats) {
 }
 
 norns_error_t
+send_control_status_request(nornsctl_stat_t* stats) {
+
+    int res;
+    norns_response_t resp;
+
+    if((res = send_request(NORNSCTL_STATUS, &resp)) 
+            != NORNS_SUCCESS) {
+        return res;
+    }
+
+    if(resp.r_type != NORNSCTL_STATUS) {
+        return NORNS_ESNAFU;
+    }
+
+//TODO
+//    stats->st_status = resp.r_status;
+//    stats->st_task_error = resp.r_task_error;
+//    stats->st_sys_errno = resp.r_errno;
+
+    return resp.r_error_code;
+}
+
+norns_error_t
 send_ping_request() {
 
     int res;
@@ -210,6 +233,7 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
             break;
         }
 
+        case NORNSCTL_STATUS:
         case NORNS_PING:
         {
             if((res = pack_to_buffer(type, &req_buf)) != NORNS_SUCCESS) {

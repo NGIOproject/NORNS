@@ -49,7 +49,7 @@ task_manager::register_task() {
     }
 
     auto it = m_task_info.emplace(tid, 
-            std::make_shared<task_stats>(task_status::pending));
+            std::make_shared<task_stats>(task_status::pending, 42));
 
     return boost::optional<ReturnType>(
             std::make_tuple(tid, it.first->second));
@@ -67,6 +67,26 @@ task_manager::find(iotask_id tid) const {
     }
 
     return stats_ptr;
+}
+
+void
+task_manager::summarize() {
+
+    for(const auto& kv : m_task_info) {
+
+        const auto tid = kv.first;
+        const task_stats_view stv(*kv.second);
+
+        switch(stv.status()) {
+            case task_status::pending:
+                break;
+            case task_status::in_progress:
+                break;
+            default:
+                break;
+        }
+
+    }
 }
 
 void

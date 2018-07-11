@@ -16,6 +16,8 @@ message Request {
         NAMESPACE_REGISTER = 9;
         NAMESPACE_UPDATE = 10;
         NAMESPACE_UNREGISTER = 11;
+
+        CTL_STATUS = 12;
     }
 
     // I/O task descriptor
@@ -102,7 +104,9 @@ message Response {
         NAMESPACE_REGISTER = 9;
         NAMESPACE_UPDATE = 10;
         NAMESPACE_UNREGISTER = 11;
-        BAD_REQUEST = 12;
+
+        CTL_STATUS = 12;
+        BAD_REQUEST = 13;
     }
 
     message TaskStats {

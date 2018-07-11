@@ -33,11 +33,15 @@ namespace io {
 
 task_stats::task_stats() 
     : m_status(task_status::undefined),
+      m_total_bytes(0),
+      m_pending_bytes(0),
       m_task_error(urd_error::success), 
       m_sys_error(std::make_error_code(static_cast<std::errc>(0))) { }
 
-task_stats::task_stats(task_status status) 
+task_stats::task_stats(task_status status, std::size_t total_bytes) 
     : m_status(status),
+      m_total_bytes(total_bytes),
+      m_pending_bytes(total_bytes),
       m_task_error(urd_error::success), 
       m_sys_error(std::make_error_code(static_cast<std::errc>(0))) { }
 
@@ -49,6 +53,8 @@ task_stats::task_stats(const task_stats& other) {
     boost::shared_lock<boost::shared_mutex> lock(m_mutex);
 
     m_status = other.m_status;
+    m_total_bytes = other.m_total_bytes;
+    m_pending_bytes = other.m_pending_bytes;
     m_task_error = other.m_task_error;
     m_sys_error = other.m_sys_error;
 }
@@ -59,6 +65,8 @@ task_stats::task_stats(task_stats&& rhs) noexcept
 task_stats& task_stats::operator=(const task_stats& other) {
     if(this != &other) {
         this->m_status = other.m_status;
+        this->m_total_bytes = other.m_total_bytes;
+        this->m_pending_bytes = other.m_pending_bytes;
         this->m_task_error = other.m_task_error;
         this->m_sys_error = other.m_sys_error;
     }
@@ -69,11 +77,21 @@ task_stats& task_stats::operator=(const task_stats& other) {
 task_stats& task_stats::operator=(task_stats&& rhs) noexcept {
     if(this != &rhs) {
         this->m_status = std::move(rhs.m_status);
+        this->m_total_bytes = std::move(rhs.m_total_bytes);
+        this->m_pending_bytes = std::move(rhs.m_pending_bytes);
         this->m_task_error = std::move(rhs.m_task_error);
         this->m_sys_error = std::move(rhs.m_sys_error);
     }
 
     return *this;
+}
+
+std::size_t task_stats::pending_bytes() const {
+    return m_pending_bytes;
+}
+
+std::size_t task_stats::total_bytes() const {
+    return m_total_bytes;
 }
 
 task_status task_stats::status() const {

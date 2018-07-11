@@ -107,6 +107,8 @@ encode_request_type(norns_rpc_type_t type) {
             return NORNS__RPC__REQUEST__TYPE__NAMESPACE_UPDATE;
         case NORNS_NAMESPACE_UNREGISTER:
             return NORNS__RPC__REQUEST__TYPE__NAMESPACE_UNREGISTER;
+        case NORNSCTL_STATUS:
+            return NORNS__RPC__REQUEST__TYPE__CTL_STATUS;
         default:
             return -1;
     }
@@ -155,7 +157,8 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
 
     norns__rpc__request__init(req_msg);
 
-    if((req_msg->type = encode_request_type(type)) < 0) {
+    if( (int) (req_msg->type = encode_request_type(type)) < 0) {
+        ERR("Encoding of request type failed");
         goto cleanup_on_error;
     }
 
@@ -172,6 +175,7 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
             break;
         }
 
+        case NORNSCTL_STATUS:
         case NORNS_PING:
         {
             break;

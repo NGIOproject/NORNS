@@ -84,6 +84,9 @@ struct task_manager {
     std::shared_ptr<task_stats>
     find(iotask_id) const;
 
+    void
+    summarize();
+
     void 
     stop_all_tasks();
 

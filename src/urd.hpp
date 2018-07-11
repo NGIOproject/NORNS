@@ -114,6 +114,7 @@ private:
     response_ptr namespace_register_handler(const request_ptr req);
     response_ptr namespace_update_handler(const request_ptr req);
     response_ptr namespace_remove_handler(const request_ptr req);
+    response_ptr ctl_status_handler(const request_ptr req);
     response_ptr unknown_request_handler(const request_ptr req);
 
     // TODO: add helpers for remove and update
