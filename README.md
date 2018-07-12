@@ -1,3 +1,6 @@
+[![pipeline status](https://storage.bsc.es/gitlab/hpc/norns/badges/master/pipeline.svg)](https://storage.bsc.es/gitlab/hpc/norns/commits/master)
+
+
 Norns Data Scheduler
 ====================
 
