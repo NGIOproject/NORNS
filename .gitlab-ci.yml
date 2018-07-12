@@ -3,8 +3,8 @@
 # can use verions as well, like gcc:5.2
 # see https://hub.docker.com/_/gcc/
 
-build:precise:
-    image: ubuntu:precise
+build:ubuntu_latest:
+    image: ubuntu:latest
     before_script:
         - apt-get update &&
           apt-get upgrade -y &&
