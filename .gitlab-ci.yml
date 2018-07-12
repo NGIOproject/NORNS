@@ -22,6 +22,8 @@ build:ubuntu_latest:
             libprotobuf-dev
             libprotobuf-c-dev
             protobuf-c-compiler
+            libyaml-cpp-dev
+            libyaml-dev
           
           
     script:
