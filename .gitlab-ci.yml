@@ -31,4 +31,4 @@ build:ubuntu_latest:
         - ./bootstrap.sh
         - mkdir build && cd build
         - ../configure
-        - make
+        - make -j4
