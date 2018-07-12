@@ -6,21 +6,21 @@
 build:precise:
     image: ubuntu:precise
     before_script:
-        - apt-get update
-          apt-get upgrade -y
-          apt-get install -y
-          build-essential
-          autotools-dev
-          automake
-          autoconf
-          libtool
-          libboost-system-dev
-          libboost-filesystem-dev
-          libboost-program-options-dev
-          libboost-thread-dev
-          libprotobuf-dev
-          libprotobuf-c-dev
-          protobuf-c-compiler
+        - apt-get update &&
+          apt-get upgrade -y &&
+          apt-get install -y &&
+            build-essential
+            autotools-dev
+            automake
+            autoconf
+            libtool
+            libboost-system-dev
+            libboost-filesystem-dev
+            libboost-program-options-dev
+            libboost-thread-dev
+            libprotobuf-dev
+            libprotobuf-c-dev
+            protobuf-c-compiler
           
           
     script:
