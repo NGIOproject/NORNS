@@ -1,0 +1,28 @@
+# This file is a template, and might need editing before it works on your project.
+# use the official gcc image, based on debian
+# can use verions as well, like gcc:5.2
+# see https://hub.docker.com/_/gcc/
+
+build:precise:
+    image: precise:base
+    before_script:
+        - apt-get update
+          apt-get upgrade -y
+          apt-get install -y
+          build-essential
+          autotools-dev
+          automake
+          autoconf
+          libtool
+          libboost-system-dev
+          libboost-filesystem-dev
+          libboost-program-options-dev
+          libboost-thread-dev
+          libprotobuf-dev
+          libprotobuf-c-dev
+          protobuf-c-compiler
+          
+          
+    script:
+        - mkdir build && cd build
+        - ../configure
