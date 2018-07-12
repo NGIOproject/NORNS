@@ -4,7 +4,7 @@
 # see https://hub.docker.com/_/gcc/
 
 build:precise:
-    image: precise
+    image: ubuntu:precise
     before_script:
         - apt-get update
           apt-get upgrade -y
