@@ -20,6 +20,7 @@ build:ubuntu_latest:
             libboost-program-options-dev
             libboost-thread-dev
             libprotobuf-dev
+            protobuf-compiler
             libprotobuf-c-dev
             protobuf-c-compiler
             libyaml-cpp-dev
@@ -30,3 +31,4 @@ build:ubuntu_latest:
         - ./bootstrap.sh
         - mkdir build && cd build
         - ../configure
+        - make
