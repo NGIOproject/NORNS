@@ -24,5 +24,6 @@ build:ubuntu_latest:
           
           
     script:
+        - ./bootstrap.sh
         - mkdir build && cd build
         - ../configure
