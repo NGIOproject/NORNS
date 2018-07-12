@@ -14,6 +14,7 @@ build:ubuntu_latest:
             automake
             autoconf
             libtool
+            pkg-config
             libboost-system-dev
             libboost-filesystem-dev
             libboost-program-options-dev
