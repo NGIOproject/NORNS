@@ -3,8 +3,14 @@
 # can use verions as well, like gcc:5.2
 # see https://hub.docker.com/_/gcc/
 
+stages:
+    - build
+    - test
+
 build:ubuntu_latest:
     image: ubuntu:latest
+
+    # Install dependencies
     before_script:
         - apt-get update &&
           apt-get upgrade -y &&
@@ -19,6 +25,7 @@ build:ubuntu_latest:
             libboost-filesystem-dev
             libboost-program-options-dev
             libboost-thread-dev
+            libboost-regex-dev
             libprotobuf-dev
             protobuf-compiler
             libprotobuf-c-dev
@@ -26,9 +33,10 @@ build:ubuntu_latest:
             libyaml-cpp-dev
             libyaml-dev
           
-          
+    # Build and test
     script:
         - ./bootstrap.sh
         - mkdir build && cd build
-        - ../configure
+        - ../configure --enable-tests
         - make -j4
+        - make check
