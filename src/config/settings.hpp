@@ -82,7 +82,7 @@ struct settings {
              bool dry_run, const bfs::path& global_socket, 
              const bfs::path& control_socket, uint32_t remote_port,
              const bfs::path& pidfile, uint32_t workers, 
-             const bfs::path& cfgfile, 
+             uint32_t backlog_size, const bfs::path& cfgfile, 
              const std::list<namespace_def>& defns);
     void load_defaults();
     void load_from_file(const bfs::path& filename);
@@ -97,6 +97,7 @@ struct settings {
     in_port_t& remote_port();
     bfs::path& pidfile();
     uint32_t& workers_in_pool();
+    uint32_t& backlog_size();
     bfs::path& config_file();
     std::list<namespace_def>& default_namespaces();
 
@@ -109,6 +110,7 @@ struct settings {
     in_port_t   m_remote_port = defaults::remote_port;
     bfs::path   m_daemon_pidfile = defaults::pidfile;
     uint32_t    m_workers_in_pool = defaults::workers_in_pool;
+    uint32_t    m_backlog_size = defaults::backlog_size;
     bfs::path   m_config_file = defaults::config_file;
     std::list<namespace_def> m_default_namespaces;
 };

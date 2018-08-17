@@ -32,13 +32,16 @@
 #include "utils.hpp"
 #include "logger.hpp"
 #include "resources.hpp"
+#include "auth.hpp"
+#include "io/task-info.hpp"
 #include "memory-to-local-path.hpp"
 #include "auth/process-credentials.hpp"
 
 namespace {
 
 std::error_code
-copy_memory_region(pid_t pid, void* src_addr, size_t size, const bfs::path& dst) {
+copy_memory_region(const std::shared_ptr<norns::io::task_info>& task_info, 
+                   pid_t pid, void* src_addr, size_t size, const bfs::path& dst) {
 
     int out_fd = -1;
     void* dst_addr = NULL;
@@ -49,6 +52,8 @@ copy_memory_region(pid_t pid, void* src_addr, size_t size, const bfs::path& dst)
     if(bfs::is_directory(dst)) {
         return std::make_error_code(static_cast<std::errc>(EISDIR));
     }
+
+    auto start = std::chrono::steady_clock::now();
 
     // create and preallocate output file
     out_fd = ::open(dst.c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
@@ -121,6 +126,13 @@ retry_close:
         }
     }
 
+    double usecs = std::chrono::duration<double, std::micro>(
+            std::chrono::steady_clock::now() - start).count();
+
+    if(rv == 0) {
+        task_info->update_bandwidth(size, usecs);
+    }
+
     return std::make_error_code(static_cast<std::errc>(rv));
 }
 
@@ -152,18 +164,21 @@ memory_region_to_local_path_transferor::validate(
 
 std::error_code 
 memory_region_to_local_path_transferor::transfer(
-        const auth::credentials& usr_creds, 
+        const auth::credentials& auth, 
+        const std::shared_ptr<task_info>& task_info,
         const std::shared_ptr<const data::resource>& src,  
         const std::shared_ptr<const data::resource>& dst) const {
+
+    (void) task_info;
 
     const auto& d_src = reinterpret_cast<const data::memory_region_resource&>(*src);
     const auto& d_dst = reinterpret_cast<const data::local_path_resource&>(*dst);
 
-    LOGGER_DEBUG("transfer: [{} {}+{}] -> {}", usr_creds.pid(), 
-                 utils::n2hexstr(d_src.address()), d_src.size(), 
+    LOGGER_DEBUG("[{}] transfer: [{} {}+{}] -> {}", task_info->id(), 
+                 auth.pid(), utils::n2hexstr(d_src.address()), d_src.size(), 
                  d_dst.canonical_path());
 
-    return ::copy_memory_region(usr_creds.pid(), 
+    return ::copy_memory_region(task_info, auth.pid(), 
                                 reinterpret_cast<void*>(d_src.address()), 
                                 d_src.size(), d_dst.canonical_path());
 }

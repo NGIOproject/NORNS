@@ -27,6 +27,8 @@
 
 #include "logger.hpp"
 #include "resources.hpp"
+#include "auth.hpp"
+#include "io/task-info.hpp"
 #include "memory-to-remote-path.hpp"
 
 namespace norns {
@@ -50,14 +52,16 @@ memory_region_to_remote_path_transferor::validate(
 
 std::error_code 
 memory_region_to_remote_path_transferor::transfer(
-        const auth::credentials& usr_creds, 
+        const auth::credentials& auth, 
+        const std::shared_ptr<task_info>& task_info,
         const std::shared_ptr<const data::resource>& src,  
         const std::shared_ptr<const data::resource>& dst) const {
 
     const auto& d_src = reinterpret_cast<const data::memory_region_resource&>(*src);
     const auto& d_dst = reinterpret_cast<const data::remote_path_resource&>(*dst);
 
-    (void) usr_creds;
+    (void) auth;
+    (void) task_info;
     (void) d_src;
     (void) d_dst;
 

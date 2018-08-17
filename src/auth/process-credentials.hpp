@@ -54,10 +54,9 @@ struct credentials {
         return boost::none;
     }
 
-private:
+    credentials();
     credentials(pid_t pid, uid_t uid, gid_t gid);
 
-public:
     pid_t pid() const;
     uid_t uid() const;
     gid_t gid() const;

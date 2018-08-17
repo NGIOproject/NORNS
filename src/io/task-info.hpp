@@ -25,37 +25,78 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#ifndef __IO_MEM_TO_SHARED_PATH_TX__
-#define __IO_MEM_TO_SHARED_PATH_TX__
+#ifndef __TASK_INFO_HPP__
+#define __TASK_INFO_HPP__
 
-#include <memory>
-#include <system_error>
-#include "transferor.hpp"
+#include <boost/thread/shared_mutex.hpp>
+#include "backends.hpp"
+#include "resources.hpp"
+#include "auth.hpp"
 
 namespace norns {
-
-// forward declarations
-namespace auth {
-struct credentials;
-}
-
-namespace data {
-struct resource_info;
-struct resource;
-}
-
 namespace io {
 
-struct memory_region_to_shared_path_transferor : public transferor {
-    bool validate(const std::shared_ptr<data::resource_info>& src_info,
-                  const std::shared_ptr<data::resource_info>& dst_info) const override final;
-    std::error_code transfer(const auth::credentials& auth,                
-                             const std::shared_ptr<task_info>& task_info,
-                             const std::shared_ptr<const data::resource>& src,  
-                             const std::shared_ptr<const data::resource>& dst) const override final;
+// forward declaration
+enum class task_status;
+struct task_stats;
+
+struct task_info {
+
+    using backend_ptr = std::shared_ptr<storage::backend>;
+    using resource_info_ptr = std::shared_ptr<data::resource_info>;
+
+    task_info(const iotask_id tid, const iotask_type type, 
+            const auth::credentials& creds,
+            const backend_ptr src_backend, const resource_info_ptr src_rinfo,
+            const backend_ptr dst_backend, const resource_info_ptr dst_rinfo);
+
+    iotask_id id() const;
+    iotask_type type() const;
+    auth::credentials auth() const ;
+    backend_ptr src_backend() const;
+    resource_info_ptr src_rinfo() const;
+    backend_ptr dst_backend() const;
+    resource_info_ptr dst_rinfo() const;
+
+    task_status status() const;
+    void update_status(const task_status st);
+    void update_status(const task_status st, const urd_error ec,
+                       const std::error_code& sc);
+
+    std::size_t sent_bytes() const;
+    std::size_t total_bytes() const;
+    double bandwidth() const;
+    void update_bandwidth(std::size_t bytes, double usecs);
+    void record_transfer(std::size_t bytes, double usecs);
+
+    task_stats stats() const;
+
+    mutable boost::shared_mutex m_mutex;
+
+    // task id and type
+    const iotask_id m_id;
+    const iotask_type m_type;
+
+    // user credentials
+    const auth::credentials m_auth;
+
+    // backends and resources involved in task
+    const backend_ptr m_src_backend;
+    const resource_info_ptr m_src_rinfo;
+    const backend_ptr m_dst_backend;
+    const resource_info_ptr m_dst_rinfo;
+
+    // general task status
+    task_status m_status;
+    urd_error m_task_error;
+    std::error_code m_sys_error;
+
+    // some statistics
+    double m_bandwidth;
+    std::size_t m_sent_bytes;
+    std::size_t m_total_bytes;
 };
 
 } // namespace io
 } // namespace norns
-
-#endif /* __IO_MEM_TO_SHARED_PATH_TX__ */
+#endif /* __TASK_INFO_HPP__ */

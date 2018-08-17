@@ -115,11 +115,16 @@ message Response {
         required uint32 sys_errnum = 3;
     }
 
+    message GlobalStats {
+        required uint32 running_tasks = 1;
+        required uint32 pending_tasks = 2;
+        required double eta = 3;
+    }
+
     // most responses only need to return an error code
     required Type type = 1;
     required uint32 error_code = 2;
     optional uint32 taskid = 3;
     optional TaskStats stats = 4;
+    optional GlobalStats gstats = 5;
 }
-
-

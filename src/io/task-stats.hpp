@@ -30,7 +30,7 @@
 
 #include <string>
 #include <system_error>
-#include <boost/thread/shared_mutex.hpp>
+#include <limits>
 
 namespace norns {
 
@@ -42,7 +42,7 @@ namespace io {
 enum class task_status {
     undefined,
     pending,
-    in_progress,
+    running,
     finished,
     finished_with_error,
 };
@@ -51,12 +51,8 @@ enum class task_status {
 struct task_stats {
 
     task_stats();
-    task_stats(task_status status, std::size_t total_bytes);
-    task_stats(const task_stats& other);
-    task_stats(task_stats&& rhs) noexcept;
-
-    task_stats& operator=(const task_stats& other);
-    task_stats& operator=(task_stats&& rhs) noexcept;
+    task_stats(task_status st, urd_error ec, const std::error_code& sc, 
+               std::size_t total_bytes, std::size_t pending_bytes);
 
     std::size_t pending_bytes() const;
     std::size_t total_bytes() const;
@@ -67,29 +63,25 @@ struct task_stats {
     std::error_code sys_error() const;
     void set_sys_error(const std::error_code& ec);
 
-    mutable boost::shared_mutex m_mutex;
     task_status m_status;
-    std::size_t m_total_bytes;
-    std::size_t m_pending_bytes;
     urd_error m_task_error;
     std::error_code m_sys_error;
+    std::size_t m_total_bytes;
+    std::size_t m_pending_bytes;
 };
 
-struct task_stats_view {
+/*! Global stats about all registered I/O tasks */
+struct global_stats {
+    global_stats();
+    global_stats(uint32_t running_tasks, uint32_t pending_tasks, double eta);
 
-    task_stats_view();
-    explicit task_stats_view(const task_stats& stats);
-    task_stats_view(const task_stats_view& other);
-    task_stats_view(task_stats_view&& rhs) noexcept;
+    uint32_t running_tasks() const;
+    uint32_t pending_tasks() const;
+    double eta() const;
 
-    task_stats_view& operator=(const task_stats_view& other);
-    task_stats_view& operator=(task_stats_view&& rhs) noexcept;
-
-    task_status status() const;
-    urd_error error() const;
-    std::error_code sys_error() const;
-
-    task_stats m_stats;
+    uint32_t m_running_tasks;
+    uint32_t m_pending_tasks;
+    double m_eta;
 };
 
 } // namespace io
@@ -97,6 +89,7 @@ struct task_stats_view {
 namespace utils {
 
 std::string to_string(io::task_status st);
+std::string to_string(const io::global_stats& gst);
 
 }
 

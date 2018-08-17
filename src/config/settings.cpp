@@ -49,7 +49,7 @@ settings::settings(const std::string& progname, bool daemonize, bool use_syslog,
                    bool dry_run, const bfs::path& global_socket, 
                    const bfs::path& control_socket, uint32_t remote_port,
                    const bfs::path& pidfile, uint32_t workers, 
-                   const bfs::path& cfgfile, 
+                   uint32_t backlog_size, const bfs::path& cfgfile, 
                    const std::list<namespace_def>& defns) :
     m_progname(progname),
     m_daemonize(daemonize),
@@ -60,6 +60,7 @@ settings::settings(const std::string& progname, bool daemonize, bool use_syslog,
     m_remote_port(remote_port),
     m_daemon_pidfile(pidfile),
     m_workers_in_pool(workers),
+    m_backlog_size(backlog_size),
     m_config_file(cfgfile),
     m_default_namespaces(defns) { }
 
@@ -73,6 +74,7 @@ void settings::load_defaults() {
     m_remote_port = defaults::remote_port;
     m_daemon_pidfile = defaults::pidfile;
     m_workers_in_pool = defaults::workers_in_pool;
+    m_backlog_size = defaults::backlog_size;
     m_config_file = defaults::config_file;
     m_default_namespaces.clear();
 }
@@ -94,6 +96,7 @@ void settings::load_from_file(const bfs::path& filename) {
     m_remote_port = gsettings.get_as<uint32_t>(keywords::remote_port);
     m_daemon_pidfile = gsettings.get_as<bfs::path>(keywords::pidfile);
     m_workers_in_pool = gsettings.get_as<uint32_t>(keywords::workers);
+    m_backlog_size = defaults::backlog_size;
 
     // load definitions for default namespaces
     const auto& namespaces =
@@ -120,6 +123,7 @@ std::string settings::to_string() const {
            "  m_remote_port: "    + std::to_string(m_remote_port) + ",\n" +
            "  m_pidfile: "        + m_daemon_pidfile.string() + ",\n" +
            "  m_workers: "        + std::to_string(m_workers_in_pool) + ",\n" +
+           "  m_backlog_size: "   + std::to_string(m_backlog_size) + ",\n" +
            "  m_config_file: "    + m_config_file.string() + ",\n" +
            "};";
     //TODO: add m_default_namespaces
@@ -160,6 +164,10 @@ bfs::path& settings::pidfile() {
 
 uint32_t& settings::workers_in_pool() {
     return m_workers_in_pool;
+}
+
+uint32_t& settings::backlog_size() {
+    return m_backlog_size;
 }
 
 bfs::path& settings::config_file() {

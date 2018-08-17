@@ -31,7 +31,6 @@
 #include "io/transferor-registry.hpp"
 #include "io/transferors.hpp"
 #include "io/task.hpp"
-#include "io/fake-task.hpp"
 #include "io/task-manager.hpp"
 #include "io/task-stats.hpp"
 

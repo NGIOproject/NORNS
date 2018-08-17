@@ -30,83 +30,171 @@
 
 #include "logger.hpp"
 #include "resources.hpp"
-#include "transferors.hpp"
 #include "task.hpp"
-#include "task-stats.hpp"
-#include "auth/process-credentials.hpp"
+#include "auth.hpp"
 
 namespace norns {
 namespace io {
 
-task::task(const iotask_id tid, const iotask_type type, 
-           const backend_ptr src_backend, const resource_info_ptr src_info,
-           const backend_ptr dst_backend, const resource_info_ptr dst_info,
-           const auth::credentials& creds, const transferor_ptr&& tx_ptr, 
-           const task_stats_ptr&& st_ptr)
-    : m_id(tid),
-      m_type(type),
-      m_src_backend(src_backend),
-      m_src_info(src_info),
-      m_dst_backend(dst_backend),
-      m_dst_info(dst_info),
-      m_usr_credentials(creds),
-      m_transferor(tx_ptr),
-      m_stats(st_ptr) { }
-
-iotask_id task::id() const {
-    return m_id;
-}
-
-void task::operator()() const {
+/////////////////////////////////////////////////////////////////////////////////
+//   specializations for copy tasks 
+/////////////////////////////////////////////////////////////////////////////////
+template<>
+void 
+task<iotask_type::copy>::operator()() {
 
     std::error_code ec;
 
+    const auto tid = m_task_info->id();
+    const auto type = m_task_info->type();
+    const auto src_backend = m_task_info->src_backend();
+    const auto src_rinfo = m_task_info->src_rinfo();
+    const auto dst_backend = m_task_info->dst_backend();
+    const auto dst_rinfo = m_task_info->dst_rinfo();
+    const auto auth = m_task_info->auth();
+
     // helper lambda for error reporting 
     const auto log_error = [&] (const std::string& msg) {
-        m_stats->set_status(task_status::finished_with_error);
-        m_stats->set_error(urd_error::system_error);
-        m_stats->set_sys_error(ec);
+        m_task_info->update_status(task_status::finished_with_error,
+                                   urd_error::system_error, ec);
 
         std::string r_msg = "[{}] " + msg + ": {}";
 
-        LOGGER_ERROR(r_msg.c_str(), m_id, ec.message());
-        LOGGER_WARN("[{}] I/O task completed with error", m_id);
+        LOGGER_ERROR(r_msg.c_str(), tid, ec.message());
+        LOGGER_WARN("[{}] I/O task completed with error", tid);
     };
 
-    LOGGER_WARN("[{}] Starting I/O task", m_id);
-    LOGGER_WARN("[{}]   TYPE: {}", m_id, utils::to_string(m_type));
-    LOGGER_WARN("[{}]   FROM: {}", m_id, m_src_backend->to_string());
-    LOGGER_WARN("[{}]     TO: {}", m_id, m_dst_backend->to_string());
+    LOGGER_WARN("[{}] Starting I/O task", tid);
+    LOGGER_WARN("[{}]   TYPE: {}", tid, utils::to_string(type));
+    LOGGER_WARN("[{}]   FROM: {}", tid, src_backend->to_string());
+    LOGGER_WARN("[{}]     TO: {}", tid, dst_backend->to_string());
 
-    m_stats->set_status(task_status::in_progress);
+    m_task_info->update_status(task_status::running);
 
-    auto src = m_src_backend->get_resource(m_src_info, ec);
+    auto src = src_backend->get_resource(src_rinfo, ec);
 
     if(ec) {
-        log_error("Could not access input data " + m_src_info->to_string());
+        log_error("Could not access input data " + src_rinfo->to_string());
         return;
     }
 
-    auto dst = m_dst_backend->new_resource(m_dst_info, src->is_collection(), ec);
+    auto dst = dst_backend->new_resource(dst_rinfo, src->is_collection(), ec);
 
     if(ec) {
-        log_error("Could not create output data " + m_dst_info->to_string());
+        log_error("Could not create output data " + dst_rinfo->to_string());
         return;
     }
 
-    //TODO progress reporting
-    ec = m_transferor->transfer(m_usr_credentials, src, dst);
+    ec = m_transferor->transfer(auth, m_task_info, src, dst);
 
     if(ec) {
         log_error("Transfer failed");
         return;
     }
 
-    LOGGER_WARN("[{}] I/O task completed successfully", m_id);
+    LOGGER_WARN("[{}] I/O task completed successfully", tid);
+    m_task_info->update_status(task_status::finished, urd_error::success, 
+                    std::make_error_code(static_cast<std::errc>(ec.value())));
+}
 
-    m_stats->set_status(task_status::finished);
-    m_stats->set_error(urd_error::success);
-    m_stats->set_sys_error(std::make_error_code(static_cast<std::errc>(ec.value())));
+
+/////////////////////////////////////////////////////////////////////////////////
+//   specializations for move tasks 
+/////////////////////////////////////////////////////////////////////////////////
+template<>
+void 
+task<iotask_type::move>::operator()() {
+
+    std::error_code ec;
+
+    const auto tid = m_task_info->id();
+    const auto type = m_task_info->type();
+    const auto src_backend = m_task_info->src_backend();
+    const auto src_rinfo = m_task_info->src_rinfo();
+    const auto dst_backend = m_task_info->dst_backend();
+    const auto dst_rinfo = m_task_info->dst_rinfo();
+    const auto auth = m_task_info->auth();
+
+    // helper lambda for error reporting 
+    const auto log_error = [&] (const std::string& msg) {
+        m_task_info->update_status(task_status::finished_with_error,
+                                   urd_error::system_error, ec);
+
+        std::string r_msg = "[{}] " + msg + ": {}";
+
+        LOGGER_ERROR(r_msg.c_str(), tid, ec.message());
+        LOGGER_WARN("[{}] I/O task completed with error", tid);
+    };
+
+    LOGGER_WARN("[{}] Starting I/O task", tid);
+    LOGGER_WARN("[{}]   TYPE: {}", tid, utils::to_string(type));
+    LOGGER_WARN("[{}]   FROM: {}", tid, src_backend->to_string());
+    LOGGER_WARN("[{}]     TO: {}", tid, dst_backend->to_string());
+
+    m_task_info->update_status(task_status::running);
+
+    auto src = src_backend->get_resource(src_rinfo, ec);
+
+    if(ec) {
+        log_error("Could not access input data " + src_rinfo->to_string());
+        return;
+    }
+
+    auto dst = dst_backend->new_resource(dst_rinfo, src->is_collection(), ec);
+
+    if(ec) {
+        log_error("Could not create output data " + dst_rinfo->to_string());
+        return;
+    }
+
+    ec = m_transferor->transfer(auth, m_task_info, src, dst);
+
+    if(ec) {
+        log_error("Transfer failed");
+        return;
+    }
+
+    LOGGER_WARN("[{}] I/O task completed successfully", tid);
+    m_task_info->update_status(task_status::finished, urd_error::success, 
+                    std::make_error_code(static_cast<std::errc>(ec.value())));
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////
+//   specializations for noop tasks 
+/////////////////////////////////////////////////////////////////////////////////
+template<>
+void 
+task<iotask_type::noop>::operator()() {
+
+    const auto tid = m_task_info->id();
+
+    LOGGER_WARN("[{}] Starting noop I/O task", tid);
+
+    usleep(100);
+
+    m_task_info->update_status(task_status::running);
+
+    LOGGER_WARN("[{}] noop I/O task \"running\"", tid);
+
+    usleep(100);
+
+    m_task_info->update_status(task_status::finished);
+
+    LOGGER_WARN("[{}] noop I/O task completed successfully", tid);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////
+//   specializations for unknown tasks 
+/////////////////////////////////////////////////////////////////////////////////
+template<>
+void 
+task<iotask_type::unknown>::operator()() {
+
+    const auto tid = m_task_info->id();
+
+    LOGGER_CRITICAL("[{}] Unknown task type detected!", tid);
 }
 
 } // namespace io

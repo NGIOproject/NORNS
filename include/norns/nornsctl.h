@@ -73,17 +73,18 @@ typedef struct {
 
 /* Global task status descriptor */
 typedef struct {
-    /* Number of active tasks */
-    size_t st_active_tasks;
+    /* Number of running tasks */
+    size_t st_running_tasks;
 
     /* Number of pending tasks */
     size_t st_pending_tasks;
 
-    /* E.T.A. in seconds for active tasks
+    /* E.T.A. in seconds for running tasks or NAN if estimation
+     * is not yet available
      *
      * This value is computed as the max of alls ETAs for all currently 
-     * active tasks */
-    size_t st_eta;
+     * running tasks */
+    double st_eta;
 } nornsctl_stat_t;
 
 nornsctl_backend_t 

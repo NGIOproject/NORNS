@@ -44,6 +44,7 @@ norns::config::settings test_cfg(
     42002, /* remote port */
     "./test_urd.pid", /* daemon_pidfile */
     2, /* api workers */
+    128,
     "./",
     {}
 );

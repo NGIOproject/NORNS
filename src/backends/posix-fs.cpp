@@ -133,6 +133,59 @@ backend::resource_ptr posix_filesystem::get_resource(const resource_info_ptr& ri
     return std::make_shared<data::local_path_resource>(shared_from_this(), ns_abs_subpath);
 }
 
+std::size_t
+posix_filesystem::get_size(const resource_info_ptr& rinfo, std::error_code& ec) const {
+
+    const auto d_rinfo = std::static_pointer_cast<data::local_path_info>(rinfo);
+
+    const bfs::path ns_subpath = utils::lexical_normalize(d_rinfo->datapath(), false);
+
+    if(ns_subpath.empty()) {
+        ec = std::make_error_code(static_cast<std::errc>(ENOENT));
+        return 0;
+    }
+
+    // check that path exists
+    boost::system::error_code error;
+    const bfs::path canonical_path = bfs::canonical(m_mount / ns_subpath, error);
+
+    if(error) {
+        ec = std::make_error_code(static_cast<std::errc>(error.value()));
+        return 0;
+    }
+
+    const std::size_t sz = [&]() -> std::size_t {
+        std::size_t bytes = 0;
+        if(bfs::is_directory(canonical_path)) {
+            for(bfs::recursive_directory_iterator it(canonical_path, error);
+                it != bfs::recursive_directory_iterator();
+                ++it) {
+
+                if(error) {
+                    return 0;
+                }
+
+                if(!bfs::is_regular(*it)) {
+                    continue;
+                }
+
+                bytes += bfs::file_size(*it);
+            }
+
+            return bytes;
+        }
+
+        return bfs::file_size(canonical_path, error);
+    }();
+
+    if(error) {
+        ec = std::make_error_code(static_cast<std::errc>(error.value()));
+        return 0;
+    }
+
+    return sz;
+}
+
 bool posix_filesystem::accepts(resource_info_ptr res) const {
     switch(res->type()) {
         case data::resource_type::local_posix_path:

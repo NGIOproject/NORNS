@@ -69,6 +69,11 @@ credentials::fetch(const ba::local::stream_protocol::socket& socket) {
 }
 #endif
 
+credentials::credentials() :
+    m_pid(0),
+    m_uid(0),
+    m_gid(0) {}
+
 credentials::credentials(pid_t pid, uid_t uid, gid_t gid) :
     m_pid(pid),
     m_uid(uid),

@@ -119,7 +119,7 @@ decode_response_type(int norns_rpc_type) {
     switch(norns_rpc_type) {
         case NORNS__RPC__RESPONSE__TYPE__IOTASK_SUBMIT:
             return NORNS_IOTASK_SUBMIT;
-        case NORNS__RPC__REQUEST__TYPE__IOTASK_STATUS:
+        case NORNS__RPC__RESPONSE__TYPE__IOTASK_STATUS:
             return NORNS_IOTASK_STATUS;
         case NORNS__RPC__RESPONSE__TYPE__PING:
             return NORNS_PING;
@@ -133,12 +133,14 @@ decode_response_type(int norns_rpc_type) {
             return NORNS_PROCESS_ADD;
         case NORNS__RPC__RESPONSE__TYPE__PROCESS_REMOVE:
             return NORNS_PROCESS_REMOVE;
-        case NORNS__RPC__REQUEST__TYPE__NAMESPACE_REGISTER:
+        case NORNS__RPC__RESPONSE__TYPE__NAMESPACE_REGISTER:
             return NORNS_NAMESPACE_REGISTER;
-        case NORNS__RPC__REQUEST__TYPE__NAMESPACE_UPDATE:
+        case NORNS__RPC__RESPONSE__TYPE__NAMESPACE_UPDATE:
             return NORNS_NAMESPACE_UPDATE;
-        case NORNS__RPC__REQUEST__TYPE__NAMESPACE_UNREGISTER:
+        case NORNS__RPC__RESPONSE__TYPE__NAMESPACE_UNREGISTER:
             return NORNS_NAMESPACE_UNREGISTER;
+        case NORNS__RPC__RESPONSE__TYPE__CTL_STATUS:
+            return NORNSCTL_STATUS;
         case NORNS__RPC__RESPONSE__TYPE__BAD_REQUEST:
             // intentionally fall through
         default:
@@ -776,6 +778,15 @@ unpack_from_buffer(msgbuffer_t* buf, norns_response_t* response) {
             response->r_status = rpc_resp->stats->status;
             response->r_task_error = rpc_resp->stats->task_error;
             response->r_errno = rpc_resp->stats->sys_errnum;
+            break;
+
+        case NORNSCTL_STATUS:
+            if(rpc_resp->gstats == NULL) {
+                return NORNS_ERPCRECVFAILED;
+            }
+            response->r_running_tasks = rpc_resp->gstats->running_tasks;
+            response->r_pending_tasks = rpc_resp->gstats->pending_tasks;
+            response->r_eta = rpc_resp->gstats->eta;
             break;
 
         default:

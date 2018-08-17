@@ -60,6 +60,14 @@ backend::resource_ptr lustre::get_resource(const resource_info_ptr& rinfo, std::
     return backend::resource_ptr(); //XXX
 }
 
+std::size_t
+lustre::get_size(const resource_info_ptr& rinfo, std::error_code& ec) const {
+    (void) rinfo;
+    (void) ec;
+    return 0; //XXX
+}
+
+
 bool lustre::accepts(resource_info_ptr res) const {
     switch(res->type()) {
         case data::resource_type::local_posix_path:

@@ -34,6 +34,8 @@
 #include "common.hpp"
 #include "resources.hpp"
 #include "backends.hpp"
+#include "task.hpp"
+#include "task-info.hpp"
 
 namespace norns {
 namespace io {
@@ -42,20 +44,9 @@ namespace io {
 struct task_stats;
 
 /*! Descriptor for a fake I/O task that does nothing but waiting */
-struct fake_task {
-
-    using backend_ptr = std::shared_ptr<storage::backend>;
-    using resource_ptr = std::shared_ptr<data::resource>;
-    using task_stats_ptr = std::shared_ptr<task_stats>;
-
-    fake_task(iotask_id tid, const task_stats_ptr stats);
-
-    iotask_id id() const;
-    bool is_valid() const;
-    void operator()() const;
-
-    iotask_id   m_id;
-    task_stats_ptr m_stats;
+struct fake_task : public task {
+    fake_task(task_info_ptr&& task_info);
+    void operator()() override final;
 };
 
 

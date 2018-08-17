@@ -39,8 +39,15 @@
 
 namespace detail {
 
+
 class task {
+
 public:
+    struct noop_epilog {
+        constexpr noop_epilog() noexcept = default;
+        void operator()(){};
+    };
+
     task(void) = default;
     virtual ~task(void) = default;
     task(const task& /*rhs*/) = delete;
@@ -58,12 +65,17 @@ public:
 
 class pool {
 
-    template <typename FuncType>
+    template <typename CallableTask, typename CallableEpilog = detail::task::noop_epilog>
     class task : public detail::task {
 
     public: 
-        task(FuncType&& func)
+
+        task(CallableTask&& func)
             : m_func(std::move(func)) {}
+
+        task(CallableTask&& func, CallableEpilog&& epilog)
+            : m_func(std::move(func)),
+              m_epilog(std::move(epilog)) {}
 
         ~task() override = default;
         task(const task& /*rhs*/) = delete;
@@ -73,10 +85,12 @@ class pool {
 
         void execute() override {
             m_func();
+            m_epilog();
         }
 
     private:
-        FuncType m_func;
+        CallableTask m_func;
+        CallableEpilog m_epilog;
     };
 
 public:
@@ -154,6 +168,19 @@ public:
         using TaskType = task<decltype(std::bind(std::declval<FuncType>(), std::declval<Args>()...))>;
 
         TaskType task{std::move(bound_task)};
+
+        m_work_queue.push(std::make_unique<TaskType>(std::move(task)));
+    }
+
+    template <typename CallableTask, typename CallableEpilog, typename... TaskArgs>
+    void submit_with_epilog_and_forget(CallableTask&& func, CallableEpilog&& epilog, TaskArgs&&... func_args) {
+
+        auto bound_task = std::bind(std::forward<CallableTask>(func), std::forward<TaskArgs>(func_args)...);
+        auto bound_epilog = std::bind(std::forward<CallableEpilog>(epilog));
+        using TaskType = task<decltype(std::bind(std::declval<CallableTask>(), std::declval<TaskArgs>()...)),
+                              decltype(std::bind(std::declval<CallableEpilog>()))>;
+
+        TaskType task{std::move(bound_task), std::move(bound_epilog)};
 
         m_work_queue.push(std::make_unique<TaskType>(std::move(task)));
     }

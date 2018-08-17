@@ -63,7 +63,7 @@ liburd_resources_la_SOURCES = \
 	resources/shared_posix_path/detail/shared-path-info.hpp
 
 liburd_resources_la_CXXFLAGS = \
-	-std=gnu++11 -Wall -Wextra
+	-std=gnu++11 -Wall -Wextra -fdevirtualize
 
 liburd_resources_la_CPPFLAGS = \
 	-DSPDLOG_ENABLE_SYSLOG \
@@ -137,10 +137,10 @@ liburd_aux_la_SOURCES = \
 	config/parsers.hpp \
 	config/defaults.hpp \
 	io.hpp \
-	io/fake-task.cpp \
-	io/fake-task.hpp \
 	io/task.cpp \
 	io/task.hpp \
+	io/task-info.cpp \
+	io/task-info.hpp \
 	io/task-manager.cpp \
 	io/task-manager.hpp \
 	io/task-stats.cpp \
@@ -179,7 +179,7 @@ nodist_liburd_aux_la_SOURCES = \
 	messages.pb.h
 
 liburd_aux_la_CXXFLAGS = \
-	-std=gnu++11 -Wall -Wextra
+	-std=gnu++11 -Wall -Wextra -fdevirtualize
 
 liburd_aux_la_CPPFLAGS = \
 	-DSPDLOG_ENABLE_SYSLOG \
@@ -228,6 +228,7 @@ config/defaults.cpp: Makefile
 	   echo "    const char* pidfile            = \"$(localstatedir)/urd.pid\";"; \
 \
 	   echo "    const uint32_t workers_in_pool = std::thread::hardware_concurrency();"; \
+	   echo "    const uint32_t backlog_size    = 128;"; \
 	   echo "    const char* config_file        = \"$(sysconfdir)/norns.conf\";"; \
 	   echo "} // namespace defaults"; \
 	   echo "} // namespace config"; \
@@ -247,7 +248,7 @@ urd_SOURCES = \
 	main.cpp
 
 urd_CXXFLAGS = \
-	-std=gnu++11 -Wall -Wextra
+	-std=gnu++11 -Wall -Wextra -fdevirtualize
 
 urd_CPPFLAGS = \
 	-DSPDLOG_ENABLE_SYSLOG \

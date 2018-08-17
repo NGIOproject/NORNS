@@ -30,31 +30,25 @@
 
 #include "logger.hpp"
 #include "fake-task.hpp"
-#include "task-stats.hpp"
 
 namespace norns {
 namespace io {
 
-fake_task::fake_task(iotask_id tid, const task_stats_ptr stats)
-    : m_id(tid),
-      m_stats(stats) { }
+fake_task::fake_task(task_info_ptr&& task_info)
+    : task(std::move(task_info), nullptr) {}
 
-iotask_id fake_task::id() const {
-    return m_id;
-}
-
-void fake_task::operator()() const {
+void fake_task::operator()() {
     LOGGER_WARN("[{}] Starting fake I/O task", m_id);
 
     usleep(100);
 
-    m_stats->set_status(task_status::in_progress);
+    m_task_info->update_status(task_status::in_progress);
 
     LOGGER_WARN("[{}] fake I/O task \"running\"", m_id);
 
     usleep(100);
 
-    m_stats->set_status(task_status::finished);
+    m_task_info->update_status(task_status::finished);
 
     LOGGER_WARN("[{}] fake I/O task completed successfully", m_id);
 }

@@ -42,7 +42,7 @@ enum class urd_error;
 // forward declarations
 namespace io {
     struct task_stats;
-    struct task_stats_view;
+    struct global_stats;
 };
 
 namespace rpc {
@@ -146,7 +146,7 @@ using iotask_create_response = detail::response_impl<
 
 using iotask_status_response = detail::response_impl<
     response_type::iotask_status,
-    io::task_stats_view
+    io::task_stats
 >;
 
 using ping_response = detail::response_impl<
@@ -186,7 +186,8 @@ using backend_unregister_response = detail::response_impl<
 >;
 
 using ctl_status_response = detail::response_impl<
-    response_type::ctl_status
+    response_type::ctl_status,
+    io::global_stats
 >;
 
 using bad_request_response = detail::response_impl<

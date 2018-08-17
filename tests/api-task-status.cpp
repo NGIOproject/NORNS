@@ -40,10 +40,27 @@ SCENARIO("check request", "[api::norns_status]") {
             }
         );
 
-        const bfs::path path_tmp0 = 
-            env.create_directory("mnt/tmp0", env.basedir());
-//        const char* path_tmp1 = env.create_directory("mnt/tmp1").c_str();
-//        const char* path_lustre0 = env.create_directory("mnt/lustre0").c_str();
+        const char* nsid0 = "tmp0";
+        const char* nsid1 = "tmp1";
+        const char* src_nsid, *dst_nsid;
+        bfs::path src_mnt, dst_mnt;
+
+        // create namespaces
+        std::tie(src_nsid, src_mnt) = env.create_namespace(nsid0, "mnt/tmp0", 16384);
+        std::tie(dst_nsid, dst_mnt) = env.create_namespace(nsid1, "mnt/tmp1", 16384);
+
+        // define input names
+        std::vector<int> input_data(100, 42);
+        void* src_buf = input_data.data();
+        size_t src_buf_size = input_data.size() * sizeof(int);
+        const bfs::path src_file = "/a/b/c/file";
+        size_t src_file_size = 4096;
+
+        // define output names
+        const bfs::path dst_file = "/b/c/d/file";
+
+        // create input data
+        env.add_to_namespace(nsid0, "/a/b/c/file", 4096);
 
         /**************************************************************************************************************/
         /* tests for error conditions                                                                                 */
@@ -53,39 +70,59 @@ SCENARIO("check request", "[api::norns_status]") {
             
             norns_op_t task_op = NORNS_IOTASK_COPY;
             
-            void* src_addr = (void*) 0xdeadbeef;
-            size_t src_size = (size_t) 42;
-            
-            const char* dst_nsid = "tmp://";
-            const char* dst_mnt = path_tmp0.c_str();
-            const char* dst_path = "/a/b/c";
-
-            nornsctl_backend_t bdst = NORNSCTL_BACKEND(NORNS_BACKEND_POSIX_FILESYSTEM, dst_mnt, 8192);
-            norns_error_t rv = nornsctl_register_namespace(dst_nsid, &bdst);
-            REQUIRE(rv == NORNS_SUCCESS);
-
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_MEMORY_REGION(src_addr, src_size), 
-                                               NORNS_LOCAL_PATH(dst_nsid, dst_path));
+                                               NORNS_MEMORY_REGION(src_buf, src_buf_size), 
+                                               NORNS_LOCAL_PATH(dst_nsid, dst_file.c_str()));
 
-            rv = norns_submit(&task);
-            REQUIRE(rv == NORNS_SUCCESS);
-            REQUIRE(task.t_id != 0);
+            norns_error_t rv = norns_submit(&task);
 
-            norns_stat_t stats;
-            rv = norns_status(&task, &stats);
-
-            THEN("NORNS_SUCCESS is returned and task status is valid") {
+            THEN("norns_submit returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
-                REQUIRE((stats.st_status == NORNS_EPENDING ||
-                         stats.st_status == NORNS_EINPROGRESS ||
-                         stats.st_status == NORNS_EFINISHED));
-            }
+                REQUIRE(task.t_id != 0);
 
-            // cleanup
-            rv = nornsctl_unregister_namespace(dst_nsid);
-            REQUIRE(rv == NORNS_SUCCESS);
+                norns_stat_t stats;
+                rv = norns_status(&task, &stats);
+
+                THEN("NORNS_SUCCESS is returned and task status is valid") {
+                    REQUIRE(rv == NORNS_SUCCESS);
+                    REQUIRE((stats.st_status == NORNS_EPENDING ||
+                            stats.st_status == NORNS_EINPROGRESS ||
+                            stats.st_status == NORNS_EFINISHED));
+                }
+            }
         }
+
+        WHEN("checking the status of an active request") {
+            
+            norns_op_t task_op = NORNS_IOTASK_COPY;
+            
+            norns_iotask_t task = NORNS_IOTASK(task_op, 
+                                               NORNS_LOCAL_PATH(src_nsid, src_file.c_str()), 
+                                               NORNS_LOCAL_PATH(dst_nsid, dst_file.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("norns_submit returns NORNS_SUCCESS") {
+                REQUIRE(rv == NORNS_SUCCESS);
+                REQUIRE(task.t_id != 0);
+
+retry:
+                norns_stat_t stats;
+                rv = norns_status(&task, &stats);
+
+                THEN("NORNS_SUCCESS is returned and task status is valid") {
+                    REQUIRE(rv == NORNS_SUCCESS);
+                    REQUIRE((stats.st_status == NORNS_EPENDING ||
+                            stats.st_status == NORNS_EINPROGRESS ||
+                            stats.st_status == NORNS_EFINISHED));
+                }
+
+                if(stats.st_status != NORNS_EFINISHED)
+                    goto retry;
+            }
+        }
+
+        env.notify_success();
 /*
         WHEN("submitting a request to copy data using unregistered backends") {
 
@@ -1038,51 +1075,115 @@ SCENARIO("check requests", "[api::nornsctl_status]") {
             }
         );
 
-        const char* dst_nsid;
-        const char* dst_path = "/a/b/c";
-        bfs::path dst_mnt;
-        // create namespaces
-        std::tie(dst_nsid, dst_mnt) = env.create_namespace("tmp0", "mnt/tmp0", 16384);
+        const char* nsid0 = "tmp0";
+        const char* nsid1 = "tmp1";
+        const char* src_nsid, *dst_nsid;
+        bfs::path src_mnt, dst_mnt;
 
-        const bfs::path path_tmp0 = 
-            env.create_directory("mnt/tmp0", env.basedir());
+        // create namespaces
+        std::tie(src_nsid, src_mnt) = env.create_namespace(nsid0, "mnt/tmp0", 16384);
+        std::tie(dst_nsid, dst_mnt) = env.create_namespace(nsid1, "mnt/tmp1", 16384);
+
+        // define input names
+        void* src_buf;
+        size_t src_buf_size __attribute__((unused));
+        const bfs::path src_file = "/a/b/c/file";
+        size_t src_file_size = 4096;
+
+        // define output names
+        const bfs::path dst_file = "/b/c/d/file";
+
+        // create input data
+        env.add_to_namespace(nsid0, src_file, 4096);
+
+        // 64MiB buffer
+        std::vector<int> input_data(16*1024*1024, 42);
+        src_buf = input_data.data();
+        src_buf_size = input_data.size() * sizeof(int);
+
+        WHEN("checking the status of all requests without actual requests running") {
+            nornsctl_stat_t global_stats;
+            norns_error_t rv = nornsctl_status(&global_stats);
+            REQUIRE(rv == NORNS_SUCCESS);
+            REQUIRE(global_stats.st_pending_tasks == 0);
+            REQUIRE(global_stats.st_running_tasks == 0);
+            REQUIRE(global_stats.st_eta == 0.0);
+        }
 
         WHEN("checking the status of all requests") {
             
             norns_op_t task_op = NORNS_IOTASK_COPY;
             
-            void* src_addr = (void*) 0xdeadbeef;
-            size_t src_size = (size_t) 42;
-            
-            const char* dst_mnt = path_tmp0.c_str();
-
             const size_t ntasks = 10;
             norns_iotask_t tasks[ntasks];
+            size_t sizes[] = { 4*1024*1024, 16*1024*1024, 32*1024*1024, 64*1024*1024 };
 
             for(size_t i=0; i<ntasks; ++i) {
+
                 tasks[i] = NORNS_IOTASK(task_op, 
-                                        NORNS_MEMORY_REGION(src_addr, src_size), 
-                                        NORNS_LOCAL_PATH(dst_nsid, dst_path));
+                                        NORNS_MEMORY_REGION(src_buf, sizes[i%4]), 
+                                        NORNS_LOCAL_PATH(dst_nsid, dst_file.c_str()));
 
                 norns_error_t rv = norns_submit(&tasks[i]);
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(tasks[i].t_id == i + 1);
             }
 
-            nornsctl_stat_t stats;
-            norns_error_t rv = nornsctl_status(&stats);
+            THEN("The status returned is consistent with status of the tasks sent") {
+                bool finished_tasks[ntasks];
+                memset(finished_tasks, 0, sizeof(finished_tasks));
+                size_t tasks_remaining = ntasks;
+                size_t tasks_completed = 0;
 
-            // norns_stat_t stats;
-            // rv = norns_status(&task, &stats);
+                do {
+                    nornsctl_stat_t global_stats;
+                    norns_error_t rv = nornsctl_status(&global_stats);
+                    REQUIRE(rv == NORNS_SUCCESS);
+                    REQUIRE((global_stats.st_pending_tasks + 
+                             global_stats.st_running_tasks) <= ntasks);
 
-            // THEN("NORNS_SUCCESS is returned and task status is valid") {
-            //     REQUIRE(rv == NORNS_SUCCESS);
-            //     REQUIRE((stats.st_status == NORNS_EPENDING ||
-            //              stats.st_status == NORNS_EINPROGRESS ||
-            //              stats.st_status == NORNS_EFINISHED));
-            // }
+                    for(size_t i=0; i<ntasks; ++i) {
+                        if(!finished_tasks[i]) {
+                            norns_stat_t stats;
+                            norns_status(&tasks[i], &stats);
+
+                            if(stats.st_status == NORNS_EFINISHED ||
+                               stats.st_status == NORNS_EFINISHEDWERROR) {
+                                finished_tasks[i] = true;
+                                --tasks_remaining;
+                                ++tasks_completed;
+                            }
+                        }
+                    }
+
+                    std::this_thread::sleep_for(std::chrono::microseconds(500));
+                }
+                while(tasks_remaining != 0);
+
+                THEN("The ETA returned is 0 when no tasks are left") {
+                    nornsctl_stat_t global_stats;
+                    norns_error_t rv = nornsctl_status(&global_stats);
+                    REQUIRE(rv == NORNS_SUCCESS);
+                    REQUIRE(global_stats.st_pending_tasks == 0);
+                    REQUIRE(global_stats.st_running_tasks == 0);
+                    REQUIRE(global_stats.st_eta == 0.0);
+                }
+            }
         }
 
         env.notify_success();
     }
+
+#ifndef USE_REAL_DAEMON
+    GIVEN("a non-running urd instance") {
+        WHEN("checking the status of all requests") {
+            nornsctl_stat_t global_stats;
+            norns_error_t rv = nornsctl_status(&global_stats);
+
+            THEN("NORNS_ECONNFAILED is returned") {
+                REQUIRE(rv == NORNS_ECONNFAILED);
+            }
+        }
+    }
+#endif
 }

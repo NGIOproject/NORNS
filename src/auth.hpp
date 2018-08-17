@@ -25,37 +25,9 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#ifndef __IO_MEM_TO_SHARED_PATH_TX__
-#define __IO_MEM_TO_SHARED_PATH_TX__
+#ifndef __AUTH_HPP__
+#define __AUTH_HPP__
 
-#include <memory>
-#include <system_error>
-#include "transferor.hpp"
+#include "auth/process-credentials.hpp"
 
-namespace norns {
-
-// forward declarations
-namespace auth {
-struct credentials;
-}
-
-namespace data {
-struct resource_info;
-struct resource;
-}
-
-namespace io {
-
-struct memory_region_to_shared_path_transferor : public transferor {
-    bool validate(const std::shared_ptr<data::resource_info>& src_info,
-                  const std::shared_ptr<data::resource_info>& dst_info) const override final;
-    std::error_code transfer(const auth::credentials& auth,                
-                             const std::shared_ptr<task_info>& task_info,
-                             const std::shared_ptr<const data::resource>& src,  
-                             const std::shared_ptr<const data::resource>& dst) const override final;
-};
-
-} // namespace io
-} // namespace norns
-
-#endif /* __IO_MEM_TO_SHARED_PATH_TX__ */
+#endif /* __AUTH_HPP__ */

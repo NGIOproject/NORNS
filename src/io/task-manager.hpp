@@ -31,11 +31,9 @@
 #include <memory>
 #include <unordered_map>
 #include <boost/optional.hpp>
+#include <boost/circular_buffer.hpp>
 #include "thread-pool.hpp"
-
 #include "task.hpp"
-#include "fake-task.hpp"
-
 #include "common.hpp"
 
 namespace norns {
@@ -44,61 +42,52 @@ namespace io {
 // forward declarations
 enum class task_status;
 struct task_stats;
+struct task_info;
 
 struct task_manager {
 
-    using ReturnType = 
-        std::tuple<iotask_id, std::shared_ptr<task_stats>>;
+    struct pair_hash {
+        template <typename T, typename U>
+        std::size_t operator()(const std::pair<T, U> &x) const {
+            std::size_t seed = 0;
+            boost::hash_combine(seed, x.first);
+            boost::hash_combine(seed, x.second);
+            return seed;
+        }
+    };
 
-    task_manager(uint32_t nrunners, bool dry_run);
+    using backend_ptr = std::shared_ptr<storage::backend>;
+    using resource_info_ptr = std::shared_ptr<data::resource_info>;
+    using resource_ptr = std::shared_ptr<data::resource>;
+    using transferor_ptr = std::shared_ptr<transferor>;
+    using ReturnType = std::tuple<iotask_id, std::shared_ptr<task_info>>;
 
-    template <typename... Args>
+    task_manager(uint32_t nrunners, uint32_t backlog_size, bool dry_run);
+
     boost::optional<iotask_id>
-    create(Args&&... args) {
+    create_task(iotask_type type, const auth::credentials& creds, 
+            const backend_ptr src_backend, const resource_info_ptr src_rinfo, 
+            const backend_ptr dst_backend, const resource_info_ptr dst_rinfo,
+            const transferor_ptr&& tx_ptr);
 
-        auto ret = register_task();
-
-        if(!ret) {
-            return boost::none;
-        }
-
-        iotask_id tid;
-        std::shared_ptr<io::task_stats> stats_record;
-
-        std::tie(tid, stats_record) = *ret;
-
-        if(!m_dry_run) {
-            m_runners.submit_and_forget(
-                    io::task(tid, std::forward<Args>(args)...,
-                                std::move(stats_record)));
-            
-            return tid;
-        }
-
-        m_runners.submit_and_forget(
-                io::fake_task(tid, std::move(stats_record)));
-
-        return tid;
-    }
-
-    std::shared_ptr<task_stats>
+    std::shared_ptr<task_info>
     find(iotask_id) const;
 
-    void
-    summarize();
+    io::global_stats
+    global_stats() const;
 
     void 
     stop_all_tasks();
 
 private:
-    boost::optional<ReturnType> register_task();
-
-private:
+    mutable boost::shared_mutex m_mutex;
     iotask_id m_id_base = 0;
+    const uint32_t m_backlog_size;
     bool m_dry_run;
-    std::unordered_map<iotask_id, std::shared_ptr<task_stats>> m_task_info;
+    std::unordered_map<iotask_id, std::shared_ptr<task_info>> m_task_info;
+    std::unordered_map<std::pair<std::string, std::string>,
+                       boost::circular_buffer<double>, pair_hash> m_bandwidth_backlog;
     thread_pool m_runners;
-
 };
 
 } // namespace io

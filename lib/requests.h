@@ -77,6 +77,11 @@ typedef struct {
             norns_error_t r_task_error;
             int r_errno;
         };
+        struct {
+            uint32_t r_running_tasks;
+            uint32_t r_pending_tasks;
+            double r_eta;
+        };
     };
 } norns_response_t;
 

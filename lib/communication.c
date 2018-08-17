@@ -122,10 +122,9 @@ send_control_status_request(nornsctl_stat_t* stats) {
         return NORNS_ESNAFU;
     }
 
-//TODO
-//    stats->st_status = resp.r_status;
-//    stats->st_task_error = resp.r_task_error;
-//    stats->st_sys_errno = resp.r_errno;
+    stats->st_running_tasks = resp.r_running_tasks;
+    stats->st_pending_tasks = resp.r_pending_tasks;
+    stats->st_eta = resp.r_eta;
 
     return resp.r_error_code;
 }

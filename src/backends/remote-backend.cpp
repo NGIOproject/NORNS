@@ -59,6 +59,14 @@ backend::resource_ptr remote_backend::get_resource(const resource_info_ptr& rinf
     return std::make_shared<data::remote_path_resource>(shared_from_this()); //XXX
 }
 
+std::size_t
+remote_backend::get_size(const resource_info_ptr& rinfo, std::error_code& ec) const {
+    (void) rinfo;
+    (void) ec;
+
+    return 0; //XXX
+}
+
 bool remote_backend::accepts(resource_info_ptr res) const {
     switch(res->type()) {
         case data::resource_type::local_posix_path:

@@ -64,6 +64,8 @@ public:
 
     virtual resource_ptr new_resource(const resource_info_ptr& rinfo, bool is_collection, std::error_code& ec) const = 0;
     virtual resource_ptr get_resource(const resource_info_ptr& rinfo, std::error_code& ec) const = 0;
+    virtual std::size_t get_size(const resource_info_ptr& rinfo, std::error_code& ec) const = 0;
+
 
     virtual bool accepts(resource_info_ptr res) const = 0;
 

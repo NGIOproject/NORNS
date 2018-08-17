@@ -33,6 +33,8 @@
 #include "utils.hpp"
 #include "logger.hpp"
 #include "resources.hpp"
+#include "auth.hpp"
+#include "io/task-info.hpp"
 #include "backends/posix-fs.hpp"
 #include "local-path-to-remote-path.hpp"
 
@@ -54,11 +56,13 @@ local_path_to_remote_path_transferor::validate(
 
 std::error_code 
 local_path_to_remote_path_transferor::transfer(
-        const auth::credentials& usr_creds, 
+        const auth::credentials& auth, 
+        const std::shared_ptr<task_info>& task_info,
         const std::shared_ptr<const data::resource>& src,  
         const std::shared_ptr<const data::resource>& dst) const {
 
-    (void) usr_creds;
+    (void) auth;
+    (void) task_info;
     (void) src;
     (void) dst;
 

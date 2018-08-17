@@ -176,20 +176,20 @@ pid_t urd::daemonize() {
 }
 
 urd_error urd::validate_iotask_args(iotask_type type, 
-                                    const resource_info_ptr& src_info,
-                                    const resource_info_ptr& dst_info) const {
+                                    const resource_info_ptr& src_rinfo,
+                                    const resource_info_ptr& dst_rinfo) const {
 
     if(type != iotask_type::copy && type != iotask_type::move) {
         return urd_error::bad_args;
     }
 
     // src_resource cannot be remote
-    if(src_info->type() == data::resource_type::remote_posix_path) {
+    if(src_rinfo->type() == data::resource_type::remote_posix_path) {
         return urd_error::not_supported;
     }
 
     // dst_resource cannot be a memory region
-    if(dst_info->type() == data::resource_type::memory_region) {
+    if(dst_rinfo->type() == data::resource_type::memory_region) {
         return urd_error::not_supported;
     }
 
@@ -207,23 +207,23 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
     auto request = utils::static_unique_ptr_cast<api::iotask_create_request>(std::move(base_request));
 
     const auto type = request->get<0>();
-    const auto src_info = request->get<1>();
-    const auto dst_info = request->get<2>();
+    const auto src_rinfo = request->get<1>();
+    const auto dst_rinfo = request->get<2>();
 
     response_ptr resp;
     iotask_id tid = 0;
     urd_error rv = urd_error::success;
 
-    const auto creds = request->credentials();
+    const auto auth = request->credentials();
 
-    if(!creds) {
+    if(!auth) {
         LOGGER_CRITICAL("Request without credentials");
         rv = urd_error::snafu; // TODO: invalid_credentials? eaccess? eperm?
         goto log_and_return;
     }
 
     //XXX move validate() to io::
-    if((rv = validate_iotask_args(type, src_info, dst_info)) 
+    if((rv = validate_iotask_args(type, src_rinfo, dst_rinfo)) 
             == urd_error::success) {
 
         std::shared_ptr<storage::backend> bsrc, bdst;
@@ -231,13 +231,13 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
         {
             boost::shared_lock<boost::shared_mutex> lock(m_namespace_mgr_mutex);
 
-            if(auto rv = m_namespace_mgr->find(src_info->nsid(), 
-                                               src_info->is_remote())) {
+            if(auto rv = m_namespace_mgr->find(src_rinfo->nsid(), 
+                                               src_rinfo->is_remote())) {
                 bsrc = *rv;
             }
 
-            if(auto rv = m_namespace_mgr->find(dst_info->nsid(), 
-                                               dst_info->is_remote())) {
+            if(auto rv = m_namespace_mgr->find(dst_rinfo->nsid(), 
+                                               dst_rinfo->is_remote())) {
                 bdst = *rv;
             }
         }
@@ -247,27 +247,22 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
             goto log_and_return;
         }
 
-        const auto tx_ptr = m_transferor_registry->get(src_info->type(), 
-                                                       dst_info->type());
+        const auto tx_ptr = m_transferor_registry->get(src_rinfo->type(), 
+                                                       dst_rinfo->type());
 
         if(!tx_ptr) {
             rv = urd_error::snafu; //TODO: unknown transferor
             goto log_and_return;
         }
 
-        if(!tx_ptr->validate(src_info, dst_info)) {
+        if(!tx_ptr->validate(src_rinfo, dst_rinfo)) {
             rv = urd_error::bad_args;
             goto log_and_return;
         }
 
-        boost::optional<iotask_id> ret;
-
         // register the task in the task manager
-        {
-            boost::unique_lock<boost::shared_mutex> lock(m_task_mgr_mutex);
-            ret = m_task_mgr->create(type, bsrc, src_info, bdst, dst_info, 
-                                     *creds, std::move(tx_ptr)); 
-        }
+        auto ret = m_task_mgr->create_task(type, *auth, bsrc, src_rinfo, 
+                                          bdst, dst_rinfo, std::move(tx_ptr)); 
 
         if(!ret) {
             // this can only happen if we tried to register a task
@@ -277,7 +272,7 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
             //   1. We end up with more than 4294967295U concurrent tasks
             //   2. We are not properly cleaning up dead tasks
             // In both cases, we want to know about it
-            LOGGER_CRITICAL("Error when creating new task!");
+            LOGGER_CRITICAL("Failed to create new task!");
             rv = urd_error::too_many_tasks;
             goto log_and_return;
         }
@@ -302,20 +297,14 @@ response_ptr urd::iotask_status_handler(const request_ptr base_request) const {
     // downcast the generic request to the concrete implementation
     auto request = utils::static_unique_ptr_cast<api::iotask_status_request>(std::move(base_request));
 
-    std::shared_ptr<io::task_stats> stats_ptr;
+    auto task_info_ptr = m_task_mgr->find(request->get<0>());
 
-    {
-        boost::shared_lock<boost::shared_mutex> lock(m_task_mgr_mutex);
-        stats_ptr = m_task_mgr->find(request->get<0>());
-    }
-
-
-    if(stats_ptr != nullptr) {
+    if(task_info_ptr) {
         resp->set_error_code(urd_error::success);
-        // *stats_ptr makes a copy of the current stats for this task in 
-        // m_task_mgr so that we don't block other threads needlessly 
-        // while sending the reply
-        resp->set<0>(io::task_stats_view(*stats_ptr));
+
+        // stats provides a thread-safe view of a task status 
+        // (locking is done internally)
+        resp->set<0>(task_info_ptr->stats());
     }
     else {
         resp->set_error_code(urd_error::no_such_task);
@@ -571,19 +560,15 @@ response_ptr urd::namespace_remove_handler(const request_ptr base_request) {
     return resp;
 }
 
-response_ptr urd::ctl_status_handler(const request_ptr /*base_request*/) {
+response_ptr urd::global_status_handler(const request_ptr /*base_request*/) {
 
-    response_ptr resp = std::make_unique<api::ctl_status_response>();
-
-    {
-        boost::unique_lock<boost::shared_mutex> lock(m_task_mgr_mutex);
-        m_task_mgr->summarize();
-    }
+    auto resp = std::make_unique<api::ctl_status_response>();
 
     resp->set_error_code(urd_error::success);
+    resp->set<0>(m_task_mgr->global_stats());
 
     LOGGER_INFO("GLOBAL_STATUS() = {}", resp->to_string());
-    return resp;
+    return std::move(resp);
 }
 
 response_ptr urd::unknown_request_handler(const request_ptr /*base_request*/) {
@@ -771,7 +756,7 @@ void urd::init_event_handlers() {
 
     m_api_listener->register_callback(
             api::request_type::ctl_status,
-            std::bind(&urd::ctl_status_handler, this, std::placeholders::_1));
+            std::bind(&urd::global_status_handler, this, std::placeholders::_1));
 
     m_api_listener->register_callback(
             api::request_type::bad_request,
@@ -813,6 +798,7 @@ void urd::init_task_manager() {
 
     try {
         m_task_mgr = std::make_unique<io::task_manager>(m_settings->workers_in_pool(),
+                                                        m_settings->backlog_size(),
                                                         m_settings->dry_run());
     }
     catch(const std::exception& e) {

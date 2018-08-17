@@ -48,13 +48,14 @@ public:
 
     resource_ptr new_resource(const resource_info_ptr& rinfo, bool is_collection, std::error_code& ec) const override final;
     resource_ptr get_resource(const resource_info_ptr& rinfo, std::error_code& ec) const override final;
+    std::size_t get_size(const resource_info_ptr& rinfo, std::error_code& ec) const override final;
 
     bool accepts(resource_info_ptr res) const override final;
     std::string to_string() const override final;
 
 private:
     bfs::path m_mount;
-    uint32_t    m_quota;
+    uint32_t  m_quota;
 };
 
 //NORNS_REGISTER_BACKEND(backend_type::posix_filesystem, posix_filesystem);
