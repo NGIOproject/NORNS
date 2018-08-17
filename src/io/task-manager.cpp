@@ -27,6 +27,7 @@
 
 #include <boost/optional.hpp>
 #include <limits>
+#include <numeric>
 
 #include "task-stats.hpp"
 #include "task-info.hpp"
