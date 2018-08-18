@@ -79,6 +79,7 @@ api_LDFLAGS = \
     @BOOST_THREAD_LIB@ \
     @BOOST_REGEX_LIB@ \
 	@PROTOBUF_LIBS@ \
+	-Wl,-rpath,$(top_builddir)/lib/.libs \
 	$(top_builddir)/src/liburd_aux.la \
 	$(top_builddir)/lib/libnorns_debug.la \
 	$(top_builddir)/lib/libnornsctl_debug.la \
