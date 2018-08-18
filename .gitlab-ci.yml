@@ -39,4 +39,6 @@ build:ubuntu_latest:
         - mkdir build && cd build
         - ../configure --enable-tests
         - make -j4
-        - make check
+        - cd tests
+        - make -j4 api
+        - ./api -as
