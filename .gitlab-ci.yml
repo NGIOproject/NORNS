@@ -41,4 +41,4 @@ build:ubuntu_latest:
         - make -j4
         - cd tests
         - make -j4 api
-        - ./api -as
+        - .libs/api -as
