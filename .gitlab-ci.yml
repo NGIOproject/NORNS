@@ -41,4 +41,4 @@ build:ubuntu_latest:
         - make -j4
         - cd tests
         - make -j4 api
-        - .libs/api -as
+        - NORNS_DEBUG_OUTPUT_TO_STDERR=1 NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as
