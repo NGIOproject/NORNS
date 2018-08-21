@@ -76,6 +76,8 @@ libnorns_create_context(void) {
         exit(EXIT_FAILURE);
     }
 
+    memset(ctx, 0, sizeof(struct libnorns_context));
+
     int err = pthread_setspecific(libnorns_context_key, ctx);
 
     if(err != 0) {

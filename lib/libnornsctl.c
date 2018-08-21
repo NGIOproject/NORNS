@@ -79,9 +79,21 @@ load_config_file(void) {
     if(ctx == NULL) {
         FATAL("Failed to retrieve library context");
     }
+
+    if(ctx->config_file != NULL) {
+        xfree(ctx->config_file);
+    }
     
     ctx->config_file = xstrdup(config_file);
+
+    if(ctx->api_socket != NULL) {
+        xfree(ctx->api_socket);
+    }
+
     ctx->api_socket = xstrdup(valid_opts[0].val);
+
+    DBG("Configuration loaded from file:");
+    DBG("   control socket: %s", ctx->api_socket);
 
     xfree(valid_opts[0].val);
 }
@@ -93,14 +105,31 @@ libnornsctl_init(void) {
     FILE* logfp = stderr;
 
 #ifdef __NORNS_DEBUG__
+    bool override_config_file = false;
+
     // parse relevant environment variables
     if(getenv("NORNS_DEBUG_OUTPUT_TO_STDERR") == NULL) {
         logfp = NULL;
+        DBG("NORNS_DEBUG_OUTPUT_TO_STDERR is set, all messages will be "
+            "sent to stderr");
+    }
+
+    if(getenv("NORNS_DEBUG_CONFIG_FILE_OVERRIDE") != NULL) {
+        override_config_file = true;
+        DBG("NORNS_DEBUG_CONFIG_FILE_OVERRIDE is set, default configuration "
+            "file will be ignored");
     }
 #endif
 
     log_init(LIBNORNSCTL_LOG_PREFIX, logfp);
     libnornsctl_create_context();
+
+#ifdef __NORNS_DEBUG__
+    if(override_config_file) {
+        return;
+    }
+#endif
+
     load_config_file();
 }
 

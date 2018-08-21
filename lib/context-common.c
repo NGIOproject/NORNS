@@ -77,6 +77,8 @@ LIBSYMBOL(create_context)(void) {
         exit(EXIT_FAILURE);
     }
 
+    memset(ctx, 0, sizeof(libcontext_t));
+
     int err = pthread_setspecific(LIBSYMBOL(context_key), ctx);
 
     if(err != 0) {

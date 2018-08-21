@@ -213,6 +213,19 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
 
     libcontext_t* ctx = get_context();
 
+#ifdef __NORNS_DEBUG__
+    libcontext_t zero_ctx;
+    memset(&zero_ctx, 0, sizeof(zero_ctx));
+
+    if(memcmp(ctx, &zero_ctx, sizeof(zero_ctx)) == 0) {
+        FATAL("Library context not correctly initialized.\n"
+              "    NORNS_DEBUG_CONFIG_FILE_OVERRIDE may have been set without "
+              "calling\n" 
+              "    libnorns_reload_config_file() or "
+              "libnornsctl_reload_config_file()");
+    }
+#endif
+
     va_list ap;
     va_start(ap, resp);
 
