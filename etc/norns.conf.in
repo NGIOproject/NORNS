@@ -25,23 +25,23 @@ global_settings: [
 ## list of namespaces available by default when service starts
 namespaces: [
 
-  # lustre namespace
-  [
-    nsid: "lustre0",
-    mountpoint: "/mnt/lustre0",
-    type: "POSIX/SHARED",
-    capacity: "5 GiB",
-    visibility: "all"
-  ],
+  ###  # Example 1: lustre namespace
+  ###  [
+  ###    nsid: "lustre0",
+  ###    mountpoint: "/mnt/lustre0",
+  ###    type: "POSIX/SHARED",
+  ###    capacity: "5 GiB",
+  ###    visibility: "all"
+  ###  ],
 
-  # local namespace
-  [
-    nsid: "scratch0",
-    mountpoint: "/mnt/scratch0",
-    type: "POSIX/LOCAL",
-    capacity: "25 GiB",
-    visibility: "none"
-  ],
+  ### # Example 2: local namespace
+  ### [
+  ###   nsid: "scratch0",
+  ###   mountpoint: "/mnt/scratch0",
+  ###   type: "POSIX/LOCAL",
+  ###   capacity: "25 GiB",
+  ###   visibility: "none"
+  ### ],
 
 
 ]
