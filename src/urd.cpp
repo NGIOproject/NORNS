@@ -620,6 +620,10 @@ void urd::init_logger() {
             std::cerr << "WARNING: Output messages redirected to syslog\n";
         }
     }
+    else if(!m_settings->log_file().empty()) {
+        logger::create_global_logger(m_settings->progname(), "file", 
+                m_settings->log_file());
+    }
     else {
         logger::create_global_logger(m_settings->progname(), "console color");
     }
@@ -938,6 +942,15 @@ void urd::print_configuration() {
     LOGGER_INFO("");
     LOGGER_INFO("[[ Configuration ]]");
     LOGGER_INFO("  - running as daemon?: {}", (m_settings->daemonize() ? "yes" : "no"));
+
+    if(!m_settings->log_file().empty()) {
+        LOGGER_INFO("  - log file: {}", m_settings->log_file());
+        LOGGER_INFO("  - log file maximum size: {}", m_settings->log_file_max_size());
+    }
+    else {
+        LOGGER_INFO("  - log file: none");
+    }
+
     LOGGER_INFO("  - dry run?: {}", (m_settings->dry_run() ? "yes" : "no"));
     LOGGER_INFO("  - pidfile: {}", m_settings->pidfile());
     LOGGER_INFO("  - control socket: {}", m_settings->control_socket());

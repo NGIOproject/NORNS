@@ -46,6 +46,7 @@ namespace config {
 
 settings::settings() { }
 settings::settings(const std::string& progname, bool daemonize, bool use_syslog,
+                   const bfs::path& log_file, const uint32_t log_file_max_size,
                    bool dry_run, const bfs::path& global_socket, 
                    const bfs::path& control_socket, uint32_t remote_port,
                    const bfs::path& pidfile, uint32_t workers, 
@@ -54,6 +55,8 @@ settings::settings(const std::string& progname, bool daemonize, bool use_syslog,
     m_progname(progname),
     m_daemonize(daemonize),
     m_use_syslog(use_syslog),
+    m_log_file(log_file),
+    m_log_file_max_size(log_file_max_size),
     m_dry_run(dry_run),
     m_global_socket(global_socket),
     m_control_socket(control_socket),
@@ -68,6 +71,8 @@ void settings::load_defaults() {
     m_progname = defaults::progname;
     m_daemonize = defaults::daemonize;
     m_use_syslog = defaults::use_syslog;
+    m_log_file = defaults::log_file;
+    m_log_file_max_size = defaults::log_file_max_size;
     m_dry_run = defaults::dry_run;
     m_global_socket = defaults::global_socket;
     m_control_socket = defaults::control_socket;
@@ -90,6 +95,16 @@ void settings::load_from_file(const bfs::path& filename) {
 
     m_progname = defaults::progname;
     m_use_syslog = gsettings.get_as<bool>(keywords::use_syslog);
+
+    if(gsettings.has(keywords::log_file)) {
+        m_log_file = gsettings.get_as<bfs::path>(keywords::log_file);
+    }
+
+    if(gsettings.has(keywords::log_file_max_size)) {
+        m_log_file_max_size = 
+            gsettings.get_as<uint32_t>(keywords::log_file_max_size);
+    }
+
     m_dry_run = gsettings.get_as<bool>(keywords::dry_run);
     m_global_socket = gsettings.get_as<bfs::path>(keywords::global_socket);
     m_control_socket = gsettings.get_as<bfs::path>(keywords::control_socket);
@@ -114,17 +129,19 @@ void settings::load_from_file(const bfs::path& filename) {
 
 std::string settings::to_string() const {
     std::string str = std::string("settings {\n") +
-           "  m_progname: "       + m_progname + ",\n" +
-           "  m_daemonize: "      + (m_daemonize ? "true" : "false") + ",\n" +
-           "  m_use_syslog: "     + (m_use_syslog ? "true" : "false") +  ",\n" +
-           "  m_dry_run: "        + (m_dry_run ? "true" : "false") +  ",\n" +
-           "  m_global_socket: "  + m_global_socket.string() + ",\n" +
-           "  m_control_socket: " + m_control_socket.string() + ",\n" +
-           "  m_remote_port: "    + std::to_string(m_remote_port) + ",\n" +
-           "  m_pidfile: "        + m_daemon_pidfile.string() + ",\n" +
-           "  m_workers: "        + std::to_string(m_workers_in_pool) + ",\n" +
-           "  m_backlog_size: "   + std::to_string(m_backlog_size) + ",\n" +
-           "  m_config_file: "    + m_config_file.string() + ",\n" +
+           "  m_progname: "          + m_progname + ",\n" +
+           "  m_daemonize: "         + (m_daemonize ? "true" : "false") + ",\n" +
+           "  m_use_syslog: "        + (m_use_syslog ? "true" : "false") +  ",\n" +
+           "  m_log_file: "          + m_log_file.string() + ",\n" +
+           "  m_log_file_max_size: " + std::to_string(m_log_file_max_size) + ",\n" +
+           "  m_dry_run: "           + (m_dry_run ? "true" : "false") +  ",\n" +
+           "  m_global_socket: "     + m_global_socket.string() + ",\n" +
+           "  m_control_socket: "    + m_control_socket.string() + ",\n" +
+           "  m_remote_port: "       + std::to_string(m_remote_port) + ",\n" +
+           "  m_pidfile: "           + m_daemon_pidfile.string() + ",\n" +
+           "  m_workers: "           + std::to_string(m_workers_in_pool) + ",\n" +
+           "  m_backlog_size: "      + std::to_string(m_backlog_size) + ",\n" +
+           "  m_config_file: "       + m_config_file.string() + ",\n" +
            "};";
     //TODO: add m_default_namespaces
     return str;
@@ -140,6 +157,14 @@ bool& settings::daemonize() {
 
 bool& settings::use_syslog() {
     return m_use_syslog;
+}
+
+bfs::path& settings::log_file() {
+    return m_log_file;
+}
+
+uint32_t& settings::log_file_max_size() {
+    return m_log_file_max_size;
 }
 
 bool& settings::dry_run() {

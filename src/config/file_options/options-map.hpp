@@ -68,6 +68,10 @@ struct option_value {
  * can be accessed using the usual std::map interface. */
 struct options_group : public std::map<std::string, option_value> {
 
+    bool has(const std::string& opt_name) const {
+        return count(opt_name) != 0;
+    }
+
     /*! If the options_group contains an option named 'opt_name'
      * of type T, returns the value for that option. 
      * If the option does not exist, throws std::invalid_argument exception.

@@ -30,6 +30,9 @@
 
 #include <cstdint>
 #include <netinet/in.h>
+#include <boost/filesystem.hpp>
+
+namespace bfs = boost::filesystem;
 
 namespace norns {
 namespace config {
@@ -38,6 +41,8 @@ namespace defaults {
     extern const char*      progname;
     extern const bool       daemonize;
     extern const bool       use_syslog;
+    extern const bfs::path  log_file;
+    extern const uint32_t   log_file_max_size;
     extern const bool       dry_run;
     extern const char*      global_socket;
     extern const char*      control_socket;

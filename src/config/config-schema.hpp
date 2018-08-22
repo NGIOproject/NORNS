@@ -58,6 +58,16 @@ const file_schema valid_options = declare_file({
                     opt_type::mandatory, 
                     converter<bool>(parsers::parse_bool)), 
 
+            declare_option<bfs::path>(
+                    keywords::log_file,
+                    opt_type::optional,
+                    converter<bfs::path>(parsers::parse_path)), 
+
+            declare_option<uint32_t>(
+                    keywords::log_file_max_size,
+                    opt_type::optional,
+                    converter<uint32_t>(parsers::parse_capacity)),
+
             declare_option<bool>(
                     keywords::dry_run, 
                     opt_type::optional, 

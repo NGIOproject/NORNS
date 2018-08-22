@@ -43,6 +43,8 @@ constexpr static const auto namespaces = "namespaces";
 
 // option names for 'global-settings' section
 constexpr static const auto use_syslog = "use_syslog";
+constexpr static const auto log_file = "log_file";
+constexpr static const auto log_file_max_size = "log_file_max_size";
 constexpr static const auto dry_run = "dry_run";
 constexpr static const auto global_socket = "global_socket";
 constexpr static const auto control_socket = "control_socket";

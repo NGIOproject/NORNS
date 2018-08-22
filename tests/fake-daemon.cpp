@@ -37,7 +37,9 @@
 norns::config::settings test_cfg(
     "test_urd", /* progname */
     false, /* daemonize */
-    true, /* use syslog */
+    false, /* use syslog */
+    "./test_urd.log", /* log file */
+    0, /* unused */
     false, /* dry run */
     "./test_urd.global.socket", /* global_socket */
     "./test_urd.control.socket", /* control_socket */

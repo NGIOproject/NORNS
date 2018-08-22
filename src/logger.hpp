@@ -31,14 +31,18 @@
 
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/ostr.h>
+#include <boost/filesystem.hpp>
 #include <sstream>
+
+namespace bfs = boost::filesystem;
 
 class logger {
 
     static const int32_t queue_size = 8192; // must be a power of 2
 
 public:
-    logger(const std::string& ident, const std::string& type, const std::string& logfile="") {
+    logger(const std::string& ident, const std::string& type, 
+           const bfs::path& log_file="") {
 
         try {
 
@@ -50,14 +54,16 @@ public:
                 spdlog::set_async_mode(queue_size);
                 m_internal_logger = spdlog::stdout_color_mt(ident);
             }
+            else if(type == "file") {
+                spdlog::set_async_mode(queue_size);
+                m_internal_logger = spdlog::basic_logger_mt(ident, 
+                        log_file.string());
+            }
 #ifdef SPDLOG_ENABLE_SYSLOG 
             else if(type == "syslog") {
                 m_internal_logger = spdlog::syslog_logger("syslog", ident, LOG_PID);
             }
 #endif
-            else if(type == "file") {
-                 m_internal_logger = spdlog::basic_logger_mt(ident, logfile);
-            }
             else {
                 throw std::invalid_argument("Unknown logger type: '" + type + "'");
             }

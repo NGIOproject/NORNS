@@ -3,11 +3,14 @@
 ## global service settings
 global_settings: [
 
-  # dump log messages to syslog
+  # if true, dump log messages to syslog
   use_syslog: false,
 
+  # log file
+  log_file: "@localstatedir@/urd.log",
+
   # path to globally-accessible socket
-  global_socket: "@localstatedir@/global.socket.2" ,
+  global_socket: "@localstatedir@/global.socket.2",
 
   # path to admin-accessible socket
   control_socket: "@localstatedir@/control.socket.2",
