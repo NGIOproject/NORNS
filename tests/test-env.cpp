@@ -160,7 +160,10 @@ test_env::~test_env() {
 }
 
 void test_env::notify_success() {
-    m_test_succeeded = true;
+
+    if(::getenv("KEEP_TEST_SUBDIR") == NULL) {
+        m_test_succeeded = true;
+    }
 }
 
 std::tuple<const char*, bfs::path> test_env::create_namespace(std::string nsid, bfs::path mnt, size_t quota) {
