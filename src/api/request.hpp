@@ -165,9 +165,7 @@ struct request_impl : std::tuple<FieldTypes...>, request {
     // this is the implementation for the generic to_string() 
     // function for any RT that is not known. For known RTs, we 
     // provide concrete specializations in the cpp file
-    std::string to_string() const override {
-        return "UNKNOWN_REQUEST";
-    }
+    std::string to_string() const override;
 
     template <std::size_t I>
     typename std::tuple_element<I, std::tuple<FieldTypes...>>::type get() const {

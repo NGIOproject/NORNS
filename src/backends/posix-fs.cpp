@@ -33,6 +33,7 @@
 #include "posix-fs.hpp"
 #include "utils.hpp"
 #include "logger.hpp"
+#include <iostream>
 
 namespace bfs = boost::filesystem;
 
@@ -116,7 +117,7 @@ backend::resource_ptr posix_filesystem::get_resource(const resource_info_ptr& ri
 
     // path exists: compute the absolute subpath considering the backend mount as root
     const bfs::path ns_abs_subpath = bfs::path("/") / 
-                                bfs::relative(m_mount, canonical_path) /
+                                bfs::relative(canonical_path, m_mount) /
                                 (bfs::is_directory(canonical_path) ? "/" : "");
 
     // if the computed subpath is relative, it means that the canonical_path

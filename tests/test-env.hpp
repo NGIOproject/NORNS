@@ -50,7 +50,7 @@ struct test_env {
 
     bfs::path basedir() const;
 
-    std::tuple<const char*, bfs::path> create_namespace(std::string nsid, bfs::path mnt, size_t quota);
+    std::tuple<const char*, bfs::path> create_namespace(const std::string& nsid, const bfs::path& mnt, size_t quota);
     bfs::path add_to_namespace(const std::string& nsid, const bfs::path& dirname);
     bfs::path add_to_namespace(const std::string& nsid, const bfs::path& filename, std::size_t size);
     bfs::path add_to_namespace(const std::string& nsid, const bfs::path& src, const bfs::path& linkname);

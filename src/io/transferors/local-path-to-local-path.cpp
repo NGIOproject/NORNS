@@ -38,6 +38,7 @@
 #include "io/task-info.hpp"
 #include "backends/posix-fs.hpp"
 #include "local-path-to-local-path.hpp"
+#include <iostream>
 
 namespace {
 
@@ -48,6 +49,9 @@ get_filesize(int fd) {
 	if(::fstat(fd, &st) != -1) {
         return static_cast<ssize_t>(st.st_size);
     }
+
+    LOGGER_ERROR("fstat() failed: {}", 
+            std::make_error_code(static_cast<std::errc>(errno)).message());
 
     return static_cast<ssize_t>(-1);
 }
@@ -154,7 +158,7 @@ copy_directory(const std::shared_ptr<norns::io::task_info>& task_info,
     auto start = std::chrono::steady_clock::now();
 
     for(; it != end; ++it) {
-        const auto dst_path = dst / bfs::relative(src, *it);
+        const auto dst_path = dst / bfs::relative(*it, src);
 
         if(bfs::is_directory(*it)) {
             if(!bfs::exists(dst_path)) {

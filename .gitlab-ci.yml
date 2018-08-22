@@ -32,6 +32,7 @@ build:ubuntu_latest:
             protobuf-c-compiler
             libyaml-cpp-dev
             libyaml-dev
+            libcap2-bin
           
     # Build and test
     script:
@@ -41,4 +42,4 @@ build:ubuntu_latest:
         - make -j4
         - cd tests
         - make -j4 api
-        - NORNS_DEBUG_OUTPUT_TO_STDERR=1 NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as
+        - NORNS_DEBUG_OUTPUT_TO_STDERR=1 NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api 2> /tmp/test_logs/stderr.log

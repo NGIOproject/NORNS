@@ -169,30 +169,31 @@ path& path::append<path::iterator>(path::iterator begin, path::iterator end, con
     return *this;
 }
 
-/* Return path when appended to 'from_path' will resolve to same as 'to_path' */
-path relative(path from_path, path to_path) {
+/* Return path that 'p' made relative to 'base' */
+path relative(path p, path base=boost::filesystem::current_path()) {
 
     path ret;
-    from_path = absolute(from_path);
-    to_path = absolute(to_path);
+    base = absolute(base);
+    p = absolute(p);
 
-    path::const_iterator from_it(from_path.begin()); 
-    path::const_iterator to_it(to_path.begin());
+    path::const_iterator base_it(base.begin()); 
+    path::const_iterator p_it(p.begin());
 
     // Find common base
-    for(path::const_iterator to_end(to_path.end()), from_end(from_path.end()); 
-        from_it != from_end && to_it != to_end && *from_it == *to_it; 
-        ++from_it, ++to_it
+    for(path::const_iterator to_end(p.end()), from_end(base.end()); 
+        base_it != from_end && p_it != to_end && *base_it == *p_it; 
+        ++base_it, ++p_it
        );
 
     // Navigate backwards in directory to reach previously found base
-    for(path::const_iterator from_end(from_path.end()); from_it != from_end; ++from_it) {
-        if((*from_it) != ".")
+    for(path::const_iterator from_end(base.end()); base_it != from_end; ++base_it) {
+        if((*base_it) != ".")
             ret /= "..";
     }
 
     // Now navigate down the directory branch
-    ret.append(to_it, to_path.end());
+    ret.append(p_it, p.end());
+
     return ret;
 }
 

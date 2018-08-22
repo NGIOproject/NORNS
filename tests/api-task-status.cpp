@@ -42,12 +42,11 @@ SCENARIO("check request", "[api::norns_status]") {
 
         const char* nsid0 = "tmp0";
         const char* nsid1 = "tmp1";
-        const char* src_nsid, *dst_nsid;
         bfs::path src_mnt, dst_mnt;
 
         // create namespaces
-        std::tie(src_nsid, src_mnt) = env.create_namespace(nsid0, "mnt/tmp0", 16384);
-        std::tie(dst_nsid, dst_mnt) = env.create_namespace(nsid1, "mnt/tmp1", 16384);
+        std::tie(std::ignore, src_mnt) = env.create_namespace(nsid0, "mnt/tmp0", 16384);
+        std::tie(std::ignore, dst_mnt) = env.create_namespace(nsid1, "mnt/tmp1", 16384);
 
         // define input names
         std::vector<int> input_data(100, 42);
@@ -72,7 +71,7 @@ SCENARIO("check request", "[api::norns_status]") {
             
             norns_iotask_t task = NORNS_IOTASK(task_op, 
                                                NORNS_MEMORY_REGION(src_buf, src_buf_size), 
-                                               NORNS_LOCAL_PATH(dst_nsid, dst_file.c_str()));
+                                               NORNS_LOCAL_PATH(nsid1, dst_file.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -97,8 +96,8 @@ SCENARIO("check request", "[api::norns_status]") {
             norns_op_t task_op = NORNS_IOTASK_COPY;
             
             norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_LOCAL_PATH(src_nsid, src_file.c_str()), 
-                                               NORNS_LOCAL_PATH(dst_nsid, dst_file.c_str()));
+                                               NORNS_LOCAL_PATH(nsid0, src_file.c_str()), 
+                                               NORNS_LOCAL_PATH(nsid1, dst_file.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -1077,12 +1076,11 @@ SCENARIO("check requests", "[api::nornsctl_status]") {
 
         const char* nsid0 = "tmp0";
         const char* nsid1 = "tmp1";
-        const char* src_nsid, *dst_nsid;
         bfs::path src_mnt, dst_mnt;
 
         // create namespaces
-        std::tie(src_nsid, src_mnt) = env.create_namespace(nsid0, "mnt/tmp0", 16384);
-        std::tie(dst_nsid, dst_mnt) = env.create_namespace(nsid1, "mnt/tmp1", 16384);
+        std::tie(std::ignore, src_mnt) = env.create_namespace(nsid0, "mnt/tmp0", 16384);
+        std::tie(std::ignore, dst_mnt) = env.create_namespace(nsid1, "mnt/tmp1", 16384);
 
         // define input names
         void* src_buf;
@@ -1122,7 +1120,7 @@ SCENARIO("check requests", "[api::nornsctl_status]") {
 
                 tasks[i] = NORNS_IOTASK(task_op, 
                                         NORNS_MEMORY_REGION(src_buf, sizes[i%4]), 
-                                        NORNS_LOCAL_PATH(dst_nsid, dst_file.c_str()));
+                                        NORNS_LOCAL_PATH(nsid1, dst_file.c_str()));
 
                 norns_error_t rv = norns_submit(&tasks[i]);
                 REQUIRE(rv == NORNS_SUCCESS);

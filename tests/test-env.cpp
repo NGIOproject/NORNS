@@ -31,6 +31,7 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/regex.hpp>
+#include <iostream>
 
 #include "catch.hpp"
 #include "test-env.hpp"
@@ -166,7 +167,9 @@ void test_env::notify_success() {
     }
 }
 
-std::tuple<const char*, bfs::path> test_env::create_namespace(std::string nsid, bfs::path mnt, size_t quota) {
+std::tuple<const char*, bfs::path> 
+test_env::create_namespace(const std::string& nsid, const bfs::path& mnt, 
+                           size_t quota) {
 
     auto abs_dir = create_directory(mnt, m_base_dir);
 
@@ -232,7 +235,7 @@ bfs::path test_env::get_from_namespace(const std::string& nsid, const bfs::path&
 
 bfs::path test_env::create_file(const bfs::path& name, const bfs::path& parent, std::size_t size) {
 
-    auto parent_dirs = bfs::relative("/", name.parent_path());
+    auto parent_dirs = bfs::relative(name.parent_path(), "/");
     auto abs_mnt = bfs::absolute(parent);
 
     if(!parent_dirs.empty() && parent_dirs != "." && parent_dirs != "/") {
@@ -269,7 +272,7 @@ bfs::path test_env::create_symlink(const bfs::path& target_name,
     auto abs_target_path = bfs::canonical(abs_mnt / target_name, ec);
     REQUIRE(!ec);
 
-    auto parent_dirs = bfs::relative("/", link_name.parent_path());
+    auto parent_dirs = bfs::relative(link_name.parent_path(), "/");
 
     if(!parent_dirs.empty() && parent_dirs != "." && parent_dirs != "/") {
         bfs::create_directories(abs_mnt / parent_dirs, ec);

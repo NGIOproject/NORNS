@@ -333,8 +333,33 @@ void request::cleanup() {
 namespace detail {
 
 template<>
-std::string bad_request::to_string() const {
-    return "BAD_REQUEST";
+std::string iotask_create_request::to_string() const {
+
+    const auto op = this->get<0>();
+    const auto src = this->get<1>();
+    const auto dst = this->get<2>();
+
+    return utils::to_string(op) + ", "
+           + src->to_string() + " => "
+           + dst->to_string();
+}
+
+template<>
+std::string iotask_status_request::to_string() const {
+
+    const auto tid = this->get<0>();
+
+    return std::to_string(tid);
+}
+
+template<>
+std::string ctl_status_request::to_string() const {
+    return "GLOBAL_STATUS";
+}
+
+template<>
+std::string ping_request::to_string() const {
+    return "PING";
 }
 
 template<>
@@ -458,23 +483,8 @@ std::string backend_unregister_request::to_string() const {
 }
 
 template<>
-std::string iotask_create_request::to_string() const {
-
-    const auto op = this->get<0>();
-    const auto src = this->get<1>();
-    const auto dst = this->get<2>();
-
-    return utils::to_string(op) + ", "
-           + src->to_string() + " => "
-           + dst->to_string();
-}
-
-template<>
-std::string iotask_status_request::to_string() const {
-
-    const auto tid = this->get<0>();
-
-    return std::to_string(tid);
+std::string bad_request::to_string() const {
+    return "BAD_REQUEST";
 }
 
 } // namespace detail

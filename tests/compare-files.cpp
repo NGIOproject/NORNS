@@ -38,6 +38,7 @@
 #include <boost/filesystem/fstream.hpp>
 #include "utils.hpp"
 #include "compare-files.hpp"
+#include <iostream>
 
 namespace bfs = boost::filesystem;
 
@@ -118,7 +119,7 @@ bool compare_directories(const bfs::path& dirname1, const bfs::path& dirname2) {
 
     for(; it != end; ++it) {
         boost::system::error_code ec;
-        const bfs::path pdst = bfs::canonical(dirname2 / bfs::relative(dirname1, *it), ec);
+        const bfs::path pdst = bfs::canonical(dirname2 / bfs::relative(*it, dirname1), ec);
 
         if(ec) {
             return false;
