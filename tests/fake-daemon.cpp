@@ -38,7 +38,7 @@ norns::config::settings test_cfg(
     "test_urd", /* progname */
     false, /* daemonize */
     false, /* use syslog */
-    "./test_urd.log", /* log file */
+    {},// "./test_urd.log", /* log file */
     0, /* unused */
     false, /* dry run */
     "./test_urd.global.socket", /* global_socket */
@@ -107,7 +107,7 @@ void fake_daemon::run() {
         int retries = 20;
 
         do {
-            std::this_thread::sleep_for(std::chrono::microseconds(200));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
             rv = nornsctl_ping();
         } while(rv != NORNS_SUCCESS && --retries != 0);
 
