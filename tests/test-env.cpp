@@ -91,6 +91,11 @@ test_env::test_env() :
     bool res = bfs::create_directory(m_base_dir);
     REQUIRE(res == true);
 
+    {
+        bfs::ofstream file("tests.log", std::ios_base::out | std::ios_base::trunc);
+        file << m_uid << "\n";
+    }
+
 #ifndef USE_REAL_DAEMON
     const auto config_file = patch_libraries(m_base_dir);
     m_td.configure(config_file);
@@ -106,6 +111,11 @@ test_env::test_env(const fake_daemon_cfg& cfg) :
 
     bool res = bfs::create_directory(m_base_dir);
     REQUIRE(res == true);
+
+    {
+        bfs::ofstream file("tests.log", std::ios_base::out | std::ios_base::trunc);
+        file << m_uid << "\n";
+    }
 
 #ifndef USE_REAL_DAEMON
     const auto config_file = patch_libraries(m_base_dir);
@@ -137,6 +147,11 @@ void test_env::cleanup() {
     }
 
     bfs::remove_all(m_base_dir);
+
+    if(bfs::exists("tests.log")) {
+        bfs::remove("tests.log");
+    }
+
 }
 
 test_env::~test_env() {
