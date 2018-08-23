@@ -44,7 +44,7 @@ xstrdup(const char* str) {
     sz = XMIN(strlen(str) + 1, XMAX_STRING_LENGTH);
     res = (char*) xmalloc(sz);
     strncpy(res, str, sz);
-    res[sz] = '\0';
+    res[sz-1] = '\0';
 
     return res;
 }
