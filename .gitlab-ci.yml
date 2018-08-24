@@ -7,8 +7,93 @@ stages:
     - build
     - test
 
-build:ubuntu_latest:
+# Install dependencies for GCC builds
+before_script:
+    - apt-get update &&
+      apt-get install -y
+        libboost-system-dev
+        libboost-filesystem-dev
+        libboost-program-options-dev
+        libboost-thread-dev
+        libboost-regex-dev
+        libprotobuf-dev
+        protobuf-compiler
+        libprotobuf-c0-dev
+        protobuf-c-compiler
+        libyaml-cpp-dev
+        libyaml-dev
+
+
+### GCC 5
+build:gcc:5:
+  image: gcc:5
+  stage: build
+
+  script:
+        - ./bootstrap.sh
+        - mkdir build && cd build
+        - ../configure 
+            --enable-tests 
+        - make -j4 CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
+        - cd tests
+        - make -j4 CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" core
+        - make -j4 CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" api
+
+
+### GCC 6
+build:gcc:6:
+  image: gcc:6
+  stage: build
+
+  script:
+        - ./bootstrap.sh
+        - mkdir build && cd build
+        - ../configure 
+            --enable-tests 
+        - make -j4 CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
+        - cd tests
+        - make -j4 CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" core
+        - make -j4 CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" api
+
+
+### GCC 7
+build:gcc:7:
+  image: gcc:7
+  stage: build
+
+  script:
+        - ./bootstrap.sh
+        - mkdir build && cd build
+        - ../configure 
+            --enable-tests 
+        - make -j4
+        - cd tests
+        - make -j4
+        - make -j4
+
+
+### GCC 8
+build:gcc:8:
+  image: gcc:8
+  stage: build
+
+  script:
+        - ./bootstrap.sh
+        - mkdir build && cd build
+        - ../configure 
+            --enable-tests 
+        - make -j4
+        - cd tests
+        - make -j4
+        - make -j4
+
+
+################################################################################
+# test scripts
+################################################################################
+test:ubuntu:latest:
     image: ubuntu:latest
+    stage: test
 
     # Install dependencies
     before_script:
@@ -47,8 +132,9 @@ build:ubuntu_latest:
 #            CPPFLAGS="-D__LOGGER_ENABLE_DEBUG__"
         - make -j4
         - cd tests
+        - make -j4 core
+        - ./core -as
         - make -j4 api
-        - whoami
         - NORNS_DEBUG_OUTPUT_TO_STDERR=1 NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_register_namespace]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_unregister_namespace]"
@@ -76,20 +162,3 @@ build:ubuntu_latest:
           then
               cat $(tail -1 tests.log)/config/urd.log;
           fi
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
