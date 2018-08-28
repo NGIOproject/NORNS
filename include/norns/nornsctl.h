@@ -122,7 +122,7 @@ nornsctl_job_init(nornsctl_job_t* job,
 
 /* Check if the service daemon is running */
 norns_error_t 
-nornsctl_ping(void) __THROW;
+nornsctl_ping(void) __THROW __attribute__((deprecated));
 
 /* Send a command to the service daemon */
 norns_error_t
