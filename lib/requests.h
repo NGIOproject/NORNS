@@ -60,7 +60,7 @@ typedef enum {
 typedef struct {
     void* b_data;
     size_t b_size;
-} msgbuffer_t;
+} norns_msgbuffer_t;
 
 #define MSGBUFFER_INIT() \
 {   .b_data = 0, \
@@ -85,8 +85,8 @@ typedef struct {
     };
 } norns_response_t;
 
-int pack_to_buffer(norns_rpc_type_t type, msgbuffer_t* buf, ...);
-int unpack_from_buffer(msgbuffer_t* buf, norns_response_t* response);
+int pack_to_buffer(norns_rpc_type_t type, norns_msgbuffer_t* buf, ...);
+int unpack_from_buffer(norns_msgbuffer_t* buf, norns_response_t* response);
 
 #pragma GCC visibility pop
 

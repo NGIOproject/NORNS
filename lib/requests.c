@@ -705,7 +705,7 @@ free_task_msg(Norns__Rpc__Request__Task* msg) {
 }
 
 int
-pack_to_buffer(norns_rpc_type_t type, msgbuffer_t* buf, ...) {
+pack_to_buffer(norns_rpc_type_t type, norns_msgbuffer_t* buf, ...) {
 
     Norns__Rpc__Request* req_msg = NULL;
     void* req_buf = NULL;
@@ -748,7 +748,7 @@ cleanup_on_error:
 }
 
 int
-unpack_from_buffer(msgbuffer_t* buf, norns_response_t* response) {
+unpack_from_buffer(norns_msgbuffer_t* buf, norns_response_t* response) {
 
     Norns__Rpc__Response* rpc_resp = NULL;
     void* resp_buf = buf->b_data;

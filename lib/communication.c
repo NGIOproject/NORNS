@@ -47,8 +47,8 @@
 #include "log.h"
 
 static int connect_to_daemon(const char* socket_path);
-static int send_message(int conn, const msgbuffer_t* buffer);
-static int recv_message(int conn, msgbuffer_t* buffer);
+static int send_message(int conn, const norns_msgbuffer_t* buffer);
+static int recv_message(int conn, norns_msgbuffer_t* buffer);
 static ssize_t recv_data(int conn, void* data, size_t size);
 static ssize_t send_data(int conn, const void* data, size_t size);
 static void print_hex(void* buffer, size_t bytes) __attribute__((unused));
@@ -208,8 +208,8 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
 
     int res;
     int conn = -1;
-    msgbuffer_t req_buf = MSGBUFFER_INIT();
-    msgbuffer_t resp_buf = MSGBUFFER_INIT();
+    norns_msgbuffer_t req_buf = MSGBUFFER_INIT();
+    norns_msgbuffer_t resp_buf = MSGBUFFER_INIT();
 
     libcontext_t* ctx = get_context();
 
@@ -384,7 +384,7 @@ connect_to_daemon(const char* socket_path) {
 }
 
 static int
-send_message(int conn, const msgbuffer_t* buffer) {
+send_message(int conn, const norns_msgbuffer_t* buffer) {
 
     if(buffer == NULL || buffer->b_data == NULL || buffer->b_size == 0) {
         return -1;
@@ -412,7 +412,7 @@ send_message(int conn, const msgbuffer_t* buffer) {
 }
 
 static int 
-recv_message(int conn, msgbuffer_t* buffer) {
+recv_message(int conn, norns_msgbuffer_t* buffer) {
 
     // first of all read the message prefix and decode it 
     // so that we know how much data to receive
