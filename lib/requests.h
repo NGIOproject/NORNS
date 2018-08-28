@@ -55,7 +55,7 @@ typedef enum {
     NORNS_NAMESPACE_UNREGISTER,
     /* other */
     NORNS_BAD_RPC
-} norns_rpc_type_t;
+} norns_msgtype_t;
 
 typedef struct {
     void* b_data;
@@ -68,7 +68,7 @@ typedef struct {
 }
 
 typedef struct {
-    norns_rpc_type_t r_type;
+    norns_msgtype_t r_type;
     int r_error_code;
     union {
         size_t r_taskid;
@@ -85,7 +85,7 @@ typedef struct {
     };
 } norns_response_t;
 
-int pack_to_buffer(norns_rpc_type_t type, norns_msgbuffer_t* buf, ...);
+int pack_to_buffer(norns_msgtype_t type, norns_msgbuffer_t* buf, ...);
 int unpack_from_buffer(norns_msgbuffer_t* buf, norns_response_t* response);
 
 #pragma GCC visibility pop

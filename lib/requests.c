@@ -78,12 +78,12 @@ static void
 free_path_msg(Norns__Rpc__Request__Task__PosixPath* msg);
 
 static int 
-encode_request_type(norns_rpc_type_t type);
-static norns_rpc_type_t 
+encode_request_type(norns_msgtype_t type);
+static norns_msgtype_t 
 decode_response_type(int type);
 
 static int 
-encode_request_type(norns_rpc_type_t type) {
+encode_request_type(norns_msgtype_t type) {
     switch(type) {
         case NORNS_IOTASK_SUBMIT:
             return NORNS__RPC__REQUEST__TYPE__IOTASK_SUBMIT;
@@ -114,7 +114,7 @@ encode_request_type(norns_rpc_type_t type) {
     }
 }
 
-static norns_rpc_type_t 
+static norns_msgtype_t 
 decode_response_type(int norns_rpc_type) {
     switch(norns_rpc_type) {
         case NORNS__RPC__RESPONSE__TYPE__IOTASK_SUBMIT:
@@ -149,7 +149,7 @@ decode_response_type(int norns_rpc_type) {
 }
 
 Norns__Rpc__Request*
-build_request_msg(norns_rpc_type_t type, va_list ap) {
+build_request_msg(norns_msgtype_t type, va_list ap) {
 
     Norns__Rpc__Request* req_msg = NULL;
 
@@ -705,7 +705,7 @@ free_task_msg(Norns__Rpc__Request__Task* msg) {
 }
 
 int
-pack_to_buffer(norns_rpc_type_t type, norns_msgbuffer_t* buf, ...) {
+pack_to_buffer(norns_msgtype_t type, norns_msgbuffer_t* buf, ...) {
 
     Norns__Rpc__Request* req_msg = NULL;
     void* req_buf = NULL;

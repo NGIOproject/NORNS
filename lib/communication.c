@@ -52,7 +52,7 @@ static int recv_message(int conn, norns_msgbuffer_t* buffer);
 static ssize_t recv_data(int conn, void* data, size_t size);
 static ssize_t send_data(int conn, const void* data, size_t size);
 static void print_hex(void* buffer, size_t bytes) __attribute__((unused));
-static norns_error_t send_request(norns_rpc_type_t type, norns_response_t* resp, ...);
+static norns_error_t send_request(norns_msgtype_t type, norns_response_t* resp, ...);
 
 norns_error_t
 send_submit_request(norns_iotask_t* task) {
@@ -147,7 +147,7 @@ send_ping_request() {
 }
 
 norns_error_t
-send_job_request(norns_rpc_type_t type, uint32_t jobid, nornsctl_job_t* job) {
+send_job_request(norns_msgtype_t type, uint32_t jobid, nornsctl_job_t* job) {
 
     int res;
     norns_response_t resp;
@@ -166,7 +166,7 @@ send_job_request(norns_rpc_type_t type, uint32_t jobid, nornsctl_job_t* job) {
 
 
 norns_error_t
-send_process_request(norns_rpc_type_t type, uint32_t jobid, 
+send_process_request(norns_msgtype_t type, uint32_t jobid, 
                      uid_t uid, gid_t gid, pid_t pid) {
 
     int res;
@@ -185,7 +185,7 @@ send_process_request(norns_rpc_type_t type, uint32_t jobid,
 }
 
 norns_error_t
-send_namespace_request(norns_rpc_type_t type, const char* nsid, 
+send_namespace_request(norns_msgtype_t type, const char* nsid, 
                        nornsctl_backend_t* ns) {
 
     int res;
@@ -204,7 +204,7 @@ send_namespace_request(norns_rpc_type_t type, const char* nsid,
 }
 
 static int
-send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
+send_request(norns_msgtype_t type, norns_response_t* resp, ...) {
 
     int res;
     int conn = -1;
