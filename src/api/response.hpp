@@ -54,7 +54,7 @@ namespace api {
 enum class response_type {
     iotask_create,
     iotask_status,
-    ctl_status,
+    global_status,
     ping,
     job_register, 
     job_update,
@@ -185,8 +185,8 @@ using backend_unregister_response = detail::response_impl<
     response_type::backend_unregister
 >;
 
-using ctl_status_response = detail::response_impl<
-    response_type::ctl_status,
+using global_status_response = detail::response_impl<
+    response_type::global_status,
     io::global_stats
 >;
 

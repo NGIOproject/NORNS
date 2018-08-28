@@ -107,8 +107,8 @@ encode_request_type(norns_rpc_type_t type) {
             return NORNS__RPC__REQUEST__TYPE__NAMESPACE_UPDATE;
         case NORNS_NAMESPACE_UNREGISTER:
             return NORNS__RPC__REQUEST__TYPE__NAMESPACE_UNREGISTER;
-        case NORNSCTL_STATUS:
-            return NORNS__RPC__REQUEST__TYPE__CTL_STATUS;
+        case NORNSCTL_GLOBAL_STATUS:
+            return NORNS__RPC__REQUEST__TYPE__GLOBAL_STATUS;
         default:
             return -1;
     }
@@ -139,8 +139,8 @@ decode_response_type(int norns_rpc_type) {
             return NORNS_NAMESPACE_UPDATE;
         case NORNS__RPC__RESPONSE__TYPE__NAMESPACE_UNREGISTER:
             return NORNS_NAMESPACE_UNREGISTER;
-        case NORNS__RPC__RESPONSE__TYPE__CTL_STATUS:
-            return NORNSCTL_STATUS;
+        case NORNS__RPC__RESPONSE__TYPE__GLOBAL_STATUS:
+            return NORNSCTL_GLOBAL_STATUS;
         case NORNS__RPC__RESPONSE__TYPE__BAD_REQUEST:
             // intentionally fall through
         default:
@@ -177,7 +177,7 @@ build_request_msg(norns_rpc_type_t type, va_list ap) {
             break;
         }
 
-        case NORNSCTL_STATUS:
+        case NORNSCTL_GLOBAL_STATUS:
         case NORNS_PING:
         {
             break;
@@ -780,7 +780,7 @@ unpack_from_buffer(msgbuffer_t* buf, norns_response_t* response) {
             response->r_errno = rpc_resp->stats->sys_errnum;
             break;
 
-        case NORNSCTL_STATUS:
+        case NORNSCTL_GLOBAL_STATUS:
             if(rpc_resp->gstats == NULL) {
                 return NORNS_ERPCRECVFAILED;
             }

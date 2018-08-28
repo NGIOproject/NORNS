@@ -113,12 +113,12 @@ send_control_status_request(nornsctl_stat_t* stats) {
     int res;
     norns_response_t resp;
 
-    if((res = send_request(NORNSCTL_STATUS, &resp)) 
+    if((res = send_request(NORNSCTL_GLOBAL_STATUS, &resp)) 
             != NORNS_SUCCESS) {
         return res;
     }
 
-    if(resp.r_type != NORNSCTL_STATUS) {
+    if(resp.r_type != NORNSCTL_GLOBAL_STATUS) {
         return NORNS_ESNAFU;
     }
 
@@ -245,7 +245,7 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
             break;
         }
 
-        case NORNSCTL_STATUS:
+        case NORNSCTL_GLOBAL_STATUS:
         case NORNS_PING:
         {
             if((res = pack_to_buffer(type, &req_buf)) != NORNS_SUCCESS) {

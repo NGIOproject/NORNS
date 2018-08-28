@@ -562,7 +562,7 @@ response_ptr urd::namespace_remove_handler(const request_ptr base_request) {
 
 response_ptr urd::global_status_handler(const request_ptr /*base_request*/) {
 
-    auto resp = std::make_unique<api::ctl_status_response>();
+    auto resp = std::make_unique<api::global_status_response>();
 
     resp->set_error_code(urd_error::success);
     resp->set<0>(m_task_mgr->global_stats());
@@ -759,7 +759,7 @@ void urd::init_event_handlers() {
             std::bind(&urd::namespace_remove_handler, this, std::placeholders::_1));
 
     m_api_listener->register_callback(
-            api::request_type::ctl_status,
+            api::request_type::global_status,
             std::bind(&urd::global_status_handler, this, std::placeholders::_1));
 
     m_api_listener->register_callback(

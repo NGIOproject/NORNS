@@ -213,8 +213,8 @@ request_ptr request::create_from_buffer(const std::vector<uint8_t>& buffer, int 
             case norns::rpc::Request::PING:
                 return std::make_unique<ping_request>();
 
-            case norns::rpc::Request::CTL_STATUS:
-                return std::make_unique<ctl_status_request>();
+            case norns::rpc::Request::GLOBAL_STATUS:
+                return std::make_unique<global_status_request>();
 
             case norns::rpc::Request::JOB_REGISTER:
             case norns::rpc::Request::JOB_UPDATE:
@@ -353,7 +353,7 @@ std::string iotask_status_request::to_string() const {
 }
 
 template<>
-std::string ctl_status_request::to_string() const {
+std::string global_status_request::to_string() const {
     return "GLOBAL_STATUS";
 }
 
