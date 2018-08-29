@@ -33,6 +33,7 @@
 
 #include <string>
 #include "norns.h"
+#include "nornsctl.h"
 
 #ifndef __URD_TYPES_HPP__
 #define __URD_TYPES_HPP__
@@ -60,6 +61,13 @@ enum class backend_type {
     unknown
 };
 
+enum class command_type {
+    ping,
+    pause_accept,
+    resume_accept,
+    unknown
+};
+
 /*! Error codes */
 enum class urd_error : norns_error_t {
     success           = NORNS_SUCCESS,
@@ -76,6 +84,7 @@ enum class urd_error : norns_error_t {
     connection_failed = NORNS_ECONNFAILED,
     rpc_send_failed   = NORNS_ERPCSENDFAILED,
     rpc_recv_failed   = NORNS_ERPCRECVFAILED,
+    accept_paused     = NORNS_EACCEPTPAUSED,
     
     /* errors about jobs */
     job_exists        = NORNS_EJOBEXISTS,

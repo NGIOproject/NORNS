@@ -82,6 +82,25 @@ send_submit_request(norns_iotask_t* task) {
 }
 
 norns_error_t
+send_control_command_request(nornsctl_command_t cmd, void* args) {
+
+    int res;
+    norns_response_t resp;
+
+    if((res = send_request(NORNSCTL_COMMAND, &resp, cmd, args)) 
+            != NORNS_SUCCESS) {
+        return res;
+    }
+
+    if(resp.r_type != NORNSCTL_COMMAND) {
+        return NORNS_ESNAFU;
+    }
+
+    return NORNS_SUCCESS;
+}
+
+
+norns_error_t
 send_status_request(norns_iotask_t* task, norns_stat_t* stats) {
 
     int res;
@@ -242,6 +261,18 @@ send_request(norns_msgtype_t type, norns_response_t* resp, ...) {
                 return res;
             }
 
+            break;
+        }
+
+        case NORNSCTL_COMMAND:
+        {
+            const nornsctl_command_t cmd = va_arg(ap, nornsctl_command_t);
+            const void* args = va_arg(ap, const void*);
+
+            if((res = pack_to_buffer(type, &req_buf, cmd, args)) 
+                    != NORNS_SUCCESS) {
+                return res;
+            }
             break;
         }
 

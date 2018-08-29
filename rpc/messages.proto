@@ -8,6 +8,7 @@ message Request {
         IOTASK_SUBMIT = 1;
         IOTASK_STATUS = 2;
         PING = 3;
+
         JOB_REGISTER = 4;
         JOB_UPDATE = 5;
         JOB_UNREGISTER = 6;
@@ -17,7 +18,8 @@ message Request {
         NAMESPACE_UPDATE = 10;
         NAMESPACE_UNREGISTER = 11;
 
-        GLOBAL_STATUS = 12;
+        GLOBAL_STATUS = 1000;
+        CTL_COMMAND = 1001;
     }
 
     // I/O task descriptor
@@ -80,12 +82,18 @@ message Request {
         required int32 quota = 2;
     }
 
+    // command descriptor 
+    message Command {
+        required uint32 id = 1;
+    }
+
     required Type type = 1;
     optional Task task = 2;
     optional uint32 jobid = 3;
     optional Job job = 4;
     optional Process process = 5;
     optional Namespace nspace = 6;
+    optional Command command = 7;
 }
 
 message Response {
@@ -105,8 +113,10 @@ message Response {
         NAMESPACE_UPDATE = 10;
         NAMESPACE_UNREGISTER = 11;
 
-        GLOBAL_STATUS = 12;
-        BAD_REQUEST = 13;
+        GLOBAL_STATUS = 1000;
+        CTL_COMMAND = 1001;
+
+        BAD_REQUEST = 2000;
     }
 
     message TaskStats {

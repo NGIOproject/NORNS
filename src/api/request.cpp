@@ -72,6 +72,22 @@ norns::backend_type decode_backend_type(::google::protobuf::uint32 type) {
     }
 }
 
+norns::command_type decode_command(::google::protobuf::uint32 type) {
+
+    using norns::command_type;
+
+    switch(type) {
+        case NORNSCTL_COMMAND_PING:
+            return command_type::ping;
+        case NORNSCTL_COMMAND_PAUSE_ACCEPT:
+            return command_type::pause_accept;
+        case NORNSCTL_COMMAND_RESUME_ACCEPT:
+            return command_type::resume_accept;
+        default:
+            return command_type::unknown;
+    }
+}
+
 
 bool is_valid(const norns::rpc::Request_Task_Resource& res) {
     if(!(res.type() & (NORNS_PROCESS_MEMORY | NORNS_POSIX_PATH))) {
@@ -216,6 +232,14 @@ request_ptr request::create_from_buffer(const std::vector<uint8_t>& buffer, int 
             case norns::rpc::Request::GLOBAL_STATUS:
                 return std::make_unique<global_status_request>();
 
+            case norns::rpc::Request::CTL_COMMAND:
+
+                if(rpc_req.has_command()) {
+                    command_type cmd = ::decode_command(rpc_req.command().id());
+                    return std::make_unique<command_request>(cmd);
+                }
+                break;
+
             case norns::rpc::Request::JOB_REGISTER:
             case norns::rpc::Request::JOB_UPDATE:
 
@@ -355,6 +379,20 @@ std::string iotask_status_request::to_string() const {
 template<>
 std::string global_status_request::to_string() const {
     return "GLOBAL_STATUS";
+}
+
+template<>
+std::string command_request::to_string() const {
+    switch(this->get<0>()) {
+        case command_type::ping:
+            return "PING";
+        case command_type::pause_accept:
+            return "PAUSE_ACCEPT";
+        case command_type::resume_accept:
+            return "RESUME_ACCEPT";
+        default:
+            return "UNKNOWN";
+    }
 }
 
 template<>

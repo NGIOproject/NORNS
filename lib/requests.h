@@ -40,6 +40,9 @@ typedef enum {
 
     NORNSCTL_GLOBAL_STATUS,
 
+    /* control commands */
+    NORNSCTL_COMMAND,
+
     NORNS_PING,
 
     /* jobs */

@@ -113,6 +113,7 @@ private:
     response_ptr namespace_update_handler(const request_ptr req);
     response_ptr namespace_remove_handler(const request_ptr req);
     response_ptr global_status_handler(const request_ptr req);
+    response_ptr command_handler(const request_ptr req);
     response_ptr unknown_request_handler(const request_ptr req);
 
     // TODO: add helpers for remove and update
@@ -121,6 +122,8 @@ private:
                                const bfs::path& mount, uint32_t quota);
 
 private:
+    std::atomic<bool> m_is_paused;
+
     std::shared_ptr<config::settings>                    m_settings;
     std::unique_ptr<io::transferor_registry> m_transferor_registry;
 

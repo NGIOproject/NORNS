@@ -55,6 +55,7 @@ enum class response_type {
     iotask_create,
     iotask_status,
     global_status,
+    command,
     ping,
     job_register, 
     job_update,
@@ -188,6 +189,10 @@ using backend_unregister_response = detail::response_impl<
 using global_status_response = detail::response_impl<
     response_type::global_status,
     io::global_stats
+>;
+
+using command_response = detail::response_impl<
+    response_type::command
 >;
 
 using bad_request_response = detail::response_impl<

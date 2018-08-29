@@ -77,6 +77,11 @@ build_path_msg(const norns_posix_path_t* path);
 static void 
 free_path_msg(Norns__Rpc__Request__Task__PosixPath* msg);
 
+static Norns__Rpc__Request__Command* 
+build_command_msg(const nornsctl_command_t cmd, const void* args);
+static void
+free_command_msg(Norns__Rpc__Request__Command* msg) __attribute__((unused));
+
 static int 
 encode_request_type(norns_msgtype_t type);
 static norns_msgtype_t 
@@ -109,6 +114,8 @@ encode_request_type(norns_msgtype_t type) {
             return NORNS__RPC__REQUEST__TYPE__NAMESPACE_UNREGISTER;
         case NORNSCTL_GLOBAL_STATUS:
             return NORNS__RPC__REQUEST__TYPE__GLOBAL_STATUS;
+        case NORNSCTL_COMMAND:
+            return NORNS__RPC__REQUEST__TYPE__CTL_COMMAND;
         default:
             return -1;
     }
@@ -141,6 +148,8 @@ decode_response_type(int norns_rpc_type) {
             return NORNS_NAMESPACE_UNREGISTER;
         case NORNS__RPC__RESPONSE__TYPE__GLOBAL_STATUS:
             return NORNSCTL_GLOBAL_STATUS;
+        case NORNS__RPC__REQUEST__TYPE__CTL_COMMAND:
+            return NORNSCTL_COMMAND;
         case NORNS__RPC__RESPONSE__TYPE__BAD_REQUEST:
             // intentionally fall through
         default:
@@ -165,6 +174,19 @@ build_request_msg(norns_msgtype_t type, va_list ap) {
     }
 
     switch(type) {
+
+        case NORNSCTL_COMMAND:
+        {
+            const nornsctl_command_t cmd = va_arg(ap, nornsctl_command_t);
+            const void* args = va_arg(ap, void*);
+
+            if((req_msg->command = build_command_msg(cmd, args)) == NULL) {
+                goto cleanup_on_error;
+            }
+
+            break;
+        }
+
         case NORNS_IOTASK_SUBMIT:
         case NORNS_IOTASK_STATUS:
         {
@@ -702,6 +724,29 @@ free_task_msg(Norns__Rpc__Request__Task* msg) {
     }
 
     xfree(msg);
+}
+
+Norns__Rpc__Request__Command* 
+build_command_msg(const nornsctl_command_t cmd, const void* args) {
+
+    (void) args;
+
+    Norns__Rpc__Request__Command* msg = xmalloc(sizeof(*msg)); 
+
+    if(msg == NULL) {
+        return NULL;
+    }
+
+    norns__rpc__request__command__init(msg);
+    msg->id = cmd;
+
+    return msg;
+}
+
+void
+free_command_msg(Norns__Rpc__Request__Command* msg) {
+    // TODO
+    (void) msg;
 }
 
 int

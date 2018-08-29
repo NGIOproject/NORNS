@@ -212,9 +212,15 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
 
     response_ptr resp;
     iotask_id tid = 0;
+    boost::optional<auth::credentials> auth;
     urd_error rv = urd_error::success;
 
-    const auto auth = request->credentials();
+    if(m_is_paused) {
+        rv = urd_error::accept_paused;
+        goto log_and_return;
+    }
+
+    auth = request->credentials();
 
     if(!auth) {
         LOGGER_CRITICAL("Request without credentials");
@@ -571,6 +577,39 @@ response_ptr urd::global_status_handler(const request_ptr /*base_request*/) {
     return std::move(resp);
 }
 
+response_ptr
+urd::command_handler(const request_ptr base_request) {
+
+    // downcast the generic request to the concrete implementation
+    auto request = 
+        utils::static_unique_ptr_cast<api::command_request>(
+                std::move(base_request));
+    auto resp = std::make_unique<api::command_response>();
+    resp->set_error_code(urd_error::success);
+
+    switch(request->get<0>()) {
+        case command_type::ping:
+            break; // nothing special to do here
+        case command_type::pause_accept:
+            if(!m_is_paused) {
+                m_is_paused = true;
+            }
+            break;
+        case command_type::resume_accept:
+            if(m_is_paused) {
+                m_is_paused = false;
+            }
+            break;
+        case command_type::unknown:
+            resp->set_error_code(urd_error::bad_args);
+            break;
+    }
+
+    LOGGER_INFO("COMMAND({}) = {}", request->to_string(), resp->to_string());
+    return std::move(resp);
+}
+
+
 response_ptr urd::unknown_request_handler(const request_ptr /*base_request*/) {
     response_ptr resp = std::make_unique<api::bad_request_response>();
 
@@ -761,6 +800,10 @@ void urd::init_event_handlers() {
     m_api_listener->register_callback(
             api::request_type::global_status,
             std::bind(&urd::global_status_handler, this, std::placeholders::_1));
+
+    m_api_listener->register_callback(
+            api::request_type::command,
+            std::bind(&urd::command_handler, this, std::placeholders::_1));
 
     m_api_listener->register_callback(
             api::request_type::bad_request,

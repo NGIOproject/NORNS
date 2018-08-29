@@ -61,6 +61,8 @@ norns::rpc::Response_Type encode(norns::api::response_type type) {
             return norns::rpc::Response::NAMESPACE_UNREGISTER;
         case response_type::global_status:
             return norns::rpc::Response::GLOBAL_STATUS;
+        case response_type::command:
+            return norns::rpc::Response::CTL_COMMAND;
         case response_type::bad_request:
             return norns::rpc::Response::BAD_REQUEST;
         default:

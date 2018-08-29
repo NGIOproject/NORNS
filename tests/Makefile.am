@@ -60,6 +60,7 @@ api_SOURCES = \
 	api-task-init.cpp \
 	api-task-submit.cpp \
 	api-task-status.cpp \
+	api-send-command.cpp \
 	compare-files.cpp \
 	compare-files.hpp \
 	config-template.cpp \
