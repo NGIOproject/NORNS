@@ -34,9 +34,17 @@ extern "C" {
 
 #include "norns_types.h"
 
-/* Types */
+/* Additional administrative types */
 typedef uint32_t nornsctl_backend_flags_t;
-typedef uint32_t nornsctl_command_t;
+//typedef uint32_t nornsctl_command_t;
+
+/* Administrative command IDs valid for nornsctl_send_command() */
+typedef enum {
+    NORNSCTL_COMMAND_PING = 1000,
+    NORNSCTL_COMMAND_PAUSE_ACCEPT,
+    NORNSCTL_COMMAND_RESUME_ACCEPT,
+} nornsctl_command_t;
+
 
 #ifdef __cplusplus
 };

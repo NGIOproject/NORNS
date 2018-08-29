@@ -50,6 +50,7 @@ extern "C" {
 #define NORNS_ECONNFAILED         -5
 #define NORNS_ERPCSENDFAILED      -6
 #define NORNS_ERPCRECVFAILED      -7
+#define NORNS_EACCEPTPAUSED       -8
 
 /* errors about jobs */
 #define NORNS_EJOBEXISTS         -10

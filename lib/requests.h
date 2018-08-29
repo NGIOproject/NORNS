@@ -38,7 +38,10 @@ typedef enum {
     NORNS_IOTASK_SUBMIT,
     NORNS_IOTASK_STATUS,
 
-    NORNSCTL_STATUS,
+    NORNSCTL_GLOBAL_STATUS,
+
+    /* control commands */
+    NORNSCTL_COMMAND,
 
     NORNS_PING,
 
@@ -55,12 +58,12 @@ typedef enum {
     NORNS_NAMESPACE_UNREGISTER,
     /* other */
     NORNS_BAD_RPC
-} norns_rpc_type_t;
+} norns_msgtype_t;
 
 typedef struct {
     void* b_data;
     size_t b_size;
-} msgbuffer_t;
+} norns_msgbuffer_t;
 
 #define MSGBUFFER_INIT() \
 {   .b_data = 0, \
@@ -68,7 +71,7 @@ typedef struct {
 }
 
 typedef struct {
-    norns_rpc_type_t r_type;
+    norns_msgtype_t r_type;
     int r_error_code;
     union {
         size_t r_taskid;
@@ -85,8 +88,8 @@ typedef struct {
     };
 } norns_response_t;
 
-int pack_to_buffer(norns_rpc_type_t type, msgbuffer_t* buf, ...);
-int unpack_from_buffer(msgbuffer_t* buf, norns_response_t* response);
+int pack_to_buffer(norns_msgtype_t type, norns_msgbuffer_t* buf, ...);
+int unpack_from_buffer(norns_msgbuffer_t* buf, norns_response_t* response);
 
 #pragma GCC visibility pop
 

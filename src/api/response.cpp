@@ -59,8 +59,10 @@ norns::rpc::Response_Type encode(norns::api::response_type type) {
             return norns::rpc::Response::NAMESPACE_UPDATE;
         case response_type::backend_unregister:
             return norns::rpc::Response::NAMESPACE_UNREGISTER;
-        case response_type::ctl_status:
-            return norns::rpc::Response::CTL_STATUS;
+        case response_type::global_status:
+            return norns::rpc::Response::GLOBAL_STATUS;
+        case response_type::command:
+            return norns::rpc::Response::CTL_COMMAND;
         case response_type::bad_request:
             return norns::rpc::Response::BAD_REQUEST;
         default:
@@ -157,10 +159,10 @@ std::string iotask_status_response::to_string() const {
 }
 
 /////////////////////////////////////////////////////////////////////////////////
-//   specializations for ctl_status_response 
+//   specializations for global_status_response 
 /////////////////////////////////////////////////////////////////////////////////
 template<>
-void ctl_status_response::pack_extra_info(norns::rpc::Response& r) const {
+void global_status_response::pack_extra_info(norns::rpc::Response& r) const {
     const auto& gstats = this->get<0>();
 
     auto gstats_msg = new norns::rpc::Response_GlobalStats();
@@ -175,7 +177,7 @@ void ctl_status_response::pack_extra_info(norns::rpc::Response& r) const {
 }
 
 template<>
-std::string ctl_status_response::to_string() const {
+std::string global_status_response::to_string() const {
     const auto& gstats = this->get<0>();
     return utils::to_string(gstats) + " " + utils::to_string(this->error_code());
 }

@@ -143,7 +143,6 @@ test:ubuntu:latest:
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_register_job]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_update_job]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_unregister_job]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_ping]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_add_process]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_remove_process]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_resource_init]"
@@ -156,6 +155,7 @@ test:ubuntu:latest:
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_status]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_status]"
+        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_send_command]"
     after_script:
         - pwd
         - if [[ -e tests.log ]]; 

@@ -53,13 +53,13 @@ api_SOURCES = \
 	api-job-register.cpp \
 	api-job-update.cpp \
 	api-job-unregister.cpp \
-	api-ping.cpp \
 	api-process-add.cpp \
 	api-process-remove.cpp \
 	api-resource-init.cpp \
 	api-task-init.cpp \
 	api-task-submit.cpp \
 	api-task-status.cpp \
+	api-send-command.cpp \
 	compare-files.cpp \
 	compare-files.hpp \
 	config-template.cpp \

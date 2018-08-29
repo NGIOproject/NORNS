@@ -25,40 +25,68 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-
 #include "norns.h"
 #include "nornsctl.h"
-#include "catch.hpp"
-#include "fake-daemon.hpp"
 #include "test-env.hpp"
+#include "catch.hpp"
 
-SCENARIO("ping request", "[api::nornsctl_ping]") {
+SCENARIO("send control commands to urd", "[api::nornsctl_send_command]") {
     GIVEN("a running urd instance") {
 
-        test_env env;
+        test_env env(
+            fake_daemon_cfg {
+                true /* dry_run? */
+            }
+        );
 
-        WHEN("pinging urd") {
+        const char* nsid0 = "tmp0";
+        bfs::path src_mnt;
+        std::tie(std::ignore, src_mnt) = env.create_namespace(nsid0, "mnt/tmp0", 16384);
 
-            int rv = nornsctl_ping();
+        WHEN("a NORNSCTL_COMMAND_PAUSE_ACCEPT command is sent") {
 
-            THEN("NORNS_SUCCESS is returned") {
+            norns_error_t rv = nornsctl_send_command(NORNSCTL_COMMAND_PAUSE_ACCEPT, NULL);
+
+            THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
+                REQUIRE(rv == NORNS_SUCCESS);
+
+                AND_THEN("norns_submit() returns NORNS_EACCEPTPAUSED") {
+                    norns_iotask_t task = 
+                        NORNS_IOTASK(NORNS_IOTASK_COPY, 
+                                    NORNS_MEMORY_REGION((void*)0xdeadbeef, 42), 
+                                    NORNS_LOCAL_PATH(nsid0, "foobar"));
+
+                    rv = norns_submit(&task);
+                    REQUIRE(rv == NORNS_EACCEPTPAUSED);
+
+                    AND_THEN("nornsctl_send_command() returns NORNS_SUCCESS and norns_submit() succeeds") {
+                        norns_error_t rv = nornsctl_send_command(NORNSCTL_COMMAND_RESUME_ACCEPT, NULL);
+                        REQUIRE(rv == NORNS_SUCCESS);
+
+                        rv = norns_submit(&task);
+                        REQUIRE(rv == NORNS_SUCCESS);
+                        REQUIRE(task.t_id == 1);
+                    }
+                }
+            }
+        }
+
+        WHEN("a NORNSCTL_COMMAND_RESUME_ACCEPT command is sent") {
+
+            norns_error_t rv = nornsctl_send_command(NORNSCTL_COMMAND_RESUME_ACCEPT, NULL);
+
+            THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
             }
         }
 
-        env.notify_success();
-    }
+        WHEN("a NORNSCTL_COMMAND_PING command is sent") {
 
-#ifndef USE_REAL_DAEMON
-    GIVEN("a non-running urd instance") {
-        WHEN("pinging urd") {
+            norns_error_t rv = nornsctl_send_command(NORNSCTL_COMMAND_PING, NULL);
 
-            int rv = nornsctl_ping();
-
-            THEN("NORNS_ECONNFAILED is returned") {
-                REQUIRE(rv == NORNS_ECONNFAILED);
+            THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
+                REQUIRE(rv == NORNS_SUCCESS);
             }
         }
     }
-#endif
 }
