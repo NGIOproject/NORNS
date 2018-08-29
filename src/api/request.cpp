@@ -46,6 +46,8 @@ norns::iotask_type decode_iotask_type(::google::protobuf::uint32 type) {
             return iotask_type::copy;
         case NORNS_IOTASK_MOVE:
             return iotask_type::move;
+        case NORNS_IOTASK_REMOVE:
+            return iotask_type::remove;
         default:
             return iotask_type::unknown;
     }

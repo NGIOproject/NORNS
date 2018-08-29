@@ -63,7 +63,8 @@ send_submit_request(norns_iotask_t* task) {
     // XXX add missing checks: e.g. validate src resource
     if(task->t_id != 0 || 
        (task->t_op != NORNS_IOTASK_COPY &&
-        task->t_op != NORNS_IOTASK_MOVE )) {
+        task->t_op != NORNS_IOTASK_MOVE && 
+        task->t_op != NORNS_IOTASK_REMOVE)) {
         return NORNS_EBADARGS;
     }
 

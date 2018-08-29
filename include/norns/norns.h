@@ -59,8 +59,9 @@ typedef struct {
 } norns_iotask_t;
 
 /* Task types */
-#define NORNS_IOTASK_COPY 0x1
-#define NORNS_IOTASK_MOVE 0x2
+#define NORNS_IOTASK_COPY   0x1
+#define NORNS_IOTASK_MOVE   0x2
+#define NORNS_IOTASK_REMOVE 0x3
 
 /* I/O task status descriptor */
 typedef struct {

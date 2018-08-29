@@ -180,7 +180,9 @@ urd_error urd::validate_iotask_args(iotask_type type,
                                     const resource_info_ptr& src_rinfo,
                                     const resource_info_ptr& dst_rinfo) const {
 
-    if(type != iotask_type::copy && type != iotask_type::move) {
+    if(type != iotask_type::copy && 
+       type != iotask_type::move &&
+       type != iotask_type::remove) {
         return urd_error::bad_args;
     }
 

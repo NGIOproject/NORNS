@@ -103,6 +103,11 @@ task_manager::create_task(iotask_type type, const auth::credentials& auth,
                     io::task<iotask_type::move>(
                         std::move(task_info_ptr), std::move(tx_ptr)), register_completion);
                 break;
+            case iotask_type::remove:
+                m_runners.submit_with_epilog_and_forget(
+                    io::task<iotask_type::remove>(
+                        std::move(task_info_ptr), std::move(tx_ptr)), register_completion);
+                break;
             default:
                 m_runners.submit_and_forget(
                     io::task<iotask_type::unknown>(
