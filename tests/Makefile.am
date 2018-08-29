@@ -53,7 +53,6 @@ api_SOURCES = \
 	api-job-register.cpp \
 	api-job-update.cpp \
 	api-job-unregister.cpp \
-	api-ping.cpp \
 	api-process-add.cpp \
 	api-process-remove.cpp \
 	api-resource-init.cpp \

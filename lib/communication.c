@@ -149,23 +149,6 @@ send_control_status_request(nornsctl_stat_t* stats) {
 }
 
 norns_error_t
-send_ping_request() {
-
-    int res;
-    norns_response_t resp;
-
-    if((res = send_request(NORNS_PING, &resp)) != NORNS_SUCCESS) {
-        return res;
-    }
-
-    if(resp.r_type != NORNS_PING) {
-        return NORNS_ESNAFU;
-    }
-
-    return resp.r_error_code;
-}
-
-norns_error_t
 send_job_request(norns_msgtype_t type, uint32_t jobid, nornsctl_job_t* job) {
 
     int res;
