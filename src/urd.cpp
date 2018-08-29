@@ -59,6 +59,7 @@
 namespace norns {
 
 urd::urd() :
+    m_is_paused(false),
     m_settings(std::make_shared<config::settings>()) {}
 
 urd::~urd() {}
