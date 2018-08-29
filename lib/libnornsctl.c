@@ -149,18 +149,16 @@ libnornsctl_reload_config_file(void) {
 
 /* Control API */
 norns_error_t
-nornsctl_ping(void) {
-    return send_ping_request();
-}
-
-norns_error_t
 nornsctl_send_command(nornsctl_command_t command, 
                       void* args) {
-    // TODO
-    (void) command;
-    (void) args;
 
-    return NORNS_SUCCESS;
+    // we don't have any commands right now that support arguments
+    if(args != NULL) {
+        ERR("invalid arguments");
+        return NORNS_EBADARGS;
+    }
+
+    return send_control_command_request(command, args);
 }
 
 norns_error_t

@@ -47,12 +47,12 @@
 #include "log.h"
 
 static int connect_to_daemon(const char* socket_path);
-static int send_message(int conn, const msgbuffer_t* buffer);
-static int recv_message(int conn, msgbuffer_t* buffer);
+static int send_message(int conn, const norns_msgbuffer_t* buffer);
+static int recv_message(int conn, norns_msgbuffer_t* buffer);
 static ssize_t recv_data(int conn, void* data, size_t size);
 static ssize_t send_data(int conn, const void* data, size_t size);
 static void print_hex(void* buffer, size_t bytes) __attribute__((unused));
-static norns_error_t send_request(norns_rpc_type_t type, norns_response_t* resp, ...);
+static norns_error_t send_request(norns_msgtype_t type, norns_response_t* resp, ...);
 
 norns_error_t
 send_submit_request(norns_iotask_t* task) {
@@ -80,6 +80,25 @@ send_submit_request(norns_iotask_t* task) {
 
     return resp.r_error_code;
 }
+
+norns_error_t
+send_control_command_request(nornsctl_command_t cmd, void* args) {
+
+    int res;
+    norns_response_t resp;
+
+    if((res = send_request(NORNSCTL_COMMAND, &resp, cmd, args)) 
+            != NORNS_SUCCESS) {
+        return res;
+    }
+
+    if(resp.r_type != NORNSCTL_COMMAND) {
+        return NORNS_ESNAFU;
+    }
+
+    return NORNS_SUCCESS;
+}
+
 
 norns_error_t
 send_status_request(norns_iotask_t* task, norns_stat_t* stats) {
@@ -113,12 +132,12 @@ send_control_status_request(nornsctl_stat_t* stats) {
     int res;
     norns_response_t resp;
 
-    if((res = send_request(NORNSCTL_STATUS, &resp)) 
+    if((res = send_request(NORNSCTL_GLOBAL_STATUS, &resp)) 
             != NORNS_SUCCESS) {
         return res;
     }
 
-    if(resp.r_type != NORNSCTL_STATUS) {
+    if(resp.r_type != NORNSCTL_GLOBAL_STATUS) {
         return NORNS_ESNAFU;
     }
 
@@ -130,24 +149,7 @@ send_control_status_request(nornsctl_stat_t* stats) {
 }
 
 norns_error_t
-send_ping_request() {
-
-    int res;
-    norns_response_t resp;
-
-    if((res = send_request(NORNS_PING, &resp)) != NORNS_SUCCESS) {
-        return res;
-    }
-
-    if(resp.r_type != NORNS_PING) {
-        return NORNS_ESNAFU;
-    }
-
-    return resp.r_error_code;
-}
-
-norns_error_t
-send_job_request(norns_rpc_type_t type, uint32_t jobid, nornsctl_job_t* job) {
+send_job_request(norns_msgtype_t type, uint32_t jobid, nornsctl_job_t* job) {
 
     int res;
     norns_response_t resp;
@@ -166,7 +168,7 @@ send_job_request(norns_rpc_type_t type, uint32_t jobid, nornsctl_job_t* job) {
 
 
 norns_error_t
-send_process_request(norns_rpc_type_t type, uint32_t jobid, 
+send_process_request(norns_msgtype_t type, uint32_t jobid, 
                      uid_t uid, gid_t gid, pid_t pid) {
 
     int res;
@@ -185,7 +187,7 @@ send_process_request(norns_rpc_type_t type, uint32_t jobid,
 }
 
 norns_error_t
-send_namespace_request(norns_rpc_type_t type, const char* nsid, 
+send_namespace_request(norns_msgtype_t type, const char* nsid, 
                        nornsctl_backend_t* ns) {
 
     int res;
@@ -204,12 +206,12 @@ send_namespace_request(norns_rpc_type_t type, const char* nsid,
 }
 
 static int
-send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
+send_request(norns_msgtype_t type, norns_response_t* resp, ...) {
 
     int res;
     int conn = -1;
-    msgbuffer_t req_buf = MSGBUFFER_INIT();
-    msgbuffer_t resp_buf = MSGBUFFER_INIT();
+    norns_msgbuffer_t req_buf = MSGBUFFER_INIT();
+    norns_msgbuffer_t resp_buf = MSGBUFFER_INIT();
 
     libcontext_t* ctx = get_context();
 
@@ -245,7 +247,19 @@ send_request(norns_rpc_type_t type, norns_response_t* resp, ...) {
             break;
         }
 
-        case NORNSCTL_STATUS:
+        case NORNSCTL_COMMAND:
+        {
+            const nornsctl_command_t cmd = va_arg(ap, nornsctl_command_t);
+            const void* args = va_arg(ap, const void*);
+
+            if((res = pack_to_buffer(type, &req_buf, cmd, args)) 
+                    != NORNS_SUCCESS) {
+                return res;
+            }
+            break;
+        }
+
+        case NORNSCTL_GLOBAL_STATUS:
         case NORNS_PING:
         {
             if((res = pack_to_buffer(type, &req_buf)) != NORNS_SUCCESS) {
@@ -384,7 +398,7 @@ connect_to_daemon(const char* socket_path) {
 }
 
 static int
-send_message(int conn, const msgbuffer_t* buffer) {
+send_message(int conn, const norns_msgbuffer_t* buffer) {
 
     if(buffer == NULL || buffer->b_data == NULL || buffer->b_size == 0) {
         return -1;
@@ -412,7 +426,7 @@ send_message(int conn, const msgbuffer_t* buffer) {
 }
 
 static int 
-recv_message(int conn, msgbuffer_t* buffer) {
+recv_message(int conn, norns_msgbuffer_t* buffer) {
 
     // first of all read the message prefix and decode it 
     // so that we know how much data to receive

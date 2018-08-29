@@ -120,10 +120,6 @@ nornsctl_job_init(nornsctl_job_t* job,
                   nornsctl_job_limit_t** limits, 
                   size_t nlimits) __THROW;
 
-/* Check if the service daemon is running */
-norns_error_t 
-nornsctl_ping(void) __THROW;
-
 /* Send a command to the service daemon */
 norns_error_t
 nornsctl_send_command(nornsctl_command_t command, 
