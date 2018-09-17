@@ -28,6 +28,7 @@
 #ifndef __TRANSFEROR_BASE_HPP__
 #define __TRANSFEROR_BASE_HPP__
 
+#include <string>
 #include <system_error>
 
 namespace norns {
@@ -55,6 +56,8 @@ struct transferor {
                              const std::shared_ptr<task_info>& task_info,
                              const std::shared_ptr<const data::resource>& src,  
                              const std::shared_ptr<const data::resource>& dst) const = 0;
+
+    virtual std::string to_string() const = 0;
 };
 
 } // namespace io

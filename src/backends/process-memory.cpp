@@ -64,6 +64,12 @@ process_memory::get_resource(const resource_info_ptr& rinfo,
             shared_from_this(), d_rinfo->address(), d_rinfo->size());
 }
 
+void
+process_memory::remove(const resource_info_ptr& rinfo, std::error_code& ec) const {
+    (void) rinfo;
+    (void) ec;
+}
+
 std::size_t
 process_memory::get_size(const resource_info_ptr& rinfo, std::error_code& ec) const {
 

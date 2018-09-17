@@ -80,8 +80,8 @@ typedef struct {
 void norns_iotask_init(norns_iotask_t* task, norns_op_t operation,
                        norns_resource_t* src, norns_resource_t* dst) __THROW;
 
-norns_iotask_t NORNS_IOTASK(norns_op_t operation, norns_resource_t src, 
-                            norns_resource_t dst) __THROW;
+norns_iotask_t 
+NORNS_IOTASK(norns_op_t operation, norns_resource_t src, ...) __THROW;
 
 /* Submit an asynchronous I/O task */
 norns_error_t norns_submit(norns_iotask_t* task) __THROW;

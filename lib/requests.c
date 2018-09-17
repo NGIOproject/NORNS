@@ -531,17 +531,21 @@ build_resource_msg(const norns_resource_t* res) {
         if(msg->buffer == NULL) {
             goto oom_cleanup;
         }
-    }
-    else {
-        assert(res->r_flags & NORNS_POSIX_PATH);
 
+        return msg;
+    }
+
+    if(res->r_flags & NORNS_POSIX_PATH) {
         msg->path = build_path_msg(&res->r_posix_path);
 
         if(msg->path == NULL) {
             goto oom_cleanup;
         }
+
+        return msg;
     }
 
+    assert(res->r_flags & NORNS_NULL_RESOURCE);
     return msg;
 
 oom_cleanup:

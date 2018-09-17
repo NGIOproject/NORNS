@@ -188,7 +188,7 @@ using iotask_create_request = detail::request_impl<
     request_type::iotask_create,
     iotask_type,
     std::shared_ptr<data::resource_info>,
-    std::shared_ptr<data::resource_info>
+    boost::optional<std::shared_ptr<data::resource_info>>
 >;
 
 using iotask_status_request = detail::request_impl<

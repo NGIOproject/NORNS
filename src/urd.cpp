@@ -211,11 +211,15 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
 
     const auto type = request->get<0>();
     const auto src_rinfo = request->get<1>();
-    const auto dst_rinfo = request->get<2>();
+    const auto dst_rinfo = request->get<2>().get_value_or(nullptr);
 
-    response_ptr resp;
-    iotask_id tid = 0;
+    std::vector<std::string> nsids;
+    std::vector<bool> remotes;
+    std::vector<std::shared_ptr<storage::backend>> backend_ptrs;
+    std::vector<std::shared_ptr<data::resource_info>> rinfo_ptrs;
+    boost::optional<iotask_id> tid;
     boost::optional<auth::credentials> auth;
+    response_ptr resp;
     urd_error rv = urd_error::success;
 
     if(m_is_paused) {
@@ -231,67 +235,52 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
         goto log_and_return;
     }
 
-    //XXX move validate() to io::
-    if((rv = validate_iotask_args(type, src_rinfo, dst_rinfo)) 
-            == urd_error::success) {
-
-        std::shared_ptr<storage::backend> bsrc, bdst;
-
-        {
-            boost::shared_lock<boost::shared_mutex> lock(m_namespace_mgr_mutex);
-
-            if(auto rv = m_namespace_mgr->find(src_rinfo->nsid(), 
-                                               src_rinfo->is_remote())) {
-                bsrc = *rv;
-            }
-
-            if(auto rv = m_namespace_mgr->find(dst_rinfo->nsid(), 
-                                               dst_rinfo->is_remote())) {
-                bdst = *rv;
-            }
+    for(const auto& rinfo : {src_rinfo, dst_rinfo}) {
+        if(rinfo) {
+            nsids.push_back(rinfo->nsid());
+            remotes.push_back(rinfo->is_remote());
+            rinfo_ptrs.emplace_back(rinfo);
         }
+    }
 
-        if(!bsrc || !bdst) {
+#ifdef __LOGGER_ENABLE_DEBUG__
+    LOGGER_DEBUG("Request metadata:");
+    LOGGER_DEBUG("  rinfos: {} {}", src_rinfo, dst_rinfo);
+
+    LOGGER_DEBUG("  nsids: {");
+    for(std::size_t i=0; i<nsids.size(); ++i) {
+        LOGGER_DEBUG("    \"{}\"", nsids[i]);
+    }
+    LOGGER_DEBUG("  }");
+
+    LOGGER_DEBUG("  remotes: {");
+    for(std::size_t i=0; i<remotes.size(); ++i) {
+        LOGGER_DEBUG("    {}", remotes[i]);
+    }
+    LOGGER_DEBUG("  }");
+#endif
+
+    {
+        bool all_found = false;
+        boost::shared_lock<boost::shared_mutex> lock(m_namespace_mgr_mutex);
+        std::tie(all_found, backend_ptrs) = m_namespace_mgr->find(nsids, remotes);
+
+        if(!all_found) {
             rv = urd_error::no_such_namespace;
             goto log_and_return;
         }
-
-        const auto tx_ptr = m_transferor_registry->get(src_rinfo->type(), 
-                                                       dst_rinfo->type());
-
-        if(!tx_ptr) {
-            rv = urd_error::snafu; //TODO: unknown transferor
-            goto log_and_return;
-        }
-
-        if(!tx_ptr->validate(src_rinfo, dst_rinfo)) {
-            rv = urd_error::bad_args;
-            goto log_and_return;
-        }
-
-        // register the task in the task manager
-        auto ret = m_task_mgr->create_task(type, *auth, bsrc, src_rinfo, 
-                                          bdst, dst_rinfo, std::move(tx_ptr)); 
-
-        if(!ret) {
-            // this can only happen if we tried to register a task
-            // and the TID automatically generated collided with an
-            // already running task. 
-            // This can happen in two cases: 
-            //   1. We end up with more than 4294967295U concurrent tasks
-            //   2. We are not properly cleaning up dead tasks
-            // In both cases, we want to know about it
-            LOGGER_CRITICAL("Failed to create new task!");
-            rv = urd_error::too_many_tasks;
-            goto log_and_return;
-        }
-
-        tid = *ret;
-        rv = urd_error::success;
     }
 
+#ifdef __LOGGER_ENABLE_DEBUG__
+    for(std::size_t i=0; i<nsids.size(); ++i) {
+        LOGGER_DEBUG("nsid: {}, remote?: {}, bptr: {}", nsids[i], remotes[i], backend_ptrs[i]);
+    }
+#endif
+
+    std::tie(rv, tid) = m_task_mgr->create_task(type, *auth, backend_ptrs, rinfo_ptrs);
+
 log_and_return:
-    resp = std::make_unique<api::iotask_create_response>(tid);
+    resp = std::make_unique<api::iotask_create_response>(tid.get_value_or(0));
     resp->set_error_code(rv);
 
     LOGGER_INFO("IOTASK_CREATE({}) = {}", request->to_string(), resp->to_string());
@@ -912,9 +901,18 @@ void urd::load_transfer_plugins() {
                                  const data::resource_type t2, 
                           std::shared_ptr<io::transferor>&& trp) {
 
-        if(!m_transferor_registry->add(t1, t2, 
-                    std::forward<std::shared_ptr<io::transferor>>(trp))) {
+        // if(!m_transferor_registry->add(t1, t2, 
+        //             std::forward<std::shared_ptr<io::transferor>>(trp))) {
 
+        //     LOGGER_WARN("    Failed to load transfer plugin ({} to {}):\n"
+        //                 "    Another plugin was already registered for this "
+        //                 "    combination (Plugin ignored)",
+        //                 utils::to_string(t1), utils::to_string(t2));
+        //     return;
+        // }
+
+        if(!m_task_mgr->register_transfer_plugin(t1, t2,
+                    std::forward<std::shared_ptr<io::transferor>>(trp))) {
             LOGGER_WARN("    Failed to load transfer plugin ({} to {}):\n"
                         "    Another plugin was already registered for this "
                         "    combination (Plugin ignored)",
@@ -922,7 +920,8 @@ void urd::load_transfer_plugins() {
             return;
         }
 
-        LOGGER_INFO("    Loaded transfer plugin ({} to {})", 
+
+        LOGGER_INFO("    Loaded transfer plugin ({} => {})", 
                     utils::to_string(t1), utils::to_string(t2));
     };
 
@@ -934,12 +933,12 @@ void urd::load_transfer_plugins() {
     // memory region -> shared path
     load_plugin(data::resource_type::memory_region, 
                 data::resource_type::shared_posix_path, 
-                std::make_shared<io::memory_region_to_local_path_transferor>());
+                std::make_shared<io::memory_region_to_shared_path_transferor>());
 
     // memory region -> remote path
     load_plugin(data::resource_type::memory_region, 
                 data::resource_type::remote_posix_path, 
-                std::make_shared<io::memory_region_to_local_path_transferor>());
+                std::make_shared<io::memory_region_to_remote_path_transferor>());
 
     // local path -> local path
     load_plugin(data::resource_type::local_posix_path, 

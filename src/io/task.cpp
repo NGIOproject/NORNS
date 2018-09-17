@@ -173,8 +173,6 @@ task<iotask_type::remove>::operator()() {
     const auto type = m_task_info->type();
     const auto src_backend = m_task_info->src_backend();
     const auto src_rinfo = m_task_info->src_rinfo();
-    const auto dst_backend = m_task_info->dst_backend();
-    const auto dst_rinfo = m_task_info->dst_rinfo();
     const auto auth = m_task_info->auth();
 
     // helper lambda for error reporting 
@@ -191,28 +189,13 @@ task<iotask_type::remove>::operator()() {
     LOGGER_WARN("[{}] Starting I/O task", tid);
     LOGGER_WARN("[{}]   TYPE: {}", tid, utils::to_string(type));
     LOGGER_WARN("[{}]   FROM: {}", tid, src_backend->to_string());
-    LOGGER_WARN("[{}]     TO: {}", tid, dst_backend->to_string());
 
     m_task_info->update_status(task_status::running);
 
-    auto src = src_backend->get_resource(src_rinfo, ec);
+    src_backend->remove(src_rinfo, ec);
 
     if(ec) {
-        log_error("Could not access input data " + src_rinfo->to_string());
-        return;
-    }
-
-    auto dst = dst_backend->new_resource(dst_rinfo, src->is_collection(), ec);
-
-    if(ec) {
-        log_error("Could not create output data " + dst_rinfo->to_string());
-        return;
-    }
-
-    ec = m_transferor->transfer(auth, m_task_info, src, dst);
-
-    if(ec) {
-        log_error("Transfer failed");
+        log_error("Failed to remove resource " + src_rinfo->to_string());
         return;
     }
 

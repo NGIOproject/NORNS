@@ -39,6 +39,7 @@ extern "C" {
 /* Resource types */
 #define NORNS_PROCESS_MEMORY    0x0100000   /* Memory buffer */
 #define NORNS_POSIX_PATH        0x0200000   /* POSIX path */
+#define NORNS_NULL_RESOURCE     0x1000000
 
 /* Access types */
 #define R_LOCAL         0x0000010    /* Local resource (default) */

@@ -54,10 +54,17 @@ nvml_dax::new_resource(const resource_info_ptr& rinfo,
     return std::make_shared<data::local_path_resource>(shared_from_this(), ""); //XXX
 }
 
-backend::resource_ptr nvml_dax::get_resource(const resource_info_ptr& rinfo, std::error_code& ec) const {
+backend::resource_ptr
+nvml_dax::get_resource(const resource_info_ptr& rinfo, std::error_code& ec) const {
     (void) rinfo;
     (void) ec;
     return std::make_shared<data::local_path_resource>(shared_from_this(), ""); //XXX
+}
+
+void
+nvml_dax::remove(const resource_info_ptr& rinfo, std::error_code& ec) const {
+    (void) rinfo;
+    (void) ec;
 }
 
 std::size_t

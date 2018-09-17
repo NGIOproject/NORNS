@@ -65,6 +65,7 @@ send_submit_request(norns_iotask_t* task) {
        (task->t_op != NORNS_IOTASK_COPY &&
         task->t_op != NORNS_IOTASK_MOVE && 
         task->t_op != NORNS_IOTASK_REMOVE)) {
+        ERR("Invalid fields detected in norns_iotask_t");
         return NORNS_EBADARGS;
     }
 

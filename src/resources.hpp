@@ -30,6 +30,7 @@
 
 #include "resources/resource-type.hpp"
 #include "resources/resource.hpp"
+
 // add additional concrete implementations here
 #include "resources/local_posix_path/local-path.hpp"
 #include "resources/memory_buffer/memory-buffer.hpp"

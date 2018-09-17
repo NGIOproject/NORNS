@@ -68,26 +68,27 @@ SCENARIO("initialize a task with norns_iotask_init", "[api::norns_iotask_init]")
         }
     }
 
-    GIVEN("invalid task information") {
-        WHEN("initializing a task with a NULL dst") {
-
-            norns_iotask_t task;
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            void* src_addr = (void*) 0xdeadbeef;
-            size_t src_size = (size_t) 42;
-
-            norns_resource_t src = NORNS_MEMORY_REGION(src_addr, src_size);
-
-            norns_iotask_init(&task, task_op, &src, NULL);
-
-            THEN("task is set to 0") {
-                norns_iotask_t dummy;
-                memset(&dummy, 0, sizeof(dummy));
-                REQUIRE(memcmp(&task, &dummy, sizeof(norns_iotask_t)) == 0);
-            }
-        }
-    }
+///XXX this case is no longer invalid
+///     GIVEN("invalid task information") {
+///         WHEN("initializing a task with a NULL dst") {
+/// 
+///             norns_iotask_t task;
+///             norns_op_t task_op = NORNS_IOTASK_COPY;
+/// 
+///             void* src_addr = (void*) 0xdeadbeef;
+///             size_t src_size = (size_t) 42;
+/// 
+///             norns_resource_t src = NORNS_MEMORY_REGION(src_addr, src_size);
+/// 
+///             norns_iotask_init(&task, task_op, &src, NULL);
+/// 
+///             THEN("task is set to 0") {
+///                 norns_iotask_t dummy;
+///                 memset(&dummy, 0, sizeof(dummy));
+///                 REQUIRE(memcmp(&task, &dummy, sizeof(norns_iotask_t)) == 0);
+///             }
+///         }
+///     }
 
     GIVEN("valid task information") {
         WHEN("initializing a task with src=NORNS_PROCESS_MEMORY and dst=NORNS_POSIX_PATH | R_LOCAL") {

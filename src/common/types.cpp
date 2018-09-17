@@ -53,6 +53,8 @@ std::string to_string(iotask_type type) {
             return "DATA_COPY";
         case iotask_type::move:
             return "DATA_MOVE";
+        case iotask_type::remove:
+            return "DATA_REMOVE";
         default:
             return "UNKNOWN_IOTASK";
     }

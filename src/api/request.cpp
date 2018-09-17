@@ -92,8 +92,8 @@ norns::command_type decode_command(::google::protobuf::uint32 type) {
 
 
 bool is_valid(const norns::rpc::Request_Task_Resource& res) {
-    if(!(res.type() & (NORNS_PROCESS_MEMORY | NORNS_POSIX_PATH))) {
-        return false;
+    if(res.type() & NORNS_NULL_RESOURCE) {
+        return true;
     }
 
     if(res.type() & NORNS_PROCESS_MEMORY) { 
@@ -128,7 +128,32 @@ bool is_valid(const norns::rpc::Request_Task_Resource& res) {
         return true;
     }
 
-    return true;
+    return false;
+}
+
+
+bool
+is_valid(const norns::rpc::Request_Task& task) {
+
+    using norns::iotask_type;
+
+    switch(::decode_iotask_type(task.optype())) {
+        case iotask_type::copy:
+        case iotask_type::move:
+        case iotask_type::remove:
+            if(!task.has_source() || !::is_valid(task.source())) {
+                return false;
+            }
+
+            if(!task.has_destination() || !::is_valid(task.destination())) {
+                return false;
+            }
+
+            return true;
+
+        default:
+            return false;
+    }
 }
 
 std::shared_ptr<norns::data::resource_info> 
@@ -140,29 +165,33 @@ create_from(const norns::rpc::Request_Task_Resource& res) {
     using norns::data::shared_path_info;
     using norns::data::remote_path_info;
 
-    if(is_valid(res)) {
-        if(res.type() & NORNS_PROCESS_MEMORY) {
-            return std::make_shared<memory_buffer>(res.buffer().address(),
-                                                   res.buffer().size());
-        }
-        else { // NORNS_POSIX_PATH
-            if(res.type() & R_LOCAL) {
-                return std::make_shared<local_path_info>(res.path().nsid(),
-                                                         res.path().datapath());
-            }
-            else if(res.type() & R_SHARED) {
-                return std::make_shared<shared_path_info>(res.path().nsid(),
-                                                          res.path().datapath());
-            }
-            else { // R_REMOTE
-                return std::make_shared<remote_path_info>(res.path().nsid(),
-                                                          res.path().hostname(), 
-                                                          res.path().datapath());
-            }
-        }
+    assert(is_valid(res));
+
+    if(res.type() & NORNS_PROCESS_MEMORY) {
+        return std::make_shared<memory_buffer>(res.buffer().address(),
+                                               res.buffer().size());
     }
 
-    return std::shared_ptr<resource_info>();
+    if(res.type() & NORNS_POSIX_PATH) {
+        if(res.type() & R_LOCAL) {
+            return std::make_shared<local_path_info>(res.path().nsid(),
+                                                     res.path().datapath());
+        }
+
+        if(res.type() & R_SHARED) {
+            return std::make_shared<shared_path_info>(res.path().nsid(),
+                                                      res.path().datapath());
+        }
+
+        // R_REMOTE
+        assert(res.type() & R_REMOTE);
+        return std::make_shared<remote_path_info>(res.path().nsid(),
+                                                  res.path().hostname(), 
+                                                  res.path().datapath());
+    }
+
+    assert(res.type() & NORNS_NULL_RESOURCE);
+    return {};
 }
 
 std::string 
@@ -202,15 +231,15 @@ request_ptr request::create_from_buffer(const std::vector<uint8_t>& buffer, int 
                     auto task = rpc_req.task();
                     iotask_type optype = ::decode_iotask_type(task.optype());
 
-                    if(optype == iotask_type::unknown) {
-                        return std::make_unique<bad_request>();
-                    }
+                    if(::is_valid(task)) {
+                        const auto src_res = ::create_from(task.source());
+                        const auto dst_res = ::create_from(task.destination());
 
-                    std::shared_ptr<data::resource_info> src_res = ::create_from(task.source());
-                    std::shared_ptr<data::resource_info> dst_res = ::create_from(task.destination());
+                        if(dst_res) {
+                            return std::make_unique<iotask_create_request>(optype, std::move(src_res), dst_res);
+                        }
 
-                    if(src_res != nullptr && dst_res != nullptr) {
-                        return std::make_unique<iotask_create_request>(optype, src_res, dst_res);
+                        return std::make_unique<iotask_create_request>(optype, std::move(src_res), boost::none);
                     }
 
                     return std::make_unique<bad_request>();
@@ -365,9 +394,17 @@ std::string iotask_create_request::to_string() const {
     const auto src = this->get<1>();
     const auto dst = this->get<2>();
 
-    return utils::to_string(op) + ", "
-           + src->to_string() + " => "
-           + dst->to_string();
+    auto str = utils::to_string(op);
+
+    if(src) {
+        str += std::string(", ") + src->to_string();
+    }
+
+    if(dst) {
+        str += std::string(" => ") + (*dst)->to_string();
+    }
+
+    return str;
 }
 
 template<>

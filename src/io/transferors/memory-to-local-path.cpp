@@ -183,6 +183,10 @@ memory_region_to_local_path_transferor::transfer(
                                 d_src.size(), d_dst.canonical_path());
 }
 
+std::string 
+memory_region_to_local_path_transferor::to_string() const {
+    return "transferor[memory_region => local_path]";
+}
 
 } // namespace io
 } // namespace norns

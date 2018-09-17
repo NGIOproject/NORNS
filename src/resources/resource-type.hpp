@@ -38,7 +38,8 @@ enum class resource_type {
     memory_region,
     local_posix_path,
     shared_posix_path,
-    remote_posix_path
+    remote_posix_path,
+    ignorable
 };
 
 } // namespace data

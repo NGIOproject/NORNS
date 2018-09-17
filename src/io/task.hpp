@@ -54,6 +54,9 @@ struct task {
     using task_info_ptr = std::shared_ptr<task_info>;
     using transferor_ptr = std::shared_ptr<transferor>;
 
+    task(const task_info_ptr&& task_info)
+        : m_task_info(std::move(task_info)) { }
+
     task(const task_info_ptr&& task_info, const transferor_ptr&& tx_ptr)
         : m_task_info(std::move(task_info)),
           m_transferor(std::move(tx_ptr)) { }

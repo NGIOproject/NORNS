@@ -70,6 +70,10 @@ memory_region_to_shared_path_transferor::transfer(
     return std::make_error_code(static_cast<std::errc>(0));
 }
 
+std::string 
+memory_region_to_shared_path_transferor::to_string() const {
+    return "transferor[memory_region => shared_path]";
+}
 
 } // namespace io
 } // namespace norns
