@@ -156,6 +156,7 @@ test:ubuntu:latest:
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_status]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_status]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_send_command]"
+        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_remove_local_posix_files]"
     after_script:
         - pwd
         - if [[ -e tests.log ]]; 
