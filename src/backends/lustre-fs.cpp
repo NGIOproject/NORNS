@@ -54,10 +54,17 @@ lustre::new_resource(const resource_info_ptr& rinfo,
     return backend::resource_ptr();
 }
 
-backend::resource_ptr lustre::get_resource(const resource_info_ptr& rinfo, std::error_code& ec) const {
+backend::resource_ptr
+lustre::get_resource(const resource_info_ptr& rinfo, std::error_code& ec) const {
     (void) rinfo;
     (void) ec;
     return backend::resource_ptr(); //XXX
+}
+
+void
+lustre::remove(const resource_info_ptr& rinfo, std::error_code& ec) const {
+    (void) rinfo;
+    (void) ec;
 }
 
 std::size_t

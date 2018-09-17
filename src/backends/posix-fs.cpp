@@ -134,6 +134,44 @@ backend::resource_ptr posix_filesystem::get_resource(const resource_info_ptr& ri
     return std::make_shared<data::local_path_resource>(shared_from_this(), ns_abs_subpath);
 }
 
+void
+posix_filesystem::remove(const resource_info_ptr& rinfo, std::error_code& ec) const {
+
+    const auto d_rinfo = std::static_pointer_cast<data::local_path_info>(rinfo);
+    const bfs::path ns_subpath = utils::lexical_normalize(d_rinfo->datapath(), false);
+
+    if(ns_subpath.empty()) {
+        ec = std::make_error_code(static_cast<std::errc>(ENOENT));
+        return;
+    }
+
+    // check that path exists
+    boost::system::error_code error;
+    const bfs::path canonical_path = [&]() {
+
+        const bfs::path p{m_mount / ns_subpath};
+
+        if(!bfs::is_symlink(p)) {
+            return bfs::canonical(p, error);
+        }
+
+        bfs::exists(p, error);
+        return p;
+    }();
+        
+    if(error) {
+        ec = std::make_error_code(static_cast<std::errc>(error.value()));
+        return;
+    }
+
+    bfs::remove_all(canonical_path, error);
+
+    if(error) {
+        ec = std::make_error_code(static_cast<std::errc>(error.value()));
+        return;
+    }
+}
+
 std::size_t
 posix_filesystem::get_size(const resource_info_ptr& rinfo, std::error_code& ec) const {
 

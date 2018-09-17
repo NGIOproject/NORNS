@@ -33,8 +33,8 @@ namespace io {
 
 bool 
 transferor_registry::add(const data::resource_type t1, 
-                          const data::resource_type t2, 
-                          std::shared_ptr<io::transferor>&& trp) {
+                         const data::resource_type t2, 
+                         std::shared_ptr<io::transferor>&& trp) {
 
     using ValueType = std::shared_ptr<io::transferor>;
 
@@ -49,7 +49,7 @@ transferor_registry::add(const data::resource_type t1,
 
 std::shared_ptr<io::transferor> 
 transferor_registry::get(const data::resource_type t1, 
-                          const data::resource_type t2) const {
+                         const data::resource_type t2) const {
 
     using ValueType = std::shared_ptr<io::transferor>;
 

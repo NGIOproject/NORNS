@@ -47,6 +47,7 @@ using iotask_id = norns_tid_t;
 enum class iotask_type {
     copy,
     move,
+    remove,
     noop,
     unknown
 };

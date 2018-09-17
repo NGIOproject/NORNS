@@ -59,8 +59,9 @@ typedef struct {
 } norns_iotask_t;
 
 /* Task types */
-#define NORNS_IOTASK_COPY 0x1
-#define NORNS_IOTASK_MOVE 0x2
+#define NORNS_IOTASK_COPY   0x1
+#define NORNS_IOTASK_MOVE   0x2
+#define NORNS_IOTASK_REMOVE 0x3
 
 /* I/O task status descriptor */
 typedef struct {
@@ -79,8 +80,8 @@ typedef struct {
 void norns_iotask_init(norns_iotask_t* task, norns_op_t operation,
                        norns_resource_t* src, norns_resource_t* dst) __THROW;
 
-norns_iotask_t NORNS_IOTASK(norns_op_t operation, norns_resource_t src, 
-                            norns_resource_t dst) __THROW;
+norns_iotask_t 
+NORNS_IOTASK(norns_op_t operation, norns_resource_t src, ...) __THROW;
 
 /* Submit an asynchronous I/O task */
 norns_error_t norns_submit(norns_iotask_t* task) __THROW;

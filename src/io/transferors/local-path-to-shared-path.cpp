@@ -71,7 +71,10 @@ local_path_to_shared_path_transferor::transfer(
     return std::make_error_code(static_cast<std::errc>(0));
 }
 
-
+std::string 
+local_path_to_shared_path_transferor::to_string() const {
+    return "transferor[local_path => shared_path]";
+}
 
 } // namespace io
 } // namespace norns

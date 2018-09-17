@@ -149,10 +149,19 @@ libnorns_reload_config_file(void) {
 /* Public API */
 
 norns_iotask_t
-NORNS_IOTASK(norns_op_t optype, norns_resource_t src, norns_resource_t dst) {
+NORNS_IOTASK(norns_op_t optype, norns_resource_t src, ...) {
     norns_iotask_t task;
 
+    if(optype == NORNS_IOTASK_REMOVE) {
+        norns_iotask_init(&task, optype, &src, NULL);
+        return task;
+    }
+
+    va_list ap;
+    va_start(ap, src);
+    norns_resource_t dst = va_arg(ap, norns_resource_t);
     norns_iotask_init(&task, optype, &src, &dst);
+    va_end(ap);
 
     return task;
 }
@@ -165,15 +174,23 @@ norns_iotask_init(norns_iotask_t* task, norns_op_t optype,
         return;
     }
 
-    if(src == NULL || dst == NULL) {
-        memset(task, 0, sizeof(*task));
+    memset(task, 0, sizeof(*task));
+
+    if(src == NULL) {
         return;
     }
 
     task->t_id = 0;
     task->t_op = optype;
     task->t_src = *src;
-    task->t_dst = *dst;
+
+    if(dst != NULL) {
+        task->t_dst = *dst;
+        return;
+    }
+
+    // dst is NULL, set r_flags so that we are aware of it later
+    task->t_dst.r_flags = NORNS_NULL_RESOURCE;
 }
 
 norns_error_t

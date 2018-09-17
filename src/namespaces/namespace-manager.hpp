@@ -85,12 +85,12 @@ struct namespace_manager {
     }
 
     bool
-    contains(const std::string& nsid) {
+    contains(const std::string& nsid) const {
         return m_namespaces.count(nsid) != 0;
     }
 
     boost::optional<std::shared_ptr<storage::backend>>
-    find(const std::string& nsid, bool is_remote = false) {
+    find(const std::string& nsid, bool is_remote = false) const {
 
         if(is_remote) {
             return static_cast<std::shared_ptr<storage::backend>>(
@@ -104,6 +104,27 @@ struct namespace_manager {
         return m_namespaces.at(nsid);
     }
 
+    std::tuple<bool, std::vector<std::shared_ptr<storage::backend>>>
+    find(const std::vector<std::string>& nsids, 
+         const std::vector<bool>& remotes) const {
+
+        bool all_found = true;
+
+        assert(nsids.size() == remotes.size());
+
+        std::vector<std::shared_ptr<storage::backend>> v;
+
+        for(std::size_t i=0; i<nsids.size(); ++i) {
+
+            v.push_back(find(nsids[i], remotes[i]).get_value_or(nullptr));
+
+            if(!v.back()) {
+                all_found = false;
+            }
+        }
+
+        return std::make_tuple(all_found, v);
+    }
 
 private:
     std::unordered_map<std::string, 

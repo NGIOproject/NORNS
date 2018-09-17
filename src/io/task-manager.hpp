@@ -37,6 +37,12 @@
 #include "common.hpp"
 
 namespace norns {
+
+// forward declarations
+namespace data {
+enum class resource_type;
+}
+
 namespace io {
 
 // forward declarations
@@ -64,11 +70,21 @@ struct task_manager {
 
     task_manager(uint32_t nrunners, uint32_t backlog_size, bool dry_run);
 
+    bool
+    register_transfer_plugin(const data::resource_type t1,
+                             const data::resource_type t2,
+                             std::shared_ptr<io::transferor>&& trp);
+
     boost::optional<iotask_id>
     create_task(iotask_type type, const auth::credentials& creds, 
             const backend_ptr src_backend, const resource_info_ptr src_rinfo, 
             const backend_ptr dst_backend, const resource_info_ptr dst_rinfo,
             const transferor_ptr&& tx_ptr);
+
+    std::tuple<urd_error, boost::optional<iotask_id>>
+    create_task(iotask_type type, const auth::credentials& auth,
+                const std::vector<std::shared_ptr<storage::backend>>& backend_ptrs,
+                const std::vector<std::shared_ptr<data::resource_info>>& rinfo_ptrs);
 
     std::shared_ptr<task_info>
     find(iotask_id) const;
@@ -88,6 +104,7 @@ private:
     std::unordered_map<std::pair<std::string, std::string>,
                        boost::circular_buffer<double>, pair_hash> m_bandwidth_backlog;
     thread_pool m_runners;
+    io::transferor_registry m_transferor_registry;
 };
 
 } // namespace io

@@ -53,6 +53,7 @@ struct memory_region_to_shared_path_transferor : public transferor {
                              const std::shared_ptr<task_info>& task_info,
                              const std::shared_ptr<const data::resource>& src,  
                              const std::shared_ptr<const data::resource>& dst) const override final;
+    std::string to_string() const override final;
 };
 
 } // namespace io
