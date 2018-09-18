@@ -35,6 +35,11 @@ namespace detail {
 
 remote_backend::remote_backend() {} 
 
+bool
+remote_backend::is_tracked() const {
+    return false;
+}
+
 bfs::path remote_backend::mount() const {
     return "";
 }

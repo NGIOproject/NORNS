@@ -41,8 +41,9 @@ namespace storage {
 
 class posix_filesystem final : public storage::backend {
 public:
-    posix_filesystem(const bfs::path& mount, uint32_t quota);
+    posix_filesystem(bool track, const bfs::path& mount, uint32_t quota);
 
+    bool is_tracked() const override final;
     bfs::path mount() const override final;
     uint32_t quota() const override final;
 
@@ -55,6 +56,7 @@ public:
     std::string to_string() const override final;
 
 private:
+    bool      m_track;
     bfs::path m_mount;
     uint32_t  m_quota;
 };

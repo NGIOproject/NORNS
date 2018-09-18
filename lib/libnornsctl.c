@@ -251,25 +251,31 @@ nornsctl_unregister_namespace(const char* nsid) {
 }
 
 nornsctl_backend_t 
-NORNSCTL_BACKEND(norns_flags_t flags, const char* mount_point, 
-                uint32_t capacity) {
+NORNSCTL_BACKEND(norns_flags_t flags, 
+                 bool track, 
+                 const char* mount_point, 
+                 uint32_t capacity) {
 
     nornsctl_backend_t b;
 
-    nornsctl_backend_init(&b, flags, mount_point, capacity);
+    nornsctl_backend_init(&b, flags, track, mount_point, capacity);
 
     return b;
 }
 
 void 
-nornsctl_backend_init(nornsctl_backend_t* backend, norns_flags_t flags, 
-                      const char* mount_point, uint32_t capacity) {
+nornsctl_backend_init(nornsctl_backend_t* backend, 
+                      norns_flags_t flags, 
+                      bool track, 
+                      const char* mount_point, 
+                      uint32_t capacity) {
 
     if(backend == NULL) {
         return;
     }
 
     backend->b_type = flags;
+    backend->b_track = track;
     backend->b_mount = mount_point;
     backend->b_capacity = capacity;
 }

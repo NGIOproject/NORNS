@@ -480,12 +480,13 @@ urd_error urd::create_namespace(const config::namespace_def& nsdef) {
         return urd_error::bad_args;
     }
 
-    return create_namespace(nsdef.nsid(), type, nsdef.mountpoint(), 
-                            nsdef.capacity());
+    return create_namespace(nsdef.nsid(), type, nsdef.track(), 
+                            nsdef.mountpoint(), nsdef.capacity());
 }
 
 urd_error urd::create_namespace(const std::string& nsid, backend_type type,
-                                const bfs::path& mount, uint32_t quota) {
+                                bool track, const bfs::path& mount, 
+                                uint32_t quota) {
 
     boost::unique_lock<boost::shared_mutex> lock(m_namespace_mgr_mutex);
 
@@ -493,7 +494,8 @@ urd_error urd::create_namespace(const std::string& nsid, backend_type type,
         return urd_error::namespace_exists;
     }
 
-    if(auto bptr = storage::backend_factory::create_from(type, mount, quota)) {
+    if(auto bptr = storage::backend_factory::create_from(
+                type, track, mount, quota)) {
         m_namespace_mgr->add(nsid, bptr);
         return urd_error::success;
     }
@@ -510,10 +512,11 @@ response_ptr urd::namespace_register_handler(const request_ptr base_request) {
 
     std::string nsid = request->get<0>();
     backend_type type = request->get<1>();
-    std::string mount = request->get<2>();
-    int32_t quota = request->get<3>();
+    bool track = request->get<2>();
+    std::string mount = request->get<3>();
+    int32_t quota = request->get<4>();
 
-    resp->set_error_code(create_namespace(nsid, type, mount, quota));
+    resp->set_error_code(create_namespace(nsid, type, track, mount, quota));
 
     LOGGER_INFO("REGISTER_NAMESPACE({}) = {}", request->to_string(), resp->to_string());
     return resp;
@@ -851,10 +854,11 @@ void urd::load_backend_plugins() {
 
     // register POSIX filesystem backend plugin
     storage::backend_factory::get().
-        register_backend<storage::posix_filesystem>(backend_type::posix_filesystem,
-            [](const bfs::path& mount, uint32_t quota) {
+        register_backend<storage::posix_filesystem>(
+            backend_type::posix_filesystem,
+            [](bool track, const bfs::path& mount, uint32_t quota) {
                 return std::shared_ptr<storage::posix_filesystem>(
-                        new storage::posix_filesystem(mount, quota));
+                        new storage::posix_filesystem(track, mount, quota));
             });
 
     storage::backend_factory::get().
@@ -864,10 +868,11 @@ void urd::load_backend_plugins() {
 
     // register NVML-DAX filesystem backend plugin
     storage::backend_factory::get().
-        register_backend<storage::nvml_dax>(backend_type::nvml,
-            [](const bfs::path& mount, uint32_t quota) {
+        register_backend<storage::nvml_dax>(
+            backend_type::nvml,
+            [](bool track, const bfs::path& mount, uint32_t quota) {
                 return std::shared_ptr<storage::nvml_dax>(
-                        new storage::nvml_dax(mount, quota));
+                        new storage::nvml_dax(track, mount, quota));
             });
 
     storage::backend_factory::get().
@@ -875,10 +880,11 @@ void urd::load_backend_plugins() {
 
     // register Lustre backend plugin
     storage::backend_factory::get().
-        register_backend<storage::lustre>(backend_type::lustre,
-            [](const bfs::path& mount, uint32_t quota) {
+        register_backend<storage::lustre>(
+            backend_type::lustre,
+            [](bool track, const bfs::path& mount, uint32_t quota) {
                 return std::shared_ptr<storage::lustre>(
-                        new storage::lustre(mount, quota));
+                        new storage::lustre(track, mount, quota));
             });
     storage::backend_factory::get().
         register_alias("Lustre", backend_type::lustre);
@@ -967,8 +973,9 @@ void urd::load_default_namespaces() {
                         nsdef.mountpoint(), nsdef.alias());
             continue;
         }
-        LOGGER_INFO("    Loaded namespace \"{}://\" -> {} (type: {})", 
-                    nsdef.nsid(), nsdef.mountpoint(), nsdef.alias());
+        LOGGER_INFO("    Loaded namespace \"{}://\" -> {} (type: {}, {})", 
+                    nsdef.nsid(), nsdef.mountpoint(), nsdef.alias(), 
+                    (nsdef.track() ? "tracked" : "untracked"));
     }
 }
 

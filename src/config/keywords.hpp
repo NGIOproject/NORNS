@@ -54,6 +54,7 @@ constexpr static const auto workers = "workers";
 
 // option names for 'namespaces' section
 constexpr static const auto nsid = "nsid";
+constexpr static const auto track_contents = "track_contents";
 constexpr static const auto mountpoint = "mountpoint";
 constexpr static const auto type = "type";
 constexpr static const auto capacity = "capacity";

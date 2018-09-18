@@ -35,6 +35,12 @@ namespace detail {
 
 process_memory::process_memory() { }
 
+bool 
+process_memory::is_tracked() const {
+    return false;
+}
+
+
 bfs::path process_memory::mount() const {
     return "";
 }

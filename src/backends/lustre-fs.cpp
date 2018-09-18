@@ -33,8 +33,15 @@
 namespace norns {
 namespace storage {
 
-lustre::lustre(const bfs::path& mount, uint32_t quota) 
-    : m_mount(mount), m_quota(quota) { }
+lustre::lustre(bool track, const bfs::path& mount, uint32_t quota) 
+    : m_track(track),
+      m_mount(mount), 
+      m_quota(quota) { }
+
+bool
+lustre::is_tracked() const {
+    return m_track;
+}
 
 bfs::path lustre::mount() const {
     return m_mount;

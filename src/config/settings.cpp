@@ -120,6 +120,7 @@ void settings::load_from_file(const bfs::path& filename) {
     for(const auto& nsdef : namespaces) {
         m_default_namespaces.emplace_back(
                 nsdef.get_as<std::string>(keywords::nsid),
+                nsdef.get_as<bool>(keywords::track_contents),
                 nsdef.get_as<bfs::path>(keywords::mountpoint),
                 nsdef.get_as<std::string>(keywords::type),
                 nsdef.get_as<uint64_t>(keywords::capacity),

@@ -40,10 +40,11 @@ namespace storage {
 
 class nvml_dax final : public storage::backend {
 public:
-    nvml_dax(const bfs::path& mount, uint32_t quota);
+    nvml_dax(bool track, const bfs::path& mount, uint32_t quota);
 
-    bfs::path mount() const override;
-    uint32_t quota() const override;
+    bool is_tracked() const override final;
+    bfs::path mount() const override final;
+    uint32_t quota() const override final;
 
     resource_ptr new_resource(const resource_info_ptr& rinfo, bool is_collection, std::error_code& ec) const override final;
     resource_ptr get_resource(const resource_info_ptr& rinfo, std::error_code& ec) const override final;
@@ -54,6 +55,7 @@ public:
     std::string to_string() const final;
 
 private:
+    bool      m_track;
     bfs::path m_mount;
     uint32_t  m_quota;
 };

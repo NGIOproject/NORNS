@@ -119,7 +119,8 @@ private:
     // TODO: add helpers for remove and update
     urd_error create_namespace(const config::namespace_def& nsdef);
     urd_error create_namespace(const std::string& nsid, backend_type type,
-                               const bfs::path& mount, uint32_t quota);
+                               bool track, const bfs::path& mount, 
+                               uint32_t quota);
 
 private:
     std::atomic<bool> m_is_paused;

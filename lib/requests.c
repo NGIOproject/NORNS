@@ -389,6 +389,7 @@ build_backend_message(const nornsctl_backend_t* backend) {
     norns__rpc__request__namespace__backend__init(backendmsg);
 
     backendmsg->type = backend->b_type;
+    backendmsg->track = backend->b_track;
 
     // n_mount might be NULL for some namespaces 
     // (e.g. NORNS_NS_PROCESS_MEMORY)

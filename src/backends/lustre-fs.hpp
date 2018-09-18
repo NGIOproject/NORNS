@@ -41,8 +41,9 @@ namespace storage {
 
 class lustre final : public storage::backend {
 public:
-    lustre(const bfs::path& mount, uint32_t quota);
+    lustre(bool track, const bfs::path& mount, uint32_t quota);
 
+    bool is_tracked() const override final;
     bfs::path mount() const override final;
     uint32_t quota() const override final;
 
@@ -55,8 +56,9 @@ public:
     std::string to_string() const override final;
 
 protected:
+    bool      m_track;
     bfs::path m_mount;
-    uint32_t    m_quota;
+    uint32_t  m_quota;
 };
 
 //NORNS_REGISTER_BACKEND(backend_type::lustre, lustre);

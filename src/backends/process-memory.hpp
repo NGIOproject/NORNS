@@ -44,6 +44,7 @@ class process_memory final : public storage::backend {
 public:
     process_memory();
 
+    bool is_tracked() const override final;
     bfs::path mount() const override final;
     uint32_t quota() const override final;
 

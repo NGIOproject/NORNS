@@ -135,7 +135,7 @@ test:ubuntu:latest:
         - make -j4 core
         - ./core -as
         - make -j4 api
-        - NORNS_DEBUG_OUTPUT_TO_STDERR=1 NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api
+#        - NORNS_DEBUG_OUTPUT_TO_STDERR=1 NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_register_namespace]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_unregister_namespace]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_copy_local_posix_files]"
@@ -148,10 +148,6 @@ test:ubuntu:latest:
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_resource_init]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_iotask_init]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::NORNS_TASK]"
-##        - valgrind 
-##            --leak-check=full 
-##            -v 
-##            env NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_status]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_status]"

@@ -33,6 +33,7 @@
 #endif
 
 #include <sys/types.h>
+#include <stdbool.h>
 #include "nornsctl_types.h"
 #include "norns_error.h"
 
@@ -53,6 +54,7 @@ extern "C" {
 /* Descriptor for a storage namespace */
 typedef struct {
     int         b_type;     /* namespace type */
+    bool        b_track;    /* should the service track its contents? */
     const char* b_mount;    /* mount point */
     uint32_t    b_capacity; /* namespace capacity (in megabytes) for writing data */
 } nornsctl_backend_t;
@@ -89,13 +91,15 @@ typedef struct {
 
 nornsctl_backend_t 
 NORNSCTL_BACKEND(nornsctl_backend_flags_t flags, 
+                 bool track,
                  const char* mount_point, 
                  uint32_t capacity) __THROW;
 
 void 
-nornsctl_backend_init(nornsctl_backend_t* backend, 
-                      nornsctl_backend_flags_t flags, 
-                      const char* mount_point, 
+nornsctl_backend_init(nornsctl_backend_t* backend,
+                      nornsctl_backend_flags_t flags,
+                      bool track,
+                      const char* mount_point,
                       uint32_t capacity) __THROW;
 
 nornsctl_job_limit_t 

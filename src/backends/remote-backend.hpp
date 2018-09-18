@@ -43,6 +43,7 @@ class remote_backend final : public storage::backend {
 public:
     remote_backend();
 
+    bool is_tracked() const override final;
     bfs::path mount() const override final;
     uint32_t quota() const override final;
 
