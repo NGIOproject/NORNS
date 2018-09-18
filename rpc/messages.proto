@@ -68,8 +68,9 @@ message Request {
         // backend descriptor
         message Backend {
             required int32 type = 1;
-            required string mount = 2;
-            required int32 capacity = 3;
+            required bool track = 2;
+            required string mount = 3;
+            required int32 capacity = 4;
         }
 
         required string nsid = 1;

@@ -239,6 +239,7 @@ using backend_register_request = detail::request_impl<
     request_type::backend_register, 
     std::string, // nsid
     backend_type, // type
+    bool, // track?,
     std::string, // mount
     int32_t // quota
 >;
@@ -247,6 +248,7 @@ using backend_update_request = detail::request_impl<
     request_type::backend_update, 
     std::string, // nsid
     backend_type, // type
+    bool, // track?,
     std::string, // mount
     int32_t // quota
 >;

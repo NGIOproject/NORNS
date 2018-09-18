@@ -39,10 +39,11 @@ namespace config {
 
 struct namespace_def {
 
-    namespace_def(const std::string& nsid, const bfs::path& mountpoint,
-                  const std::string& alias, const uint64_t capacity, 
-                  const std::string& visibility) :
+    namespace_def(const std::string& nsid, bool track, 
+                  const bfs::path& mountpoint, const std::string& alias, 
+                  const uint64_t capacity, const std::string& visibility) :
         m_nsid(nsid),
+        m_track(track),
         m_mountpoint(mountpoint),
         m_alias(alias),
         m_capacity(capacity),
@@ -50,6 +51,10 @@ struct namespace_def {
 
     std::string nsid() const {
         return m_nsid;
+    }
+
+    bool track() const {
+        return m_track;
     }
 
     bfs::path mountpoint() const {
@@ -69,6 +74,7 @@ struct namespace_def {
     }
 
     const std::string m_nsid;
+    const bool        m_track;
     const bfs::path   m_mountpoint;
     const std::string m_alias;
     const uint64_t    m_capacity;

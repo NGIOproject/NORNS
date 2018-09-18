@@ -109,6 +109,10 @@ const file_schema valid_options = declare_file({
             declare_option<std::string>(
                     keywords::nsid,
                     opt_type::mandatory),
+            declare_option<bool>(
+                    keywords::track_contents,
+                    opt_type::mandatory,
+                    converter<bool>(parsers::parse_bool)), 
             declare_option<bfs::path>(
                     keywords::mountpoint,
                     opt_type::mandatory,

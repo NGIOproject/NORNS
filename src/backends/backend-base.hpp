@@ -59,6 +59,7 @@ protected:
 public:
     virtual ~backend() {};
 
+    virtual bool is_tracked() const = 0;
     virtual bfs::path mount() const = 0;
     virtual uint32_t quota() const = 0;
 
@@ -83,7 +84,8 @@ public:
 
 class backend_factory {
 
-    using creator_function = std::function<std::shared_ptr<backend>(const bfs::path&, uint32_t)>;
+    using creator_function = std::function<
+        std::shared_ptr<backend>(bool track, const bfs::path&, uint32_t)>;
 
 
 public:
@@ -136,7 +138,9 @@ public:
     }
 
 private:
-    std::shared_ptr<backend> create(const backend_type type, const bfs::path& mount, uint32_t quota) const;
+    std::shared_ptr<backend> 
+    create(const backend_type type, bool track, const bfs::path& mount, 
+           uint32_t quota) const;
 
 protected:
     backend_factory() {}

@@ -360,13 +360,15 @@ request_ptr request::create_from_buffer(const std::vector<uint8_t>& buffer, int 
                         if(rpc_req.type() == norns::rpc::Request::NAMESPACE_REGISTER) {
                             return std::make_unique<backend_register_request>(nspace.nsid(), 
                                                                               type, 
+                                                                              b.track(),
                                                                               b.mount(), 
                                                                               b.capacity());
                         }
                         else { // rpc_req.type() == norns::rpc::Request::NAMESPACE_UPDATE
                             return std::make_unique<backend_update_request>(nspace.nsid(), 
-                                                                            type, 
-                                                                            b.mount(), 
+                                                                            type,
+                                                                            b.track(),
+                                                                            b.mount(),
                                                                             b.capacity());
                         }
                     }
@@ -514,8 +516,9 @@ std::string backend_register_request::to_string() const {
 
     const auto& nsid = this->get<0>();
     const auto& type = this->get<1>();
-    const auto& mount = this->get<2>();
-    const auto& quota = this->get<3>();
+    const auto& track = this->get<2>();
+    const auto& mount = this->get<3>();
+    const auto& quota = this->get<4>();
 
 #if 0 // verbose
     return "nsid: \"" + nsid + "\", "
@@ -525,6 +528,7 @@ std::string backend_register_request::to_string() const {
 #else
     return "\"" + nsid + "\", " +
            utils::to_string(type) + ", " +
+           (track ? "tracked" : "untracked") + ", " +
            (mount != "" ?  "\"" + mount + "\", " : "") +
            (quota != 0 ? std::to_string(quota) : "unlimited");
 #endif
@@ -535,8 +539,9 @@ std::string backend_update_request::to_string() const {
 
     const auto& nsid = this->get<0>();
     const auto& type = this->get<1>();
-    const auto& mount = this->get<2>();
-    const auto& quota = this->get<3>();
+    const auto& track = this->get<2>();
+    const auto& mount = this->get<3>();
+    const auto& quota = this->get<4>();
 
 #if 0 // verbose
     return "nsid: \"" + nsid + "\", "
@@ -546,6 +551,7 @@ std::string backend_update_request::to_string() const {
 #else
     return "\"" + nsid + "\", " +
            utils::to_string(type) + ", " +
+           (track ? "tracked" : "untracked") + ", " +
            (mount != "" ?  "\"" + mount + "\", " : "") +
            (quota != 0 ? std::to_string(quota) : "unlimited");
 #endif
