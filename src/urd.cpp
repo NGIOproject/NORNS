@@ -595,6 +595,10 @@ urd::command_handler(const request_ptr base_request) {
                 m_is_paused = false;
             }
             break;
+        case command_type::shutdown:
+            // TODO
+            LOGGER_WARN("Shutdown requested!");
+            break;
         case command_type::unknown:
             resp->set_error_code(urd_error::bad_args);
             break;

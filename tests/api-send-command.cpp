@@ -88,5 +88,14 @@ SCENARIO("send control commands to urd", "[api::nornsctl_send_command]") {
                 REQUIRE(rv == NORNS_SUCCESS);
             }
         }
+
+        WHEN("a NORNSCTL_COMMAND_SHUTDOWN command is sent") {
+
+            norns_error_t rv = nornsctl_send_command(NORNSCTL_COMMAND_SHUTDOWN, NULL);
+
+            THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
+                REQUIRE(rv == NORNS_SUCCESS);
+            }
+        }
     }
 }

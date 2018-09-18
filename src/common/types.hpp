@@ -66,6 +66,7 @@ enum class command_type {
     ping,
     pause_accept,
     resume_accept,
+    shutdown,
     unknown
 };
 

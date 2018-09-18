@@ -85,6 +85,8 @@ norns::command_type decode_command(::google::protobuf::uint32 type) {
             return command_type::pause_accept;
         case NORNSCTL_COMMAND_RESUME_ACCEPT:
             return command_type::resume_accept;
+        case NORNSCTL_COMMAND_SHUTDOWN:
+            return command_type::shutdown;
         default:
             return command_type::unknown;
     }
@@ -431,6 +433,8 @@ std::string command_request::to_string() const {
             return "PAUSE_ACCEPT";
         case command_type::resume_accept:
             return "RESUME_ACCEPT";
+        case command_type::shutdown:
+            return "SHUTDOWN";
         default:
             return "UNKNOWN";
     }
