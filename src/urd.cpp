@@ -586,19 +586,20 @@ urd::command_handler(const request_ptr base_request) {
         case command_type::ping:
             break; // nothing special to do here
         case command_type::pause_accept:
-            if(!m_is_paused) {
-                m_is_paused = true;
-            }
+            pause_accept();
             break;
         case command_type::resume_accept:
-            if(m_is_paused) {
-                m_is_paused = false;
-            }
+            resume_accept();
             break;
         case command_type::shutdown:
+        {
             // TODO
             LOGGER_WARN("Shutdown requested!");
+            pause_accept();
+
+
             break;
+        }
         case command_type::unknown:
             resp->set_error_code(urd_error::bad_args);
             break;
@@ -1026,6 +1027,21 @@ void urd::print_farewell() {
     LOGGER_INFO(farewell, m_settings->progname(), getpid());
     LOGGER_INFO("{}", fsep);
 }
+
+void urd::pause_accept() {
+    bool expected = false;
+    while(!m_is_paused.compare_exchange_weak(expected, true) && !expected);
+
+    LOGGER_WARN("Daemon locked: incoming requests will be rejected");
+}
+
+void urd::resume_accept() {
+    bool expected = true;
+    while(!m_is_paused.compare_exchange_weak(expected, false) && expected);
+
+    LOGGER_WARN("Daemon unlocked: incoming requests will be processed");
+}
+
 
 int urd::run() {
 

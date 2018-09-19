@@ -68,6 +68,15 @@ SCENARIO("send control commands to urd", "[api::nornsctl_send_command]") {
                         REQUIRE(task.t_id == 1);
                     }
                 }
+
+                AND_WHEN("further NORNSCTL_COMMAND_PAUSE_ACCEPT commands are sent") {
+
+                    rv = nornsctl_send_command(NORNSCTL_COMMAND_PAUSE_ACCEPT, NULL);
+
+                    THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
+                        REQUIRE(rv == NORNS_SUCCESS);
+                    }
+                }
             }
         }
 
@@ -77,6 +86,14 @@ SCENARIO("send control commands to urd", "[api::nornsctl_send_command]") {
 
             THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
+
+                AND_WHEN("further NORNSCTL_COMMAND_RESUME_ACCEPT commands are sent") {
+                    rv = nornsctl_send_command(NORNSCTL_COMMAND_RESUME_ACCEPT, NULL);
+
+                    THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
+                        REQUIRE(rv == NORNS_SUCCESS);
+                    }
+                }
             }
         }
 

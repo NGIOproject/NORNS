@@ -122,6 +122,9 @@ private:
                                bool track, const bfs::path& mount, 
                                uint32_t quota);
 
+    void pause_accept();
+    void resume_accept();
+
 private:
     std::atomic<bool> m_is_paused;
 
