@@ -40,6 +40,10 @@ process_memory::is_tracked() const {
     return false;
 }
 
+bool
+process_memory::is_empty() const {
+    return false;
+}
 
 bfs::path process_memory::mount() const {
     return "";

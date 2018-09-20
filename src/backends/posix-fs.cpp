@@ -66,6 +66,12 @@ posix_filesystem::is_tracked() const {
     return m_track;
 }
 
+bool
+posix_filesystem::is_empty() const {
+    return (bfs::recursive_directory_iterator(m_mount) == 
+            bfs::recursive_directory_iterator());
+}
+
 bfs::path posix_filesystem::mount() const {
     return m_mount;
 }

@@ -80,6 +80,7 @@ public:
     void configure(const config::settings& settings);
     config::settings get_configuration() const;
     int run();
+    void shutdown();
     void teardown();
 
 private:
@@ -124,6 +125,8 @@ private:
 
     void pause_accept();
     void resume_accept();
+    urd_error check_shutdown();
+
 
 private:
     std::atomic<bool> m_is_paused;

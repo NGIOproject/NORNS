@@ -71,6 +71,12 @@ struct task_info {
 
     task_stats stats() const;
 
+    boost::shared_lock<boost::shared_mutex>
+    lock_shared() const;
+
+    boost::unique_lock<boost::shared_mutex>
+    lock_unique() const;
+
     mutable boost::shared_mutex m_mutex;
 
     // task id and type

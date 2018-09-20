@@ -160,5 +160,17 @@ task_info::record_transfer(std::size_t bytes, double usecs) {
     LOGGER_DEBUG("[{}] {}({}, {}) => {}", m_id, __FUNCTION__, bytes, usecs, m_bandwidth);
 }
 
+boost::shared_lock<boost::shared_mutex>
+task_info::lock_shared() const {
+    boost::shared_lock<boost::shared_mutex> lock(m_mutex);
+    return lock;
+}
+
+boost::unique_lock<boost::shared_mutex>
+task_info::lock_unique() const {
+    boost::unique_lock<boost::shared_mutex> lock(m_mutex);
+    return lock;
+}
+
 } // namespace io
 } // namespace norns

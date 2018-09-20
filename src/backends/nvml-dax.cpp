@@ -43,6 +43,11 @@ nvml_dax::is_tracked() const {
     return m_track;
 }
 
+bool
+nvml_dax::is_empty() const {
+    return false;
+}
+
 bfs::path nvml_dax::mount() const {
     return m_mount;
 }

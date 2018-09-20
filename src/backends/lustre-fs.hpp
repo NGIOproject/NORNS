@@ -44,6 +44,7 @@ public:
     lustre(bool track, const bfs::path& mount, uint32_t quota);
 
     bool is_tracked() const override final;
+    bool is_empty() const override final;
     bfs::path mount() const override final;
     uint32_t quota() const override final;
 

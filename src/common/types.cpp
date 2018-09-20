@@ -95,12 +95,16 @@ std::string to_string(urd_error ecode) {
             return "NORNS_ENAMESPACEEXISTS";
         case urd_error::no_such_namespace:
             return "NORNS_ENOSUCHNAMESPACE";
+        case urd_error::namespace_not_empty:
+            return "NORNS_ENAMESPACENOTEMPTY";
         case urd_error::task_exists:
             return "NORNS_ETASKEXISTS";
         case urd_error::no_such_task:
             return "NORNS_ENOSUCHTASK";
         case urd_error::too_many_tasks:
             return "NORNS_ETOOMANYTASKS";
+        case urd_error::tasks_pending:
+            return "NORNS_ETASKSPENDING";
         case urd_error::accept_paused:
             return "NORNS_EACCEPTPAUSED";
         default:

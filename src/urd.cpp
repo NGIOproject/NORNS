@@ -593,11 +593,17 @@ urd::command_handler(const request_ptr base_request) {
             break;
         case command_type::shutdown:
         {
-            // TODO
             LOGGER_WARN("Shutdown requested!");
             pause_accept();
 
+            const auto rv = check_shutdown();
+            resp->set_error_code(rv);
 
+            if(rv != urd_error::success) {
+                resume_accept();
+                break;
+            }
+            shutdown();
             break;
         }
         case command_type::unknown:
@@ -633,16 +639,12 @@ void urd::signal_handler(int signum){
 
         case SIGINT:
             LOGGER_WARN("A signal (SIGINT) occurred.");
-            if(m_api_listener) {
-                m_api_listener->stop();
-            }
+            shutdown();
             break;
 
         case SIGTERM:
             LOGGER_WARN("A signal (SIGTERM) occurred.");
-            if(m_api_listener) {
-                m_api_listener->stop();
-            }
+            shutdown();
             break;
 
         case SIGHUP:
@@ -1042,6 +1044,39 @@ void urd::resume_accept() {
     LOGGER_WARN("Daemon unlocked: incoming requests will be processed");
 }
 
+urd_error urd::check_shutdown() {
+    // - if there are active tasks (i.e. pending or running), we let 
+    // the client know by returning urd_error::tasks_pending
+    const auto task_is_active = 
+        [](const std::shared_ptr<io::task_info>& ti) {
+            // make sure no modifications can happen 
+            // to the task metadata while we examine it
+            const auto lock = ti->lock_shared();
+            return (ti->status() == io::task_status::pending ||
+                    ti->status() == io::task_status::running);
+        };
+
+    if(m_task_mgr->count_if(task_is_active) != 0) {
+        return urd_error::tasks_pending;
+    }
+
+    // - if there are no active tasks but non-empty tracked backends 
+    // remain, we return urd_error::namespace_not_empty
+    const auto tracked_namespace_not_empty =
+        [](const std::shared_ptr<storage::backend>& b) {
+            // no need to filter out the process_memory and remote backends,
+            // since they will never be tracked
+            return (b->is_tracked() && !b->is_empty());
+        };
+
+    boost::shared_lock<boost::shared_mutex> lock(m_namespace_mgr_mutex);
+    if(m_namespace_mgr->count_if(tracked_namespace_not_empty) != 0) {
+        return urd_error::namespace_not_empty;
+    }
+
+    // - otherwise, we return urd_error::success
+    return urd_error::success;
+}
 
 int urd::run() {
 
@@ -1116,6 +1151,12 @@ void urd::teardown() {
         LOGGER_INFO("* Stopping task manager...");
         m_task_mgr->stop_all_tasks();
         m_task_mgr.reset();
+    }
+}
+
+void urd::shutdown() {
+    if(m_api_listener) {
+        m_api_listener->stop();
     }
 }
 
