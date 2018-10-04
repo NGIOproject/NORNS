@@ -40,9 +40,10 @@ typedef uint32_t nornsctl_backend_flags_t;
 
 /* Administrative command IDs valid for nornsctl_send_command() */
 typedef enum {
-    NORNSCTL_COMMAND_PING = 1000,
-    NORNSCTL_COMMAND_PAUSE_ACCEPT,
-    NORNSCTL_COMMAND_RESUME_ACCEPT,
+    NORNSCTL_CMD_PING = 1000,
+    NORNSCTL_CMD_PAUSE_LISTEN,
+    NORNSCTL_CMD_RESUME_LISTEN,
+    NORNSCTL_CMD_SHUTDOWN,
 } nornsctl_command_t;
 
 

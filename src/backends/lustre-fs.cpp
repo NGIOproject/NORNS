@@ -43,6 +43,11 @@ lustre::is_tracked() const {
     return m_track;
 }
 
+bool
+lustre::is_empty() const {
+    return false;
+}
+
 bfs::path lustre::mount() const {
     return m_mount;
 }

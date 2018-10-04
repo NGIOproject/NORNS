@@ -62,13 +62,18 @@ struct task_manager {
         }
     };
 
+    using key_type = iotask_id; 
+    using value_type = std::shared_ptr<task_info>;
     using backend_ptr = std::shared_ptr<storage::backend>;
     using resource_info_ptr = std::shared_ptr<data::resource_info>;
     using resource_ptr = std::shared_ptr<data::resource>;
     using transferor_ptr = std::shared_ptr<transferor>;
     using ReturnType = std::tuple<iotask_id, std::shared_ptr<task_info>>;
 
-    task_manager(uint32_t nrunners, uint32_t backlog_size, bool dry_run);
+    task_manager(uint32_t nrunners, 
+                 uint32_t backlog_size, 
+                 bool dry_run, 
+                 uint32_t dry_run_duration);
 
     bool
     register_transfer_plugin(const data::resource_type t1,
@@ -89,6 +94,17 @@ struct task_manager {
     std::shared_ptr<task_info>
     find(iotask_id) const;
 
+    template <typename UnaryPredicate>
+    std::size_t
+    count_if(UnaryPredicate&& p) {
+        boost::unique_lock<boost::shared_mutex> lock(m_mutex);
+        return std::count_if(m_task_info.begin(),
+                             m_task_info.end(),
+                             [&](const std::pair<key_type, value_type>& kv) {
+                                return p(kv.second);
+                             });
+    }
+
     io::global_stats
     global_stats() const;
 
@@ -100,6 +116,7 @@ private:
     iotask_id m_id_base = 0;
     const uint32_t m_backlog_size;
     bool m_dry_run;
+    uint32_t m_dry_run_duration;
     std::unordered_map<iotask_id, std::shared_ptr<task_info>> m_task_info;
     std::unordered_map<std::pair<std::string, std::string>,
                        boost::circular_buffer<double>, pair_hash> m_bandwidth_backlog;

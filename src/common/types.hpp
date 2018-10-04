@@ -64,8 +64,9 @@ enum class backend_type {
 
 enum class command_type {
     ping,
-    pause_accept,
-    resume_accept,
+    pause_listen,
+    resume_listen,
+    shutdown,
     unknown
 };
 
@@ -98,11 +99,13 @@ enum class urd_error : norns_error_t {
     /* errors about backends */
     namespace_exists    = NORNS_ENAMESPACEEXISTS,
     no_such_namespace   = NORNS_ENOSUCHNAMESPACE,
+    namespace_not_empty = NORNS_ENAMESPACENOTEMPTY,
     
     /* errors about tasks */
     task_exists       = NORNS_ETASKEXISTS,
     no_such_task      = NORNS_ENOSUCHTASK,
     too_many_tasks    = NORNS_ETOOMANYTASKS,
+    tasks_pending     = NORNS_ETASKSPENDING,
 };
 
 namespace utils {

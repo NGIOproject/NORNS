@@ -585,16 +585,27 @@ urd::command_handler(const request_ptr base_request) {
     switch(request->get<0>()) {
         case command_type::ping:
             break; // nothing special to do here
-        case command_type::pause_accept:
-            if(!m_is_paused) {
-                m_is_paused = true;
-            }
+        case command_type::pause_listen:
+            pause_listening();
             break;
-        case command_type::resume_accept:
-            if(m_is_paused) {
-                m_is_paused = false;
-            }
+        case command_type::resume_listen:
+            resume_listening();
             break;
+        case command_type::shutdown:
+        {
+            LOGGER_WARN("Shutdown requested!");
+            pause_listening();
+
+            const auto rv = check_shutdown();
+            resp->set_error_code(rv);
+
+            if(rv != urd_error::success) {
+                resume_listening();
+                break;
+            }
+            shutdown();
+            break;
+        }
         case command_type::unknown:
             resp->set_error_code(urd_error::bad_args);
             break;
@@ -628,16 +639,12 @@ void urd::signal_handler(int signum){
 
         case SIGINT:
             LOGGER_WARN("A signal (SIGINT) occurred.");
-            if(m_api_listener) {
-                m_api_listener->stop();
-            }
+            shutdown();
             break;
 
         case SIGTERM:
             LOGGER_WARN("A signal (SIGTERM) occurred.");
-            if(m_api_listener) {
-                m_api_listener->stop();
-            }
+            shutdown();
             break;
 
         case SIGHUP:
@@ -841,7 +848,8 @@ void urd::init_task_manager() {
     try {
         m_task_mgr = std::make_unique<io::task_manager>(m_settings->workers_in_pool(),
                                                         m_settings->backlog_size(),
-                                                        m_settings->dry_run());
+                                                        m_settings->dry_run(),
+                                                        m_settings->dry_run_duration());
     }
     catch(const std::exception& e) {
         LOGGER_ERROR("Failed to create the task manager. This should "
@@ -1003,7 +1011,8 @@ void urd::print_configuration() {
         LOGGER_INFO("  - log file: none");
     }
 
-    LOGGER_INFO("  - dry run?: {}", (m_settings->dry_run() ? "yes" : "no"));
+    LOGGER_INFO("  - dry run?: {} [duration: {} microseconds]", 
+            (m_settings->dry_run() ? "yes" : "no"), m_settings->dry_run_duration());
     LOGGER_INFO("  - pidfile: {}", m_settings->pidfile());
     LOGGER_INFO("  - control socket: {}", m_settings->control_socket());
     LOGGER_INFO("  - global socket: {}", m_settings->global_socket());
@@ -1021,6 +1030,54 @@ void urd::print_farewell() {
     LOGGER_INFO("{}", fsep);
     LOGGER_INFO(farewell, m_settings->progname(), getpid());
     LOGGER_INFO("{}", fsep);
+}
+
+void urd::pause_listening() {
+    bool expected = false;
+    while(!m_is_paused.compare_exchange_weak(expected, true) && !expected);
+
+    LOGGER_WARN("Daemon locked: incoming requests will be rejected");
+}
+
+void urd::resume_listening() {
+    bool expected = true;
+    while(!m_is_paused.compare_exchange_weak(expected, false) && expected);
+
+    LOGGER_WARN("Daemon unlocked: incoming requests will be processed");
+}
+
+urd_error urd::check_shutdown() {
+    // - if there are active tasks (i.e. pending or running), we let 
+    // the client know by returning urd_error::tasks_pending
+    const auto task_is_active = 
+        [](const std::shared_ptr<io::task_info>& ti) {
+            // make sure no modifications can happen 
+            // to the task metadata while we examine it
+            const auto lock = ti->lock_shared();
+            return (ti->status() == io::task_status::pending ||
+                    ti->status() == io::task_status::running);
+        };
+
+    if(m_task_mgr->count_if(task_is_active) != 0) {
+        return urd_error::tasks_pending;
+    }
+
+    // - if there are no active tasks but non-empty tracked backends 
+    // remain, we return urd_error::namespace_not_empty
+    const auto tracked_namespace_not_empty =
+        [](const std::shared_ptr<storage::backend>& b) {
+            // no need to filter out the process_memory and remote backends,
+            // since they will never be tracked
+            return (b->is_tracked() && !b->is_empty());
+        };
+
+    boost::shared_lock<boost::shared_mutex> lock(m_namespace_mgr_mutex);
+    if(m_namespace_mgr->count_if(tracked_namespace_not_empty) != 0) {
+        return urd_error::namespace_not_empty;
+    }
+
+    // - otherwise, we return urd_error::success
+    return urd_error::success;
 }
 
 int urd::run() {
@@ -1096,6 +1153,12 @@ void urd::teardown() {
         LOGGER_INFO("* Stopping task manager...");
         m_task_mgr->stop_all_tasks();
         m_task_mgr.reset();
+    }
+}
+
+void urd::shutdown() {
+    if(m_api_listener) {
+        m_api_listener->stop();
     }
 }
 

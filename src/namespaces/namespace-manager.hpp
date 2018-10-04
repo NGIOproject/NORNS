@@ -126,6 +126,22 @@ struct namespace_manager {
         return std::make_tuple(all_found, v);
     }
 
+    template <typename UnaryPredicate>
+    std::size_t
+    count_if(UnaryPredicate&& p) const {
+
+        using kv_type = std::pair<std::string, 
+                                  std::shared_ptr<storage::backend>>;
+
+        return std::count_if(
+                m_namespaces.begin(),
+                m_namespaces.end(), 
+                [&](const kv_type& kv) {
+                    return p(kv.second);
+                }); 
+    }
+
+
 private:
     std::unordered_map<std::string, 
                        std::shared_ptr<storage::backend>> m_namespaces;

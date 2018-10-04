@@ -63,11 +63,13 @@ extern "C" {
 /* errors about namespaces */
 #define NORNS_ENAMESPACEEXISTS   -30
 #define NORNS_ENOSUCHNAMESPACE   -31
+#define NORNS_ENAMESPACENOTEMPTY -32
 
 /* errors about tasks */
 #define NORNS_ETASKEXISTS        -40
 #define NORNS_ENOSUCHTASK        -41
 #define NORNS_ETOOMANYTASKS      -42
+#define NORNS_ETASKSPENDING      -43
 
 /* task status */
 #define NORNS_EPENDING          -100

@@ -86,7 +86,8 @@ struct settings {
     settings();
     settings(const std::string& progname, bool daemonize, bool use_syslog,
              const bfs::path& log_file, const uint32_t log_file_max_size,
-             bool dry_run, const bfs::path& global_socket, 
+             bool dry_run, uint32_t dry_run_duration,
+             const bfs::path& global_socket, 
              const bfs::path& control_socket, uint32_t remote_port,
              const bfs::path& pidfile, uint32_t workers, 
              uint32_t backlog_size, const bfs::path& cfgfile, 
@@ -101,6 +102,7 @@ struct settings {
     bfs::path& log_file();
     uint32_t& log_file_max_size();
     bool& dry_run();
+    uint32_t& dry_run_duration();
     bfs::path& global_socket();
     bfs::path& control_socket();
     in_port_t& remote_port();
@@ -116,6 +118,7 @@ struct settings {
     bfs::path   m_log_file = defaults::log_file;
     uint32_t    m_log_file_max_size = defaults::log_file_max_size;
     bool        m_dry_run = defaults::dry_run;
+    uint32_t    m_dry_run_duration = defaults::dry_run_duration;
     bfs::path   m_global_socket = defaults::global_socket;
     bfs::path   m_control_socket = defaults::control_socket;
     in_port_t   m_remote_port = defaults::remote_port;

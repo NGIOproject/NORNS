@@ -60,6 +60,7 @@ public:
     virtual ~backend() {};
 
     virtual bool is_tracked() const = 0;
+    virtual bool is_empty() const = 0;
     virtual bfs::path mount() const = 0;
     virtual uint32_t quota() const = 0;
 

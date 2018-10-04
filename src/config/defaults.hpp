@@ -44,6 +44,7 @@ namespace defaults {
     extern const bfs::path  log_file;
     extern const uint32_t   log_file_max_size;
     extern const bool       dry_run;
+    extern const uint32_t   dry_run_duration;
     extern const char*      global_socket;
     extern const char*      control_socket;
     extern const in_port_t  remote_port;

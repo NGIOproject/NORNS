@@ -36,10 +36,12 @@
 
 struct fake_daemon_cfg {
 
-    fake_daemon_cfg(bool dry_run) :
-        m_dry_run(dry_run) { }
+    fake_daemon_cfg(bool dry_run, uint32_t t = 100) :
+        m_dry_run(dry_run),
+        m_dry_run_duration(t) { }
 
     bool m_dry_run = false;
+    uint32_t m_dry_run_duration = 0;
 };
 
 struct fake_daemon {

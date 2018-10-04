@@ -53,11 +53,13 @@ const char* const norns_errlist[NORNS_ERRMAX + 1] = {
     /* backend errors */
     [ERR_REMAP(NORNS_ENAMESPACEEXISTS)] = "Namespace already exists",
     [ERR_REMAP(NORNS_ENOSUCHNAMESPACE)] = "Namespace does not exist",
+    [ERR_REMAP(NORNS_ENAMESPACENOTEMPTY)] = "Namespace is not empty",
     
     /* task errors */
     [ERR_REMAP(NORNS_ETASKEXISTS)] = "Task already exists",
     [ERR_REMAP(NORNS_ENOSUCHTASK)] = "Task does not exist",
     [ERR_REMAP(NORNS_ETOOMANYTASKS)] = "Too many pending tasks",
+    [ERR_REMAP(NORNS_ETASKSPENDING)] = "There are still pending tasks",
 
     /* misc errors */
     [ERR_REMAP(NORNS_ENOTSUPPORTED)] = "Not supported",

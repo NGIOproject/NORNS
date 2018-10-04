@@ -41,6 +41,7 @@ norns::config::settings test_cfg(
     {},// "./test_urd.log", /* log file */
     0, /* unused */
     false, /* dry run */
+    100, /* dry run duration */
     "./test_urd.global.socket", /* global_socket */
     "./test_urd.control.socket", /* control_socket */
     42002, /* remote port */
@@ -73,6 +74,7 @@ void fake_daemon::configure(const bfs::path& config_file,
     m_config.daemonize() = test_cfg.daemonize();
     m_config.use_syslog() = test_cfg.use_syslog();
     m_config.dry_run() = override_cfg.m_dry_run;
+    m_config.dry_run_duration() = override_cfg.m_dry_run_duration;
     m_config.remote_port() = test_cfg.remote_port();
     m_config.workers_in_pool() = test_cfg.workers_in_pool();
     m_config.config_file() = config_file;
@@ -108,7 +110,7 @@ void fake_daemon::run() {
 
         do {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            rv = nornsctl_send_command(NORNSCTL_COMMAND_PING, NULL);
+            rv = nornsctl_send_command(NORNSCTL_CMD_PING, NULL);
         } while(rv != NORNS_SUCCESS && --retries != 0);
 
         if(retries == 0) {

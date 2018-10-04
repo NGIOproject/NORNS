@@ -205,31 +205,6 @@ task<iotask_type::remove>::operator()() {
 }
 
 /////////////////////////////////////////////////////////////////////////////////
-//   specializations for noop tasks 
-/////////////////////////////////////////////////////////////////////////////////
-template<>
-void 
-task<iotask_type::noop>::operator()() {
-
-    const auto tid = m_task_info->id();
-
-    LOGGER_WARN("[{}] Starting noop I/O task", tid);
-
-    usleep(100);
-
-    m_task_info->update_status(task_status::running);
-
-    LOGGER_WARN("[{}] noop I/O task \"running\"", tid);
-
-    usleep(100);
-
-    m_task_info->update_status(task_status::finished);
-
-    LOGGER_WARN("[{}] noop I/O task completed successfully", tid);
-}
-
-
-/////////////////////////////////////////////////////////////////////////////////
 //   specializations for unknown tasks 
 /////////////////////////////////////////////////////////////////////////////////
 template<>

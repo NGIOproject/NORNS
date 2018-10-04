@@ -40,6 +40,11 @@ remote_backend::is_tracked() const {
     return false;
 }
 
+bool
+remote_backend::is_empty() const {
+    return false;
+}
+
 bfs::path remote_backend::mount() const {
     return "";
 }

@@ -79,12 +79,14 @@ norns::command_type decode_command(::google::protobuf::uint32 type) {
     using norns::command_type;
 
     switch(type) {
-        case NORNSCTL_COMMAND_PING:
+        case NORNSCTL_CMD_PING:
             return command_type::ping;
-        case NORNSCTL_COMMAND_PAUSE_ACCEPT:
-            return command_type::pause_accept;
-        case NORNSCTL_COMMAND_RESUME_ACCEPT:
-            return command_type::resume_accept;
+        case NORNSCTL_CMD_PAUSE_LISTEN:
+            return command_type::pause_listen;
+        case NORNSCTL_CMD_RESUME_LISTEN:
+            return command_type::resume_listen;
+        case NORNSCTL_CMD_SHUTDOWN:
+            return command_type::shutdown;
         default:
             return command_type::unknown;
     }
@@ -427,10 +429,12 @@ std::string command_request::to_string() const {
     switch(this->get<0>()) {
         case command_type::ping:
             return "PING";
-        case command_type::pause_accept:
-            return "PAUSE_ACCEPT";
-        case command_type::resume_accept:
-            return "RESUME_ACCEPT";
+        case command_type::pause_listen:
+            return "PAUSE_LISTEN";
+        case command_type::resume_listen:
+            return "RESUME_LISTEN";
+        case command_type::shutdown:
+            return "SHUTDOWN";
         default:
             return "UNKNOWN";
     }

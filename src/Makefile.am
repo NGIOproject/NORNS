@@ -215,23 +215,24 @@ config/defaults.cpp: Makefile
 	   echo "namespace norns {"; \
 	   echo "namespace config {"; \
 	   echo "namespace defaults {"; \
-	   echo "    const char* progname           = \"urd\";"; \
-	   echo "    const bool  daemonize          = true;"; \
-	   echo "    const bool  use_syslog         = false;"; \
-	   echo "    const bfs::path log_file = boost::filesystem::path();"; \
+	   echo "    const char* progname             = \"urd\";"; \
+	   echo "    const bool  daemonize            = true;"; \
+	   echo "    const bool  use_syslog           = false;"; \
+	   echo "    const bfs::path log_file         = boost::filesystem::path();"; \
 	   echo "    const uint32_t log_file_max_size = static_cast<uint32_t>(16*1024*1024);"; \
 	   echo ""; \
 \
-	   echo "    const bool dry_run             = false;"; \
+	   echo "    const bool dry_run               = false;"; \
+	   echo "    const uint32_t dry_run_duration  = 100;"; \
 \
-	   echo "    const char* global_socket      = \"$(localstatedir)/global.socket.2\";"; \
-	   echo "    const char* control_socket     = \"$(localstatedir)/control.socket.2\";"; \
-	   echo "    const in_port_t remote_port    = 42000;"; \
-	   echo "    const char* pidfile            = \"$(localstatedir)/urd.pid\";"; \
+	   echo "    const char* global_socket        = \"$(localstatedir)/global.socket.2\";"; \
+	   echo "    const char* control_socket       = \"$(localstatedir)/control.socket.2\";"; \
+	   echo "    const in_port_t remote_port      = 42000;"; \
+	   echo "    const char* pidfile              = \"$(localstatedir)/urd.pid\";"; \
 \
-	   echo "    const uint32_t workers_in_pool = std::thread::hardware_concurrency();"; \
-	   echo "    const uint32_t backlog_size    = 128;"; \
-	   echo "    const char* config_file        = \"$(sysconfdir)/norns.conf\";"; \
+	   echo "    const uint32_t workers_in_pool   = std::thread::hardware_concurrency();"; \
+	   echo "    const uint32_t backlog_size      = 128;"; \
+	   echo "    const char* config_file          = \"$(sysconfdir)/norns.conf\";"; \
 	   echo "} // namespace defaults"; \
 	   echo "} // namespace config"; \
 	   echo "} // namespace norns"; \

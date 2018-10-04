@@ -35,7 +35,8 @@ SCENARIO("send control commands to urd", "[api::nornsctl_send_command]") {
 
         test_env env(
             fake_daemon_cfg {
-                true /* dry_run? */
+                true, /* dry_run? */
+                500000 /* dry_run_duration */
             }
         );
 
@@ -43,9 +44,9 @@ SCENARIO("send control commands to urd", "[api::nornsctl_send_command]") {
         bfs::path src_mnt;
         std::tie(std::ignore, src_mnt) = env.create_namespace(nsid0, "mnt/tmp0", 16384);
 
-        WHEN("a NORNSCTL_COMMAND_PAUSE_ACCEPT command is sent") {
+        WHEN("a NORNSCTL_CMD_PAUSE_LISTEN command is sent") {
 
-            norns_error_t rv = nornsctl_send_command(NORNSCTL_COMMAND_PAUSE_ACCEPT, NULL);
+            norns_error_t rv = nornsctl_send_command(NORNSCTL_CMD_PAUSE_LISTEN, NULL);
 
             THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -60,7 +61,7 @@ SCENARIO("send control commands to urd", "[api::nornsctl_send_command]") {
                     REQUIRE(rv == NORNS_EACCEPTPAUSED);
 
                     AND_THEN("nornsctl_send_command() returns NORNS_SUCCESS and norns_submit() succeeds") {
-                        norns_error_t rv = nornsctl_send_command(NORNSCTL_COMMAND_RESUME_ACCEPT, NULL);
+                        norns_error_t rv = nornsctl_send_command(NORNSCTL_CMD_RESUME_LISTEN, NULL);
                         REQUIRE(rv == NORNS_SUCCESS);
 
                         rv = norns_submit(&task);
@@ -68,25 +69,101 @@ SCENARIO("send control commands to urd", "[api::nornsctl_send_command]") {
                         REQUIRE(task.t_id == 1);
                     }
                 }
+
+                AND_WHEN("further NORNSCTL_CMD_PAUSE_LISTEN commands are sent") {
+
+                    rv = nornsctl_send_command(NORNSCTL_CMD_PAUSE_LISTEN, NULL);
+
+                    THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
+                        REQUIRE(rv == NORNS_SUCCESS);
+                    }
+                }
             }
         }
 
-        WHEN("a NORNSCTL_COMMAND_RESUME_ACCEPT command is sent") {
+        WHEN("a NORNSCTL_CMD_RESUME_LISTEN command is sent") {
 
-            norns_error_t rv = nornsctl_send_command(NORNSCTL_COMMAND_RESUME_ACCEPT, NULL);
+            norns_error_t rv = nornsctl_send_command(NORNSCTL_CMD_RESUME_LISTEN, NULL);
+
+            THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
+                REQUIRE(rv == NORNS_SUCCESS);
+
+                AND_WHEN("further NORNSCTL_CMD_RESUME_LISTEN commands are sent") {
+                    rv = nornsctl_send_command(NORNSCTL_CMD_RESUME_LISTEN, NULL);
+
+                    THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
+                        REQUIRE(rv == NORNS_SUCCESS);
+                    }
+                }
+            }
+        }
+
+        WHEN("a NORNSCTL_CMD_PING command is sent") {
+
+            norns_error_t rv = nornsctl_send_command(NORNSCTL_CMD_PING, NULL);
 
             THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
             }
         }
 
-        WHEN("a NORNSCTL_COMMAND_PING command is sent") {
+#ifndef USE_REAL_DAEMON
+        WHEN("a NORNSCTL_CMD_SHUTDOWN command is sent and there are no pending tasks") {
 
-            norns_error_t rv = nornsctl_send_command(NORNSCTL_COMMAND_PING, NULL);
+            norns_error_t rv = nornsctl_send_command(NORNSCTL_CMD_SHUTDOWN, NULL);
 
             THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
+            }
+        }
+#endif
+
+        WHEN("a NORNSCTL_CMD_SHUTDOWN command is sent and there are pending tasks") {
+
+            const size_t ntasks = 10;
+            norns_iotask_t tasks[ntasks];
+
+            const auto submit_task = [&] {
+
+                norns_iotask_t task = 
+                    NORNS_IOTASK(NORNS_IOTASK_COPY, 
+                                 NORNS_MEMORY_REGION((void*)0xdeadbeef, 43), 
+                                 NORNS_LOCAL_PATH(nsid0, "foobar"));
+                auto rv = norns_submit(&task);
+
+                return task;
+            };
+
+            for(size_t i=0; i<ntasks; ++i) {
+                tasks[i] = submit_task();
+            }
+
+            norns_error_t rv = nornsctl_send_command(NORNSCTL_CMD_SHUTDOWN, NULL);
+
+            THEN("nornsctl_send_command() returns NORNS_ETASKSPENDING") {
+                REQUIRE(rv == NORNS_ETASKSPENDING);
+
+                AND_WHEN("all tasks complete") {
+                    rv = norns_wait(&tasks[ntasks-1]);
+
+                    THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
+                        rv = nornsctl_send_command(NORNSCTL_CMD_SHUTDOWN, NULL);
+                        REQUIRE(rv == NORNS_SUCCESS);
+                    }
+                }
             }
         }
     }
+
+#ifndef USE_REAL_DAEMON
+    GIVEN("a non-running urd instance") {
+        WHEN("checking the status of all requests") {
+            norns_error_t rv = nornsctl_send_command(NORNSCTL_CMD_PING, NULL);
+
+            THEN("NORNS_ECONNFAILED is returned") {
+                REQUIRE(rv == NORNS_ECONNFAILED);
+            }
+        }
+    }
+#endif
 }
