@@ -123,7 +123,7 @@ private:
                                bool track, const bfs::path& mount, 
                                uint32_t quota);
 
-    void pause_accept();
+    void pause_listening();
     void resume_accept();
     urd_error check_shutdown();
 

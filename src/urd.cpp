@@ -585,8 +585,8 @@ urd::command_handler(const request_ptr base_request) {
     switch(request->get<0>()) {
         case command_type::ping:
             break; // nothing special to do here
-        case command_type::pause_accept:
-            pause_accept();
+        case command_type::pause_listen:
+            pause_listening();
             break;
         case command_type::resume_accept:
             resume_accept();
@@ -594,7 +594,7 @@ urd::command_handler(const request_ptr base_request) {
         case command_type::shutdown:
         {
             LOGGER_WARN("Shutdown requested!");
-            pause_accept();
+            pause_listening();
 
             const auto rv = check_shutdown();
             resp->set_error_code(rv);
@@ -1032,7 +1032,7 @@ void urd::print_farewell() {
     LOGGER_INFO("{}", fsep);
 }
 
-void urd::pause_accept() {
+void urd::pause_listening() {
     bool expected = false;
     while(!m_is_paused.compare_exchange_weak(expected, true) && !expected);
 

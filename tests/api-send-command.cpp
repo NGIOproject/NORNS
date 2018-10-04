@@ -44,9 +44,9 @@ SCENARIO("send control commands to urd", "[api::nornsctl_send_command]") {
         bfs::path src_mnt;
         std::tie(std::ignore, src_mnt) = env.create_namespace(nsid0, "mnt/tmp0", 16384);
 
-        WHEN("a NORNSCTL_CMD_PAUSE_ACCEPT command is sent") {
+        WHEN("a NORNSCTL_CMD_PAUSE_LISTEN command is sent") {
 
-            norns_error_t rv = nornsctl_send_command(NORNSCTL_CMD_PAUSE_ACCEPT, NULL);
+            norns_error_t rv = nornsctl_send_command(NORNSCTL_CMD_PAUSE_LISTEN, NULL);
 
             THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -70,9 +70,9 @@ SCENARIO("send control commands to urd", "[api::nornsctl_send_command]") {
                     }
                 }
 
-                AND_WHEN("further NORNSCTL_CMD_PAUSE_ACCEPT commands are sent") {
+                AND_WHEN("further NORNSCTL_CMD_PAUSE_LISTEN commands are sent") {
 
-                    rv = nornsctl_send_command(NORNSCTL_CMD_PAUSE_ACCEPT, NULL);
+                    rv = nornsctl_send_command(NORNSCTL_CMD_PAUSE_LISTEN, NULL);
 
                     THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
                         REQUIRE(rv == NORNS_SUCCESS);
