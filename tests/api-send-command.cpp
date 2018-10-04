@@ -44,9 +44,9 @@ SCENARIO("send control commands to urd", "[api::nornsctl_send_command]") {
         bfs::path src_mnt;
         std::tie(std::ignore, src_mnt) = env.create_namespace(nsid0, "mnt/tmp0", 16384);
 
-        WHEN("a NORNSCTL_COMMAND_PAUSE_ACCEPT command is sent") {
+        WHEN("a NORNSCTL_CMD_PAUSE_ACCEPT command is sent") {
 
-            norns_error_t rv = nornsctl_send_command(NORNSCTL_COMMAND_PAUSE_ACCEPT, NULL);
+            norns_error_t rv = nornsctl_send_command(NORNSCTL_CMD_PAUSE_ACCEPT, NULL);
 
             THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -61,7 +61,7 @@ SCENARIO("send control commands to urd", "[api::nornsctl_send_command]") {
                     REQUIRE(rv == NORNS_EACCEPTPAUSED);
 
                     AND_THEN("nornsctl_send_command() returns NORNS_SUCCESS and norns_submit() succeeds") {
-                        norns_error_t rv = nornsctl_send_command(NORNSCTL_COMMAND_RESUME_ACCEPT, NULL);
+                        norns_error_t rv = nornsctl_send_command(NORNSCTL_CMD_RESUME_ACCEPT, NULL);
                         REQUIRE(rv == NORNS_SUCCESS);
 
                         rv = norns_submit(&task);
@@ -70,9 +70,9 @@ SCENARIO("send control commands to urd", "[api::nornsctl_send_command]") {
                     }
                 }
 
-                AND_WHEN("further NORNSCTL_COMMAND_PAUSE_ACCEPT commands are sent") {
+                AND_WHEN("further NORNSCTL_CMD_PAUSE_ACCEPT commands are sent") {
 
-                    rv = nornsctl_send_command(NORNSCTL_COMMAND_PAUSE_ACCEPT, NULL);
+                    rv = nornsctl_send_command(NORNSCTL_CMD_PAUSE_ACCEPT, NULL);
 
                     THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
                         REQUIRE(rv == NORNS_SUCCESS);
@@ -81,15 +81,15 @@ SCENARIO("send control commands to urd", "[api::nornsctl_send_command]") {
             }
         }
 
-        WHEN("a NORNSCTL_COMMAND_RESUME_ACCEPT command is sent") {
+        WHEN("a NORNSCTL_CMD_RESUME_ACCEPT command is sent") {
 
-            norns_error_t rv = nornsctl_send_command(NORNSCTL_COMMAND_RESUME_ACCEPT, NULL);
+            norns_error_t rv = nornsctl_send_command(NORNSCTL_CMD_RESUME_ACCEPT, NULL);
 
             THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
 
-                AND_WHEN("further NORNSCTL_COMMAND_RESUME_ACCEPT commands are sent") {
-                    rv = nornsctl_send_command(NORNSCTL_COMMAND_RESUME_ACCEPT, NULL);
+                AND_WHEN("further NORNSCTL_CMD_RESUME_ACCEPT commands are sent") {
+                    rv = nornsctl_send_command(NORNSCTL_CMD_RESUME_ACCEPT, NULL);
 
                     THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
                         REQUIRE(rv == NORNS_SUCCESS);
@@ -98,9 +98,9 @@ SCENARIO("send control commands to urd", "[api::nornsctl_send_command]") {
             }
         }
 
-        WHEN("a NORNSCTL_COMMAND_PING command is sent") {
+        WHEN("a NORNSCTL_CMD_PING command is sent") {
 
-            norns_error_t rv = nornsctl_send_command(NORNSCTL_COMMAND_PING, NULL);
+            norns_error_t rv = nornsctl_send_command(NORNSCTL_CMD_PING, NULL);
 
             THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -108,9 +108,9 @@ SCENARIO("send control commands to urd", "[api::nornsctl_send_command]") {
         }
 
 #ifndef USE_REAL_DAEMON
-        WHEN("a NORNSCTL_COMMAND_SHUTDOWN command is sent and there are no pending tasks") {
+        WHEN("a NORNSCTL_CMD_SHUTDOWN command is sent and there are no pending tasks") {
 
-            norns_error_t rv = nornsctl_send_command(NORNSCTL_COMMAND_SHUTDOWN, NULL);
+            norns_error_t rv = nornsctl_send_command(NORNSCTL_CMD_SHUTDOWN, NULL);
 
             THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -118,7 +118,7 @@ SCENARIO("send control commands to urd", "[api::nornsctl_send_command]") {
         }
 #endif
 
-        WHEN("a NORNSCTL_COMMAND_SHUTDOWN command is sent and there are pending tasks") {
+        WHEN("a NORNSCTL_CMD_SHUTDOWN command is sent and there are pending tasks") {
 
             const size_t ntasks = 10;
             norns_iotask_t tasks[ntasks];
@@ -138,7 +138,7 @@ SCENARIO("send control commands to urd", "[api::nornsctl_send_command]") {
                 tasks[i] = submit_task();
             }
 
-            norns_error_t rv = nornsctl_send_command(NORNSCTL_COMMAND_SHUTDOWN, NULL);
+            norns_error_t rv = nornsctl_send_command(NORNSCTL_CMD_SHUTDOWN, NULL);
 
             THEN("nornsctl_send_command() returns NORNS_ETASKSPENDING") {
                 REQUIRE(rv == NORNS_ETASKSPENDING);
@@ -147,7 +147,7 @@ SCENARIO("send control commands to urd", "[api::nornsctl_send_command]") {
                     rv = norns_wait(&tasks[ntasks-1]);
 
                     THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
-                        rv = nornsctl_send_command(NORNSCTL_COMMAND_SHUTDOWN, NULL);
+                        rv = nornsctl_send_command(NORNSCTL_CMD_SHUTDOWN, NULL);
                         REQUIRE(rv == NORNS_SUCCESS);
                     }
                 }
@@ -158,7 +158,7 @@ SCENARIO("send control commands to urd", "[api::nornsctl_send_command]") {
 #ifndef USE_REAL_DAEMON
     GIVEN("a non-running urd instance") {
         WHEN("checking the status of all requests") {
-            norns_error_t rv = nornsctl_send_command(NORNSCTL_COMMAND_PING, NULL);
+            norns_error_t rv = nornsctl_send_command(NORNSCTL_CMD_PING, NULL);
 
             THEN("NORNS_ECONNFAILED is returned") {
                 REQUIRE(rv == NORNS_ECONNFAILED);

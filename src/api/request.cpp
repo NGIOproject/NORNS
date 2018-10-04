@@ -79,13 +79,13 @@ norns::command_type decode_command(::google::protobuf::uint32 type) {
     using norns::command_type;
 
     switch(type) {
-        case NORNSCTL_COMMAND_PING:
+        case NORNSCTL_CMD_PING:
             return command_type::ping;
-        case NORNSCTL_COMMAND_PAUSE_ACCEPT:
+        case NORNSCTL_CMD_PAUSE_ACCEPT:
             return command_type::pause_accept;
-        case NORNSCTL_COMMAND_RESUME_ACCEPT:
+        case NORNSCTL_CMD_RESUME_ACCEPT:
             return command_type::resume_accept;
-        case NORNSCTL_COMMAND_SHUTDOWN:
+        case NORNSCTL_CMD_SHUTDOWN:
             return command_type::shutdown;
         default:
             return command_type::unknown;
