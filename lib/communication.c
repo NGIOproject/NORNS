@@ -98,7 +98,7 @@ send_control_command_request(nornsctl_command_t cmd, void* args) {
         return NORNS_ESNAFU;
     }
 
-    return NORNS_SUCCESS;
+    return resp.r_error_code;
 }
 
 

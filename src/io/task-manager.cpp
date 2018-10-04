@@ -38,9 +38,13 @@
 namespace norns {
 namespace io {
 
-task_manager::task_manager(uint32_t nrunners, uint32_t backlog_size, bool dry_run) :
+task_manager::task_manager(uint32_t nrunners, 
+                           uint32_t backlog_size, 
+                           bool dry_run,
+                           uint32_t dry_run_duration) :
     m_backlog_size(backlog_size),
     m_dry_run(dry_run),
+    m_dry_run_duration(dry_run_duration),
     m_runners(nrunners) {}
 
 bool
@@ -278,7 +282,8 @@ task_manager::create_task(iotask_type type, const auth::credentials& auth,
             }
 
             m_runners.submit_and_forget(
-                io::task<iotask_type::noop>(std::move(task_info_ptr)));
+                io::task<iotask_type::noop>(std::move(task_info_ptr),
+                                            m_dry_run_duration));
             break;
         }
 

@@ -70,7 +70,10 @@ struct task_manager {
     using transferor_ptr = std::shared_ptr<transferor>;
     using ReturnType = std::tuple<iotask_id, std::shared_ptr<task_info>>;
 
-    task_manager(uint32_t nrunners, uint32_t backlog_size, bool dry_run);
+    task_manager(uint32_t nrunners, 
+                 uint32_t backlog_size, 
+                 bool dry_run, 
+                 uint32_t dry_run_duration);
 
     bool
     register_transfer_plugin(const data::resource_type t1,
@@ -113,6 +116,7 @@ private:
     iotask_id m_id_base = 0;
     const uint32_t m_backlog_size;
     bool m_dry_run;
+    uint32_t m_dry_run_duration;
     std::unordered_map<iotask_id, std::shared_ptr<task_info>> m_task_info;
     std::unordered_map<std::pair<std::string, std::string>,
                        boost::circular_buffer<double>, pair_hash> m_bandwidth_backlog;

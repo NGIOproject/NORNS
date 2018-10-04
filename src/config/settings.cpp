@@ -47,7 +47,8 @@ namespace config {
 settings::settings() { }
 settings::settings(const std::string& progname, bool daemonize, bool use_syslog,
                    const bfs::path& log_file, const uint32_t log_file_max_size,
-                   bool dry_run, const bfs::path& global_socket, 
+                   bool dry_run, uint32_t dry_run_duration, 
+                   const bfs::path& global_socket, 
                    const bfs::path& control_socket, uint32_t remote_port,
                    const bfs::path& pidfile, uint32_t workers, 
                    uint32_t backlog_size, const bfs::path& cfgfile, 
@@ -58,6 +59,7 @@ settings::settings(const std::string& progname, bool daemonize, bool use_syslog,
     m_log_file(log_file),
     m_log_file_max_size(log_file_max_size),
     m_dry_run(dry_run),
+    m_dry_run_duration(dry_run_duration),
     m_global_socket(global_socket),
     m_control_socket(control_socket),
     m_remote_port(remote_port),
@@ -74,6 +76,7 @@ void settings::load_defaults() {
     m_log_file = defaults::log_file;
     m_log_file_max_size = defaults::log_file_max_size;
     m_dry_run = defaults::dry_run;
+    m_dry_run_duration = defaults::dry_run_duration;
     m_global_socket = defaults::global_socket;
     m_control_socket = defaults::control_socket;
     m_remote_port = defaults::remote_port;
@@ -106,6 +109,7 @@ void settings::load_from_file(const bfs::path& filename) {
     }
 
     m_dry_run = gsettings.get_as<bool>(keywords::dry_run);
+    m_dry_run_duration = defaults::dry_run_duration;
     m_global_socket = gsettings.get_as<bfs::path>(keywords::global_socket);
     m_control_socket = gsettings.get_as<bfs::path>(keywords::control_socket);
     m_remote_port = gsettings.get_as<uint32_t>(keywords::remote_port);
@@ -136,6 +140,7 @@ std::string settings::to_string() const {
            "  m_log_file: "          + m_log_file.string() + ",\n" +
            "  m_log_file_max_size: " + std::to_string(m_log_file_max_size) + ",\n" +
            "  m_dry_run: "           + (m_dry_run ? "true" : "false") +  ",\n" +
+           "  m_dry_run_duration: "  + std::to_string(m_dry_run_duration) +  ",\n" +
            "  m_global_socket: "     + m_global_socket.string() + ",\n" +
            "  m_control_socket: "    + m_control_socket.string() + ",\n" +
            "  m_remote_port: "       + std::to_string(m_remote_port) + ",\n" +
@@ -170,6 +175,10 @@ uint32_t& settings::log_file_max_size() {
 
 bool& settings::dry_run() {
     return m_dry_run;
+}
+
+uint32_t& settings::dry_run_duration() {
+    return m_dry_run_duration;
 }
 
 bfs::path& settings::global_socket() {

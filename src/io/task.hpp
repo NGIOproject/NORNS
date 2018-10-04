@@ -67,6 +67,42 @@ struct task {
     const transferor_ptr m_transferor;
 };
 
+/////////////////////////////////////////////////////////////////////////////////
+//   specializations for noop tasks 
+/////////////////////////////////////////////////////////////////////////////////
+template <>
+struct task<iotask_type::noop> {
+
+    using task_info_ptr = std::shared_ptr<task_info>;
+
+    task(const task_info_ptr&& task_info, uint32_t sleep_duration)
+        : m_task_info(std::move(task_info)),
+          m_sleep_duration(sleep_duration) { }
+
+    void operator()() {
+        const auto tid = m_task_info->id();
+
+        LOGGER_WARN("[{}] Starting noop I/O task", tid);
+
+        LOGGER_DEBUG("[{}] Sleep for {} usecs", tid, m_sleep_duration);
+        usleep(m_sleep_duration);
+
+        m_task_info->update_status(task_status::running);
+
+        LOGGER_WARN("[{}] noop I/O task \"running\"", tid);
+
+        LOGGER_DEBUG("[{}] Sleep for {} usecs", tid, m_sleep_duration);
+        usleep(m_sleep_duration);
+
+        m_task_info->update_status(task_status::finished);
+
+        LOGGER_WARN("[{}] noop I/O task completed successfully", tid);
+    }
+
+    const task_info_ptr m_task_info;
+    const uint32_t m_sleep_duration;
+};
+
 
 } // namespace io
 } // namespace norns

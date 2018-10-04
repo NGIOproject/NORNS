@@ -848,7 +848,8 @@ void urd::init_task_manager() {
     try {
         m_task_mgr = std::make_unique<io::task_manager>(m_settings->workers_in_pool(),
                                                         m_settings->backlog_size(),
-                                                        m_settings->dry_run());
+                                                        m_settings->dry_run(),
+                                                        m_settings->dry_run_duration());
     }
     catch(const std::exception& e) {
         LOGGER_ERROR("Failed to create the task manager. This should "
@@ -1010,7 +1011,8 @@ void urd::print_configuration() {
         LOGGER_INFO("  - log file: none");
     }
 
-    LOGGER_INFO("  - dry run?: {}", (m_settings->dry_run() ? "yes" : "no"));
+    LOGGER_INFO("  - dry run?: {} [duration: {} microseconds]", 
+            (m_settings->dry_run() ? "yes" : "no"), m_settings->dry_run_duration());
     LOGGER_INFO("  - pidfile: {}", m_settings->pidfile());
     LOGGER_INFO("  - control socket: {}", m_settings->control_socket());
     LOGGER_INFO("  - global socket: {}", m_settings->global_socket());

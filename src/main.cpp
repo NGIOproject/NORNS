@@ -29,12 +29,28 @@
 #include <sys/types.h>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
-
 #include "config.hpp"
 #include "urd.hpp"
 
 namespace bfs = boost::filesystem;
 namespace bpo = boost::program_options;
+
+namespace {
+
+void 
+option_dependency(const boost::program_options::variables_map& vm,
+                  const std::string& for_what, 
+                  const std::string& required_option) {
+
+    if(vm.count(for_what) && !vm[for_what].defaulted()) {
+        if(vm.count(required_option) == 0 || vm[required_option].defaulted()) {
+            throw std::logic_error(std::string("Option '") + for_what +
+                  "' requires option '" + required_option + "'.");
+        }
+    }
+}
+
+}
 
 int main(int argc, char* argv[]){
 
@@ -43,20 +59,27 @@ int main(int argc, char* argv[]){
     
     bool run_in_foreground = !cfg.daemonize();
     bool dry_run = cfg.dry_run();
+    uint32_t dry_run_duration = cfg.dry_run_duration();
 
     // declare a group of options that will be allowed only on the command line
     bpo::options_description generic("Allowed options");
     generic.add_options()
-        (",f", bpo::bool_switch(&run_in_foreground), "foreground operation") // check how to do flags
-        ("dry-run,d", bpo::bool_switch(&dry_run),    "don't actually execute tasks") // check how to do flags
-        ("version,v",                                "print version string")
-        ("help,h",                                   "produce help message")
+        (",f", 
+         bpo::bool_switch(&run_in_foreground),
+         "foreground operation")
+        ("dry-run,d", 
+         bpo::value<uint32_t>()->value_name("N")->implicit_value(100),
+         "don't actually execute tasks, but wait N microseconds per task if an argument is provided")
+        ("version,v",
+         "print version string")
+        ("help,h",
+         "produce help message")
     ;
 
     // declare a group of options that will be allowed in a config file
     bpo::variables_map vm;
     bpo::store(bpo::parse_command_line(argc, argv, generic), vm);
-    bpo::notify(vm);    
+    bpo::notify(vm);
 
     if (vm.count("help")) {
         std::cout << generic << "\n";
@@ -76,9 +99,15 @@ int main(int argc, char* argv[]){
         exit(EXIT_FAILURE);
     }
 
+    if(vm.count("dry-run")) {
+        dry_run = true;
+        dry_run_duration = vm["dry-run"].as<uint32_t>();
+    }
+
     // override settings from file with command-line arguments
     cfg.daemonize() = !run_in_foreground;
     cfg.dry_run() = dry_run;
+    cfg.dry_run_duration() = dry_run_duration;
 
     norns::urd daemon;
     daemon.configure(cfg);
