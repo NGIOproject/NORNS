@@ -124,7 +124,7 @@ private:
                                uint32_t quota);
 
     void pause_listening();
-    void resume_accept();
+    void resume_listening();
     urd_error check_shutdown();
 
 

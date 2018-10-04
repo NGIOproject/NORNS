@@ -42,7 +42,7 @@ typedef uint32_t nornsctl_backend_flags_t;
 typedef enum {
     NORNSCTL_CMD_PING = 1000,
     NORNSCTL_CMD_PAUSE_LISTEN,
-    NORNSCTL_CMD_RESUME_ACCEPT,
+    NORNSCTL_CMD_RESUME_LISTEN,
     NORNSCTL_CMD_SHUTDOWN,
 } nornsctl_command_t;
 

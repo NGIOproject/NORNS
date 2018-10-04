@@ -61,7 +61,7 @@ SCENARIO("send control commands to urd", "[api::nornsctl_send_command]") {
                     REQUIRE(rv == NORNS_EACCEPTPAUSED);
 
                     AND_THEN("nornsctl_send_command() returns NORNS_SUCCESS and norns_submit() succeeds") {
-                        norns_error_t rv = nornsctl_send_command(NORNSCTL_CMD_RESUME_ACCEPT, NULL);
+                        norns_error_t rv = nornsctl_send_command(NORNSCTL_CMD_RESUME_LISTEN, NULL);
                         REQUIRE(rv == NORNS_SUCCESS);
 
                         rv = norns_submit(&task);
@@ -81,15 +81,15 @@ SCENARIO("send control commands to urd", "[api::nornsctl_send_command]") {
             }
         }
 
-        WHEN("a NORNSCTL_CMD_RESUME_ACCEPT command is sent") {
+        WHEN("a NORNSCTL_CMD_RESUME_LISTEN command is sent") {
 
-            norns_error_t rv = nornsctl_send_command(NORNSCTL_CMD_RESUME_ACCEPT, NULL);
+            norns_error_t rv = nornsctl_send_command(NORNSCTL_CMD_RESUME_LISTEN, NULL);
 
             THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
 
-                AND_WHEN("further NORNSCTL_CMD_RESUME_ACCEPT commands are sent") {
-                    rv = nornsctl_send_command(NORNSCTL_CMD_RESUME_ACCEPT, NULL);
+                AND_WHEN("further NORNSCTL_CMD_RESUME_LISTEN commands are sent") {
+                    rv = nornsctl_send_command(NORNSCTL_CMD_RESUME_LISTEN, NULL);
 
                     THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
                         REQUIRE(rv == NORNS_SUCCESS);

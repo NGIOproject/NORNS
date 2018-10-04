@@ -588,8 +588,8 @@ urd::command_handler(const request_ptr base_request) {
         case command_type::pause_listen:
             pause_listening();
             break;
-        case command_type::resume_accept:
-            resume_accept();
+        case command_type::resume_listen:
+            resume_listening();
             break;
         case command_type::shutdown:
         {
@@ -600,7 +600,7 @@ urd::command_handler(const request_ptr base_request) {
             resp->set_error_code(rv);
 
             if(rv != urd_error::success) {
-                resume_accept();
+                resume_listening();
                 break;
             }
             shutdown();
@@ -1039,7 +1039,7 @@ void urd::pause_listening() {
     LOGGER_WARN("Daemon locked: incoming requests will be rejected");
 }
 
-void urd::resume_accept() {
+void urd::resume_listening() {
     bool expected = true;
     while(!m_is_paused.compare_exchange_weak(expected, false) && expected);
 

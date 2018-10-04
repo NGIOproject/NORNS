@@ -65,7 +65,7 @@ enum class backend_type {
 enum class command_type {
     ping,
     pause_listen,
-    resume_accept,
+    resume_listen,
     shutdown,
     unknown
 };
