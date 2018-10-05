@@ -41,6 +41,7 @@ namespace defaults {
     extern const char*      progname;
     extern const bool       daemonize;
     extern const bool       use_syslog;
+    extern const bool       use_console;
     extern const bfs::path  log_file;
     extern const uint32_t   log_file_max_size;
     extern const bool       dry_run;
