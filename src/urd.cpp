@@ -53,7 +53,7 @@
 #include "resources.hpp"
 #include "io.hpp"
 #include "namespaces.hpp"
-
+#include "fmt.hpp"
 #include "urd.hpp"
 
 namespace norns {
@@ -654,20 +654,30 @@ void urd::signal_handler(int signum){
 }
 
 void urd::init_logger() {
+
+    if(m_settings->use_console()) {
+        logger::create_global_logger(m_settings->progname(), "console color");
+        return;;
+    }
+
     if(m_settings->use_syslog()) {
         logger::create_global_logger(m_settings->progname(), "syslog");
 
         if(!m_settings->daemonize()) {
-            std::cerr << "WARNING: Output messages redirected to syslog\n";
+            fmt::print(stderr, "PSA: Output sent to syslog while in "
+                               "non-daemon mode\n");
         }
+
+        return;
     }
-    else if(!m_settings->log_file().empty()) {
+
+    if(!m_settings->log_file().empty()) {
         logger::create_global_logger(m_settings->progname(), "file", 
                 m_settings->log_file());
+        return;
     }
-    else {
-        logger::create_global_logger(m_settings->progname(), "console color");
-    }
+
+    logger::create_global_logger(m_settings->progname(), "console color");
 }
 
 void urd::init_event_handlers() {

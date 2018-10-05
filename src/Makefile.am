@@ -216,8 +216,9 @@ config/defaults.cpp: Makefile
 	   echo "namespace config {"; \
 	   echo "namespace defaults {"; \
 	   echo "    const char* progname             = \"urd\";"; \
-	   echo "    const bool  daemonize            = true;"; \
-	   echo "    const bool  use_syslog           = false;"; \
+	   echo "    const bool daemonize             = true;"; \
+	   echo "    const bool use_syslog            = false;"; \
+	   echo "    const bool use_console           = false;"; \
 	   echo "    const bfs::path log_file         = boost::filesystem::path();"; \
 	   echo "    const uint32_t log_file_max_size = static_cast<uint32_t>(16*1024*1024);"; \
 	   echo ""; \

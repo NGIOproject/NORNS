@@ -45,17 +45,27 @@ namespace norns {
 namespace config {
 
 settings::settings() { }
-settings::settings(const std::string& progname, bool daemonize, bool use_syslog,
-                   const bfs::path& log_file, const uint32_t log_file_max_size,
-                   bool dry_run, uint32_t dry_run_duration, 
+
+settings::settings(const std::string& progname, 
+                   bool daemonize, 
+                   bool use_syslog,
+                   bool use_console,
+                   const bfs::path& log_file, 
+                   const uint32_t log_file_max_size,
+                   bool dry_run, 
+                   uint32_t dry_run_duration, 
                    const bfs::path& global_socket, 
-                   const bfs::path& control_socket, uint32_t remote_port,
-                   const bfs::path& pidfile, uint32_t workers, 
-                   uint32_t backlog_size, const bfs::path& cfgfile, 
+                   const bfs::path& control_socket, 
+                   uint32_t remote_port,
+                   const bfs::path& pidfile, 
+                   uint32_t workers,
+                   uint32_t backlog_size, 
+                   const bfs::path& cfgfile, 
                    const std::list<namespace_def>& defns) :
     m_progname(progname),
     m_daemonize(daemonize),
     m_use_syslog(use_syslog),
+    m_use_console(use_console),
     m_log_file(log_file),
     m_log_file_max_size(log_file_max_size),
     m_dry_run(dry_run),
@@ -73,6 +83,7 @@ void settings::load_defaults() {
     m_progname = defaults::progname;
     m_daemonize = defaults::daemonize;
     m_use_syslog = defaults::use_syslog;
+    m_use_console = defaults::use_console;
     m_log_file = defaults::log_file;
     m_log_file_max_size = defaults::log_file_max_size;
     m_dry_run = defaults::dry_run;
@@ -98,6 +109,7 @@ void settings::load_from_file(const bfs::path& filename) {
 
     m_progname = defaults::progname;
     m_use_syslog = gsettings.get_as<bool>(keywords::use_syslog);
+    m_use_console = defaults::use_console;
 
     if(gsettings.has(keywords::log_file)) {
         m_log_file = gsettings.get_as<bfs::path>(keywords::log_file);
@@ -137,6 +149,7 @@ std::string settings::to_string() const {
            "  m_progname: "          + m_progname + ",\n" +
            "  m_daemonize: "         + (m_daemonize ? "true" : "false") + ",\n" +
            "  m_use_syslog: "        + (m_use_syslog ? "true" : "false") +  ",\n" +
+           "  m_use_console: "       + (m_use_console ? "true" : "false") +  ",\n" +
            "  m_log_file: "          + m_log_file.string() + ",\n" +
            "  m_log_file_max_size: " + std::to_string(m_log_file_max_size) + ",\n" +
            "  m_dry_run: "           + (m_dry_run ? "true" : "false") +  ",\n" +
@@ -163,6 +176,10 @@ bool& settings::daemonize() {
 
 bool& settings::use_syslog() {
     return m_use_syslog;
+}
+
+bool& settings::use_console() {
+    return m_use_console;
 }
 
 bfs::path& settings::log_file() {

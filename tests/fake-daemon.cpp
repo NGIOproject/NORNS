@@ -38,6 +38,7 @@ norns::config::settings test_cfg(
     "test_urd", /* progname */
     false, /* daemonize */
     false, /* use syslog */
+    false, /* use console */
     {},// "./test_urd.log", /* log file */
     0, /* unused */
     false, /* dry run */
