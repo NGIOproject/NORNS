@@ -34,7 +34,7 @@
 #include "nornsctl.h"
 #include "fake-daemon.hpp"
 
-norns::config::settings test_cfg(
+norns::config::settings default_cfg(
     "test_urd", /* progname */
     false, /* daemonize */
     false, /* use syslog */
@@ -71,25 +71,30 @@ void fake_daemon::configure(const bfs::path& config_file,
 
     m_config.load_from_file(config_file);
 
-    m_config.progname() = test_cfg.progname();
-    m_config.daemonize() = test_cfg.daemonize();
-    m_config.use_syslog() = test_cfg.use_syslog();
+    m_config.progname() = default_cfg.progname();
+    m_config.daemonize() = default_cfg.daemonize();
+    m_config.use_syslog() = default_cfg.use_syslog();
+    m_config.use_console() = default_cfg.use_console();
     m_config.dry_run() = override_cfg.m_dry_run;
     m_config.dry_run_duration() = override_cfg.m_dry_run_duration;
-    m_config.remote_port() = test_cfg.remote_port();
-    m_config.workers_in_pool() = test_cfg.workers_in_pool();
+    m_config.remote_port() = default_cfg.remote_port();
+    m_config.workers_in_pool() = default_cfg.workers_in_pool();
     m_config.config_file() = config_file;
     m_config.default_namespaces().clear();
 }
 
-void fake_daemon::configure(const bfs::path& config_file) {
+void fake_daemon::configure(const bfs::path& config_file,
+                            const std::string& alias) {
+
     m_config.load_from_file(config_file);
-    m_config.progname() = test_cfg.progname();
-    m_config.daemonize() = test_cfg.daemonize();
-    m_config.use_syslog() = test_cfg.use_syslog();
-    m_config.dry_run() = test_cfg.dry_run();
-    m_config.remote_port() = test_cfg.remote_port();
-    m_config.workers_in_pool() = test_cfg.workers_in_pool();
+
+    m_config.progname() = default_cfg.progname() + alias;
+    m_config.daemonize() = default_cfg.daemonize();
+    m_config.use_syslog() = default_cfg.use_syslog();
+    m_config.use_console() = default_cfg.use_console();
+    m_config.dry_run() = default_cfg.dry_run();
+    m_config.dry_run_duration() = default_cfg.dry_run_duration();
+    m_config.workers_in_pool() = default_cfg.workers_in_pool();
     m_config.config_file() = config_file;
     m_config.default_namespaces().clear();
 }

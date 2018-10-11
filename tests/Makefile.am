@@ -50,6 +50,7 @@ api_SOURCES = \
 	api-namespace-register.cpp \
 	api-namespace-unregister.cpp \
 	api-copy-local-data.cpp \
+	api-copy-remote-data.cpp \
 	api-remove-local-data.cpp \
 	api-job-register.cpp \
 	api-job-update.cpp \

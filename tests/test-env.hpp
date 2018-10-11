@@ -44,7 +44,7 @@ namespace bfs = boost::filesystem;
 
 struct test_env {
 
-    test_env();
+    test_env(bool requires_remote_peer = false);
     test_env(const fake_daemon_cfg& cfg);
     ~test_env();
 
@@ -71,7 +71,8 @@ struct test_env {
     bfs::path m_base_dir;
 
 #ifndef USE_REAL_DAEMON
-    fake_daemon m_td;
+    fake_daemon m_ltd;
+    fake_daemon m_rtd;
 #endif
 
     std::set<bfs::path> m_dirs;

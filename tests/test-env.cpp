@@ -40,7 +40,6 @@
 #include "config-template.hpp"
 
 //#define __DEBUG_OUTPUT__
-
 namespace bfs = boost::filesystem;
 
 namespace {
@@ -50,40 +49,58 @@ std::string generate_testid() {
     return std::string("test_") + seed.substr(0, 8);
 }
 
+
+
 #ifndef USE_REAL_DAEMON
-bfs::path create_config_file(const bfs::path& basedir) {
 
-    const bfs::path cfgdir = basedir / "config";
-    bool res = bfs::create_directory(cfgdir);
-    REQUIRE(res == true);
+using replacement_list = 
+    std::vector<
+        std::pair<std::string, std::string>>;
 
-    const bfs::path config_file = cfgdir / "test.conf";
+bfs::path 
+create_config_file(const bfs::path& basedir, 
+                   const std::string& alias, 
+                   const replacement_list& reps = replacement_list()) {
+
+    const bfs::path cfgdir = basedir / ("config" + alias);
+
+    if(!bfs::exists(cfgdir)) {
+        bool res = bfs::create_directory(cfgdir);
+        REQUIRE(res == true);
+    }
+
+    const std::string name = "test.conf" + alias;
+
+    const bfs::path config_file = cfgdir / name;
+
+    auto outstr = boost::regex_replace(config_file::cftemplate,
+                                             boost::regex("@localstatedir@"),
+                                             cfgdir.string());
+
+    for(const auto& r : reps) {
+        outstr = boost::regex_replace(outstr, boost::regex(r.first), r.second);
+    }
+
     bfs::ofstream outf(config_file);
-    outf << boost::regex_replace(config_file::cftemplate,
-                              boost::regex("@localstatedir@"),
-                              cfgdir.string());
+    outf << outstr;
     outf.close();
 
     return config_file;
 }
 
-bfs::path patch_libraries(const bfs::path& basedir) {
-
-    const auto config_file = create_config_file(basedir);
+void
+patch_libraries(const bfs::path& config_file) {
 
     int rv = ::setenv("NORNS_CONFIG_FILE", config_file.c_str(), 1);
     REQUIRE(rv != -1);
 
     libnorns_reload_config_file();
     libnornsctl_reload_config_file();
-
-    return config_file;
 }
 #endif
-
 }
 
-test_env::test_env() :
+test_env::test_env(bool requires_remote_peer) :
     m_test_succeeded(false),
     m_uid(generate_testid()),
     m_base_dir(bfs::absolute(bfs::current_path() / m_uid)) {
@@ -97,9 +114,28 @@ test_env::test_env() :
     }
 
 #ifndef USE_REAL_DAEMON
-    const auto config_file = patch_libraries(m_base_dir);
-    m_td.configure(config_file);
-    m_td.run();
+    const std::string alias(".local");
+    const auto local_config = ::create_config_file(m_base_dir, alias);
+    ::patch_libraries(local_config);
+    m_ltd.configure(local_config, alias);
+    m_ltd.run();
+
+    // if the test requires a remote peer, we need to spawn another daemon
+    if(requires_remote_peer) {
+        const std::string alias(".remote");
+        const auto remote_config = 
+            ::create_config_file(m_base_dir, alias,
+                { {"(remote_port:)\\s*?42000\\s*?,$",    "\\1 50000,"} });
+
+        // temporarily patch the libraries so that we can 
+        // ping the "remote" daemon
+        ::patch_libraries(remote_config);
+        m_rtd.configure(remote_config, alias);
+        m_rtd.run();
+
+        // restore the libraries for the client
+        ::patch_libraries(local_config);
+    }
 #endif
 
 }
@@ -118,9 +154,10 @@ test_env::test_env(const fake_daemon_cfg& cfg) :
     }
 
 #ifndef USE_REAL_DAEMON
-    const auto config_file = patch_libraries(m_base_dir);
-    m_td.configure(config_file, cfg);
-    m_td.run();
+    const auto config_file = ::create_config_file(m_base_dir, "");
+    ::patch_libraries(config_file);
+    m_ltd.configure(config_file, cfg);
+    m_ltd.run();
 #else
     (void) cfg;
 #endif
@@ -166,7 +203,7 @@ test_env::~test_env() {
     }
 
 #ifndef USE_REAL_DAEMON
-    int ret = m_td.stop();
+    int ret = m_ltd.stop();
     //REQUIRE(ret == 0);
 #endif
 

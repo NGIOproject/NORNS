@@ -49,7 +49,7 @@ struct fake_daemon {
     fake_daemon();
     ~fake_daemon();
     void configure(const bfs::path& config_file, const fake_daemon_cfg& override_cfg);
-    void configure(const bfs::path& config_file);
+    void configure(const bfs::path& config_file, const std::string& alias = "");
     void run();
     int stop();
 
