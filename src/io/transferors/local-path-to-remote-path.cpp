@@ -66,6 +66,14 @@ local_path_to_remote_path_transferor::transfer(
     (void) src;
     (void) dst;
 
+    const auto& d_src = 
+        reinterpret_cast<const data::local_path_resource&>(*src);
+    const auto& d_dst = 
+        reinterpret_cast<const data::remote_path_resource&>(*dst);
+
+    LOGGER_DEBUG("[{}] transfer: {} -> {}", task_info->id(),
+            d_src.canonical_path(), d_dst.to_string());
+
     LOGGER_WARN("Transfer not implemented");
 
     return std::make_error_code(static_cast<std::errc>(0));

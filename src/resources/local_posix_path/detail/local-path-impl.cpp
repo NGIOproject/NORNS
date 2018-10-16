@@ -47,14 +47,14 @@ using local_path_resource = resource_impl<resource_type::local_posix_path>;
 
 local_path_resource::resource_impl(const std::shared_ptr<const storage::backend> parent, 
                                    const bfs::path& name) :
-    m_namespace_name(name),
+    m_name_in_namespace(name),
     m_canonical_path(parent->mount() / name),
     m_is_collection(bfs::is_directory(m_canonical_path)),
     m_parent(std::static_pointer_cast<const storage::posix_filesystem>(std::move(parent))) { }
 
 std::string
 local_path_resource::name() const {
-    return m_namespace_name.string();
+    return m_name_in_namespace.string();
 }
 
 resource_type

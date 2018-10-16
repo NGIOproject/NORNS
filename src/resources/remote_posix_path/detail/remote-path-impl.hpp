@@ -55,6 +55,8 @@ struct resource_impl<resource_type::remote_posix_path> : public resource {
     const std::shared_ptr<const storage::backend> parent() const override final;
     std::string to_string() const override final;
 
+
+    const bfs::path m_name_in_namespace;
     const std::shared_ptr<const storage::detail::remote_backend> m_parent;
 };
 

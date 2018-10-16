@@ -33,7 +33,8 @@
 
 namespace bfs = boost::filesystem;
 
-SCENARIO("copy local POSIX file to remote POSIX file", "[api::norns_submit_remote_copy_local_posix_files]") {
+SCENARIO("copy local POSIX file to remote POSIX file", 
+         "[api::norns_submit_remote_copy_local_posix_files]") {
     GIVEN("a running urd instance") {
 
         test_env env(true);
@@ -44,8 +45,10 @@ SCENARIO("copy local POSIX file to remote POSIX file", "[api::norns_submit_remot
         bfs::path src_mnt, dst_mnt;
 
         // create namespaces
-        std::tie(std::ignore, src_mnt) = env.create_namespace(nsid0, "mnt/tmp0", 16384);
-        std::tie(std::ignore, dst_mnt) = env.create_namespace(nsid1, "mnt/tmp1", 16384);
+        std::tie(std::ignore, src_mnt) = 
+            env.create_namespace(nsid0, "mnt/tmp0", 16384);
+        std::tie(std::ignore, dst_mnt) = 
+            env.create_namespace(nsid1, "mnt/tmp1", 16384);
 
         // define input names
         const bfs::path src_file_at_root = "/file0";
