@@ -23,6 +23,25 @@ before_script:
         libyaml-cpp-dev
         libyaml-dev
 
+    - git clone https://github.com/mercury-hpc/mercury.git &&
+      cd mercury &&
+      git checkout 3d8ed01eeff6b504862702048d7577457c71227c &&
+      mkdir build &&
+      cd build &&
+      cmake
+        -DCMAKE_BUILD_TYPE:STRING=Debug
+        -DBUILD_TESTING:BOOL=OFF
+        -DMERCURY_USE_SM_ROUTING:BOOL=OFF
+        -DMERCURY_USE_SELF_FORWARD:BOOL=OFF
+        -DMERCURY_USE_CHECKSUMS:BOOL=ON
+        -DMERCURY_USE_BOOST_PP:BOOL=ON
+        -DMERCURY_USE_EAGER_BULK:BOOL=ON
+        -DBUILD_SHARED_LIBS:BOOL=ON
+        -DNA_USE_OFI:BOOL=ON
+        .. &&
+      make -j$(nproc) &&
+      make install
+
 
 ### GCC 5
 build:gcc:5:
