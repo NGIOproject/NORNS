@@ -33,7 +33,13 @@ namespace norns {
 namespace storage {
 namespace detail {
 
-process_memory::process_memory() { }
+process_memory::process_memory(const std::string& nsid) :
+    m_nsid(nsid) { }
+
+std::string
+process_memory::nsid() const {
+    return m_nsid;
+}
 
 bool 
 process_memory::is_tracked() const {

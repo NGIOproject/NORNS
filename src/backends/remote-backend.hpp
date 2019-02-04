@@ -41,8 +41,9 @@ namespace detail {
 
 class remote_backend final : public storage::backend {
 public:
-    remote_backend();
+    remote_backend(const std::string& nsid);
 
+    std::string nsid() const override final;
     bool is_tracked() const override final;
     bool is_empty() const override final;
     bfs::path mount() const override final;
@@ -55,6 +56,9 @@ public:
 
     bool accepts(resource_info_ptr res) const override final;
     std::string to_string() const override final;
+
+private:
+    std::string m_nsid;
 };
 
 // no need to register it since it's never going to be created 

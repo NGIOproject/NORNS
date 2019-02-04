@@ -71,6 +71,23 @@ local_path_to_shared_path_transferor::transfer(
     return std::make_error_code(static_cast<std::errc>(0));
 }
 
+std::error_code 
+local_path_to_shared_path_transferor::transfer(
+        const auth::credentials& auth, 
+        const std::shared_ptr<task_info>& task_info,
+        const std::shared_ptr<data::resource_info>& src,  
+        const std::shared_ptr<data::resource_info>& dst) const {
+
+    (void) auth;
+    (void) task_info;
+    (void) src;
+    (void) dst;
+
+    LOGGER_WARN("Transfer not implemented");
+
+    return std::make_error_code(static_cast<std::errc>(0));
+}
+
 std::string 
 local_path_to_shared_path_transferor::to_string() const {
     return "transferor[local_path => shared_path]";

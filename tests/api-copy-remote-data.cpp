@@ -37,11 +37,11 @@ SCENARIO("copy local POSIX file to remote POSIX file",
          "[api::norns_submit_remote_copy_local_posix_files]") {
     GIVEN("a running urd instance") {
 
-        test_env env(true);
+        test_env env(false);
 
         const char* nsid0 = "tmp0";
         const char* nsid1 = "tmp1";
-        const char* remote_host = "localhost";
+        const char* remote_host = "127.0.0.1:42000";
         bfs::path src_mnt, dst_mnt;
 
         // create namespaces
@@ -84,8 +84,8 @@ SCENARIO("copy local POSIX file to remote POSIX file",
         const bfs::path dst_file_at_subdir3 = "/e/f/g/h/i/file1"; // different fullname
 
         // create input data
-        env.add_to_namespace(nsid0, src_file_at_root, 4096);
-        env.add_to_namespace(nsid0, src_file_at_subdir, 8192);
+        env.add_to_namespace(nsid0, src_file_at_root, 40000);
+        env.add_to_namespace(nsid0, src_file_at_subdir, 80000);
         env.add_to_namespace(nsid0, src_subdir0);
         env.add_to_namespace(nsid0, src_subdir1);
         env.add_to_namespace(nsid0, src_empty_dir);
@@ -506,7 +506,8 @@ SCENARIO("copy local POSIX file to remote POSIX file",
         /**********************************************************************/
         /* tests for single files                                             */
         /**********************************************************************/
-        // cp -r ns0://file0.txt -> ns1:// = ns1://file0.txt
+        // cp -r ns0://file0.txt 
+        //    -> ns1:// = ns1://file0.txt
         WHEN("copying a single NORNS_LOCAL_PATH from src namespace's root to "
              "another NORNS_REMOTE_PATH at dst namespace's root "
              "(keeping the name)") {
@@ -527,321 +528,368 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                 // wait until the task completes
                 rv = norns_wait(&task);
 
-//                THEN("NORNS_SUCCESS is returned") {
-//                    REQUIRE(rv == NORNS_SUCCESS);
-//
-//                    THEN("Files are equal") {
-//
-//                        bfs::path src = env.get_from_namespace(nsid0, src_file_at_root);
-//                        bfs::path dst = env.get_from_namespace(nsid1, dst_file_at_root0);
-//
-//                        REQUIRE(compare_files(src, dst) == true);
-//                    }
-//                }
+                THEN("NORNS_SUCCESS is returned") {
+                    REQUIRE(rv == NORNS_SUCCESS);
+
+                    THEN("Files are equal") {
+
+                        bfs::path src = 
+                            env.get_from_namespace(nsid0, src_file_at_root);
+                        bfs::path dst = 
+                            env.get_from_namespace(nsid1, dst_file_at_root0);
+
+                        REQUIRE(compare_files(src, dst) == true);
+                    }
+                }
+            }
+        }
+
+        // cp -r ns0://file0.txt 
+        //    -> ns1://file1.txt = ns1://file1.txt
+        WHEN("copying a single NORNS_LOCAL_PATH from src namespace's root to "
+             "another NORNS_LOCAL_PATH at dst namespace's root (changing the name)") {
+
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, src_file_at_root.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host,
+                                               dst_file_at_root1.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("NORNS_SUCCESS is returned") {
+                REQUIRE(rv == NORNS_SUCCESS);
+                REQUIRE(task.t_id != 0);
+
+                // wait until the task completes
+                rv = norns_wait(&task);
+
+                THEN("NORNS_SUCCESS is returned") {
+                    REQUIRE(rv == NORNS_SUCCESS);
+
+                    THEN("Files are equal") {
+                        bfs::path src = 
+                            env.get_from_namespace(nsid0, src_file_at_root);
+                        bfs::path dst = 
+                            env.get_from_namespace(nsid1, dst_file_at_root1);
+
+                        REQUIRE(compare_files(src, dst) == true);
+                    }
+                }
+            }
+        }
+
+        // cp -r ns0://a/b/c/.../d/file0.txt 
+        //    -> ns1://file0.txt = ns1://file0.txt
+        WHEN("copying a single NORNS_LOCAL_PATH from a src namespace's subdir "
+             "to another NORNS_LOCAL_PATH at dst namespace's root (keeping "
+             "the name)") {
+
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, src_file_at_subdir.c_str()),
+                             NORNS_REMOTE_PATH(nsid1,
+                                               remote_host,
+                                               dst_file_at_root0.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("NORNS_SUCCESS is returned") {
+                REQUIRE(rv == NORNS_SUCCESS);
+                REQUIRE(task.t_id != 0);
+
+                // wait until the task completes
+                rv = norns_wait(&task);
+
+                THEN("NORNS_SUCCESS is returned") {
+                    REQUIRE(rv == NORNS_SUCCESS);
+
+                    THEN("Files are equal") {
+                        bfs::path src = 
+                            env.get_from_namespace(nsid0, src_file_at_subdir);
+                        bfs::path dst = 
+                            env.get_from_namespace(nsid1, dst_file_at_root0);
+
+                        REQUIRE(compare_files(src, dst) == true);
+                    }
+                }
+            }
+        }
+
+        // cp -r ns0://a/b/c/.../d/file0.txt 
+        //    -> ns1://file1.txt = ns1://file1.txt
+        WHEN("copying a single NORNS_LOCAL_PATH from a src namespace's subdir "
+             "to another NORNS_LOCAL_PATH at dst namespace's root (changing the "
+             "name)") {
+
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, src_file_at_subdir.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host, 
+                                               dst_file_at_root1.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("NORNS_SUCCESS is returned") {
+                REQUIRE(rv == NORNS_SUCCESS);
+                REQUIRE(task.t_id != 0);
+
+                // wait until the task completes
+                rv = norns_wait(&task);
+
+                THEN("NORNS_SUCCESS is returned") {
+                    REQUIRE(rv == NORNS_SUCCESS);
+
+                    THEN("Files are equal") {
+                        bfs::path src = 
+                            env.get_from_namespace(nsid0, src_file_at_subdir);
+                        bfs::path dst = 
+                            env.get_from_namespace(nsid1, dst_file_at_root1);
+
+                        REQUIRE(compare_files(src, dst) == true);
+                    }
+                }
+            }
+        }
+
+        // cp -r ns0://file0.txt 
+        //    -> ns1://a/b/c/.../file0.txt = ns1://a/b/c/.../file0.txt
+        WHEN("copying a single NORNS_LOCAL_PATH from src namespace's root to "
+             "another NORNS_LOCAL_PATH at a dst namespace's subdir "
+             "(keeping the name)") {
+
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, src_file_at_root.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host, 
+                                               dst_file_at_subdir0.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("NORNS_SUCCESS is returned") {
+                REQUIRE(rv == NORNS_SUCCESS);
+                REQUIRE(task.t_id != 0);
+
+                // wait until the task completes
+                rv = norns_wait(&task);
+
+                THEN("NORNS_SUCCESS is returned") {
+                    REQUIRE(rv == NORNS_SUCCESS);
+
+                    THEN("Files are equal") {
+                        bfs::path src = 
+                            env.get_from_namespace(nsid0, src_file_at_root);
+                        bfs::path dst = 
+                            env.get_from_namespace(nsid1, dst_file_at_subdir0);
+
+                        REQUIRE(compare_files(src, dst) == true);
+                    }
+                }
+            }
+        }
+
+        // cp -r ns0://file0.txt 
+        //    -> ns1://a/b/c/.../file1.txt = ns1://a/b/c/.../file1.txt
+        WHEN("copying a single NORNS_LOCAL_PATH from src namespace's root to "
+             "another NORNS_LOCAL_PATH at a dst namespace's subdir "
+             "(changing the name)") {
+
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, src_file_at_root.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host,
+                                               dst_file_at_subdir1.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("NORNS_SUCCESS is returned") {
+                REQUIRE(rv == NORNS_SUCCESS);
+                REQUIRE(task.t_id != 0);
+
+                // wait until the task completes
+                rv = norns_wait(&task);
+
+                THEN("NORNS_SUCCESS is returned") {
+                    REQUIRE(rv == NORNS_SUCCESS);
+
+                    THEN("Files are equal") {
+                        bfs::path src = 
+                            env.get_from_namespace(nsid0, src_file_at_root);
+                        bfs::path dst = 
+                            env.get_from_namespace(nsid1, dst_file_at_subdir1);
+
+                        REQUIRE(compare_files(src, dst) == true);
+                    }
+                }
+            }
+        }
+
+        // cp -r ns0://a/b/c/.../file0.txt 
+        //    -> ns1://a/b/c/.../file0.txt = ns1://a/b/c/.../file0.txt
+        WHEN("copying a single NORNS_LOCAL_PATH from a src namespace's subdir "
+             "to another NORNS_LOCAL_PATH at a dst namespace's subdir "
+             "(keeping the name)") {
+
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, src_file_at_subdir.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host,
+                                               dst_file_at_subdir0.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("NORNS_SUCCESS is returned") {
+                REQUIRE(rv == NORNS_SUCCESS);
+                REQUIRE(task.t_id != 0);
+
+                // wait until the task completes
+                rv = norns_wait(&task);
+
+                THEN("NORNS_SUCCESS is returned") {
+                    REQUIRE(rv == NORNS_SUCCESS);
+
+                    THEN("Files are equal") {
+                        bfs::path src = 
+                            env.get_from_namespace(nsid0, src_file_at_subdir);
+                        bfs::path dst = 
+                            env.get_from_namespace(nsid1, dst_file_at_subdir0);
+
+                        REQUIRE(compare_files(src, dst) == true);
+                    }
+                }
+            }
+        }
+
+        // cp -r ns0://a/b/c/.../file0.txt 
+        //    -> ns1://a/b/c/.../file1.txt = ns1://a/b/c/.../file1.txt
+        WHEN("copying a single NORNS_LOCAL_PATH from a src namespace's subdir "
+             "to another NORNS_LOCAL_PATH at a dst namespace's subdir "
+             "(changing the name)") {
+
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, src_file_at_subdir.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host, 
+                                               dst_file_at_subdir1.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("NORNS_SUCCESS is returned") {
+                REQUIRE(rv == NORNS_SUCCESS);
+                REQUIRE(task.t_id != 0);
+
+                // wait until the task completes
+                rv = norns_wait(&task);
+
+                THEN("NORNS_SUCCESS is returned") {
+                    REQUIRE(rv == NORNS_SUCCESS);
+
+                    THEN("Files are equal") {
+                        bfs::path src = 
+                            env.get_from_namespace(nsid0, src_file_at_subdir);
+                        bfs::path dst = 
+                            env.get_from_namespace(nsid1, dst_file_at_subdir1);
+
+                        REQUIRE(compare_files(src, dst) == true);
+                    }
+                }
+            }
+        }
+
+        // cp -r ns0://a/b/c/.../file0.txt 
+        //    -> ns1://e/f/g/.../file0.txt = ns1://e/f/g/.../file0.txt
+        WHEN("copying a single NORNS_LOCAL_PATH from a src namespace's subdir "
+             "to another NORNS_LOCAL_PATH at a dst namespace's subdir "
+             "(changing the parents names)") {
+
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, src_file_at_subdir.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host,
+                                               dst_file_at_subdir2.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("NORNS_SUCCESS is returned") {
+                REQUIRE(rv == NORNS_SUCCESS);
+                REQUIRE(task.t_id != 0);
+
+                // wait until the task completes
+                rv = norns_wait(&task);
+
+                THEN("NORNS_SUCCESS is returned") {
+                    REQUIRE(rv == NORNS_SUCCESS);
+
+                    THEN("Files are equal") {
+                        bfs::path src = 
+                            env.get_from_namespace(nsid0, src_file_at_subdir);
+                        bfs::path dst = 
+                            env.get_from_namespace(nsid1, dst_file_at_subdir2);
+
+                        REQUIRE(compare_files(src, dst) == true);
+                    }
+                }
+            }
+        }
+
+        // cp -r ns0://a/b/c/.../file0.txt 
+        //    -> ns1://e/f/g/.../file1.txt = ns1://e/f/g/.../file1.txt
+        WHEN("copying a single NORNS_LOCAL_PATH from a src namespace's subdir "
+             "to another NORNS_LOCAL_PATH at a dst namespace's subdir "
+             "(changing the name)") {
+
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, src_file_at_subdir.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host, 
+                                               dst_file_at_subdir3.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("NORNS_SUCCESS is returned") {
+                REQUIRE(rv == NORNS_SUCCESS);
+                REQUIRE(task.t_id != 0);
+
+                // wait until the task completes
+                rv = norns_wait(&task);
+
+                THEN("NORNS_SUCCESS is returned") {
+                    REQUIRE(rv == NORNS_SUCCESS);
+
+                    THEN("Files are equal") {
+                        bfs::path src = 
+                            env.get_from_namespace(nsid0, src_file_at_subdir);
+                        bfs::path dst = 
+                            env.get_from_namespace(nsid1, dst_file_at_subdir3);
+
+                        REQUIRE(compare_files(src, dst) == true);
+                    }
+                }
             }
         }
 
 #if 0
-        // cp -r ns0://file0.txt -> ns1://file1.txt = ns1://file1.txt
-        WHEN("copying a single NORNS_LOCAL_PATH from src namespace's root to "
-             "another NORNS_LOCAL_PATH at dst namespace's root (changing the name)") {
-
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_file_at_root.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file_at_root1.c_str()));
-
-            norns_error_t rv = norns_submit(&task);
-
-            THEN("NORNS_SUCCESS is returned") {
-                REQUIRE(rv == NORNS_SUCCESS);
-                REQUIRE(task.t_id != 0);
-
-                // wait until the task completes
-                rv = norns_wait(&task);
-
-                THEN("NORNS_SUCCESS is returned") {
-                    REQUIRE(rv == NORNS_SUCCESS);
-
-                    THEN("Files are equal") {
-                        bfs::path src = env.get_from_namespace(nsid0, src_file_at_root);
-                        bfs::path dst = env.get_from_namespace(nsid1, dst_file_at_root1);
-
-                        REQUIRE(compare_files(src, dst) == true);
-                    }
-                }
-            }
-        }
-
-        // cp -r ns0://a/b/c/.../d/file0.txt -> ns1://file0.txt = ns1://file0.txt
-        WHEN("copying a single NORNS_LOCAL_PATH from a src namespace's subdir to "
-             "another NORNS_LOCAL_PATH at dst namespace's root (keeping the name)") {
-
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_file_at_subdir.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file_at_root0.c_str()));
-
-            norns_error_t rv = norns_submit(&task);
-
-            THEN("NORNS_SUCCESS is returned") {
-                REQUIRE(rv == NORNS_SUCCESS);
-                REQUIRE(task.t_id != 0);
-
-                // wait until the task completes
-                rv = norns_wait(&task);
-
-                THEN("NORNS_SUCCESS is returned") {
-                    REQUIRE(rv == NORNS_SUCCESS);
-
-                    THEN("Files are equal") {
-                        bfs::path src = env.get_from_namespace(nsid0, src_file_at_subdir);
-                        bfs::path dst = env.get_from_namespace(nsid1, dst_file_at_root0);
-
-                        REQUIRE(compare_files(src, dst) == true);
-                    }
-                }
-            }
-        }
-
-        // cp -r ns0://a/b/c/.../d/file0.txt -> ns1://file1.txt = ns1://file1.txt
-        WHEN("copying a single NORNS_LOCAL_PATH from a src namespace's subdir to "
-             "another NORNS_LOCAL_PATH at dst namespace's root (changing the name)") {
-
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_file_at_subdir.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file_at_root1.c_str()));
-
-            norns_error_t rv = norns_submit(&task);
-
-            THEN("NORNS_SUCCESS is returned") {
-                REQUIRE(rv == NORNS_SUCCESS);
-                REQUIRE(task.t_id != 0);
-
-                // wait until the task completes
-                rv = norns_wait(&task);
-
-                THEN("NORNS_SUCCESS is returned") {
-                    REQUIRE(rv == NORNS_SUCCESS);
-
-                    THEN("Files are equal") {
-                        bfs::path src = env.get_from_namespace(nsid0, src_file_at_subdir);
-                        bfs::path dst = env.get_from_namespace(nsid1, dst_file_at_root1);
-
-                        REQUIRE(compare_files(src, dst) == true);
-                    }
-                }
-            }
-        }
-
-        // cp -r ns0://file0.txt -> ns1://a/b/c/.../file0.txt = ns1://a/b/c/.../file0.txt
-        WHEN("copying a single NORNS_LOCAL_PATH from src namespace's root to "
-             "another NORNS_LOCAL_PATH at a dst namespace's subdir (keeping the name)") {
-
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_file_at_root.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file_at_subdir0.c_str()));
-
-            norns_error_t rv = norns_submit(&task);
-
-            THEN("NORNS_SUCCESS is returned") {
-                REQUIRE(rv == NORNS_SUCCESS);
-                REQUIRE(task.t_id != 0);
-
-                // wait until the task completes
-                rv = norns_wait(&task);
-
-                THEN("NORNS_SUCCESS is returned") {
-                    REQUIRE(rv == NORNS_SUCCESS);
-
-                    THEN("Files are equal") {
-                        bfs::path src = env.get_from_namespace(nsid0, src_file_at_root);
-                        bfs::path dst = env.get_from_namespace(nsid1, dst_file_at_subdir0);
-
-                        REQUIRE(compare_files(src, dst) == true);
-                    }
-                }
-            }
-        }
-
-        // cp -r ns0://file0.txt -> ns1://a/b/c/.../file1.txt = ns1://a/b/c/.../file1.txt
-        WHEN("copying a single NORNS_LOCAL_PATH from src namespace's root to "
-             "another NORNS_LOCAL_PATH at a dst namespace's subdir (changing the name)") {
-
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_file_at_root.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file_at_subdir1.c_str()));
-
-            norns_error_t rv = norns_submit(&task);
-
-            THEN("NORNS_SUCCESS is returned") {
-                REQUIRE(rv == NORNS_SUCCESS);
-                REQUIRE(task.t_id != 0);
-
-                // wait until the task completes
-                rv = norns_wait(&task);
-
-                THEN("NORNS_SUCCESS is returned") {
-                    REQUIRE(rv == NORNS_SUCCESS);
-
-                    THEN("Files are equal") {
-                        bfs::path src = env.get_from_namespace(nsid0, src_file_at_root);
-                        bfs::path dst = env.get_from_namespace(nsid1, dst_file_at_subdir1);
-
-                        REQUIRE(compare_files(src, dst) == true);
-                    }
-                }
-            }
-        }
-
-        // cp -r ns0://a/b/c/.../file0.txt -> ns1://a/b/c/.../file0.txt = ns1://a/b/c/.../file0.txt
-        WHEN("copying a single NORNS_LOCAL_PATH from a src namespace's subdir to "
-             "another NORNS_LOCAL_PATH at a dst namespace's subdir (keeping the name)") {
-
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_file_at_subdir.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file_at_subdir0.c_str()));
-
-            norns_error_t rv = norns_submit(&task);
-
-            THEN("NORNS_SUCCESS is returned") {
-                REQUIRE(rv == NORNS_SUCCESS);
-                REQUIRE(task.t_id != 0);
-
-                // wait until the task completes
-                rv = norns_wait(&task);
-
-                THEN("NORNS_SUCCESS is returned") {
-                    REQUIRE(rv == NORNS_SUCCESS);
-
-                    THEN("Files are equal") {
-                        bfs::path src = env.get_from_namespace(nsid0, src_file_at_subdir);
-                        bfs::path dst = env.get_from_namespace(nsid1, dst_file_at_subdir0);
-
-                        REQUIRE(compare_files(src, dst) == true);
-                    }
-                }
-            }
-        }
-
-        // cp -r ns0://a/b/c/.../file0.txt -> ns1://a/b/c/.../file1.txt = ns1://a/b/c/.../file1.txt
-        WHEN("copying a single NORNS_LOCAL_PATH from a src namespace's subdir to "
-             "another NORNS_LOCAL_PATH at a dst namespace's subdir (changing the name)") {
-
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_file_at_subdir.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file_at_subdir1.c_str()));
-
-            norns_error_t rv = norns_submit(&task);
-
-            THEN("NORNS_SUCCESS is returned") {
-                REQUIRE(rv == NORNS_SUCCESS);
-                REQUIRE(task.t_id != 0);
-
-                // wait until the task completes
-                rv = norns_wait(&task);
-
-                THEN("NORNS_SUCCESS is returned") {
-                    REQUIRE(rv == NORNS_SUCCESS);
-
-                    THEN("Files are equal") {
-                        bfs::path src = env.get_from_namespace(nsid0, src_file_at_subdir);
-                        bfs::path dst = env.get_from_namespace(nsid1, dst_file_at_subdir1);
-
-                        REQUIRE(compare_files(src, dst) == true);
-                    }
-                }
-            }
-        }
-
-        // cp -r ns0://a/b/c/.../file0.txt -> ns1://e/f/g/.../file0.txt = ns1://e/f/g/.../file0.txt
-        WHEN("copying a single NORNS_LOCAL_PATH from a src namespace's subdir to "
-             "another NORNS_LOCAL_PATH at a dst namespace's subdir (changing the parents names)") {
-
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_file_at_subdir.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file_at_subdir2.c_str()));
-
-            norns_error_t rv = norns_submit(&task);
-
-            THEN("NORNS_SUCCESS is returned") {
-                REQUIRE(rv == NORNS_SUCCESS);
-                REQUIRE(task.t_id != 0);
-
-                // wait until the task completes
-                rv = norns_wait(&task);
-
-                THEN("NORNS_SUCCESS is returned") {
-                    REQUIRE(rv == NORNS_SUCCESS);
-
-                    THEN("Files are equal") {
-                        bfs::path src = env.get_from_namespace(nsid0, src_file_at_subdir);
-                        bfs::path dst = env.get_from_namespace(nsid1, dst_file_at_subdir2);
-
-                        REQUIRE(compare_files(src, dst) == true);
-                    }
-                }
-            }
-        }
-
-        // cp -r ns0://a/b/c/.../file0.txt -> ns1://e/f/g/.../file1.txt = ns1://e/f/g/.../file1.txt
-        WHEN("copying a single NORNS_LOCAL_PATH from a src namespace's subdir to "
-             "another NORNS_LOCAL_PATH at a dst namespace's subdir (changing the name)") {
-
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_file_at_subdir.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file_at_subdir3.c_str()));
-
-            norns_error_t rv = norns_submit(&task);
-
-            THEN("NORNS_SUCCESS is returned") {
-                REQUIRE(rv == NORNS_SUCCESS);
-                REQUIRE(task.t_id != 0);
-
-                // wait until the task completes
-                rv = norns_wait(&task);
-
-                THEN("NORNS_SUCCESS is returned") {
-                    REQUIRE(rv == NORNS_SUCCESS);
-
-                    THEN("Files are equal") {
-                        bfs::path src = env.get_from_namespace(nsid0, src_file_at_subdir);
-                        bfs::path dst = env.get_from_namespace(nsid1, dst_file_at_subdir3);
-
-                        REQUIRE(compare_files(src, dst) == true);
-                    }
-                }
-            }
-        }
-
-        /**************************************************************************************************************/
-        /* tests for directories                                                                                      */
-        /**************************************************************************************************************/
+        /**********************************************************************/
+        /* tests for directories                                              */
+        /**********************************************************************/
         // cp -r /a/contents.* -> / = /contents.*
-        WHEN("copying the contents of a NORNS_LOCAL_PATH subdir from src namespace's root to "
-             "dst namespace's root") {
+        WHEN("copying the contents of a NORNS_LOCAL_PATH subdir from src "
+             "namespace's root to dst namespace's root") {
 
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_subdir0.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_root.c_str()));
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, src_subdir0.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host, 
+                                               dst_root.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -856,7 +904,8 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Copied files are identical to original") {
-                        bfs::path src = env.get_from_namespace(nsid0, src_subdir0);
+                        bfs::path src = 
+                            env.get_from_namespace(nsid0, src_subdir0);
                         bfs::path dst = env.get_from_namespace(nsid1, dst_root);
 
                         REQUIRE(compare_directories(src, dst) == true);

@@ -49,7 +49,7 @@ remote_path_resource::resource_impl(
           std::move(parent))) {}
 
 std::string remote_path_resource::name() const {
-    return "PENDING";
+    return "PENDING: " + m_parent->to_string();
 }
 
 resource_type remote_path_resource::type() const {

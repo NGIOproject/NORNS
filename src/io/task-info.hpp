@@ -28,6 +28,7 @@
 #ifndef __TASK_INFO_HPP__
 #define __TASK_INFO_HPP__
 
+#include <boost/any.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include "backends.hpp"
 #include "resources.hpp"
@@ -45,10 +46,16 @@ struct task_info {
     using backend_ptr = std::shared_ptr<storage::backend>;
     using resource_info_ptr = std::shared_ptr<data::resource_info>;
 
-    task_info(const iotask_id tid, const iotask_type type, 
-            const auth::credentials& creds,
-            const backend_ptr src_backend, const resource_info_ptr src_rinfo,
-            const backend_ptr dst_backend, const resource_info_ptr dst_rinfo);
+    task_info(const iotask_id tid, 
+              const iotask_type type, 
+              const auth::credentials& creds,
+              const backend_ptr src_backend, 
+              const resource_info_ptr src_rinfo,
+              const backend_ptr dst_backend, 
+              const resource_info_ptr dst_rinfo,
+              const boost::any& ctx = {});
+
+    ~task_info();
 
     iotask_id id() const;
     iotask_type type() const;
@@ -57,6 +64,9 @@ struct task_info {
     resource_info_ptr src_rinfo() const;
     backend_ptr dst_backend() const;
     resource_info_ptr dst_rinfo() const;
+
+    boost::any context() const;
+    void set_context(const boost::any& ctx);
 
     task_status status() const;
     void update_status(const task_status st);
@@ -91,6 +101,9 @@ struct task_info {
     const resource_info_ptr m_src_rinfo;
     const backend_ptr m_dst_backend;
     const resource_info_ptr m_dst_rinfo;
+
+    // optional task context
+    boost::any m_ctx;
 
     // general task status
     task_status m_status;

@@ -25,48 +25,74 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#ifndef __NVML_DAX_HPP__
-#define __NVML_DAX_HPP__
+#ifndef __IO_LOCAL_PATH_TO_REMOTE_RESOURCE_TX__
+#define __IO_LOCAL_PATH_TO_REMOTE_RESOURCE_TX__
 
+#include <memory>
 #include <system_error>
-#include <boost/filesystem.hpp>
+#include "transferor.hpp"
 
-#include "backend-base.hpp"
+namespace hermes {
+class async_engine;
 
-namespace bfs = boost::filesystem;
+template <typename T> class request;
+
+} // namespace hermes
 
 namespace norns {
-namespace storage {
 
-class nvml_dax final : public storage::backend {
-public:
-    nvml_dax(const std::string& nsid, bool track, const bfs::path& mount, uint32_t quota);
+// forward declarations
+namespace auth {
+struct credentials;
+}
 
-    std::string nsid() const override final;
-    bool is_tracked() const override final;
-    bool is_empty() const override final;
-    bfs::path mount() const override final;
-    uint32_t quota() const override final;
+namespace data {
+struct resource_info;
+struct resource;
+}
 
-    resource_ptr new_resource(const resource_info_ptr& rinfo, bool is_collection, std::error_code& ec) const override final;
-    resource_ptr get_resource(const resource_info_ptr& rinfo, std::error_code& ec) const override final;
-    void remove(const resource_info_ptr& rinfo, std::error_code& ec) const override final;
-    std::size_t get_size(const resource_info_ptr& rinfo, std::error_code& ec) const override final;
+namespace rpc {
+struct remote_transfer;
+}
 
-    bool accepts(resource_info_ptr res) const override final;
-    std::string to_string() const final;
+namespace io {
+
+struct local_path_to_remote_resource_transferor : public transferor {
+
+    local_path_to_remote_resource_transferor(
+            std::shared_ptr<hermes::async_engine> remote_endpoint);
+
+    bool 
+    validate(const std::shared_ptr<data::resource_info>& src_info,
+             const std::shared_ptr<data::resource_info>& dst_info) 
+    const override final;
+
+    std::error_code 
+    transfer(const auth::credentials& auth,                
+             const std::shared_ptr<task_info>& task_info,
+             const std::shared_ptr<const data::resource>& src,  
+             const std::shared_ptr<const data::resource>& dst) 
+    const override final;
+
+    std::error_code 
+    transfer(const auth::credentials& auth,                
+             const std::shared_ptr<task_info>& task_info,
+             const std::shared_ptr<data::resource_info>& src,  
+             const std::shared_ptr<data::resource_info>& dst) 
+    const override final;
+
+    std::string to_string() const override final;
 
 private:
-    std::string m_nsid;
-    bool        m_track;
-    bfs::path   m_mount;
-    uint32_t    m_quota;
+
+    void
+    do_accept(hermes::request<norns::rpc::remote_transfer>&& req);
+
+    std::shared_ptr<hermes::async_engine> m_remote_endpoint;
+
 };
 
-//NORNS_REGISTER_BACKEND(backend_type::nvml, nvml_dax);
-
-} // namespace storage
+} // namespace io
 } // namespace norns
 
-
-#endif // __NVML_DAX_HPP__
+#endif /* __LOCAL_PATH_TO_REMOTE_RESOURCE_TX__ */

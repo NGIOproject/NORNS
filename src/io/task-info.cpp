@@ -35,9 +35,12 @@ namespace norns {
 namespace io {
 
 task_info::task_info(const iotask_id tid, const iotask_type type,
-            const auth::credentials& auth,
-            const backend_ptr src_backend, const resource_info_ptr src_rinfo,
-            const backend_ptr dst_backend, const resource_info_ptr dst_rinfo) :
+                     const auth::credentials& auth,
+                     const backend_ptr src_backend, 
+                     const resource_info_ptr src_rinfo,
+                     const backend_ptr dst_backend, 
+                     const resource_info_ptr dst_rinfo,
+                     const boost::any& ctx) :
     m_id(tid),
     m_type(type),
     m_auth(auth),
@@ -45,12 +48,17 @@ task_info::task_info(const iotask_id tid, const iotask_type type,
     m_src_rinfo(src_rinfo),
     m_dst_backend(dst_backend),
     m_dst_rinfo(dst_rinfo),
+    m_ctx(ctx),
     m_status(task_status::pending),
     m_task_error(urd_error::success),
     m_sys_error(),
     m_bandwidth(std::numeric_limits<double>::quiet_NaN()),
     m_sent_bytes(),
     m_total_bytes() {
+
+    if(!src_rinfo) {
+        return;
+    }
 
     std::error_code ec;
     m_total_bytes = src_backend->get_size(src_rinfo, ec);
@@ -60,6 +68,8 @@ task_info::task_info(const iotask_id tid, const iotask_type type,
         m_total_bytes = 0;
     }
 }
+
+task_info::~task_info() { }
 
 iotask_id
 task_info::id() const {
@@ -94,6 +104,16 @@ task_info::dst_backend() const {
 task_info::resource_info_ptr 
 task_info::dst_rinfo() const {
     return m_dst_rinfo;
+}
+
+boost::any
+task_info::context() const {
+    return m_ctx;
+}
+
+void 
+task_info::set_context(const boost::any& ctx) {
+    m_ctx = ctx;
 }
 
 task_status

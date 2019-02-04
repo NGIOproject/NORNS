@@ -1,5 +1,5 @@
 /*************************************************************************
- * Copyright (C) 2017-2018 Barcelona Supercomputing Center               *
+ * Copyright (C) 2017-2019 Barcelona Supercomputing Center               *
  *                         Centro Nacional de Supercomputacion           *
  * All rights reserved.                                                  *
  *                                                                       *
@@ -25,48 +25,78 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#ifndef __NVML_DAX_HPP__
-#define __NVML_DAX_HPP__
-
 #include <system_error>
-#include <boost/filesystem.hpp>
 
-#include "backend-base.hpp"
-
-namespace bfs = boost::filesystem;
+#include "common.hpp"
+#include "resource-type.hpp"
+#include "resource.hpp"
+#include "remote-resource-info.hpp"
+#include "remote-resource-impl.hpp"
+#include "backends/remote-backend.hpp"
+#include "logger.hpp"
 
 namespace norns {
-namespace storage {
+namespace data {
+namespace detail {
 
-class nvml_dax final : public storage::backend {
-public:
-    nvml_dax(const std::string& nsid, bool track, const bfs::path& mount, uint32_t quota);
+// local alias for convenience
+using remote_resource = resource_impl<resource_type::remote_resource>;
 
-    std::string nsid() const override final;
-    bool is_tracked() const override final;
-    bool is_empty() const override final;
-    bfs::path mount() const override final;
-    uint32_t quota() const override final;
+remote_resource::resource_impl(
+        const std::shared_ptr<const storage::backend> parent, 
+        const std::shared_ptr<const remote_resource_info> rinfo) :
+    m_name(rinfo->m_name),
+    m_address(rinfo->m_address),
+    m_nsid(rinfo->m_nsid),
+    m_buffers(rinfo->m_buffers),
+    m_is_collection(rinfo->m_buffers.count() > 1),
+    m_parent(std::static_pointer_cast<const storage::detail::remote_backend>(std::move(parent))) { }
 
-    resource_ptr new_resource(const resource_info_ptr& rinfo, bool is_collection, std::error_code& ec) const override final;
-    resource_ptr get_resource(const resource_info_ptr& rinfo, std::error_code& ec) const override final;
-    void remove(const resource_info_ptr& rinfo, std::error_code& ec) const override final;
-    std::size_t get_size(const resource_info_ptr& rinfo, std::error_code& ec) const override final;
+std::string
+remote_resource::name() const {
+    return m_name;
+}
 
-    bool accepts(resource_info_ptr res) const override final;
-    std::string to_string() const final;
+resource_type
+remote_resource::type() const {
+    return resource_type::remote_resource;
+}
 
-private:
-    std::string m_nsid;
-    bool        m_track;
-    bfs::path   m_mount;
-    uint32_t    m_quota;
-};
+bool
+remote_resource::is_collection() const {
+    return m_is_collection;
+}
 
-//NORNS_REGISTER_BACKEND(backend_type::nvml, nvml_dax);
+const std::shared_ptr<const storage::backend>
+remote_resource::parent() const {
+    return std::static_pointer_cast<const storage::backend>(m_parent);
+}
 
-} // namespace storage
+std::string
+remote_resource::to_string() const {
+    return "REMOTE_RESOURCE[" + m_nsid + "@" + m_address + ":" + m_name + "]";
+}
+
+std::string
+remote_resource::address() const {
+    return m_address;
+}
+
+std::string
+remote_resource::nsid() const {
+    return m_nsid;
+}
+
+bool
+remote_resource::has_buffer() const {
+    return m_buffers.count() != 0;
+}
+
+hermes::exposed_memory
+remote_resource::buffers() const {
+    return m_buffers;
+}
+
+} // namespace detail
+} // namespace data
 } // namespace norns
-
-
-#endif // __NVML_DAX_HPP__

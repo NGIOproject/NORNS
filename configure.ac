@@ -119,6 +119,9 @@ AS_IF([test "x$is_enabled_build_tests" = "xyes"],
         AC_CONFIG_FILES(tests/Makefile)
       ], [])
 
+# check for mercury
+PKG_CHECK_MODULES([MERCURY], [mercury >= 0.26])
+
 # check for libyaml-cpp
 PKG_CHECK_MODULES([YAMLCPP], [yaml-cpp >= 0.5.1])
 

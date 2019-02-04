@@ -39,15 +39,16 @@
 
 #include "job.hpp"
 
-
-
+namespace hermes {
+    class async_engine;
+    template <typename T> class request;
+}
 
 namespace norns {
 
 
 /*! Aliases for convenience */
 using api_listener = api::listener<api::message<api::request, api::response>>;
-using api_listener_ptr = std::unique_ptr<api_listener>;
 
 using request_ptr = std::unique_ptr<api::request>;
 using response_ptr = std::unique_ptr<api::response>;
@@ -68,6 +69,10 @@ namespace io {
 
 namespace ns {
     struct namespace_manager;
+}
+
+namespace rpc {
+    struct remote_transfer;
 }
 
 enum class urd_error;
@@ -117,6 +122,8 @@ private:
     response_ptr command_handler(const request_ptr req);
     response_ptr unknown_request_handler(const request_ptr req);
 
+    void remote_transfer_handler(hermes::request<rpc::remote_transfer>&& req);
+
     // TODO: add helpers for remove and update
     urd_error create_namespace(const config::namespace_def& nsdef);
     urd_error create_namespace(const std::string& nsid, backend_type type,
@@ -134,7 +141,9 @@ private:
     std::shared_ptr<config::settings>                    m_settings;
     std::unique_ptr<io::transferor_registry> m_transferor_registry;
 
-    api_listener_ptr                                    m_api_listener;
+    std::unique_ptr<api_listener> m_ipc_endpoint;
+
+    std::shared_ptr<hermes::async_engine> m_network_endpoint;
 
     std::unique_ptr<ns::namespace_manager> m_namespace_mgr;
     mutable boost::shared_mutex m_namespace_mgr_mutex;

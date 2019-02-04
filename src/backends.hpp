@@ -38,8 +38,11 @@
 
 namespace norns {
 namespace storage {
-    static const auto process_memory_backend = std::make_shared<detail::process_memory>();
-    static const auto remote_backend = std::make_shared<detail::remote_backend>();
+
+    constexpr static const auto memory_nsid = "[[internal::memory]]";
+
+    static const auto process_memory_backend = std::make_shared<detail::process_memory>(memory_nsid);
+//    static const auto remote_backend = std::make_shared<detail::remote_backend>();
 } // namespace storage
 } // namespace norns
 

@@ -39,6 +39,7 @@ enum class resource_type {
     local_posix_path,
     shared_posix_path,
     remote_posix_path,
+    remote_resource,
     ignorable
 };
 
@@ -56,6 +57,8 @@ static inline std::string to_string(data::resource_type type) {
             return "SHARED_PATH";
         case data::resource_type::remote_posix_path:
             return "REMOTE_PATH";
+        case data::resource_type::remote_resource:
+            return "REMOTE_RESOURCE";
         default:
             return "UNKNOWN_RESOURCE_TYPE";
     }

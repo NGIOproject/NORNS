@@ -41,6 +41,7 @@ api_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/rpc \
 	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/externals/hermes/include \
 	-D__NORNS_DEBUG__ \
 	$(END)
 
@@ -133,6 +134,7 @@ core_CXXFLAGS = \
 
 core_CPPFLAGS = \
 	-I$(top_srcdir)/include \
+	-I$(top_srcdir)/src/externals/hermes/include \
 	-I$(top_srcdir)/rpc \
 	-I$(top_srcdir)/src \
 	$(END)

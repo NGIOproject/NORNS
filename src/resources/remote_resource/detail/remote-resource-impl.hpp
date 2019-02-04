@@ -1,5 +1,5 @@
 /*************************************************************************
- * Copyright (C) 2017-2018 Barcelona Supercomputing Center               *
+ * Copyright (C) 2017-2019 Barcelona Supercomputing Center               *
  *                         Centro Nacional de Supercomputacion           *
  * All rights reserved.                                                  *
  *                                                                       *
@@ -25,48 +25,64 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#ifndef __NVML_DAX_HPP__
-#define __NVML_DAX_HPP__
+#ifndef __REMOTE_RESOURCE_IMPL_HPP__
+#define __REMOTE_RESOURCE_IMPL_HPP__
 
+#include <string>
+#include <memory>
+#include <vector>
 #include <system_error>
-#include <boost/filesystem.hpp>
-
-#include "backend-base.hpp"
-
-namespace bfs = boost::filesystem;
+#include <hermes.hpp>
 
 namespace norns {
+
+// forward declarations
 namespace storage {
+namespace detail {
+class remote_backend;
+}
+}
 
-class nvml_dax final : public storage::backend {
-public:
-    nvml_dax(const std::string& nsid, bool track, const bfs::path& mount, uint32_t quota);
+namespace data {
 
-    std::string nsid() const override final;
-    bool is_tracked() const override final;
-    bool is_empty() const override final;
-    bfs::path mount() const override final;
-    uint32_t quota() const override final;
+enum class resource_type;
 
-    resource_ptr new_resource(const resource_info_ptr& rinfo, bool is_collection, std::error_code& ec) const override final;
-    resource_ptr get_resource(const resource_info_ptr& rinfo, std::error_code& ec) const override final;
-    void remove(const resource_info_ptr& rinfo, std::error_code& ec) const override final;
-    std::size_t get_size(const resource_info_ptr& rinfo, std::error_code& ec) const override final;
+namespace detail {
 
-    bool accepts(resource_info_ptr res) const override final;
-    std::string to_string() const final;
+template <>
+struct resource_impl<resource_type::remote_resource> : public resource {
 
-private:
-    std::string m_nsid;
-    bool        m_track;
-    bfs::path   m_mount;
-    uint32_t    m_quota;
+    resource_impl(const std::shared_ptr<const storage::backend> parent, 
+                  const std::shared_ptr<const remote_resource_info> rinfo);
+
+    std::string name() const override final;
+    resource_type type() const override final;
+    bool is_collection() const override final;
+    const std::shared_ptr<const storage::backend> parent() const override final;
+    std::string to_string() const override final;
+
+    std::string
+    address() const;
+
+    std::string
+    nsid() const;
+
+    bool
+    has_buffer() const;
+
+    hermes::exposed_memory
+    buffers() const;
+
+    const std::string m_name;
+    const std::string m_address;
+    const std::string m_nsid;
+    const hermes::exposed_memory m_buffers;
+    const bool m_is_collection;
+    const std::shared_ptr<const storage::detail::remote_backend> m_parent;
 };
 
-//NORNS_REGISTER_BACKEND(backend_type::nvml, nvml_dax);
-
-} // namespace storage
+} // namespace detail
+} // namespace data
 } // namespace norns
 
-
-#endif // __NVML_DAX_HPP__
+#endif /* __REMOTE_RESOURCE_IMPL_HPP__ */

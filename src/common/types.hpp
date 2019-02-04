@@ -48,6 +48,7 @@ enum class iotask_type {
     copy,
     move,
     remove,
+    remote_transfer,
     noop,
     unknown
 };

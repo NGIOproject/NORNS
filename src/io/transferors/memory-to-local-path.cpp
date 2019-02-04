@@ -183,6 +183,53 @@ memory_region_to_local_path_transferor::transfer(
                                 d_src.size(), d_dst.canonical_path());
 }
 
+std::error_code 
+memory_region_to_local_path_transferor::transfer(
+        const auth::credentials& auth, 
+        const std::shared_ptr<task_info>& task_info,
+        const std::shared_ptr<data::resource_info>& src_rinfo,
+        const std::shared_ptr<data::resource_info>& dst_rinfo) const {
+
+    (void) task_info;
+    std::error_code ec;
+    const auto src_backend = task_info->src_backend();
+    const auto dst_backend = task_info->dst_backend();
+
+    auto src = src_backend->get_resource(src_rinfo, ec);
+
+    if(ec) {
+        LOGGER_ERROR("[{}] Could not access input resource '{}': {}", 
+                     task_info->id(),
+                     src_rinfo->to_string(),
+                     ec.message());
+        return ec;
+    }
+
+    auto dst = dst_backend->new_resource(dst_rinfo, src->is_collection(), ec);
+
+    if(ec) {
+        LOGGER_ERROR("[{}] Could not create output resource '{}': {}", 
+                     task_info->id(),
+                     src_rinfo->to_string(),
+                     ec.message());
+        return ec;
+    }
+
+    const auto& d_src = reinterpret_cast<const data::memory_region_resource&>(*src);
+    const auto& d_dst = reinterpret_cast<const data::local_path_resource&>(*dst);
+
+    LOGGER_DEBUG("[{}] transfer: [{} {}+{}] -> {}", 
+                 task_info->id(), 
+                 auth.pid(), 
+                 utils::n2hexstr(d_src.address()), 
+                 d_src.size(), 
+                 d_dst.canonical_path());
+
+    return ::copy_memory_region(task_info, auth.pid(), 
+                                reinterpret_cast<void*>(d_src.address()), 
+                                d_src.size(), d_dst.canonical_path());
+}
+
 std::string 
 memory_region_to_local_path_transferor::to_string() const {
     return "transferor[memory_region => local_path]";

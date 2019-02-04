@@ -1,5 +1,5 @@
 /*************************************************************************
- * Copyright (C) 2017-2018 Barcelona Supercomputing Center               *
+ * Copyright (C) 2017-2019 Barcelona Supercomputing Center               *
  *                         Centro Nacional de Supercomputacion           *
  * All rights reserved.                                                  *
  *                                                                       *
@@ -25,48 +25,54 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#ifndef __NVML_DAX_HPP__
-#define __NVML_DAX_HPP__
-
-#include <system_error>
-#include <boost/filesystem.hpp>
-
-#include "backend-base.hpp"
-
-namespace bfs = boost::filesystem;
+#ifndef __IO_TASK_NOOP_HPP__
+#define __IO_TASK_NOOP_HPP__
 
 namespace norns {
-namespace storage {
+namespace io {
 
-class nvml_dax final : public storage::backend {
-public:
-    nvml_dax(const std::string& nsid, bool track, const bfs::path& mount, uint32_t quota);
+/////////////////////////////////////////////////////////////////////////////////
+//   specializations for noop tasks 
+/////////////////////////////////////////////////////////////////////////////////
+template <>
+struct task<iotask_type::noop> {
 
-    std::string nsid() const override final;
-    bool is_tracked() const override final;
-    bool is_empty() const override final;
-    bfs::path mount() const override final;
-    uint32_t quota() const override final;
+    using task_info_ptr = std::shared_ptr<task_info>;
 
-    resource_ptr new_resource(const resource_info_ptr& rinfo, bool is_collection, std::error_code& ec) const override final;
-    resource_ptr get_resource(const resource_info_ptr& rinfo, std::error_code& ec) const override final;
-    void remove(const resource_info_ptr& rinfo, std::error_code& ec) const override final;
-    std::size_t get_size(const resource_info_ptr& rinfo, std::error_code& ec) const override final;
+    task(const task_info_ptr&& task_info, uint32_t sleep_duration)
+        : m_task_info(std::move(task_info)),
+          m_sleep_duration(sleep_duration) { }
 
-    bool accepts(resource_info_ptr res) const override final;
-    std::string to_string() const final;
+    task(const task& other) = default;
+    task(task&& rhs) = default;
+    task& operator=(const task& other) = default;
+    task& operator=(task&& rhs) = default;
 
-private:
-    std::string m_nsid;
-    bool        m_track;
-    bfs::path   m_mount;
-    uint32_t    m_quota;
+    void operator()() {
+        const auto tid = m_task_info->id();
+
+        LOGGER_WARN("[{}] Starting noop I/O task", tid);
+
+        LOGGER_DEBUG("[{}] Sleep for {} usecs", tid, m_sleep_duration);
+        usleep(m_sleep_duration);
+
+        m_task_info->update_status(task_status::running);
+
+        LOGGER_WARN("[{}] noop I/O task \"running\"", tid);
+
+        LOGGER_DEBUG("[{}] Sleep for {} usecs", tid, m_sleep_duration);
+        usleep(m_sleep_duration);
+
+        m_task_info->update_status(task_status::finished);
+
+        LOGGER_WARN("[{}] noop I/O task completed successfully", tid);
+    }
+
+    task_info_ptr m_task_info;
+    uint32_t m_sleep_duration;
 };
 
-//NORNS_REGISTER_BACKEND(backend_type::nvml, nvml_dax);
-
-} // namespace storage
+} // namespace io
 } // namespace norns
 
-
-#endif // __NVML_DAX_HPP__
+#endif // __IO_TASK_NOOP_HPP__

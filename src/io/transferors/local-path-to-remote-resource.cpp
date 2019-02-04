@@ -25,25 +25,36 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
+#include <sys/sendfile.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+#include "utils.hpp"
 #include "logger.hpp"
 #include "resources.hpp"
 #include "auth.hpp"
 #include "io/task-info.hpp"
-#include "memory-to-shared-path.hpp"
+#include "backends/posix-fs.hpp"
+#include "hermes.hpp"
+#include "rpcs.hpp"
+#include "local-path-to-remote-resource.hpp"
+
 
 namespace norns {
 namespace io {
 
+local_path_to_remote_resource_transferor::local_path_to_remote_resource_transferor(
+        std::shared_ptr<hermes::async_engine> remote_endpoint) :
+    m_remote_endpoint(remote_endpoint) { }
+
 bool 
-memory_region_to_shared_path_transferor::validate(
+local_path_to_remote_resource_transferor::validate(
         const std::shared_ptr<data::resource_info>& src_info,
         const std::shared_ptr<data::resource_info>& dst_info) const {
 
-    const auto& d_src = reinterpret_cast<const data::memory_region_info&>(*src_info);
-    const auto& d_dst = reinterpret_cast<const data::shared_path_info&>(*dst_info);
-
-    (void) d_src;
-    (void) d_dst;
+    (void) src_info;
+    (void) dst_info;
 
     LOGGER_WARN("Validation not implemented");
 
@@ -51,27 +62,69 @@ memory_region_to_shared_path_transferor::validate(
 }
 
 std::error_code 
-memory_region_to_shared_path_transferor::transfer(
+local_path_to_remote_resource_transferor::transfer(
         const auth::credentials& auth, 
         const std::shared_ptr<task_info>& task_info,
         const std::shared_ptr<const data::resource>& src,  
         const std::shared_ptr<const data::resource>& dst) const {
 
-    const auto& d_src = reinterpret_cast<const data::memory_region_resource&>(*src);
-    const auto& d_dst = reinterpret_cast<const data::shared_path_resource&>(*dst);
-
     (void) auth;
-    (void) task_info;
-    (void) d_src;
-    (void) d_dst;
 
-    LOGGER_WARN("Transfer not implemented");
+    const auto& d_src = 
+        reinterpret_cast<const data::local_path_resource&>(*src);
+    const auto& d_dst = 
+        reinterpret_cast<const data::remote_resource&>(*dst);
 
-    return std::make_error_code(static_cast<std::errc>(0));
+    LOGGER_DEBUG("[{}] start_transfer: {} -> {}", 
+                 task_info->id(), d_src.canonical_path(), d_dst.to_string());
+
+    hermes::endpoint endp = m_remote_endpoint->lookup(d_dst.address());
+
+    try {
+        hermes::mapped_buffer input_data(d_src.canonical_path().string());
+
+        std::vector<hermes::mutable_buffer> bufvec{
+            hermes::mutable_buffer{(void*) input_data.data(), input_data.size()}
+        };
+
+        auto buffers = 
+            m_remote_endpoint->expose(bufvec, hermes::access_mode::read_only);
+
+        norns::rpc::remote_transfer::input args(
+                m_remote_endpoint->self_address(),
+                d_src.parent()->nsid(),
+                d_dst.parent()->nsid(), 
+                static_cast<uint32_t>(backend_type::posix_filesystem),
+                static_cast<uint32_t>(data::resource_type::local_posix_path), 
+                d_dst.name(),
+                buffers);
+
+        auto start = std::chrono::steady_clock::now();
+
+        auto rpc = 
+            m_remote_endpoint->post<norns::rpc::remote_transfer>(endp, args);
+
+        auto resp = rpc.get();
+
+        double usecs = std::chrono::duration<double, std::micro>(
+                std::chrono::steady_clock::now() - start).count();
+
+        task_info->record_transfer(input_data.size(), usecs);
+
+        LOGGER_DEBUG("Remote request completed with retval {} "
+                     "({} bytes, {} usecs)",
+                    resp.at(0).retval(), input_data.size(), usecs);
+
+        return std::make_error_code(static_cast<std::errc>(0));
+    }
+    catch(const std::exception& ex) {
+        LOGGER_ERROR(ex.what());
+        return std::make_error_code(static_cast<std::errc>(-1));
+    }
 }
 
 std::error_code 
-memory_region_to_shared_path_transferor::transfer(
+local_path_to_remote_resource_transferor::transfer(
         const auth::credentials& auth, 
         const std::shared_ptr<task_info>& task_info,
         const std::shared_ptr<data::resource_info>& src_rinfo,  
@@ -82,14 +135,12 @@ memory_region_to_shared_path_transferor::transfer(
     (void) src_rinfo;
     (void) dst_rinfo;
 
-    LOGGER_WARN("Transfer not implemented");
-
     return std::make_error_code(static_cast<std::errc>(0));
 }
 
 std::string 
-memory_region_to_shared_path_transferor::to_string() const {
-    return "transferor[memory_region => shared_path]";
+local_path_to_remote_resource_transferor::to_string() const {
+    return "transferor[local_path => remote_resource]";
 }
 
 } // namespace io

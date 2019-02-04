@@ -33,10 +33,16 @@
 namespace norns {
 namespace storage {
 
-nvml_dax::nvml_dax(bool track, const bfs::path& mount, uint32_t quota) 
-    : m_track(track),
+nvml_dax::nvml_dax(const std::string& nsid, bool track, const bfs::path& mount, uint32_t quota) 
+    : m_nsid(nsid),
+      m_track(track),
       m_mount(mount),
       m_quota(quota) { }
+
+std::string 
+nvml_dax::nsid() const {
+    return m_nsid;
+}
 
 bool
 nvml_dax::is_tracked() const {
