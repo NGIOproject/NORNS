@@ -42,6 +42,8 @@
 #include <string.h>
 #include <ctime>
 
+#include <boost/optional.hpp>
+#include <boost/optional/optional_io.hpp>
 #include <boost/atomic.hpp>
 #include <functional>
 

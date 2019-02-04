@@ -3,6 +3,9 @@
 # can use verions as well, like gcc:5.2
 # see https://hub.docker.com/_/gcc/
 
+variables:
+  GIT_SUBMODULE_STRATEGY: normal
+
 stages:
     - build
     - test
@@ -22,10 +25,23 @@ before_script:
         protobuf-c-compiler
         libyaml-cpp-dev
         libyaml-dev
+        cmake
 
-    - git clone https://github.com/mercury-hpc/mercury.git &&
+    - pushd . &&
+      git clone https://github.com/ofiwg/libfabric.git &&
+      cd libfabric &&
+      ./autogen.sh &&
+      mkdir build &&
+      cd build &&
+      ../configure &&
+      make -j $(nproc) &&
+      make install &&
+      popd
+
+    - pushd . &&
+      git clone https://github.com/mercury-hpc/mercury.git &&
       cd mercury &&
-      git checkout 3d8ed01eeff6b504862702048d7577457c71227c &&
+      git reset --hard 3d8ed01eeff6b504862702048d7577457c71227c &&
       mkdir build &&
       cd build &&
       cmake
@@ -33,14 +49,15 @@ before_script:
         -DBUILD_TESTING:BOOL=OFF
         -DMERCURY_USE_SM_ROUTING:BOOL=OFF
         -DMERCURY_USE_SELF_FORWARD:BOOL=OFF
-        -DMERCURY_USE_CHECKSUMS:BOOL=ON
+        -DMERCURY_USE_CHECKSUMS:BOOL=OFF
         -DMERCURY_USE_BOOST_PP:BOOL=ON
         -DMERCURY_USE_EAGER_BULK:BOOL=ON
         -DBUILD_SHARED_LIBS:BOOL=ON
         -DNA_USE_OFI:BOOL=ON
         .. &&
-      make -j$(nproc) &&
-      make install
+      make -j $(nproc) &&
+      make install &&
+      popd
 
 
 ### GCC 5

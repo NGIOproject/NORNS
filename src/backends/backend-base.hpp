@@ -104,7 +104,7 @@ public:
         try {
             return get().create(std::forward<Args>(args)...);
         }
-        catch(std::invalid_argument) {
+        catch(const std::invalid_argument&) {
             return std::shared_ptr<backend>();
         }
     }
