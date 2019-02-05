@@ -70,10 +70,10 @@ build:gcc:5:
         - mkdir build && cd build
         - ../configure 
             --enable-tests 
-        - make -j4 CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
+        - make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
         - cd tests
-        - make -j4 CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" core
-        - make -j4 CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" api
+        - make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" core
+        - make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" api
 
 
 ### GCC 6
@@ -86,10 +86,10 @@ build:gcc:6:
         - mkdir build && cd build
         - ../configure 
             --enable-tests 
-        - make -j4 CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
+        - make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
         - cd tests
-        - make -j4 CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" core
-        - make -j4 CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" api
+        - make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" core
+        - make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" api
 
 
 ### GCC 7
@@ -102,10 +102,10 @@ build:gcc:7:
         - mkdir build && cd build
         - ../configure 
             --enable-tests 
-        - make -j4
+        - make -j$(nproc)
         - cd tests
-        - make -j4
-        - make -j4
+        - make -j$(nproc)
+        - make -j$(nproc)
 
 
 ### GCC 8
@@ -118,10 +118,10 @@ build:gcc:8:
         - mkdir build && cd build
         - ../configure 
             --enable-tests 
-        - make -j4
+        - make -j$(nproc)
         - cd tests
-        - make -j4
-        - make -j4
+        - make -j$(nproc)
+        - make -j$(nproc)
 
 
 ################################################################################
@@ -136,6 +136,7 @@ test:ubuntu:latest:
         - apt-get update &&
           apt-get upgrade -y &&
           apt-get install -y
+            git
             build-essential
             autotools-dev
             automake
@@ -155,6 +156,41 @@ test:ubuntu:latest:
             libyaml-dev
             libcap2-bin
             valgrind
+            cmake
+
+        - pushd . &&
+          git clone https://github.com/ofiwg/libfabric.git &&
+          cd libfabric &&
+          ./autogen.sh &&
+          mkdir build &&
+          cd build &&
+          ../configure &&
+          make -j $(nproc) &&
+          make install &&
+          popd
+
+        - pushd . &&
+          git clone https://github.com/mercury-hpc/mercury.git &&
+          cd mercury &&
+          git reset --hard 3d8ed01eeff6b504862702048d7577457c71227c &&
+          mkdir build &&
+          cd build &&
+          cmake
+            -DCMAKE_BUILD_TYPE:STRING=Debug
+            -DBUILD_TESTING:BOOL=OFF
+            -DMERCURY_USE_SM_ROUTING:BOOL=OFF
+            -DMERCURY_USE_SELF_FORWARD:BOOL=OFF
+            -DMERCURY_USE_CHECKSUMS:BOOL=OFF
+            -DMERCURY_USE_BOOST_PP:BOOL=ON
+            -DMERCURY_USE_EAGER_BULK:BOOL=ON
+            -DBUILD_SHARED_LIBS:BOOL=ON
+            -DNA_USE_OFI:BOOL=ON
+            .. &&
+          make -j $(nproc) &&
+          make install &&
+          popd
+
+        - ldconfig
           
     # Build and test
     script:
@@ -166,11 +202,11 @@ test:ubuntu:latest:
 #            CXXFLAGS="-fsanitize=address"
 #            LDFLAGS="-fsanitize=address"
 #            CPPFLAGS="-D__LOGGER_ENABLE_DEBUG__"
-        - make -j4
+        - make -j$(nproc)
         - cd tests
-        - make -j4 core
+        - make -j$(nproc) core
         - ./core -as
-        - make -j4 api
+        - make -j$(nproc) api
 #        - NORNS_DEBUG_OUTPUT_TO_STDERR=1 NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_register_namespace]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_unregister_namespace]"
