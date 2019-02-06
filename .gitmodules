@@ -1,3 +1,3 @@
 [submodule "src/externals/hermes"]
 	path = src/externals/hermes
-    url = https://gitlab+deploy-token-4:ByFiVuuKjbwSFfZPE68G@storage.bsc.es/gitlab/hpc/hermes.git
+    url = ../hermes.git

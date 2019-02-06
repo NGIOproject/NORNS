@@ -680,6 +680,24 @@ urd::remote_transfer_handler(hermes::request<rpc::remote_transfer>&& req) {
                 args.out_nsid(),
                 args.resource_name());
 
+    LOGGER_DEBUG("rpc::out::args{{");
+    LOGGER_DEBUG("  address: \"{}\",", args.address()); 
+    LOGGER_DEBUG("  in_nsid: \"{}\",", args.in_nsid());
+    LOGGER_DEBUG("  out_nsid: \"{}\",", args.out_nsid());
+    LOGGER_DEBUG("  btype: {} ({}),", 
+                 args.backend_type(),
+                 utils::to_string(
+                     static_cast<backend_type>(args.backend_type())));
+    LOGGER_DEBUG("  rtype: {} ({}),",
+                 args.resource_type(),
+                 utils::to_string(
+                     static_cast<data::resource_type>(args.resource_type())));
+    LOGGER_DEBUG("  rname: \"{}\",", args.resource_name());
+    LOGGER_DEBUG("  buffers: {{...}}");
+    LOGGER_DEBUG("};");
+    LOGGER_FLUSH();
+
+
     urd_error rv = urd_error::success;
     boost::optional<io::generic_task> t;
     std::shared_ptr<storage::backend> src_backend;

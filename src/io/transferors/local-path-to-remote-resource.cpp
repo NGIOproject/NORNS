@@ -99,6 +99,21 @@ local_path_to_remote_resource_transferor::transfer(
                 d_dst.name(),
                 buffers);
 
+        LOGGER_DEBUG("rpc::in::args{{");
+        LOGGER_DEBUG("  address: \"{}\",", m_remote_endpoint->self_address()); 
+        LOGGER_DEBUG("  in_nsid: \"{}\",", d_src.parent()->nsid());
+        LOGGER_DEBUG("  out_nsid: \"{}\",", d_dst.parent()->nsid());
+        LOGGER_DEBUG("  btype: {} ({}),",
+                     static_cast<uint32_t>(backend_type::posix_filesystem),
+                     utils::to_string(backend_type::posix_filesystem));
+        LOGGER_DEBUG("  rtype: {} ({}),",
+                     static_cast<uint32_t>(data::resource_type::local_posix_path), 
+                     utils::to_string(data::resource_type::local_posix_path));
+        LOGGER_DEBUG("  rname: \"{}\",", d_dst.name());
+        LOGGER_DEBUG("  buffers: {{...}}");
+        LOGGER_DEBUG("};");
+        LOGGER_FLUSH();
+
         auto start = std::chrono::steady_clock::now();
 
         auto rpc = 

@@ -104,7 +104,90 @@ struct remote_transfer {
             m_backend_type(backend_type),
             m_resource_type(resource_type),
             m_resource_name(resource_name),
-            m_buffers(buffers) { }
+            m_buffers(buffers) {
+
+#ifdef HERMES_DEBUG_BUILD
+            this->print("this", __PRETTY_FUNCTION__);
+#endif
+
+        }
+
+#ifdef HERMES_DEBUG_BUILD
+        input(input&& rhs) :
+            m_address(std::move(rhs.m_address)),
+            m_in_nsid(std::move(rhs.m_in_nsid)),
+            m_out_nsid(std::move(rhs.m_out_nsid)),
+            m_backend_type(std::move(rhs.m_backend_type)),
+            m_resource_type(std::move(rhs.m_resource_type)),
+            m_resource_name(std::move(rhs.m_resource_name)),
+            m_buffers(std::move(rhs.m_buffers)) {
+
+            rhs.m_backend_type = 0;
+            rhs.m_resource_type = 0;
+
+            this->print("this", __PRETTY_FUNCTION__);
+            rhs.print("rhs", __PRETTY_FUNCTION__);
+        }
+
+        input(const input& other) :
+            m_address(other.m_address),
+            m_in_nsid(other.m_in_nsid),
+            m_out_nsid(other.m_out_nsid),
+            m_backend_type(other.m_backend_type),
+            m_resource_type(other.m_resource_type),
+            m_resource_name(other.m_resource_name),
+            m_buffers(other.m_buffers) {
+
+            this->print("this", __PRETTY_FUNCTION__);
+            other.print("other", __PRETTY_FUNCTION__);
+        }
+
+        input& 
+        operator=(input&& rhs) {
+
+            if(this != &rhs) {
+                m_address = std::move(rhs.m_address);
+                m_in_nsid = std::move(rhs.m_in_nsid);
+                m_out_nsid = std::move(rhs.m_out_nsid);
+                m_backend_type = std::move(rhs.m_backend_type);
+                m_resource_type = std::move(rhs.m_resource_type);
+                m_resource_name = std::move(rhs.m_resource_name);
+                m_buffers = std::move(rhs.m_buffers);
+
+                rhs.m_backend_type = 0;
+                rhs.m_resource_type = 0;
+            }
+
+            this->print("this", __PRETTY_FUNCTION__);
+            rhs.print("rhs", __PRETTY_FUNCTION__);
+
+            return *this;
+        }
+
+        input& 
+        operator=(const input& other) {
+            
+            if(this != &other) {
+                m_address = other.m_address;
+                m_in_nsid = other.m_in_nsid;
+                m_out_nsid = other.m_out_nsid;
+                m_backend_type = other.m_backend_type;
+                m_resource_type = other.m_resource_type;
+                m_resource_name = other.m_resource_name;
+                m_buffers = other.m_buffers;
+            }
+
+            this->print("this", __PRETTY_FUNCTION__);
+            other.print("other", __PRETTY_FUNCTION__);
+
+            return *this;
+        }
+#else // HERMES_DEBUG_BUILD
+        input(input&& rhs) = default;
+        input(const input& other) = default;
+        input& operator=(input&& rhs) = default;
+        input& operator=(const input& other) = default;
+#endif // ! HERMES_DEBUG_BUILD
 
         std::string
         address() const {
@@ -141,6 +224,36 @@ struct remote_transfer {
             return m_buffers;
         }
 
+#ifdef HERMES_DEBUG_BUILD
+        void
+        print(const std::string& id,
+              const std::string& caller = "") const {
+
+            (void) id;
+            auto c = caller.empty() ? "unknown_caller" : caller;
+
+            HERMES_DEBUG2("{}, {} ({}) = {{", caller, id, fmt::ptr(this));
+            HERMES_DEBUG2("  m_address: \"{}\" ({} -> {}),", 
+                         m_address, fmt::ptr(&m_address), 
+                         fmt::ptr(m_address.c_str()));
+            HERMES_DEBUG2("  m_in_nsid: \"{}\" ({} -> {}),", 
+                         m_in_nsid, fmt::ptr(&m_in_nsid),
+                         fmt::ptr(m_in_nsid.c_str()));
+            HERMES_DEBUG2("  m_out_nsid: \"{}\" ({} -> {}),", 
+                         m_out_nsid, fmt::ptr(&m_out_nsid),
+                         fmt::ptr(m_out_nsid.c_str()));
+            HERMES_DEBUG2("  m_backend_type: {},", 
+                         m_backend_type); 
+            HERMES_DEBUG2("  m_resource_type: {},", 
+                         m_resource_type); 
+            HERMES_DEBUG2("  m_resource_name: \"{}\" ({} -> {}),", 
+                         m_resource_name, fmt::ptr(&m_resource_name),
+                         fmt::ptr(m_resource_name.c_str()));
+            HERMES_DEBUG2("  m_buffers: {...},"); 
+            HERMES_DEBUG2("}}");
+        }
+#endif // ! HERMES_DEBUG_BUILD
+
 //TODO: make private
         explicit
         input(const hermes::detail::remote_transfer_in_t& other) :
@@ -150,7 +263,22 @@ struct remote_transfer {
             m_backend_type(other.backend_type),
             m_resource_type(other.resource_type),
             m_resource_name(other.resource_name),
-            m_buffers(other.buffers) { }
+            m_buffers(other.buffers) { 
+
+            HERMES_DEBUG("input::input(const hermes::detail::remote_transfer_in_t&){{");
+            HERMES_DEBUG("  m_address: {} ({}),", 
+                         m_address, fmt::ptr(&m_address));
+            HERMES_DEBUG("  m_in_nsid: {} ({}),", 
+                         m_in_nsid, fmt::ptr(&m_in_nsid));
+            HERMES_DEBUG("  m_out_nsid: {} ({}),", 
+                         m_out_nsid, fmt::ptr(&m_out_nsid));
+            HERMES_DEBUG("  m_backend_type: {},", 
+                         m_backend_type); 
+            HERMES_DEBUG("  m_resource_type: {},", 
+                         m_resource_type); 
+            HERMES_DEBUG("  m_buffers: {...},"); 
+            HERMES_DEBUG("}}");
+        }
         
         explicit
         operator hermes::detail::remote_transfer_in_t() {
