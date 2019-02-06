@@ -167,7 +167,8 @@ test:ubuntu:latest:
           ../configure &&
           make -j $(nproc) &&
           make install &&
-          popd
+          popd &&
+          ldconfig
 
         - pushd . &&
           git clone https://github.com/mercury-hpc/mercury.git &&
@@ -188,9 +189,8 @@ test:ubuntu:latest:
             .. &&
           make -j $(nproc) &&
           make install &&
-          popd
-
-        - ldconfig
+          popd &&
+          ldconfig
           
     # Build and test
     script:
@@ -225,6 +225,8 @@ test:ubuntu:latest:
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_status]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_send_command]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_remove_local_posix_files]"
+        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_remote_copy_local_posix_files]"
+
     after_script:
         - pwd
         - if [[ -e tests.log ]]; 
