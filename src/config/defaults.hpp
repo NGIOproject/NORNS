@@ -48,6 +48,7 @@ namespace defaults {
     extern const uint32_t   dry_run_duration;
     extern const char*      global_socket;
     extern const char*      control_socket;
+    extern const char*      bind_address;
     extern const in_port_t  remote_port;
     extern const char*      pidfile;
     extern const uint32_t   workers_in_pool;

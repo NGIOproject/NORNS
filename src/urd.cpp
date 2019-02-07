@@ -901,7 +901,7 @@ void urd::init_event_handlers() {
     try {
 
         const std::string bind_address = 
-            std::string("127.0.0.1:") + 
+            m_settings->bind_address() + ":" +
             std::to_string(m_settings->remote_port());
 
         m_network_endpoint = 

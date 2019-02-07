@@ -84,6 +84,10 @@ const file_schema valid_options = declare_file({
                     opt_type::mandatory, 
                     converter<bfs::path>(parsers::parse_path)), 
 
+            declare_option<std::string>(
+                    keywords::bind_address,
+                    opt_type::mandatory),
+
             declare_option<uint32_t>(
                     keywords::remote_port, 
                     opt_type::mandatory, 

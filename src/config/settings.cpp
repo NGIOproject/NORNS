@@ -56,6 +56,7 @@ settings::settings(const std::string& progname,
                    uint32_t dry_run_duration, 
                    const bfs::path& global_socket, 
                    const bfs::path& control_socket, 
+                   const std::string& bind_address,
                    uint32_t remote_port,
                    const bfs::path& pidfile, 
                    uint32_t workers,
@@ -72,6 +73,7 @@ settings::settings(const std::string& progname,
     m_dry_run_duration(dry_run_duration),
     m_global_socket(global_socket),
     m_control_socket(control_socket),
+    m_bind_address(bind_address),
     m_remote_port(remote_port),
     m_daemon_pidfile(pidfile),
     m_workers_in_pool(workers),
@@ -90,6 +92,7 @@ void settings::load_defaults() {
     m_dry_run_duration = defaults::dry_run_duration;
     m_global_socket = defaults::global_socket;
     m_control_socket = defaults::control_socket;
+    m_bind_address = defaults::bind_address;
     m_remote_port = defaults::remote_port;
     m_daemon_pidfile = defaults::pidfile;
     m_workers_in_pool = defaults::workers_in_pool;
@@ -124,6 +127,7 @@ void settings::load_from_file(const bfs::path& filename) {
     m_dry_run_duration = defaults::dry_run_duration;
     m_global_socket = gsettings.get_as<bfs::path>(keywords::global_socket);
     m_control_socket = gsettings.get_as<bfs::path>(keywords::control_socket);
+    m_bind_address = gsettings.get_as<std::string>(keywords::bind_address);
     m_remote_port = gsettings.get_as<uint32_t>(keywords::remote_port);
     m_daemon_pidfile = gsettings.get_as<bfs::path>(keywords::pidfile);
     m_workers_in_pool = gsettings.get_as<uint32_t>(keywords::workers);
@@ -156,6 +160,7 @@ std::string settings::to_string() const {
            "  m_dry_run_duration: "  + std::to_string(m_dry_run_duration) +  ",\n" +
            "  m_global_socket: "     + m_global_socket.string() + ",\n" +
            "  m_control_socket: "    + m_control_socket.string() + ",\n" +
+           "  m_bind_address: "      + m_bind_address + ",\n" +
            "  m_remote_port: "       + std::to_string(m_remote_port) + ",\n" +
            "  m_pidfile: "           + m_daemon_pidfile.string() + ",\n" +
            "  m_workers: "           + std::to_string(m_workers_in_pool) + ",\n" +
@@ -204,6 +209,10 @@ bfs::path& settings::global_socket() {
 
 bfs::path& settings::control_socket() {
     return m_control_socket;
+}
+
+std::string& settings::bind_address() {
+    return m_bind_address;
 }
 
 in_port_t& settings::remote_port() {

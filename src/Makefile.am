@@ -247,6 +247,7 @@ config/defaults.cpp: Makefile
 \
 	   echo "    const char* global_socket        = \"$(localstatedir)/global.socket.2\";"; \
 	   echo "    const char* control_socket       = \"$(localstatedir)/control.socket.2\";"; \
+	   echo "    const char* bind_address         = \"127.0.0.1\";"; \
 	   echo "    const in_port_t remote_port      = 42000;"; \
 	   echo "    const char* pidfile              = \"$(localstatedir)/urd.pid\";"; \
 \

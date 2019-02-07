@@ -45,6 +45,7 @@ norns::config::settings default_cfg(
     100, /* dry run duration */
     "./test_urd.global.socket", /* global_socket */
     "./test_urd.control.socket", /* control_socket */
+    "127.0.0.1", /* bind address */
     42002, /* remote port */
     "./test_urd.pid", /* daemon_pidfile */
     2, /* api workers */
@@ -77,6 +78,7 @@ void fake_daemon::configure(const bfs::path& config_file,
     m_config.use_console() = default_cfg.use_console();
     m_config.dry_run() = override_cfg.m_dry_run;
     m_config.dry_run_duration() = override_cfg.m_dry_run_duration;
+    m_config.bind_address() = default_cfg.bind_address();
     m_config.remote_port() = default_cfg.remote_port();
     m_config.workers_in_pool() = default_cfg.workers_in_pool();
     m_config.config_file() = config_file;
