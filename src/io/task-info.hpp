@@ -73,6 +73,12 @@ struct task_info {
     void update_status(const task_status st, const urd_error ec,
                        const std::error_code& sc);
 
+    urd_error 
+    task_error() const;
+
+    std::error_code 
+    sys_error() const;
+
     std::size_t sent_bytes() const;
     std::size_t total_bytes() const;
     double bandwidth() const;

@@ -132,6 +132,12 @@ struct generic_task {
                 return boost::get<TaskType>(m_impl).m_task_info->id();
             }
 
+            case iotask_type::remote_transfer:
+            {
+                using TaskType = io::task<iotask_type::remote_transfer>;
+                return boost::get<TaskType>(m_impl).m_task_info->id();
+            }
+
             default:
                 return static_cast<iotask_id>(0);
         }
@@ -161,6 +167,12 @@ struct generic_task {
             case iotask_type::remove:
             {
                 using TaskType = io::task<iotask_type::remove>;
+                return boost::get<TaskType>(m_impl).m_task_info;
+            }
+
+            case iotask_type::remote_transfer:
+            {
+                using TaskType = io::task<iotask_type::remote_transfer>;
                 return boost::get<TaskType>(m_impl).m_task_info;
             }
 

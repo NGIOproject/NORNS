@@ -730,7 +730,10 @@ urd::remote_transfer_handler(hermes::request<rpc::remote_transfer>&& req) {
     if(m_is_paused) {
         rv = urd_error::accept_paused;
         LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
-        m_network_endpoint->respond(std::move(req), static_cast<int32_t>(rv));
+        m_network_endpoint->respond(std::move(req), 
+                    static_cast<uint32_t>(io::task_status::finished_with_error),
+                    static_cast<uint32_t>(rv),
+                    0);
         return;
     }
 
@@ -748,7 +751,10 @@ urd::remote_transfer_handler(hermes::request<rpc::remote_transfer>&& req) {
     if(!dst_backend) {
         rv = urd_error::no_such_namespace;
         LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
-        m_network_endpoint->respond(std::move(req), static_cast<int32_t>(rv));
+        m_network_endpoint->respond(std::move(req), 
+                static_cast<uint32_t>(io::task_status::finished_with_error),
+                static_cast<int32_t>(rv),
+                0);
         return;
     }
 
@@ -764,12 +770,18 @@ urd::remote_transfer_handler(hermes::request<rpc::remote_transfer>&& req) {
                 *dst_backend, dst_rinfo);
 
     if(rv == urd_error::success) {
-        // run the task
+        // run the task and check that it started correctly
         (*t)();
 
-        // rv = t.info().status() ??
+        if(t->info()->status() == io::task_status::finished_with_error) {
+            rv = urd_error::no_such_namespace;
+            LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
+            m_network_endpoint->respond(std::move(req), 
+                    static_cast<uint32_t>(io::task_status::finished_with_error),
+                    static_cast<int32_t>(t->info()->task_error()),
+                    static_cast<int32_t>(t->info()->sys_error().value()));
+        }
     }
-
 }
 
 

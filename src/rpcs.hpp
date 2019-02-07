@@ -43,7 +43,9 @@ MERCURY_GEN_PROC(remote_transfer_in_t,
         ((hg_bulk_t) (buffers)))
 
 MERCURY_GEN_PROC(remote_transfer_out_t,
-        ((int32_t) (retval)))
+        ((uint32_t) (status))
+        ((uint32_t) (task_error))
+        ((uint32_t) (sys_errnum)))
 
 }} // namespace hermes::detail
 
@@ -308,31 +310,59 @@ struct remote_transfer {
         friend hg_return_t hermes::detail::post_to_mercury(ExecutionContext*);
 
     public:
-        output(int32_t retval) :
-            m_retval(retval) { }
+        output(uint32_t status,
+               uint32_t task_error,
+               uint32_t sys_errnum) :
+            m_status(status),
+            m_task_error(task_error),
+            m_sys_errnum(sys_errnum) {}
 
-        int32_t
-        retval() const {
-            return m_retval;
+        uint32_t
+        status() const {
+            return m_status;
         }
 
         void
-        set_retval(int32_t retval) {
-            m_retval = retval;
+        set_retval(uint32_t status) {
+            m_status = status;
+        }
+
+        uint32_t 
+        task_error() const {
+            return m_task_error;
+        }
+
+        void 
+        set_task_error(uint32_t task_error) {
+            m_task_error = task_error;
+        }
+
+        uint32_t 
+        sys_errnum() const {
+            return m_sys_errnum;
+        }
+
+        void 
+        set_sys_errnum(uint32_t errnum) {
+            m_sys_errnum = errnum;
         }
 
         explicit 
         output(const hermes::detail::remote_transfer_out_t& out) {
-            m_retval = out.retval;
+            m_status = out.status;
+            m_task_error = out.task_error;
+            m_sys_errnum = out.sys_errnum;
         }
 
         explicit 
         operator hermes::detail::remote_transfer_out_t() {
-            return {m_retval};
+            return {m_status, m_task_error, m_sys_errnum};
         }
 
     private:
-        int32_t m_retval;
+        uint32_t m_status;
+        uint32_t m_task_error;
+        uint32_t m_sys_errnum;
     };
 };
 

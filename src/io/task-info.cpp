@@ -138,6 +138,17 @@ task_info::update_status(const task_status st, const urd_error ec,
     m_sys_error = sc;
 }
 
+urd_error 
+task_info::task_error() const {
+    boost::shared_lock<boost::shared_mutex> lock(m_mutex);
+    return m_task_error;
+}
+
+std::error_code 
+task_info::sys_error() const {
+    return m_sys_error;
+}
+
 std::size_t
 task_info::sent_bytes() const {
     boost::shared_lock<boost::shared_mutex> lock(m_mutex);

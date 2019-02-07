@@ -30,6 +30,7 @@
 #include "resources.hpp"
 #include "auth.hpp"
 #include "io/task-info.hpp"
+#include "io/task-stats.hpp"
 #include "hermes.hpp"
 #include "rpcs.hpp"
 #include "remote-resource-to-local-path.hpp"
@@ -156,7 +157,10 @@ remote_resource_to_local_path_transferor::transfer(
     if(ec) {
         if(req.requires_response()) {
             m_remote_endpoint->respond<rpc::remote_transfer>(
-                    std::move(req), static_cast<uint32_t>(urd_error::snafu));//XXX
+                    std::move(req),
+                    static_cast<uint32_t>(task_status::finished_with_error),
+                    static_cast<uint32_t>(urd_error::system_error),
+                    static_cast<uint32_t>(ec.value()));
         }
         return ec;
     }
@@ -183,7 +187,10 @@ remote_resource_to_local_path_transferor::transfer(
 
         if(req.requires_response()) {
             m_remote_endpoint->respond<rpc::remote_transfer>(
-                    std::move(req), static_cast<uint32_t>(urd_error::success));
+                    std::move(req), 
+                    static_cast<uint32_t>(task_status::finished),
+                    static_cast<uint32_t>(urd_error::success),
+                    0);
         }
     };
 
@@ -201,6 +208,11 @@ remote_resource_to_local_path_transferor::transfer(
         const std::shared_ptr<task_info>& task_info,
         const std::shared_ptr<data::resource_info>& src_rinfo,  
         const std::shared_ptr<data::resource_info>& dst_rinfo) const {
+
+    (void) auth;
+    (void) task_info;
+    (void) src_rinfo;
+    (void) dst_rinfo;
 
 #if 0
     (void) auth;

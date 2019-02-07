@@ -126,9 +126,11 @@ local_path_to_remote_resource_transferor::transfer(
 
         task_info->record_transfer(input_data.size(), usecs);
 
-        LOGGER_DEBUG("Remote request completed with retval {} "
+        LOGGER_DEBUG("Remote request completed with output "
+                     "{{status: {}, task_error: {}, sys_errnum: {}}} "
                      "({} bytes, {} usecs)",
-                    resp.at(0).retval(), input_data.size(), usecs);
+                    resp.at(0).status(), resp.at(0).task_error(), 
+                    resp.at(0).sys_errnum(), input_data.size(), usecs);
 
         return std::make_error_code(static_cast<std::errc>(0));
     }
