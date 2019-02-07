@@ -41,11 +41,13 @@ std::tuple<std::error_code, std::shared_ptr<hermes::mapped_buffer>>
 create_file(const bfs::path& filename,
             std::size_t size) {
 
+    std::error_code ec;
+
     int out_fd = 
         ::open(filename.c_str(), O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
 
     if(out_fd == -1) {
-        auto ec = std::make_error_code(static_cast<std::errc>(errno));
+        ec = std::make_error_code(static_cast<std::errc>(errno));
         return std::make_tuple(ec, nullptr);
     }
 
@@ -54,11 +56,11 @@ create_file(const bfs::path& filename,
         // filesystem doesn't support fallocate(), fallback to truncate()
         if(errno == EOPNOTSUPP) {
             if(::ftruncate(out_fd, size) != 0) {
-                auto ec = std::make_error_code(static_cast<std::errc>(errno));
+                ec = std::make_error_code(static_cast<std::errc>(errno));
                 return std::make_tuple(ec, nullptr);
             }
         }
-        auto ec = std::make_error_code(static_cast<std::errc>(errno));
+        ec = std::make_error_code(static_cast<std::errc>(errno));
         return std::make_tuple(ec, nullptr);
     }
 
@@ -68,25 +70,21 @@ retry_close:
             goto retry_close;
         }
 
-        auto ec = std::make_error_code(static_cast<std::errc>(errno));
+        ec = std::make_error_code(static_cast<std::errc>(errno));
         return std::make_tuple(ec, nullptr);
     }
 
-    std::shared_ptr<hermes::mapped_buffer> output_data;
+    auto output_data = 
+        std::make_shared<hermes::mapped_buffer>(
+            filename.string(), 
+            hermes::access_mode::write_only,
+            &ec);
 
-    try {
-        output_data = 
-            std::make_shared<hermes::mapped_buffer>(
-                filename.string(), hermes::access_mode::write_only);
-    }
-    catch(const std::exception& ex) {
-        LOGGER_ERROR(ex.what());
-
-        auto ec = std::make_error_code(static_cast<std::errc>(-1));
+    if(ec) {
+        LOGGER_ERROR("Failed mapping output data: {}", ec.value());
         return std::make_tuple(ec, output_data);
     }
 
-    auto ec = std::make_error_code(static_cast<std::errc>(0));
     return std::make_tuple(ec, output_data);
 }
 

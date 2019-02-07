@@ -45,8 +45,8 @@ namespace norns {
 namespace io {
 
 local_path_to_remote_resource_transferor::local_path_to_remote_resource_transferor(
-        std::shared_ptr<hermes::async_engine> remote_endpoint) :
-    m_remote_endpoint(remote_endpoint) { }
+        std::shared_ptr<hermes::async_engine> network_endpoint) :
+    m_network_endpoint(network_endpoint) { }
 
 bool 
 local_path_to_remote_resource_transferor::validate(
@@ -78,20 +78,28 @@ local_path_to_remote_resource_transferor::transfer(
     LOGGER_DEBUG("[{}] start_transfer: {} -> {}", 
                  task_info->id(), d_src.canonical_path(), d_dst.to_string());
 
-    hermes::endpoint endp = m_remote_endpoint->lookup(d_dst.address());
+    hermes::endpoint endp = m_network_endpoint->lookup(d_dst.address());
 
     try {
-        hermes::mapped_buffer input_data(d_src.canonical_path().string());
+        std::error_code ec;
+        hermes::mapped_buffer input_data(d_src.canonical_path().string(),
+                                         hermes::access_mode::read_only,
+                                         &ec);
+
+        if(ec) {
+            LOGGER_ERROR("Failed mapping input data: {}", ec.value());
+            return ec;
+        }
 
         std::vector<hermes::mutable_buffer> bufvec{
-            hermes::mutable_buffer{(void*) input_data.data(), input_data.size()}
+            hermes::mutable_buffer{input_data.data(), input_data.size()}
         };
 
         auto buffers = 
-            m_remote_endpoint->expose(bufvec, hermes::access_mode::read_only);
+            m_network_endpoint->expose(bufvec, hermes::access_mode::read_only);
 
         norns::rpc::remote_transfer::input args(
-                m_remote_endpoint->self_address(),
+                m_network_endpoint->self_address(),
                 d_src.parent()->nsid(),
                 d_dst.parent()->nsid(), 
                 static_cast<uint32_t>(backend_type::posix_filesystem),
@@ -100,7 +108,7 @@ local_path_to_remote_resource_transferor::transfer(
                 buffers);
 
         LOGGER_DEBUG("rpc::in::args{{");
-        LOGGER_DEBUG("  address: \"{}\",", m_remote_endpoint->self_address()); 
+        LOGGER_DEBUG("  address: \"{}\",", m_network_endpoint->self_address()); 
         LOGGER_DEBUG("  in_nsid: \"{}\",", d_src.parent()->nsid());
         LOGGER_DEBUG("  out_nsid: \"{}\",", d_dst.parent()->nsid());
         LOGGER_DEBUG("  btype: {} ({}),",
@@ -117,7 +125,7 @@ local_path_to_remote_resource_transferor::transfer(
         auto start = std::chrono::steady_clock::now();
 
         auto rpc = 
-            m_remote_endpoint->post<norns::rpc::remote_transfer>(endp, args);
+            m_network_endpoint->post<norns::rpc::remote_transfer>(endp, args);
 
         auto resp = rpc.get();
 
