@@ -25,6 +25,7 @@ before_script:
         protobuf-c-compiler
         libyaml-cpp-dev
         libyaml-dev
+        libtar-dev
         cmake
 
     - pushd . &&
@@ -154,6 +155,7 @@ test:ubuntu:latest:
             protobuf-c-compiler
             libyaml-cpp-dev
             libyaml-dev
+            libtar-dev
             libcap2-bin
             valgrind
             cmake
