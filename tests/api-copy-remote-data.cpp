@@ -138,18 +138,18 @@ SCENARIO("copy local POSIX file to remote POSIX file",
         // create required output directories
         env.add_to_namespace(nsid1, dst_subdir1);
 
-#if 0
-        /**************************************************************************************************************/
-        /* tests for error conditions                                                                                 */
-        /**************************************************************************************************************/
+        /**********************************************************************/
+        /* tests for error conditions                                         */
+        /**********************************************************************/
         // - trying to copy a non-existing file
         WHEN("copying a non-existing NORNS_LOCAL_PATH file") {
 
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_invalid_file.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file_at_root0.c_str()));
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, src_invalid_file.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host, 
+                                               dst_file_at_root0.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -179,11 +179,12 @@ SCENARIO("copy local POSIX file to remote POSIX file",
         // - trying to copy a non-existing directory
         WHEN("copying a non-existing NORNS_LOCAL_PATH directory") {
 
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_invalid_dir.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file_at_root0.c_str()));
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, src_invalid_dir.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host, 
+                                               dst_file_at_root0.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -213,11 +214,12 @@ SCENARIO("copy local POSIX file to remote POSIX file",
         // - trying to copy an empty directory
         WHEN("copying an empty NORNS_LOCAL_PATH directory") {
 
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_empty_dir.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file_at_root0.c_str()));
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, src_empty_dir.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host, 
+                                               dst_file_at_root0.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -250,13 +252,56 @@ SCENARIO("copy local POSIX file to remote POSIX file",
 #ifdef __SETCAP_TESTS__
 
         // - trying to copy a file from namespace root with invalid access permissions
-        WHEN("copying a NORNS_LOCAL_PATH file from \"/\" without appropriate permissions to access it") {
+        WHEN("copying a NORNS_LOCAL_PATH file from \"/\" without appropriate "
+             "permissions to access it") {
+
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, src_noperms_file0.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host, 
+                                               dst_file_at_root0.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("NORNS_SUCCESS is returned") {
+                REQUIRE(rv == NORNS_SUCCESS);
+                REQUIRE(task.t_id != 0);
+
+                // wait until the task completes
+                rv = norns_wait(&task);
+
+                THEN("NORNS_SUCCESS is returned") {
+                    REQUIRE(rv == NORNS_SUCCESS);
+
+                    THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL "
+                         "are reported") {
+                        norns_stat_t stats;
+                        rv = norns_status(&task, &stats);
+
+                        REQUIRE(rv == NORNS_SUCCESS);
+                        REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
+                        REQUIRE(stats.st_task_error == NORNS_ESYSTEMERROR);
+                        REQUIRE(( (stats.st_sys_errno == EACCES) ||
+                                  (stats.st_sys_errno == EPERM ) ||
+                                  (stats.st_sys_errno == EINVAL) ));
+                    }
+                }
+            }
+        }
+
+        // - trying to copy a file from namespace root with invalid access permissions
+        WHEN("copying a NORNS_LOCAL_PATH file from a subdir without "
+             "appropriate permissions to access it") {
 
             norns_op_t task_op = NORNS_IOTASK_COPY;
 
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_noperms_file0.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file_at_root0.c_str()));
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, src_noperms_file1.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host, 
+                                               dst_file_at_root0.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -286,13 +331,15 @@ SCENARIO("copy local POSIX file to remote POSIX file",
         }
 
         // - trying to copy a file from namespace root with invalid access permissions
-        WHEN("copying a NORNS_LOCAL_PATH file from a subdir without appropriate permissions to access it") {
+        WHEN("copying a NORNS_LOCAL_PATH file from a subdir without "
+             "appropriate permissions to access a parent") {
 
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_noperms_file1.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file_at_root0.c_str()));
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, src_noperms_file2.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host, 
+                                               dst_file_at_root0.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -306,7 +353,8 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                 THEN("NORNS_SUCCESS is returned") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL are reported") {
+                    THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL "
+                         "are reported") {
                         norns_stat_t stats;
                         rv = norns_status(&task, &stats);
 
@@ -321,14 +369,57 @@ SCENARIO("copy local POSIX file to remote POSIX file",
             }
         }
 
-        // - trying to copy a file from namespace root with invalid access permissions
-        WHEN("copying a NORNS_LOCAL_PATH file from a subdir without appropriate permissions to access a parent") {
+        // - trying to copy a subdir from namespace root with invalid access permissions
+        WHEN("copying a NORNS_LOCAL_PATH subdir from \"/\"  without "
+             "appropriate permissions to access it") {
 
-            norns_op_t task_op = NORNS_IOTASK_COPY;
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, 
+                                              src_noperms_subdir0.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host, 
+                                               dst_file_at_root0.c_str()));
 
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_noperms_file2.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file_at_root0.c_str()));
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("NORNS_SUCCESS is returned") {
+                REQUIRE(rv == NORNS_SUCCESS);
+                REQUIRE(task.t_id != 0);
+
+                // wait until the task completes
+                rv = norns_wait(&task);
+
+                THEN("NORNS_SUCCESS is returned") {
+                    REQUIRE(rv == NORNS_SUCCESS);
+
+                    THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL "
+                         "are reported") {
+                        norns_stat_t stats;
+                        rv = norns_status(&task, &stats);
+
+                        REQUIRE(rv == NORNS_SUCCESS);
+                        REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
+                        REQUIRE(stats.st_task_error == NORNS_ESYSTEMERROR);
+                        REQUIRE(( (stats.st_sys_errno == EACCES) ||
+                                  (stats.st_sys_errno == EPERM ) ||
+                                  (stats.st_sys_errno == EINVAL) ));
+                    }
+                }
+            }
+        }
+
+        // - trying to copy a subdir from namespace root with invalid access permissions
+        WHEN("copying a NORNS_LOCAL_PATH subdir from another subdir "
+             "without appropriate permissions to access it") {
+
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, 
+                                              src_noperms_subdir1.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host, 
+                                               dst_file_at_root0.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -358,49 +449,16 @@ SCENARIO("copy local POSIX file to remote POSIX file",
         }
 
         // - trying to copy a subdir from namespace root with invalid access permissions
-        WHEN("copying a NORNS_LOCAL_PATH subdir from \"/\"  without appropriate permissions to access it") {
+        WHEN("copying a NORNS_LOCAL_PATH subdir from another subdir without "
+             "appropriate permissions to access a parent") {
 
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_noperms_subdir0.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file_at_root0.c_str()));
-
-            norns_error_t rv = norns_submit(&task);
-
-            THEN("NORNS_SUCCESS is returned") {
-                REQUIRE(rv == NORNS_SUCCESS);
-                REQUIRE(task.t_id != 0);
-
-                // wait until the task completes
-                rv = norns_wait(&task);
-
-                THEN("NORNS_SUCCESS is returned") {
-                    REQUIRE(rv == NORNS_SUCCESS);
-
-                    THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL are reported") {
-                        norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
-
-                        REQUIRE(rv == NORNS_SUCCESS);
-                        REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
-                        REQUIRE(stats.st_task_error == NORNS_ESYSTEMERROR);
-                        REQUIRE(( (stats.st_sys_errno == EACCES) ||
-                                  (stats.st_sys_errno == EPERM ) ||
-                                  (stats.st_sys_errno == EINVAL) ));
-                    }
-                }
-            }
-        }
-
-        // - trying to copy a subdir from namespace root with invalid access permissions
-        WHEN("copying a NORNS_LOCAL_PATH subdir from another subdir without appropriate permissions to access it") {
-
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_noperms_subdir1.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file_at_root0.c_str()));
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, 
+                                              src_noperms_subdir2.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host, 
+                                               dst_file_at_root0.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -414,7 +472,8 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                 THEN("NORNS_SUCCESS is returned") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL are reported") {
+                    THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL "
+                         "are reported") {
                         norns_stat_t stats;
                         rv = norns_status(&task, &stats);
 
@@ -428,53 +487,18 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                 }
             }
         }
-
-        // - trying to copy a subdir from namespace root with invalid access permissions
-        WHEN("copying a NORNS_LOCAL_PATH subdir from another subdir without appropriate permissions to access a parent") {
-
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_noperms_subdir2.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file_at_root0.c_str()));
-
-            norns_error_t rv = norns_submit(&task);
-
-            THEN("NORNS_SUCCESS is returned") {
-                REQUIRE(rv == NORNS_SUCCESS);
-                REQUIRE(task.t_id != 0);
-
-                // wait until the task completes
-                rv = norns_wait(&task);
-
-                THEN("NORNS_SUCCESS is returned") {
-                    REQUIRE(rv == NORNS_SUCCESS);
-
-                    THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL are reported") {
-                        norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
-
-                        REQUIRE(rv == NORNS_SUCCESS);
-                        REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
-                        REQUIRE(stats.st_task_error == NORNS_ESYSTEMERROR);
-                        REQUIRE(( (stats.st_sys_errno == EACCES) ||
-                                  (stats.st_sys_errno == EPERM ) ||
-                                  (stats.st_sys_errno == EINVAL) ));
-                    }
-                }
-            }
-        }
-#endif
 
         // symlink leading out of namespace
         WHEN("copying a NORNS_LOCAL_PATH through a symbolic link that leads "
              "out of the src namespace") {
 
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, out_symlink.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file_at_root0.c_str()));
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, 
+                                              out_symlink.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host, 
+                                               dst_file_at_root0.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -547,7 +571,8 @@ SCENARIO("copy local POSIX file to remote POSIX file",
         // cp -r ns0://file0.txt 
         //    -> ns1://file1.txt = ns1://file1.txt
         WHEN("copying a single NORNS_LOCAL_PATH from src namespace's root to "
-             "another NORNS_LOCAL_PATH at dst namespace's root (changing the name)") {
+             "another NORNS_LOCAL_PATH at dst namespace's root "
+             "(changing the name)") {
 
             norns_iotask_t task = 
                 NORNS_IOTASK(NORNS_IOTASK_COPY,
@@ -620,8 +645,8 @@ SCENARIO("copy local POSIX file to remote POSIX file",
         // cp -r ns0://a/b/c/.../d/file0.txt 
         //    -> ns1://file1.txt = ns1://file1.txt
         WHEN("copying a single NORNS_LOCAL_PATH from a src namespace's subdir "
-             "to another NORNS_LOCAL_PATH at dst namespace's root (changing the "
-             "name)") {
+             "to another NORNS_LOCAL_PATH at dst namespace's root (changing "
+             "the name)") {
 
             norns_iotask_t task = 
                 NORNS_IOTASK(NORNS_IOTASK_COPY,
@@ -876,13 +901,13 @@ SCENARIO("copy local POSIX file to remote POSIX file",
             }
         }
 
-#if 0
         /**********************************************************************/
         /* tests for directories                                              */
         /**********************************************************************/
         // cp -r /a/contents.* -> / = /contents.*
         WHEN("copying the contents of a NORNS_LOCAL_PATH subdir from src "
-             "namespace's root to dst namespace's root") {
+             "namespace's root to dst namespace's root\n"
+             "  cp -r /a/contents.* -> / = /contents.* ") {
 
             norns_iotask_t task = 
                 NORNS_IOTASK(NORNS_IOTASK_COPY,
@@ -916,13 +941,15 @@ SCENARIO("copy local POSIX file to remote POSIX file",
 
         // cp -r /a/b/c/.../contents.* -> / = /contents.*
         WHEN("copying the contents of a NORNS_LOCAL_PATH arbitrary subdir to "
-             "dst namespace's root") {
+             "dst namespace's root\n"
+             "  cp -r /a/b/c/.../contents.* -> / = /contents.*") {
 
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_subdir1.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_root.c_str()));
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, src_subdir1.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host, 
+                                               dst_root.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -937,8 +964,10 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Copied files are identical to original") {
-                        bfs::path src = env.get_from_namespace(nsid0, src_subdir1);
-                        bfs::path dst = env.get_from_namespace(nsid1, dst_root);
+                        bfs::path src = 
+                            env.get_from_namespace(nsid0, src_subdir1);
+                        bfs::path dst = 
+                            env.get_from_namespace(nsid1, dst_root);
 
                         REQUIRE(compare_directories(src, dst) == true);
                     }
@@ -948,14 +977,17 @@ SCENARIO("copy local POSIX file to remote POSIX file",
 
         // cp -r /a/contents.* -> /c = /c/contents.*
         // (c did not exist previously)
-        WHEN("copying the contents of a NORNS_LOCAL_PATH subdir from src namespace's root to "
-             "another NORNS_LOCAL_PATH subdir at dst namespace's root while changing its name") {
+        WHEN("copying the contents of a NORNS_LOCAL_PATH subdir from src "
+             "namespace's root to another NORNS_REMOTE_PATH subdir at dst "
+             "namespace's root while changing its name\n"
+             "  cp -r /a/contents.* -> /c = /c/contents.*") {
 
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_subdir0.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_subdir0.c_str()));
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, src_subdir0.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host, 
+                                               dst_subdir0.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -970,8 +1002,10 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Copied files are identical to original") {
-                        bfs::path src = env.get_from_namespace(nsid0, src_subdir0);
-                        bfs::path dst = env.get_from_namespace(nsid1, dst_subdir0);
+                        bfs::path src = 
+                            env.get_from_namespace(nsid0, src_subdir0);
+                        bfs::path dst = 
+                            env.get_from_namespace(nsid1, dst_subdir0);
 
                         REQUIRE(compare_directories(src, dst) == true);
                     }
@@ -981,14 +1015,17 @@ SCENARIO("copy local POSIX file to remote POSIX file",
 
         // cp -r /a/contents.* -> /c = /c/contents.*
         // (c did exist previously)
-        WHEN("copying the contents of a NORNS_LOCAL_PATH subdir from src namespace's root to "
-             "another NORNS_LOCAL_PATH subdir at dst namespace's root while changing its name") {
+        WHEN("copying the contents of a NORNS_LOCAL_PATH subdir from src "
+             "namespace's root to another NORNS_REMOTE_PATH subdir at dst "
+             "namespace's root while changing its name\n"
+             "  cp -r /a/contents.* -> /c / /c/contents.*") {
 
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_subdir0.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_subdir1.c_str()));
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, src_subdir0.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host, 
+                                               dst_subdir1.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -1003,8 +1040,10 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Copied files are identical to original") {
-                        bfs::path src = env.get_from_namespace(nsid0, src_subdir0);
-                        bfs::path dst = env.get_from_namespace(nsid1, dst_subdir1);
+                        bfs::path src = 
+                            env.get_from_namespace(nsid0, src_subdir0);
+                        bfs::path dst = 
+                            env.get_from_namespace(nsid1, dst_subdir1);
 
                         REQUIRE(compare_directories(src, dst) == true);
                     }
@@ -1014,14 +1053,17 @@ SCENARIO("copy local POSIX file to remote POSIX file",
 
         // cp -r /a/b/c/.../contents.* -> /c = /c/a/b/c/.../contents.*
         // (c did not exist previously)
-        WHEN("copying the contents of a NORNS_LOCAL_PATH subdir from src namespace's root to "
-             "another NORNS_LOCAL_PATH subdir at dst namespace's root while changing its name") {
+        WHEN("copying the contents of a NORNS_LOCAL_PATH subdir from src "
+             "namespace's root to a NORNS_REMOTE_PATH subdir at dst "
+             "namespace's root while changing its name\n"
+             "cp -r /a/b/c/.../contents.* -> /c = /c/a/b/c/.../contents.*") {
 
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_subdir1.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_subdir0.c_str()));
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, src_subdir1.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host, 
+                                               dst_subdir0.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -1036,8 +1078,10 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Copied files are identical to original") {
-                        bfs::path src = env.get_from_namespace(nsid0, src_subdir1);
-                        bfs::path dst = env.get_from_namespace(nsid1, dst_subdir0);
+                        bfs::path src = 
+                            env.get_from_namespace(nsid0, src_subdir1);
+                        bfs::path dst = 
+                            env.get_from_namespace(nsid1, dst_subdir0);
 
                         REQUIRE(compare_directories(src, dst) == true);
                     }
@@ -1047,14 +1091,17 @@ SCENARIO("copy local POSIX file to remote POSIX file",
 
         // cp -r /a/b/c/.../contents.* -> /c = /c/a/b/c/.../contents.*
         // (c did exist previously)
-        WHEN("copying the contents of a NORNS_LOCAL_PATH subdir from src namespace's root to "
-             "another NORNS_LOCAL_PATH subdir at dst namespace's root while changing its name") {
+        WHEN("copying the contents of a NORNS_LOCAL_PATH subdir from src "
+             "namespace's root to another NORNS_REMOTE_PATH subdir at dst "
+             "namespace's root while changing its name:"
+             "  cp -r /a/b/c/.../contents.* -> /c = /c/a/b/c/.../contents.*") {
 
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_subdir1.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_subdir1.c_str()));
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, src_subdir1.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host, 
+                                               dst_subdir1.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -1069,8 +1116,10 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Copied files are identical to original") {
-                        bfs::path src = env.get_from_namespace(nsid0, src_subdir1);
-                        bfs::path dst = env.get_from_namespace(nsid1, dst_subdir1);
+                        bfs::path src = 
+                            env.get_from_namespace(nsid0, src_subdir1);
+                        bfs::path dst = 
+                            env.get_from_namespace(nsid1, dst_subdir1);
 
                         REQUIRE(compare_directories(src, dst) == true);
                     }
@@ -1084,11 +1133,13 @@ SCENARIO("copy local POSIX file to remote POSIX file",
         WHEN("copying a single NORNS_LOCAL_PATH file from src namespace's '/' "
              "through a symlink also located at '/'" ) {
 
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_symlink_at_root0.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file_at_root0.c_str()));
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, 
+                                              src_symlink_at_root0.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host, 
+                                               dst_file_at_root0.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -1104,8 +1155,10 @@ SCENARIO("copy local POSIX file to remote POSIX file",
 
                     THEN("Files are equal") {
 
-                        bfs::path src = env.get_from_namespace(nsid0, src_symlink_at_root0);
-                        bfs::path dst = env.get_from_namespace(nsid1, dst_file_at_root0);
+                        bfs::path src = 
+                            env.get_from_namespace(nsid0, src_symlink_at_root0);
+                        bfs::path dst = 
+                            env.get_from_namespace(nsid1, dst_file_at_root0);
 
                         REQUIRE(compare_files(src, dst) == true);
                     }
@@ -1113,14 +1166,16 @@ SCENARIO("copy local POSIX file to remote POSIX file",
             }
         }
 
-        WHEN("copying a single NORNS_LOCAL_PATH subdir from src namespace's '/' "
-             "through a symlink also located at '/'" ) {
+        WHEN("copying a single NORNS_LOCAL_PATH subdir from src "
+             "namespace's '/' through a symlink also located at '/'" ) {
 
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_symlink_at_root1.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file_at_root0.c_str()));
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, 
+                                              src_symlink_at_root1.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host, 
+                                               dst_file_at_root0.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -1136,8 +1191,10 @@ SCENARIO("copy local POSIX file to remote POSIX file",
 
                     THEN("Directories are equal") {
 
-                        bfs::path src = env.get_from_namespace(nsid0, src_symlink_at_root1);
-                        bfs::path dst = env.get_from_namespace(nsid1, dst_file_at_root0);
+                        bfs::path src = 
+                            env.get_from_namespace(nsid0, src_symlink_at_root1);
+                        bfs::path dst = 
+                            env.get_from_namespace(nsid1, dst_file_at_root0);
 
                         REQUIRE(compare_directories(src, dst) == true);
                     }
@@ -1150,9 +1207,13 @@ SCENARIO("copy local POSIX file to remote POSIX file",
 
             norns_op_t task_op = NORNS_IOTASK_COPY;
 
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_symlink_at_root2.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file_at_root0.c_str()));
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, 
+                                              src_symlink_at_root2.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host,
+                                               dst_file_at_root0.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -1168,8 +1229,10 @@ SCENARIO("copy local POSIX file to remote POSIX file",
 
                     THEN("Directories are equal") {
 
-                        bfs::path src = env.get_from_namespace(nsid0, src_symlink_at_root2);
-                        bfs::path dst = env.get_from_namespace(nsid1, dst_file_at_root0);
+                        bfs::path src = 
+                            env.get_from_namespace(nsid0, src_symlink_at_root2);
+                        bfs::path dst = 
+                            env.get_from_namespace(nsid1, dst_file_at_root0);
 
                         REQUIRE(compare_directories(src, dst) == true);
                     }
@@ -1180,11 +1243,13 @@ SCENARIO("copy local POSIX file to remote POSIX file",
         WHEN("copying a single NORNS_LOCAL_PATH file from src namespace's '/' "
              "through a symlink located in a subdir" ) {
 
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_symlink_at_subdir0.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file_at_root0.c_str()));
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, 
+                                              src_symlink_at_subdir0.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host, 
+                                               dst_file_at_root0.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -1200,8 +1265,11 @@ SCENARIO("copy local POSIX file to remote POSIX file",
 
                     THEN("Files are equal") {
 
-                        bfs::path src = env.get_from_namespace(nsid0, src_symlink_at_subdir0);
-                        bfs::path dst = env.get_from_namespace(nsid1, dst_file_at_root0);
+                        bfs::path src = 
+                            env.get_from_namespace(nsid0, 
+                                                   src_symlink_at_subdir0);
+                        bfs::path dst = 
+                            env.get_from_namespace(nsid1, dst_file_at_root0);
 
                         REQUIRE(compare_files(src, dst) == true);
                     }
@@ -1209,14 +1277,16 @@ SCENARIO("copy local POSIX file to remote POSIX file",
             }
         }
 
-        WHEN("copying a single NORNS_LOCAL_PATH subdir from src namespace's '/' "
-             "through a symlink also located at subdir" ) {
+        WHEN("copying a single NORNS_LOCAL_PATH subdir from src "
+             "namespace's '/' through a symlink also located at subdir" ) {
 
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_symlink_at_subdir1.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file_at_root0.c_str()));
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, 
+                                              src_symlink_at_subdir1.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host, 
+                                               dst_file_at_root0.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -1232,8 +1302,11 @@ SCENARIO("copy local POSIX file to remote POSIX file",
 
                     THEN("Directories are equal") {
 
-                        bfs::path src = env.get_from_namespace(nsid0, src_symlink_at_subdir1);
-                        bfs::path dst = env.get_from_namespace(nsid1, dst_file_at_root0);
+                        bfs::path src = 
+                            env.get_from_namespace(nsid0, 
+                                                   src_symlink_at_subdir1);
+                        bfs::path dst = 
+                            env.get_from_namespace(nsid1, dst_file_at_root0);
 
                         REQUIRE(compare_directories(src, dst) == true);
                     }
@@ -1244,11 +1317,13 @@ SCENARIO("copy local POSIX file to remote POSIX file",
         WHEN("copying a single NORNS_LOCAL_PATH arbitrary subdir"
              "through a symlink also located at a subdir" ) {
 
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_LOCAL_PATH(nsid0, src_symlink_at_subdir2.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file_at_root0.c_str()));
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_LOCAL_PATH(nsid0, 
+                                              src_symlink_at_subdir2.c_str()),
+                             NORNS_REMOTE_PATH(nsid1, 
+                                               remote_host,
+                                               dst_file_at_root0.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
@@ -1264,15 +1339,17 @@ SCENARIO("copy local POSIX file to remote POSIX file",
 
                     THEN("Directories are equal") {
 
-                        bfs::path src = env.get_from_namespace(nsid0, src_symlink_at_subdir2);
-                        bfs::path dst = env.get_from_namespace(nsid1, dst_file_at_root0);
+                        bfs::path src = 
+                            env.get_from_namespace(nsid0, 
+                                                   src_symlink_at_subdir2);
+                        bfs::path dst = 
+                            env.get_from_namespace(nsid1, dst_file_at_root0);
 
                         REQUIRE(compare_directories(src, dst) == true);
                     }
                 }
             }
         }
-#endif
 
         env.notify_success();
     }

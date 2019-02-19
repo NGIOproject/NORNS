@@ -25,83 +25,84 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#include "resource-type.hpp"
-#include "resource-info.hpp"
-#include "remote-resource-info.hpp"
+#include "utils.hpp"
+#include "logger.hpp"
+#include "tar-archive.hpp"
 
 namespace norns {
-namespace data {
-namespace detail {
+namespace utils {
 
-/*! Remote path data */
-remote_resource_info::remote_resource_info(
-        const std::string& address,
-        const std::string& nsid,
-        const std::string& name) :
-    m_address(address),
-    m_nsid(nsid),
-    m_is_collection(false),
-    m_name(name) { }
+tar::tar(const bfs::path& filename, 
+         openmode op,
+         std::error_code& ec) :
+    m_path(filename) {
 
-remote_resource_info::remote_resource_info(
-        const std::string& address,
-        const std::string& nsid,
-        bool is_collection,
-        const std::string& name,
-        const hermes::exposed_memory& buffers) :
-    m_address(address),
-    m_nsid(nsid),
-    m_is_collection(is_collection),
-    m_name(name),
-    m_buffers(buffers) { }
+    constexpr const std::array<int, 2> flags = {
+        {O_WRONLY | O_CREAT| O_EXCL, O_RDONLY}
+    };
 
-remote_resource_info::~remote_resource_info() { }
+    constexpr const std::array<int, 2> modes = {
+        {S_IRUSR | S_IWUSR, 0}
+    };
 
-resource_type 
-remote_resource_info::type() const {
-    return resource_type::remote_resource;
+    if(tar_open(&m_tar, m_path.c_str(), NULL, 
+                flags[static_cast<int>(op)], 
+                modes[static_cast<int>(op)], TAR_GNU) != 0) {
+        ec = std::make_error_code(static_cast<std::errc>(errno)); 
+        LOGGER_ERROR("Failed to open archive for writing: {}", 
+                     logger::errno_message(ec.value()));
+        return;
+    }
 }
 
-std::string
-remote_resource_info::address() const {
-    return m_address;
+void
+tar::add_directory(const bfs::path& real_dir, 
+                   const bfs::path& archive_dir,
+                   std::error_code& ec) {
+
+    const bfs::path rd = 
+        norns::utils::remove_trailing_separator(real_dir);
+    const bfs::path ad = 
+        norns::utils::remove_trailing_separator(archive_dir);
+
+    if(tar_append_tree(m_tar, const_cast<char*>(rd.c_str()),
+                        const_cast<char*>(ad.c_str())) != 0) {
+        ec = std::make_error_code(static_cast<std::errc>(errno));
+        return;
+    }
+
+    ec = std::make_error_code(static_cast<std::errc>(0)); 
 }
 
-std::string 
-remote_resource_info::nsid() const {
-    return m_nsid;
+void
+tar::extract(const bfs::path& parent_dir, 
+             std::error_code& ec) {
+
+    if(m_tar == nullptr) {
+        ec = std::make_error_code(static_cast<std::errc>(EINVAL)); 
+        return;
+    }
+
+    if(tar_extract_all(m_tar, const_cast<char*>(parent_dir.c_str())) != 0) {
+        ec = std::make_error_code(static_cast<std::errc>(errno));
+    }
 }
 
-bool 
-remote_resource_info::is_remote() const {
-    return true;
+
+bfs::path
+tar::path() const {
+    return m_path;
 }
 
-std::string 
-remote_resource_info::to_string() const {
-    return "REMOTE_RESOURCE[" + m_nsid + "@" + m_address + ":" + m_name + "]";
+tar::~tar() {
+
+    if(m_tar != nullptr) {
+        if(tar_close(m_tar) != 0) {
+            LOGGER_ERROR("Failed to close TAR archive: {}",
+                        logger::errno_message(errno));
+        }
+    }
 }
 
-std::string
-remote_resource_info::name() const {
-    return m_name;
-}
-
-bool
-remote_resource_info::is_collection() const {
-    return m_is_collection;
-}
-
-bool
-remote_resource_info::has_buffers() const {
-    return m_buffers.count() != 0;
-}
-
-hermes::exposed_memory
-remote_resource_info::buffers() const {
-    return m_buffers;
-}
-
-} // namespace detail
-} // namespace data
+} // namespace utils
 } // namespace norns

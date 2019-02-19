@@ -82,6 +82,7 @@ api_LDFLAGS = \
     @BOOST_THREAD_LIB@ \
     @BOOST_REGEX_LIB@ \
 	@PROTOBUF_LIBS@ \
+	-no-install \
 	-Wl,-rpath,$(top_builddir)/lib/.libs \
 	$(top_builddir)/src/liburd_aux.la \
 	$(top_builddir)/lib/libnorns_debug.la \
@@ -146,6 +147,7 @@ core_SOURCES = \
 	$(END)
 
 core_LDFLAGS = \
+	-no-install \
     @BOOST_ASIO_LIB@ \
 	@BOOST_LDFLAGS@	\
 	@BOOST_FILESYSTEM_LIB@ \

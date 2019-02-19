@@ -51,7 +51,7 @@ task<iotask_type::remote_transfer>::operator()() {
     const auto log_error = [&] (const std::string& msg) {
 
         m_task_info->update_status(task_status::finished_with_error,
-                                urd_error::system_error, ec);
+                                   urd_error::system_error, ec);
         std::string r_msg = "[{}] " + msg + ": {}";
 
         LOGGER_ERROR(r_msg.c_str(), tid, ec.message());

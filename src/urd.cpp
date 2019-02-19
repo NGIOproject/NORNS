@@ -692,11 +692,11 @@ urd::remote_transfer_handler(hermes::request<rpc::remote_transfer>&& req) {
                  args.resource_type(),
                  utils::to_string(
                      static_cast<data::resource_type>(args.resource_type())));
+    LOGGER_DEBUG("  is_collection: {}", args.is_collection());
     LOGGER_DEBUG("  rname: \"{}\",", args.resource_name());
     LOGGER_DEBUG("  buffers: {{...}}");
     LOGGER_DEBUG("};");
     LOGGER_FLUSH();
-
 
     urd_error rv = urd_error::success;
     boost::optional<io::generic_task> t;
@@ -712,7 +712,7 @@ urd::remote_transfer_handler(hermes::request<rpc::remote_transfer>&& req) {
         switch(rtype) {
             case data::resource_type::remote_resource:
                 return std::make_shared<data::remote_resource_info>(
-                        args.address(), args.in_nsid(), 
+                        args.address(), args.in_nsid(), args.is_collection(),
                         args.resource_name(), args.buffers());
             case data::resource_type::local_posix_path:
             case data::resource_type::shared_posix_path:
@@ -733,6 +733,7 @@ urd::remote_transfer_handler(hermes::request<rpc::remote_transfer>&& req) {
         m_network_endpoint->respond(std::move(req), 
                     static_cast<uint32_t>(io::task_status::finished_with_error),
                     static_cast<uint32_t>(rv),
+                    0,
                     0);
         return;
     }
@@ -754,6 +755,7 @@ urd::remote_transfer_handler(hermes::request<rpc::remote_transfer>&& req) {
         m_network_endpoint->respond(std::move(req), 
                 static_cast<uint32_t>(io::task_status::finished_with_error),
                 static_cast<int32_t>(rv),
+                0,
                 0);
         return;
     }
@@ -773,13 +775,16 @@ urd::remote_transfer_handler(hermes::request<rpc::remote_transfer>&& req) {
         // run the task and check that it started correctly
         (*t)();
 
+        auto req = std::move(*ctx);
+
         if(t->info()->status() == io::task_status::finished_with_error) {
             rv = urd_error::no_such_namespace;
             LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
             m_network_endpoint->respond(std::move(req), 
                     static_cast<uint32_t>(io::task_status::finished_with_error),
                     static_cast<int32_t>(t->info()->task_error()),
-                    static_cast<int32_t>(t->info()->sys_error().value()));
+                    static_cast<int32_t>(t->info()->sys_error().value()),
+                    0);
         }
     }
 }

@@ -49,7 +49,7 @@ remote_resource::resource_impl(
     m_address(rinfo->m_address),
     m_nsid(rinfo->m_nsid),
     m_buffers(rinfo->m_buffers),
-    m_is_collection(rinfo->m_buffers.count() > 1),
+    m_is_collection(rinfo->m_is_collection),
     m_parent(std::static_pointer_cast<const storage::detail::remote_backend>(std::move(parent))) { }
 
 std::string

@@ -144,7 +144,13 @@ AS_IF([test "x${PROTOC}" == "x"],
 AC_SEARCH_LIBS([yaml_parser_initialize], [yaml], 
                [YAML_LIBS="-lyaml"
                 AC_SUBST(YAML_LIBS)], 
-               [AC_MSG_ERROR([This software required libyaml >= 0.1.4])])
+               [AC_MSG_ERROR([This software requires libyaml >= 0.1.4])])
+
+# check for libtar manually (since it doesn't provide a pkgconfig file)
+AC_SEARCH_LIBS([tar_open], [tar],
+               [TAR_LIBS="-ltar"
+                AC_SUBST(TAR_LIBS)],
+               [AC_MSG_ERROR([This software requires libtar >= 1.2.0])])
 
 # Checks for header files.
 

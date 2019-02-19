@@ -29,6 +29,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <stdlib.h>
 
 #include "utils.hpp"
 #include "logger.hpp"
@@ -38,6 +39,7 @@
 #include "backends/posix-fs.hpp"
 #include "hermes.hpp"
 #include "rpcs.hpp"
+#include "tar-archive.hpp"
 #include "local-path-to-remote-resource.hpp"
 
 
@@ -68,12 +70,48 @@ local_path_to_remote_resource_transferor::transfer(
         const std::shared_ptr<const data::resource>& src,  
         const std::shared_ptr<const data::resource>& dst) const {
 
+    using utils::tar;
+
     (void) auth;
 
     const auto& d_src = 
         reinterpret_cast<const data::local_path_resource&>(*src);
     const auto& d_dst = 
         reinterpret_cast<const data::remote_resource&>(*dst);
+
+    std::string input_path = d_src.canonical_path().string();
+
+    if(src->is_collection()) {
+        LOGGER_DEBUG("[{}] Creating archive for local directory", 
+                     task_info->id());
+
+        std::error_code ec;
+
+        bfs::path ar_path = 
+            "/tmp" / bfs::unique_path("norns-archive-%%%%-%%%%-%%%%.tar");
+        
+        tar ar(ar_path, tar::create, ec);
+
+        if(ec) {
+            LOGGER_ERROR("Failed to create archive: {}", 
+                         logger::errno_message(ec.value()));
+            return ec;
+        }
+
+        LOGGER_INFO("Archive created in {}", ar.path());
+
+        ar.add_directory(d_src.canonical_path(), 
+                         d_dst.name(),
+                         ec);
+
+        if(ec) {
+            LOGGER_ERROR("Failed to add directory to archive: {}", 
+                         logger::errno_message(ec.value()));
+            return ec;
+        }
+
+        input_path = ar.path().string();
+    }
 
     LOGGER_DEBUG("[{}] start_transfer: {} -> {}", 
                  task_info->id(), d_src.canonical_path(), d_dst.to_string());
@@ -82,7 +120,7 @@ local_path_to_remote_resource_transferor::transfer(
 
     try {
         std::error_code ec;
-        hermes::mapped_buffer input_data(d_src.canonical_path().string(),
+        hermes::mapped_buffer input_data(input_path,
                                          hermes::access_mode::read_only,
                                          &ec);
 
@@ -104,6 +142,7 @@ local_path_to_remote_resource_transferor::transfer(
                 d_dst.parent()->nsid(), 
                 static_cast<uint32_t>(backend_type::posix_filesystem),
                 static_cast<uint32_t>(data::resource_type::local_posix_path), 
+                d_src.is_collection(),
                 d_dst.name(),
                 buffers);
 
@@ -122,23 +161,34 @@ local_path_to_remote_resource_transferor::transfer(
         LOGGER_DEBUG("};");
         LOGGER_FLUSH();
 
-        auto start = std::chrono::steady_clock::now();
-
         auto rpc = 
             m_network_endpoint->post<norns::rpc::remote_transfer>(endp, args);
 
         auto resp = rpc.get();
 
-        double usecs = std::chrono::duration<double, std::micro>(
-                std::chrono::steady_clock::now() - start).count();
-
-        task_info->record_transfer(input_data.size(), usecs);
+        task_info->record_transfer(input_data.size(), 
+                                   resp.at(0).elapsed_time());
 
         LOGGER_DEBUG("Remote request completed with output "
                      "{{status: {}, task_error: {}, sys_errnum: {}}} "
                      "({} bytes, {} usecs)",
                     resp.at(0).status(), resp.at(0).task_error(), 
-                    resp.at(0).sys_errnum(), input_data.size(), usecs);
+                    resp.at(0).sys_errnum(), input_data.size(), 
+                    resp.at(0).elapsed_time());
+
+        if(src->is_collection()) {
+            boost::system::error_code bec;
+
+            bfs::remove(input_path, bec);
+
+            if(bec) {
+                LOGGER_ERROR("Failed to remove archive {}: {}", 
+                             input_path, logger::errno_message(ec.value()));
+                //TODO
+                return std::make_error_code(
+                    static_cast<std::errc>(bec.value()));
+            }
+        }
 
         return std::make_error_code(static_cast<std::errc>(0));
     }

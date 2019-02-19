@@ -221,6 +221,15 @@ do {                                                        \
         m_internal_logger->error(fmt, args...);
     }
 
+    static inline std::string
+    errno_message(int errno_value) {
+        // 1024 should be more than enough for most locales
+        constexpr const std::size_t MAX_ERROR_MSG = 1024;
+        std::array<char, MAX_ERROR_MSG> errstr;
+        char* msg = strerror_r(errno_value, errstr.data(), MAX_ERROR_MSG);
+        return std::string{msg};
+    }
+
     template <typename... Args>
     inline void error_errno(const char* fmt, const Args&... args) {
 

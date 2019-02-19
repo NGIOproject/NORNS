@@ -33,6 +33,7 @@
 #include "io/task-stats.hpp"
 #include "hermes.hpp"
 #include "rpcs.hpp"
+#include "tar-archive.hpp"
 #include "remote-resource-to-local-path.hpp"
 
 namespace {
@@ -121,6 +122,8 @@ remote_resource_to_local_path_transferor::transfer(
     (void) src;
     (void) dst;
 
+    using utils::tar;
+
     const auto& d_src = 
         reinterpret_cast<const data::remote_resource&>(*src);
     const auto& d_dst = 
@@ -144,22 +147,21 @@ remote_resource_to_local_path_transferor::transfer(
 
     assert(remote_buffers.count() == 1);
 
-    LOGGER_DEBUG("creating local resource: {}", d_dst.canonical_path());
+    bool is_collection = d_src.is_collection();
+
+    bfs::path output_path = 
+        is_collection ? "/tmp/test.tar" : d_dst.canonical_path();
+
+    LOGGER_DEBUG("creating local resource: {}", output_path);
 
     std::error_code ec;
     std::shared_ptr<hermes::mapped_buffer> output_data;
 
     std::tie(ec, output_data) = 
-        ::create_file(d_dst.canonical_path(), remote_buffers.size());
+        ::create_file(output_path, remote_buffers.size());
 
     if(ec) {
-        if(req.requires_response()) {
-            m_remote_endpoint->respond<rpc::remote_transfer>(
-                    std::move(req),
-                    static_cast<uint32_t>(task_status::finished_with_error),
-                    static_cast<uint32_t>(urd_error::system_error),
-                    static_cast<uint32_t>(ec.value()));
-        }
+        *ctx = std::move(req);
         return ec;
     }
 
@@ -172,23 +174,89 @@ remote_resource_to_local_path_transferor::transfer(
     hermes::exposed_memory local_buffers =
         m_remote_endpoint->expose(bufseq, hermes::access_mode::write_only);
 
-    LOGGER_DEBUG("pulling remote data into {}", d_dst.canonical_path());
+    LOGGER_DEBUG("pulling remote data into {}", output_path);
+
+    auto start = std::chrono::steady_clock::now();
 
     // N.B. IMPORTANT: we NEED to capture output_data by value here so that
     // the mapped_buffer doesn't get released before completion_callback()
     // is called.
-    const auto completion_callback = [this, output_data](
+    const auto completion_callback = 
+        [this, is_collection, output_path, d_dst, output_data, start](
             hermes::request<rpc::remote_transfer>&& req) {
 
-        //TODO: hermes offers no way to check for an error yet
-        LOGGER_DEBUG("pull succeeded");
+        uint32_t usecs = 
+            std::chrono::duration_cast<std::chrono::microseconds>(
+                std::chrono::steady_clock::now() - start).count();
 
+        // default response
+        rpc::remote_transfer::output out(
+                static_cast<uint32_t>(task_status::finished),
+                static_cast<uint32_t>(urd_error::success),
+                0,
+                usecs);
+
+        //TODO: hermes offers no way to check for an error yet
+        LOGGER_DEBUG("Transfer completed ({} usecs)", usecs);
+
+        if(is_collection) {
+            std::error_code ec;
+            boost::system::error_code bec;
+            tar ar(output_path, tar::open, ec);
+
+            if(ec) {
+                LOGGER_ERROR("Failed to open archive {}: {}", 
+                             output_path, logger::errno_message(ec.value()));
+
+                out = std::move(rpc::remote_transfer::output{
+                    static_cast<uint32_t>(task_status::finished_with_error),
+                    static_cast<uint32_t>(urd_error::system_error),
+                    static_cast<uint32_t>(ec.value()),
+                    0
+                });
+                goto respond;
+            }
+
+            ar.extract(d_dst.parent()->mount(), ec);
+
+            if(ec) {
+                LOGGER_ERROR("Failed to extact archive into {}: {}",
+                             ar.path(), d_dst.parent()->mount(), 
+                             logger::errno_message(ec.value()));
+                out = std::move(rpc::remote_transfer::output{
+                    static_cast<uint32_t>(task_status::finished_with_error),
+                    static_cast<uint32_t>(urd_error::system_error),
+                    static_cast<uint32_t>(ec.value()),
+                    0
+                });
+                goto respond;
+            }
+
+            LOGGER_DEBUG("Archive {} extracted into {}", 
+                         ar.path(), d_dst.parent()->mount());
+
+            bfs::remove(ar.path(), bec);
+
+            if(bec) {
+                LOGGER_ERROR("Failed to remove archive {}: {}", 
+                             ar.path(), logger::errno_message(ec.value()));
+                out = std::move(rpc::remote_transfer::output{
+                    static_cast<uint32_t>(task_status::finished_with_error),
+                    static_cast<uint32_t>(urd_error::system_error),
+                    static_cast<uint32_t>(ec.value()),
+                    0
+                });
+            }
+        }
+
+respond:
         if(req.requires_response()) {
             m_remote_endpoint->respond<rpc::remote_transfer>(
                     std::move(req), 
                     static_cast<uint32_t>(task_status::finished),
                     static_cast<uint32_t>(urd_error::success),
-                    0);
+                    0,
+                    usecs);
         }
     };
 

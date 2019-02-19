@@ -25,83 +25,44 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#include "resource-type.hpp"
-#include "resource-info.hpp"
-#include "remote-resource-info.hpp"
+#include <boost/filesystem.hpp>
+#include <system_error>
+#include <libtar.h>
+
+namespace bfs = boost::filesystem;
 
 namespace norns {
-namespace data {
-namespace detail {
+namespace utils {
 
-/*! Remote path data */
-remote_resource_info::remote_resource_info(
-        const std::string& address,
-        const std::string& nsid,
-        const std::string& name) :
-    m_address(address),
-    m_nsid(nsid),
-    m_is_collection(false),
-    m_name(name) { }
+struct tar {
 
-remote_resource_info::remote_resource_info(
-        const std::string& address,
-        const std::string& nsid,
-        bool is_collection,
-        const std::string& name,
-        const hermes::exposed_memory& buffers) :
-    m_address(address),
-    m_nsid(nsid),
-    m_is_collection(is_collection),
-    m_name(name),
-    m_buffers(buffers) { }
+    enum class openmode : int {
+        create = 0,
+        open   = 1,
+    };
 
-remote_resource_info::~remote_resource_info() { }
+    constexpr static openmode create = openmode::create;
+    constexpr static openmode open = openmode::open;
 
-resource_type 
-remote_resource_info::type() const {
-    return resource_type::remote_resource;
-}
+    tar(const bfs::path& filename, openmode op, std::error_code& ec);
 
-std::string
-remote_resource_info::address() const {
-    return m_address;
-}
+    void
+    add_directory(const bfs::path& real_dir, 
+                  const bfs::path& archive_dir,
+                  std::error_code& ec);
 
-std::string 
-remote_resource_info::nsid() const {
-    return m_nsid;
-}
+    void
+    extract(const bfs::path& parent_dir,
+            std::error_code& ec);
 
-bool 
-remote_resource_info::is_remote() const {
-    return true;
-}
+    bfs::path
+    path() const;
 
-std::string 
-remote_resource_info::to_string() const {
-    return "REMOTE_RESOURCE[" + m_nsid + "@" + m_address + ":" + m_name + "]";
-}
+    ~tar();
 
-std::string
-remote_resource_info::name() const {
-    return m_name;
-}
+    TAR* m_tar = nullptr;
+    bfs::path m_path;
+};
 
-bool
-remote_resource_info::is_collection() const {
-    return m_is_collection;
-}
-
-bool
-remote_resource_info::has_buffers() const {
-    return m_buffers.count() != 0;
-}
-
-hermes::exposed_memory
-remote_resource_info::buffers() const {
-    return m_buffers;
-}
-
-} // namespace detail
-} // namespace data
+} // namespace utils
 } // namespace norns

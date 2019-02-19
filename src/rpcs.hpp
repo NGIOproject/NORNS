@@ -37,15 +37,17 @@ MERCURY_GEN_PROC(remote_transfer_in_t,
         ((hg_const_string_t) (address))
         ((hg_const_string_t) (in_nsid))
         ((hg_const_string_t) (out_nsid))
-        ((uint32_t) (backend_type))
-        ((uint32_t) (resource_type))
+        ((uint32_t)          (backend_type))
+        ((uint32_t)          (resource_type))
+        ((hg_bool_t)         (is_collection))
         ((hg_const_string_t) (resource_name))
-        ((hg_bulk_t) (buffers)))
+        ((hg_bulk_t)         (buffers)))
 
 MERCURY_GEN_PROC(remote_transfer_out_t,
         ((uint32_t) (status))
         ((uint32_t) (task_error))
-        ((uint32_t) (sys_errnum)))
+        ((uint32_t) (sys_errnum))
+        ((uint32_t) (elapsed_time)))
 
 }} // namespace hermes::detail
 
@@ -98,6 +100,7 @@ struct remote_transfer {
               const std::string& out_nsid,
               uint32_t backend_type,
               uint32_t resource_type,
+              uint32_t is_collection,
               const std::string& resource_name,
               const hermes::exposed_memory& buffers) :
             m_address(address),
@@ -105,6 +108,7 @@ struct remote_transfer {
             m_out_nsid(out_nsid),
             m_backend_type(backend_type),
             m_resource_type(resource_type),
+            m_is_collection(is_collection),
             m_resource_name(resource_name),
             m_buffers(buffers) {
 
@@ -121,11 +125,13 @@ struct remote_transfer {
             m_out_nsid(std::move(rhs.m_out_nsid)),
             m_backend_type(std::move(rhs.m_backend_type)),
             m_resource_type(std::move(rhs.m_resource_type)),
+            m_is_collection(std::move(rhs.m_is_collection)),
             m_resource_name(std::move(rhs.m_resource_name)),
             m_buffers(std::move(rhs.m_buffers)) {
 
             rhs.m_backend_type = 0;
             rhs.m_resource_type = 0;
+            rhs.m_is_collection = false;
 
             this->print("this", __PRETTY_FUNCTION__);
             rhs.print("rhs", __PRETTY_FUNCTION__);
@@ -137,6 +143,7 @@ struct remote_transfer {
             m_out_nsid(other.m_out_nsid),
             m_backend_type(other.m_backend_type),
             m_resource_type(other.m_resource_type),
+            m_is_collection(other.m_is_collection),
             m_resource_name(other.m_resource_name),
             m_buffers(other.m_buffers) {
 
@@ -153,11 +160,13 @@ struct remote_transfer {
                 m_out_nsid = std::move(rhs.m_out_nsid);
                 m_backend_type = std::move(rhs.m_backend_type);
                 m_resource_type = std::move(rhs.m_resource_type);
+                m_is_collection = std::move(rhs.m_is_collection);
                 m_resource_name = std::move(rhs.m_resource_name);
                 m_buffers = std::move(rhs.m_buffers);
 
                 rhs.m_backend_type = 0;
                 rhs.m_resource_type = 0;
+                rhs.m_is_collection = false;
             }
 
             this->print("this", __PRETTY_FUNCTION__);
@@ -175,6 +184,7 @@ struct remote_transfer {
                 m_out_nsid = other.m_out_nsid;
                 m_backend_type = other.m_backend_type;
                 m_resource_type = other.m_resource_type;
+                m_is_collection = other.m_is_collection;
                 m_resource_name = other.m_resource_name;
                 m_buffers = other.m_buffers;
             }
@@ -216,6 +226,11 @@ struct remote_transfer {
             return m_resource_type;
         }
 
+        bool
+        is_collection() const {
+            return m_is_collection;
+        }
+
         std::string
         resource_name() const {
             return m_resource_name;
@@ -248,6 +263,8 @@ struct remote_transfer {
                          m_backend_type); 
             HERMES_DEBUG2("  m_resource_type: {},", 
                          m_resource_type); 
+            HERMES_DEBUG2("  m_is_collection: {},",
+                          m_is_collection);
             HERMES_DEBUG2("  m_resource_name: \"{}\" ({} -> {}),", 
                          m_resource_name, fmt::ptr(&m_resource_name),
                          fmt::ptr(m_resource_name.c_str()));
@@ -264,6 +281,7 @@ struct remote_transfer {
             m_out_nsid(other.out_nsid),
             m_backend_type(other.backend_type),
             m_resource_type(other.resource_type),
+            m_is_collection(other.is_collection),
             m_resource_name(other.resource_name),
             m_buffers(other.buffers) { 
 
@@ -278,6 +296,8 @@ struct remote_transfer {
                          m_backend_type); 
             HERMES_DEBUG("  m_resource_type: {},", 
                          m_resource_type); 
+            HERMES_DEBUG("  m_is_collection: {},", 
+                         m_is_collection); 
             HERMES_DEBUG("  m_buffers: {...},"); 
             HERMES_DEBUG("}}");
         }
@@ -289,6 +309,7 @@ struct remote_transfer {
                     m_out_nsid.c_str(), 
                     m_backend_type,
                     m_resource_type, 
+                    m_is_collection,
                     m_resource_name.c_str(), 
                     hg_bulk_t(m_buffers)};
         }
@@ -300,6 +321,7 @@ struct remote_transfer {
         std::string m_out_nsid;
         uint32_t m_backend_type;
         uint32_t m_resource_type;
+        bool m_is_collection;
         std::string m_resource_name;
         hermes::exposed_memory m_buffers;
     };
@@ -312,10 +334,12 @@ struct remote_transfer {
     public:
         output(uint32_t status,
                uint32_t task_error,
-               uint32_t sys_errnum) :
+               uint32_t sys_errnum,
+               uint32_t elapsed_time) :
             m_status(status),
             m_task_error(task_error),
-            m_sys_errnum(sys_errnum) {}
+            m_sys_errnum(sys_errnum),
+            m_elapsed_time(elapsed_time) {}
 
         uint32_t
         status() const {
@@ -342,6 +366,11 @@ struct remote_transfer {
             return m_sys_errnum;
         }
 
+        uint32_t
+        elapsed_time() const {
+            return m_elapsed_time;
+        }
+
         void 
         set_sys_errnum(uint32_t errnum) {
             m_sys_errnum = errnum;
@@ -352,17 +381,19 @@ struct remote_transfer {
             m_status = out.status;
             m_task_error = out.task_error;
             m_sys_errnum = out.sys_errnum;
+            m_elapsed_time = out.elapsed_time;
         }
 
         explicit 
         operator hermes::detail::remote_transfer_out_t() {
-            return {m_status, m_task_error, m_sys_errnum};
+            return {m_status, m_task_error, m_sys_errnum, m_elapsed_time};
         }
 
     private:
         uint32_t m_status;
         uint32_t m_task_error;
         uint32_t m_sys_errnum;
+        uint32_t m_elapsed_time;
     };
 };
 

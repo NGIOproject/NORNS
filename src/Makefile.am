@@ -90,6 +90,7 @@ liburd_resources_la_LDFLAGS = \
     @BOOST_THREAD_LIB@ \
     @MERCURY_LIBS@ \
 	@PROTOBUF_LIBS@ \
+	@TAR_LIBS@ \
 	-pthread
 
 
@@ -167,6 +168,8 @@ liburd_aux_la_SOURCES = \
 	io/transferors/local-path-to-remote-resource.hpp \
 	io/transferors/remote-resource-to-local-path.cpp \
 	io/transferors/remote-resource-to-local-path.hpp \
+	io/transferors/tar-archive.cpp \
+	io/transferors/tar-archive.hpp \
 	io/transferors/memory-to-local-path.cpp \
 	io/transferors/memory-to-local-path.hpp \
 	io/transferors/memory-to-shared-path.cpp \
@@ -218,6 +221,7 @@ liburd_aux_la_LDFLAGS = \
     @MERCURY_LIBS@ \
 	@PROTOBUF_LIBS@ \
 	@YAMLCPP_LIBS@ \
+	@TAR_LIBS@ \
 	liburd_resources.la \
 	-pthread
 
@@ -293,6 +297,7 @@ urd_LDFLAGS = \
     @BOOST_THREAD_LIB@ \
     @MERCURY_LIBS@ \
 	@PROTOBUF_LIBS@ \
+	@TAR_LIBS@ \
 	liburd_aux.la
 
 # we also need to include it as an additional dependency, since automake
