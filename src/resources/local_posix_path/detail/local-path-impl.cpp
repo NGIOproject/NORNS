@@ -36,6 +36,7 @@ namespace bfs = boost::filesystem;
 #include "local-path-info.hpp"
 #include "local-path-impl.hpp"
 #include "backends/posix-fs.hpp"
+#include "utils.hpp"
 #include "logger.hpp"
 
 namespace norns {
@@ -65,6 +66,15 @@ local_path_resource::type() const {
 bool
 local_path_resource::is_collection() const {
     return m_is_collection;
+}
+
+std::size_t
+local_path_resource::packed_size() const {
+    std::error_code ec;
+    std::size_t sz = 
+        utils::tar::estimate_size_once_packed(m_canonical_path, ec);
+
+    return ec ? 0 : sz;
 }
 
 const std::shared_ptr<const storage::backend>

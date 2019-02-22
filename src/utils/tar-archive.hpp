@@ -25,84 +25,59 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#include "utils.hpp"
-#include "logger.hpp"
-#include "tar-archive.hpp"
+#ifndef NORNS_UTILS_TAR_ARCHIVE_HPP
+#define NORNS_UTILS_TAR_ARCHIVE_HPP
+
+#include <boost/filesystem.hpp>
+#include <system_error>
+#include <libtar.h>
+
+namespace bfs = boost::filesystem;
 
 namespace norns {
 namespace utils {
 
-tar::tar(const bfs::path& filename, 
-         openmode op,
-         std::error_code& ec) :
-    m_path(filename) {
+struct tar {
 
-    constexpr const std::array<int, 2> flags = {
-        {O_WRONLY | O_CREAT| O_EXCL, O_RDONLY}
+    enum class openmode : int {
+        create = 0,
+        open   = 1,
     };
 
-    constexpr const std::array<int, 2> modes = {
-        {S_IRUSR | S_IWUSR, 0}
-    };
+    constexpr static openmode create = openmode::create;
+    constexpr static openmode open = openmode::open;
 
-    if(tar_open(&m_tar, m_path.c_str(), NULL, 
-                flags[static_cast<int>(op)], 
-                modes[static_cast<int>(op)], TAR_GNU) != 0) {
-        ec = std::make_error_code(static_cast<std::errc>(errno)); 
-        LOGGER_ERROR("Failed to open archive for writing: {}", 
-                     logger::errno_message(ec.value()));
-        return;
-    }
-}
+    tar(const bfs::path& filename, openmode op, std::error_code& ec);
 
-void
-tar::add_directory(const bfs::path& real_dir, 
-                   const bfs::path& archive_dir,
-                   std::error_code& ec) {
+    void
+    add_file(const bfs::path& real_name, 
+             const bfs::path& archive_name,
+             std::error_code& ec);
 
-    const bfs::path rd = 
-        norns::utils::remove_trailing_separator(real_dir);
-    const bfs::path ad = 
-        norns::utils::remove_trailing_separator(archive_dir);
+    void
+    add_directory(const bfs::path& real_dir, 
+                  const bfs::path& archive_dir,
+                  std::error_code& ec);
 
-    if(tar_append_tree(m_tar, const_cast<char*>(rd.c_str()),
-                        const_cast<char*>(ad.c_str())) != 0) {
-        ec = std::make_error_code(static_cast<std::errc>(errno));
-        return;
-    }
+    void
+    extract(const bfs::path& parent_dir,
+            std::error_code& ec);
 
-    ec = std::make_error_code(static_cast<std::errc>(0)); 
-}
+    bfs::path
+    path() const;
 
-void
-tar::extract(const bfs::path& parent_dir, 
-             std::error_code& ec) {
+    static std::size_t
+    estimate_size_once_packed(const bfs::path& path,
+                              std::error_code& ec);
 
-    if(m_tar == nullptr) {
-        ec = std::make_error_code(static_cast<std::errc>(EINVAL)); 
-        return;
-    }
+    ~tar();
 
-    if(tar_extract_all(m_tar, const_cast<char*>(parent_dir.c_str())) != 0) {
-        ec = std::make_error_code(static_cast<std::errc>(errno));
-    }
-}
-
-
-bfs::path
-tar::path() const {
-    return m_path;
-}
-
-tar::~tar() {
-
-    if(m_tar != nullptr) {
-        if(tar_close(m_tar) != 0) {
-            LOGGER_ERROR("Failed to close TAR archive: {}",
-                        logger::errno_message(errno));
-        }
-    }
-}
+    TAR* m_tar = nullptr;
+    bfs::path m_path;
+    openmode m_openmode;
+};
 
 } // namespace utils
 } // namespace norns
+
+#endif // NORNS_UTILS_TAR_ARCHIVE_HPP

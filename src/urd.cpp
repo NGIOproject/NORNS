@@ -778,7 +778,7 @@ urd::remote_transfer_handler(hermes::request<rpc::remote_transfer>&& req) {
         auto req = std::move(*ctx);
 
         if(t->info()->status() == io::task_status::finished_with_error) {
-            rv = urd_error::no_such_namespace;
+            rv = t->info()->task_error();
             LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
             m_network_endpoint->respond(std::move(req), 
                     static_cast<uint32_t>(io::task_status::finished_with_error),
@@ -787,6 +787,71 @@ urd::remote_transfer_handler(hermes::request<rpc::remote_transfer>&& req) {
                     0);
         }
     }
+}
+
+void
+urd::resource_stat_handler(hermes::request<rpc::resource_stat>&& req) {
+
+    const auto args = req.args();
+
+    LOGGER_WARN("incoming rpc::resource_stat(\"{}:{}\")", 
+                args.nsid(), 
+                args.resource_name());
+
+    urd_error rv = urd_error::success;
+    boost::optional<std::shared_ptr<storage::backend>> dst_backend;
+
+    {
+        boost::shared_lock<boost::shared_mutex> lock(m_namespace_mgr_mutex);
+        dst_backend = m_namespace_mgr->find(args.nsid());
+    }
+
+    if(!dst_backend) {
+        rv = urd_error::no_such_namespace;
+        LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
+        m_network_endpoint->respond(std::move(req), 
+                                    static_cast<uint32_t>(rv),
+                                    0);
+        return;
+    }
+
+    auto rtype = static_cast<data::resource_type>(args.resource_type());
+
+    const auto create_rinfo = 
+        [&](const data::resource_type& rtype) -> 
+            std::shared_ptr<data::resource_info> {
+
+        switch(rtype) {
+            case data::resource_type::local_posix_path:
+            case data::resource_type::shared_posix_path:
+                return std::make_shared<data::local_path_info>(
+                        args.nsid(), args.resource_name());
+            default:
+                rv = urd_error::not_supported;
+                return {};
+        }
+    };
+
+    auto rinfo = create_rinfo(rtype);
+
+    std::error_code ec;
+    auto rsrc = (*dst_backend)->get_resource(rinfo, ec);
+
+    if(ec) {
+        LOGGER_ERROR("Failed to access resource {}", rinfo->to_string());
+        rv = urd_error::snafu;
+
+        LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
+        m_network_endpoint->respond(std::move(req), 
+                                    static_cast<uint32_t>(rv),
+                                    0);
+        return;
+    }
+
+    LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
+    m_network_endpoint->respond(std::move(req), 
+            static_cast<uint32_t>(urd_error::success),
+            rsrc->packed_size());
 }
 
 
@@ -1013,6 +1078,11 @@ void urd::init_event_handlers() {
     m_network_endpoint->register_handler<rpc::remote_transfer>(
             std::bind(&urd::remote_transfer_handler, this, 
                       std::placeholders::_1));
+
+    m_network_endpoint->register_handler<rpc::resource_stat>(
+            std::bind(&urd::resource_stat_handler, this, 
+                      std::placeholders::_1));
+
 
     // signal handlers must be installed AFTER daemonizing
     LOGGER_INFO(" * Installing signal handlers...");

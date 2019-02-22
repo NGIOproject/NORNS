@@ -25,6 +25,9 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
+#ifndef NORNS_UTILS_HPP
+#define NORNS_UTILS_HPP
+
 #include <boost/version.hpp>
 #include <boost/filesystem.hpp>
 #include <system_error>
@@ -33,6 +36,7 @@
 #include <cstdint>
 
 #include "common.hpp"
+#include "utils/tar-archive.hpp"
 
 namespace norns {
 namespace utils {
@@ -71,3 +75,5 @@ path relative(path from_path, path to_path);
 }} // namespace boost::filesystem
 
 #endif
+
+#endif // NORNS_UTILS_HPP

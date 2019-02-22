@@ -52,6 +52,7 @@ struct resource_impl<resource_type::memory_region> : public resource {
     std::string name() const override final;
     resource_type type() const override final;
     bool is_collection() const override final;
+    std::size_t packed_size() const override final;
     const std::shared_ptr<const storage::backend> parent() const override final;
     std::string to_string() const override final;
 

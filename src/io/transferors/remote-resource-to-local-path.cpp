@@ -33,7 +33,6 @@
 #include "io/task-stats.hpp"
 #include "hermes.hpp"
 #include "rpcs.hpp"
-#include "tar-archive.hpp"
 #include "remote-resource-to-local-path.hpp"
 
 namespace {

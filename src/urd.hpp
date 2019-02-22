@@ -73,6 +73,7 @@ namespace ns {
 
 namespace rpc {
     struct remote_transfer;
+    struct resource_stat;
 }
 
 enum class urd_error;
@@ -123,6 +124,7 @@ private:
     response_ptr unknown_request_handler(const request_ptr req);
 
     void remote_transfer_handler(hermes::request<rpc::remote_transfer>&& req);
+    void resource_stat_handler(hermes::request<rpc::resource_stat>&& req);
 
     // TODO: add helpers for remove and update
     urd_error create_namespace(const config::namespace_def& nsdef);

@@ -39,7 +39,6 @@
 #include "backends/posix-fs.hpp"
 #include "hermes.hpp"
 #include "rpcs.hpp"
-#include "tar-archive.hpp"
 #include "local-path-to-remote-resource.hpp"
 
 

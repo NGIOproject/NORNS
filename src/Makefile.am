@@ -168,8 +168,6 @@ liburd_aux_la_SOURCES = \
 	io/transferors/local-path-to-remote-resource.hpp \
 	io/transferors/remote-resource-to-local-path.cpp \
 	io/transferors/remote-resource-to-local-path.hpp \
-	io/transferors/tar-archive.cpp \
-	io/transferors/tar-archive.hpp \
 	io/transferors/memory-to-local-path.cpp \
 	io/transferors/memory-to-local-path.hpp \
 	io/transferors/memory-to-shared-path.cpp \
@@ -190,7 +188,9 @@ liburd_aux_la_SOURCES = \
 	urd.cpp	\
 	urd.hpp	\
 	utils.cpp \
-	utils.hpp
+	utils.hpp \
+	utils/tar-archive.cpp \
+	utils/tar-archive.hpp
 
 nodist_liburd_aux_la_SOURCES = \
 	config/defaults.cpp \

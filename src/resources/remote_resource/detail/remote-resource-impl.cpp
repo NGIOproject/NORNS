@@ -67,6 +67,11 @@ remote_resource::is_collection() const {
     return m_is_collection;
 }
 
+std::size_t
+remote_resource::packed_size() const {
+    return 0;
+}
+
 const std::shared_ptr<const storage::backend>
 remote_resource::parent() const {
     return std::static_pointer_cast<const storage::backend>(m_parent);

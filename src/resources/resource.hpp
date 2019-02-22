@@ -49,6 +49,7 @@ struct resource : public std::enable_shared_from_this<resource> {
     virtual resource_type type() const = 0;
     virtual std::string name() const = 0;
     virtual bool is_collection() const = 0;
+    virtual std::size_t packed_size() const = 0;
     virtual const std::shared_ptr<const storage::backend> parent() const = 0; 
     virtual std::string to_string() const = 0;
 };

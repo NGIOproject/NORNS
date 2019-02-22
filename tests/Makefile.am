@@ -138,12 +138,16 @@ core_CPPFLAGS = \
 	-I$(top_srcdir)/src/externals/hermes/include \
 	-I$(top_srcdir)/rpc \
 	-I$(top_srcdir)/src \
+	-DUSE_REAL_DAEMON \
 	$(END)
 
 core_SOURCES = \
 	catch.hpp \
 	api-main.cpp \
 	utils-path-normalize.cpp \
+	utils-tar.cpp \
+	test-env.cpp \
+	test-env.hpp \
 	$(END)
 
 core_LDFLAGS = \
