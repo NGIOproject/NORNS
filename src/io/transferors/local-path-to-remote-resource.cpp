@@ -197,21 +197,6 @@ local_path_to_remote_resource_transferor::transfer(
     }
 }
 
-std::error_code 
-local_path_to_remote_resource_transferor::transfer(
-        const auth::credentials& auth, 
-        const std::shared_ptr<task_info>& task_info,
-        const std::shared_ptr<data::resource_info>& src_rinfo,  
-        const std::shared_ptr<data::resource_info>& dst_rinfo) const {
-
-    (void) auth;
-    (void) task_info;
-    (void) src_rinfo;
-    (void) dst_rinfo;
-
-    return std::make_error_code(static_cast<std::errc>(0));
-}
-
 std::string 
 local_path_to_remote_resource_transferor::to_string() const {
     return "transferor[local_path => remote_resource]";

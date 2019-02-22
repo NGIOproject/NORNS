@@ -47,21 +47,21 @@ struct resource;
 namespace io {
 
 struct memory_region_to_shared_path_transferor : public transferor {
-    bool validate(const std::shared_ptr<data::resource_info>& src_info,
-                  const std::shared_ptr<data::resource_info>& dst_info) const override final;
-    std::error_code transfer(const auth::credentials& auth,                
-                             const std::shared_ptr<task_info>& task_info,
-                             const std::shared_ptr<const data::resource>& src,  
-                             const std::shared_ptr<const data::resource>& dst) const override final;
+
+    bool 
+    validate(const std::shared_ptr<data::resource_info>& src_info,
+             const std::shared_ptr<data::resource_info>& dst_info) 
+        const override final;
 
     std::error_code 
     transfer(const auth::credentials& auth,                
              const std::shared_ptr<task_info>& task_info,
-             const std::shared_ptr<data::resource_info>& src,  
-             const std::shared_ptr<data::resource_info>& dst) 
-    const override final;
+             const std::shared_ptr<const data::resource>& src,  
+             const std::shared_ptr<const data::resource>& dst) 
+        const override final;
 
-    std::string to_string() const override final;
+    std::string 
+    to_string() const override final;
 };
 
 } // namespace io
