@@ -65,7 +65,22 @@ memory_region_to_shared_path_transferor::transfer(
     (void) d_src;
     (void) d_dst;
 
-    LOGGER_WARN("Transfer not implemented");
+    LOGGER_WARN("transfer not implemented");
+
+    return std::make_error_code(static_cast<std::errc>(0));
+}
+
+std::error_code 
+memory_region_to_shared_path_transferor::accept_transfer(
+        const auth::credentials& auth, 
+        const std::shared_ptr<task_info>& task_info,
+        const std::shared_ptr<const data::resource>& src,  
+        const std::shared_ptr<const data::resource>& dst) const {
+
+    (void) auth;
+    (void) task_info;
+    (void) src;
+    (void) dst;
 
     return std::make_error_code(static_cast<std::errc>(0));
 }

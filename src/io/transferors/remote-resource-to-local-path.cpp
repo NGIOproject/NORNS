@@ -196,7 +196,7 @@ remote_resource_to_local_path_transferor::transfer(
                 usecs);
 
         //TODO: hermes offers no way to check for an error yet
-        LOGGER_DEBUG("Transfer completed ({} usecs)", usecs);
+        LOGGER_DEBUG("Pull completed ({} usecs)", usecs);
 
         if(is_collection) {
             std::error_code ec;
@@ -263,6 +263,22 @@ respond:
                                   local_buffers,
                                   std::move(req),
                                   completion_callback);
+
+    return std::make_error_code(static_cast<std::errc>(0));
+}
+
+
+std::error_code 
+remote_resource_to_local_path_transferor::accept_transfer(
+        const auth::credentials& auth, 
+        const std::shared_ptr<task_info>& task_info,
+        const std::shared_ptr<const data::resource>& src,  
+        const std::shared_ptr<const data::resource>& dst) const {
+
+    (void) auth;
+    (void) task_info;
+    (void) src;
+    (void) dst;
 
     return std::make_error_code(static_cast<std::errc>(0));
 }

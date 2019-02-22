@@ -59,7 +59,14 @@ struct transferor {
              const std::shared_ptr<const data::resource> &src,
              const std::shared_ptr<const data::resource> &dst) const = 0;
 
-    virtual std::string to_string() const = 0;
+    virtual std::error_code
+    accept_transfer(const auth::credentials &auth,
+                    const std::shared_ptr<task_info> &task_info,
+                    const std::shared_ptr<const data::resource> &src,
+                    const std::shared_ptr<const data::resource> &dst) const = 0;
+
+    virtual std::string 
+    to_string() const = 0;
 };
 
 } // namespace io

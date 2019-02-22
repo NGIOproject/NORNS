@@ -231,6 +231,21 @@ local_path_to_local_path_transferor::transfer(
                        d_dst.canonical_path());
 }
 
+std::error_code 
+local_path_to_local_path_transferor::accept_transfer(
+        const auth::credentials& auth, 
+        const std::shared_ptr<task_info>& task_info,
+        const std::shared_ptr<const data::resource>& src,  
+        const std::shared_ptr<const data::resource>& dst) const {
+
+    (void) auth;
+    (void) task_info;
+    (void) src;
+    (void) dst;
+
+    return std::make_error_code(static_cast<std::errc>(0));
+}
+
 std::string 
 local_path_to_local_path_transferor::to_string() const {
     return "transferor[local_path => local_path]";
