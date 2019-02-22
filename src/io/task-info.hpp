@@ -48,6 +48,7 @@ struct task_info {
 
     task_info(const iotask_id tid, 
               const iotask_type type, 
+              const bool is_remote,
               const auth::credentials& creds,
               const backend_ptr src_backend, 
               const resource_info_ptr src_rinfo,
@@ -57,21 +58,45 @@ struct task_info {
 
     ~task_info();
 
-    iotask_id id() const;
-    iotask_type type() const;
-    auth::credentials auth() const ;
-    backend_ptr src_backend() const;
-    resource_info_ptr src_rinfo() const;
-    backend_ptr dst_backend() const;
-    resource_info_ptr dst_rinfo() const;
+    iotask_id 
+    id() const;
 
-    boost::any context() const;
-    void set_context(const boost::any& ctx);
+    iotask_type 
+    type() const;
 
-    task_status status() const;
-    void update_status(const task_status st);
-    void update_status(const task_status st, const urd_error ec,
-                       const std::error_code& sc);
+    bool 
+    is_remote() const;
+
+    auth::credentials 
+    auth() const ;
+
+    backend_ptr 
+    src_backend() const;
+
+    resource_info_ptr 
+    src_rinfo() const;
+
+    backend_ptr 
+    dst_backend() const;
+
+    resource_info_ptr 
+    dst_rinfo() const;
+
+    boost::any 
+    context() const;
+
+    void 
+    set_context(const boost::any& ctx);
+
+    task_status 
+    status() const;
+
+    void 
+    update_status(const task_status st);
+
+    void 
+    update_status(const task_status st, const urd_error ec,
+                  const std::error_code& sc);
 
     urd_error 
     task_error() const;
@@ -79,13 +104,23 @@ struct task_info {
     std::error_code 
     sys_error() const;
 
-    std::size_t sent_bytes() const;
-    std::size_t total_bytes() const;
-    double bandwidth() const;
-    void update_bandwidth(std::size_t bytes, double usecs);
-    void record_transfer(std::size_t bytes, double usecs);
+    std::size_t 
+    sent_bytes() const;
 
-    task_stats stats() const;
+    std::size_t 
+    total_bytes() const;
+
+    double 
+    bandwidth() const;
+
+    void 
+    update_bandwidth(std::size_t bytes, double usecs);
+
+    void 
+    record_transfer(std::size_t bytes, double usecs);
+
+    task_stats 
+    stats() const;
 
     boost::shared_lock<boost::shared_mutex>
     lock_shared() const;
@@ -98,6 +133,7 @@ struct task_info {
     // task id and type
     const iotask_id m_id;
     const iotask_type m_type;
+    const bool m_is_remote;
 
     // user credentials
     const auth::credentials m_auth;

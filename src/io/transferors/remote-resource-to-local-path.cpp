@@ -35,6 +35,7 @@
 #include "rpcs.hpp"
 #include "remote-resource-to-local-path.hpp"
 
+#if 0
 namespace {
 
 std::tuple<std::error_code, std::shared_ptr<hermes::mapped_buffer>>
@@ -89,6 +90,7 @@ retry_close:
 }
 
 } // anonymous namespace
+#endif
 
 namespace norns {
 namespace io {
@@ -120,7 +122,9 @@ remote_resource_to_local_path_transferor::transfer(
     (void) auth;
     (void) src;
     (void) dst;
+    (void) task_info;
 
+#if 0
     using utils::tar;
 
     const auto& d_src = 
@@ -264,6 +268,7 @@ respond:
                                   std::move(req),
                                   completion_callback);
 
+#endif
     return std::make_error_code(static_cast<std::errc>(0));
 }
 

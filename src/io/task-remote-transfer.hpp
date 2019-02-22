@@ -80,7 +80,13 @@ task<iotask_type::remote_transfer>::operator()() {
         return;
     }
 
-    ec = m_transferor->transfer(auth, m_task_info, src, dst);
+    if(m_task_info->is_remote()) {
+        ec = m_transferor->accept_transfer(auth, m_task_info, src, dst);
+    }
+    else {
+        ec = m_transferor->transfer(auth, m_task_info, src, dst);
+    }
+
 
     if(ec) {
         log_error("Transfer failed");

@@ -83,8 +83,7 @@ local_path_to_shared_path_transferor::accept_transfer(
     (void) src;
     (void) dst;
 
-    LOGGER_WARN("transfer not implemented");
-
+    LOGGER_ERROR("This function should never be called for this transfer type");
     return std::make_error_code(static_cast<std::errc>(0));
 }
 

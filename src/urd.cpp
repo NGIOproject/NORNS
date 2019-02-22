@@ -724,9 +724,6 @@ urd::remote_transfer_handler(hermes::request<rpc::remote_transfer>&& req) {
         }
     };
 
-    auto src_rinfo = create_rinfo(data::resource_type::remote_resource);
-    auto dst_rinfo = create_rinfo(dst_rtype);
-
     if(m_is_paused) {
         rv = urd_error::accept_paused;
         LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
@@ -737,6 +734,12 @@ urd::remote_transfer_handler(hermes::request<rpc::remote_transfer>&& req) {
                     0);
         return;
     }
+
+    auto src_rinfo = create_rinfo(data::resource_type::remote_resource);
+    auto dst_rinfo = create_rinfo(dst_rtype);
+
+    //TODO: check src_rinfo and dst_rinfo
+
 
     // TODO: actually retrieve and validate credentials, etc
 

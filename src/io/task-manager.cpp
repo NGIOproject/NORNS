@@ -169,7 +169,7 @@ task_manager::create_task(iotask_type type,
 
         auto it = m_task_info.end();
         std::tie(it, std::ignore) = m_task_info.emplace(tid,
-                std::make_shared<task_info>(tid, type, auth, 
+                std::make_shared<task_info>(tid, type, false, auth,
                                             src_backend, src_rinfo,
                                             dst_backend, dst_rinfo));
         return it->second;
@@ -326,7 +326,7 @@ task_manager::create_local_initiated_task(iotask_type type,
 
         auto it = m_task_info.end();
         std::tie(it, std::ignore) = m_task_info.emplace(tid,
-                std::make_shared<task_info>(tid, type, auth, 
+                std::make_shared<task_info>(tid, type, false, auth,
                                             src_backend, src_rinfo,
                                             dst_backend, dst_rinfo));
         return it->second;
@@ -431,15 +431,20 @@ task_manager::create_remote_initiated_task(iotask_type task_type,
 
         auto it = m_task_info.end();
         std::tie(it, std::ignore) = m_task_info.emplace(tid,
-                std::make_shared<task_info>(tid, task_type, auth, 
+                std::make_shared<task_info>(tid, task_type, true, auth, 
                                             src_backend, src_rinfo,
                                             dst_backend, dst_rinfo,
                                             ctx));
         return it->second;
     }();
 
+    //auto tx_ptr = 
+    //    m_transferor_registry.get(src_rinfo->type(), dst_rinfo->type());
+
+    // XXX for a remote-initiated task the order of the types
+    // is swapped
     auto tx_ptr = 
-        m_transferor_registry.get(src_rinfo->type(), dst_rinfo->type());
+        m_transferor_registry.get(dst_rinfo->type(), src_rinfo->type());
 
     if(!tx_ptr) {
         return std::make_tuple(urd_error::not_supported, boost::none);

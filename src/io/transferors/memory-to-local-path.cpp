@@ -195,6 +195,7 @@ memory_region_to_local_path_transferor::accept_transfer(
     (void) src;
     (void) dst;
 
+    LOGGER_ERROR("This function should never be called for this transfer type");
     return std::make_error_code(static_cast<std::errc>(0));
 }
 

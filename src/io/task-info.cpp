@@ -34,7 +34,9 @@
 namespace norns {
 namespace io {
 
-task_info::task_info(const iotask_id tid, const iotask_type type,
+task_info::task_info(const iotask_id tid, 
+                     const iotask_type type,
+                     const bool is_remote,
                      const auth::credentials& auth,
                      const backend_ptr src_backend, 
                      const resource_info_ptr src_rinfo,
@@ -43,6 +45,7 @@ task_info::task_info(const iotask_id tid, const iotask_type type,
                      const boost::any& ctx) :
     m_id(tid),
     m_type(type),
+    m_is_remote(is_remote),
     m_auth(auth),
     m_src_backend(src_backend),
     m_src_rinfo(src_rinfo),
@@ -79,6 +82,11 @@ task_info::id() const {
 iotask_type
 task_info::type() const {
     return m_type;
+}
+
+bool 
+task_info::is_remote() const {
+    return m_is_remote;
 }
 
 auth::credentials 
