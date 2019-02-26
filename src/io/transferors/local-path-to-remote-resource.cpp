@@ -134,7 +134,7 @@ local_path_to_remote_resource_transferor::transfer(
 
     std::string input_path = d_src.canonical_path().string();
 
-    if(src->is_collection()) {
+    if(d_src.is_collection()) {
         LOGGER_DEBUG("[{}] Creating archive for local directory", 
                      task_info->id());
 
@@ -146,8 +146,7 @@ local_path_to_remote_resource_transferor::transfer(
         tar ar(ar_path, tar::create, ec);
 
         if(ec) {
-            LOGGER_ERROR("Failed to create archive: {}", 
-                         logger::errno_message(ec.value()));
+            LOGGER_ERROR("Failed to create archive: {}", ec.message());
             return ec;
         }
 
@@ -159,7 +158,7 @@ local_path_to_remote_resource_transferor::transfer(
 
         if(ec) {
             LOGGER_ERROR("Failed to add directory to archive: {}", 
-                         logger::errno_message(ec.value()));
+                         ec.message());
             return ec;
         }
 
@@ -189,7 +188,7 @@ local_path_to_remote_resource_transferor::transfer(
         auto buffers = 
             m_network_endpoint->expose(bufvec, hermes::access_mode::read_only);
 
-        norns::rpc::remote_transfer::input args(
+        rpc::remote_transfer::input args(
                 m_network_endpoint->self_address(),
                 d_src.parent()->nsid(),
                 d_dst.parent()->nsid(), 
@@ -215,9 +214,35 @@ local_path_to_remote_resource_transferor::transfer(
         LOGGER_FLUSH();
 
         auto rpc = 
-            m_network_endpoint->post<norns::rpc::remote_transfer>(endp, args);
+            m_network_endpoint->post<rpc::remote_transfer>(endp, args);
 
         auto resp = rpc.get();
+
+        if(static_cast<task_status>(resp.at(0).status()) ==
+            task_status::finished_with_error) {
+
+            // XXX it would probably be worth it to define
+            // a temporary_file class that cleans itself when
+            // destroyed to ease removal and avoid code duplication
+            // below
+            if(src->is_collection()) {
+                boost::system::error_code bec;
+
+                bfs::remove(input_path, bec);
+
+                if(bec) {
+                    LOGGER_ERROR("Failed to remove archive {}: {}", 
+                                input_path, ec.message());
+                    //TODO
+                    return std::make_error_code(
+                        static_cast<std::errc>(bec.value()));
+                }
+            }
+
+            // XXX error interface should be improved
+            return std::make_error_code(
+                static_cast<std::errc>(resp.at(0).sys_errnum()));
+        }
 
         task_info->record_transfer(input_data.size(), 
                                    resp.at(0).elapsed_time());
@@ -236,7 +261,7 @@ local_path_to_remote_resource_transferor::transfer(
 
             if(bec) {
                 LOGGER_ERROR("Failed to remove archive {}: {}", 
-                             input_path, logger::errno_message(ec.value()));
+                             input_path, ec.message());
                 //TODO
                 return std::make_error_code(
                     static_cast<std::errc>(bec.value()));
@@ -347,7 +372,7 @@ local_path_to_remote_resource_transferor::accept_transfer(
 
             if(ec) {
                 LOGGER_ERROR("Failed to open archive {}: {}", 
-                             output_path, logger::errno_message(ec.value()));
+                             output_path, ec.message());
 
                 out = std::move(rpc::remote_transfer::output{
                     static_cast<uint32_t>(task_status::finished_with_error),
@@ -361,9 +386,9 @@ local_path_to_remote_resource_transferor::accept_transfer(
             ar.extract(d_dst.parent()->mount(), ec);
 
             if(ec) {
-                LOGGER_ERROR("Failed to extact archive into {}: {}",
+                LOGGER_ERROR("Failed to extract archive into {}: {}",
                              ar.path(), d_dst.parent()->mount(), 
-                             logger::errno_message(ec.value()));
+                             ec.message());
                 out = std::move(rpc::remote_transfer::output{
                     static_cast<uint32_t>(task_status::finished_with_error),
                     static_cast<uint32_t>(urd_error::system_error),
@@ -380,11 +405,11 @@ local_path_to_remote_resource_transferor::accept_transfer(
 
             if(bec) {
                 LOGGER_ERROR("Failed to remove archive {}: {}", 
-                             ar.path(), logger::errno_message(ec.value()));
+                             ar.path(), ec.message());
                 out = std::move(rpc::remote_transfer::output{
                     static_cast<uint32_t>(task_status::finished_with_error),
                     static_cast<uint32_t>(urd_error::system_error),
-                    static_cast<uint32_t>(ec.value()),
+                    static_cast<uint32_t>(bec.value()),
                     0
                 });
             }
@@ -394,10 +419,7 @@ respond:
         if(req.requires_response()) {
             m_network_endpoint->respond<rpc::remote_transfer>(
                     std::move(req), 
-                    static_cast<uint32_t>(task_status::finished),
-                    static_cast<uint32_t>(urd_error::success),
-                    0,
-                    usecs);
+                    out);
         }
     };
 

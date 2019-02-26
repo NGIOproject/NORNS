@@ -208,17 +208,21 @@ SCENARIO("submit request", "[api::norns_submit]") {
         }
 
         /* using a remote node as source is not allowed (yet) */
-        WHEN("submitting a request to copy from NORNS_REMOTE_PATH to NORNS_LOCAL_PATH") {
-            
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-            norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_REMOTE_PATH(nsid0, src_host0, src_file0.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file1.c_str()));
+        WHEN("submitting a request to copy from NORNS_REMOTE_PATH to "
+             "NORNS_LOCAL_PATH") {
+
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY, 
+                             NORNS_REMOTE_PATH(nsid0, 
+                                               src_host0, 
+                                               src_file0.c_str()),
+                             NORNS_LOCAL_PATH(nsid1, 
+                                              dst_file1.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
-            THEN("NORNS_ENOTSUPPORTED is returned") {
-                REQUIRE(rv == NORNS_ENOTSUPPORTED);
+            THEN("norns_submit() return NORNS_SUCCESS") {
+                REQUIRE(rv == NORNS_SUCCESS);
             }
         }
 
@@ -395,17 +399,21 @@ SCENARIO("submit request", "[api::norns_submit]") {
         }
 
         /* using a remote node as source is not allowed (yet) */
-        WHEN("submitting a request to move from NORNS_REMOTE_PATH to NORNS_LOCAL_PATH") {
-            
-            norns_op_t task_op = NORNS_IOTASK_MOVE;
-            norns_iotask_t task = NORNS_IOTASK(task_op, 
-                                               NORNS_REMOTE_PATH(nsid0, src_host0, src_file0.c_str()),
-                                               NORNS_LOCAL_PATH(nsid1, dst_file1.c_str()));
+        WHEN("submitting a request to move from NORNS_REMOTE_PATH to "
+             "NORNS_LOCAL_PATH") {
+
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_MOVE, 
+                             NORNS_REMOTE_PATH(nsid0, 
+                                               src_host0, 
+                                               src_file0.c_str()),
+                             NORNS_LOCAL_PATH(nsid1, 
+                                              dst_file1.c_str()));
 
             norns_error_t rv = norns_submit(&task);
 
-            THEN("NORNS_ENOTSUPPORTED is returned") {
-                REQUIRE(rv == NORNS_ENOTSUPPORTED);
+            THEN("norns_submit() returns NORNS_SUCCESS") {
+                REQUIRE(rv == NORNS_SUCCESS);
             }
         }
 

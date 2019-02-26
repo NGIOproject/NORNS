@@ -49,6 +49,21 @@ MERCURY_GEN_PROC(remote_transfer_out_t,
         ((uint32_t) (sys_errnum))
         ((uint32_t) (elapsed_time)))
 
+MERCURY_GEN_PROC(pull_resource_in_t,
+        ((hg_const_string_t) (in_nsid))
+        ((hg_const_string_t) (in_resource_name))
+        ((uint32_t)          (in_resource_type))
+        ((hg_const_string_t) (out_address))
+        ((hg_const_string_t) (out_nsid))
+        ((hg_const_string_t) (out_resource_name))
+        ((hg_bulk_t)         (out_buffers)))
+
+MERCURY_GEN_PROC(pull_resource_out_t,
+        ((uint32_t) (status))
+        ((uint32_t) (task_error))
+        ((uint32_t) (sys_errnum))
+        ((uint32_t) (elapsed_time)))
+
 MERCURY_GEN_PROC(resource_stat_in_t,
         ((hg_const_string_t) (address))
         ((hg_const_string_t) (nsid))
@@ -56,8 +71,10 @@ MERCURY_GEN_PROC(resource_stat_in_t,
         ((hg_const_string_t) (resource_name)))
 
 MERCURY_GEN_PROC(resource_stat_out_t,
-        ((uint32_t) (return_value))
-        ((uint64_t) (packed_size)))
+        ((uint32_t)  (task_error))
+        ((uint32_t)  (sys_errnum))
+        ((hg_bool_t) (is_collection))
+        ((uint64_t)  (packed_size)))
 
 }} // namespace hermes::detail
 
@@ -407,6 +424,317 @@ struct remote_transfer {
     };
 };
 
+struct pull_resource {
+
+    // forward declarations of public input/output types for this RPC
+    class input;
+    class output;
+
+    // traits used so that the engine knows what to do with the RPC
+    using self_type = pull_resource;
+    using handle_type = hermes::rpc_handle<self_type>;
+    using input_type = input;
+    using output_type = output;
+    using mercury_input_type = hermes::detail::pull_resource_in_t;
+    using mercury_output_type = hermes::detail::pull_resource_out_t;
+
+    // RPC public identifier
+    constexpr static const uint16_t public_id = 44;
+
+    // RPC internal Mercury identifier
+    constexpr static const uint16_t mercury_id = public_id;
+
+    // RPC name
+    constexpr static const auto name = "pull_resource";
+
+    // requires response?
+    constexpr static const auto requires_response = true;
+
+    // Mercury callback to serialize input arguments
+    constexpr static const auto mercury_in_proc_cb = 
+        HG_GEN_PROC_NAME(pull_resource_in_t);
+
+    // Mercury callback to serialize output arguments
+    constexpr static const auto mercury_out_proc_cb = 
+        HG_GEN_PROC_NAME(pull_resource_out_t);
+
+    class input {
+
+        template <typename ExecutionContext>
+        friend hg_return_t hermes::detail::post_to_mercury(ExecutionContext*);
+
+    public:
+        input(const std::string& in_nsid,
+              const std::string& in_resource_name,
+              uint32_t in_resource_type,
+              const std::string& out_address,
+              const std::string& out_nsid,
+              const std::string& out_resource_name,
+              const hermes::exposed_memory& out_buffers) :
+            m_in_nsid(in_nsid),
+            m_in_resource_name(in_resource_name),
+            m_in_resource_type(in_resource_type),
+            m_out_address(out_address),
+            m_out_nsid(out_nsid),
+            m_out_resource_name(out_resource_name),
+            m_out_buffers(out_buffers) {
+
+#ifdef HERMES_DEBUG_BUILD
+            this->print("this", __PRETTY_FUNCTION__);
+#endif
+
+        }
+
+#ifdef HERMES_DEBUG_BUILD
+        input(input&& rhs) :
+            m_in_nsid(std::move(rhs.m_in_nsid)),
+            m_out_address(std::move(rhs.m_out_address)),
+            m_out_nsid(std::move(rhs.m_out_nsid)),
+            m_in_resource_type(std::move(rhs.m_in_resource_type)),
+            m_resource_name(std::move(rhs.m_resource_name)),
+            m_buffers(std::move(rhs.m_buffers)) {
+
+            rhs.m_in_resource_type = 0;
+
+            this->print("this", __PRETTY_FUNCTION__);
+            rhs.print("rhs", __PRETTY_FUNCTION__);
+        }
+
+        input(const input& other) :
+            m_in_nsid(other.m_in_nsid),
+            m_out_address(other.m_out_address),
+            m_out_nsid(other.m_out_nsid),
+            m_in_resource_type(other.m_in_resource_type),
+            m_resource_name(other.m_resource_name),
+            m_buffers(other.m_buffers) {
+
+            this->print("this", __PRETTY_FUNCTION__);
+            other.print("other", __PRETTY_FUNCTION__);
+        }
+
+        input& 
+        operator=(input&& rhs) {
+
+            if(this != &rhs) {
+                m_in_nsid = std::move(rhs.m_in_nsid);
+                m_out_address = std::move(rhs.m_out_address);
+                m_out_nsid = std::move(rhs.m_out_nsid);
+                m_in_resource_type = std::move(rhs.m_in_resource_type);
+                m_resource_name = std::move(rhs.m_resource_name);
+                m_buffers = std::move(rhs.m_buffers);
+
+                rhs.m_in_resource_type = 0;
+                rhs.m_is_collection = false;
+            }
+
+            this->print("this", __PRETTY_FUNCTION__);
+            rhs.print("rhs", __PRETTY_FUNCTION__);
+
+            return *this;
+        }
+
+        input& 
+        operator=(const input& other) {
+            
+            if(this != &other) {
+                m_in_nsid = other.m_in_nsid;
+                m_out_address = other.m_out_address;
+                m_out_nsid = other.m_out_nsid;
+                m_in_resource_type = other.m_in_resource_type;
+                m_resource_name = other.m_resource_name;
+                m_buffers = other.m_buffers;
+            }
+
+            this->print("this", __PRETTY_FUNCTION__);
+            other.print("other", __PRETTY_FUNCTION__);
+
+            return *this;
+        }
+#else // HERMES_DEBUG_BUILD
+        input(input&& rhs) = default;
+        input(const input& other) = default;
+        input& operator=(input&& rhs) = default;
+        input& operator=(const input& other) = default;
+#endif // ! HERMES_DEBUG_BUILD
+
+        std::string
+        in_nsid() const {
+            return m_in_nsid;
+        }
+
+        uint32_t
+        in_resource_type() const {
+            return m_in_resource_type;
+        }
+
+        std::string
+        in_resource_name() const {
+            return m_in_resource_name;
+        }
+
+        std::string
+        out_address() const {
+            return m_out_address;
+        }
+
+        std::string
+        out_nsid() const {
+            return m_out_nsid;
+        }
+
+        std::string
+        out_resource_name() const {
+            return m_out_resource_name;
+        }
+
+        hermes::exposed_memory
+        out_buffers() const {
+            return m_out_buffers;
+        }
+
+#ifdef HERMES_DEBUG_BUILD
+        void
+        print(const std::string& id,
+              const std::string& caller = "") const {
+
+            (void) id;
+            auto c = caller.empty() ? "unknown_caller" : caller;
+
+            HERMES_DEBUG2("{}, {} ({}) = {{", caller, id, fmt::ptr(this));
+            HERMES_DEBUG2("  m_in_nsid: \"{}\" ({} -> {}),", 
+                          m_in_nsid, fmt::ptr(&m_in_nsid),
+                          fmt::ptr(m_in_nsid.c_str()));
+            HERMES_DEBUG2("  m_in_resource_name: \"{}\" ({} -> {}),", 
+                          m_in_resource_name, fmt::ptr(&m_in_resource_name),
+                          fmt::ptr(m_in_resource_name.c_str()));
+            HERMES_DEBUG2("  m_in_resource_type: {},", 
+                          m_in_resource_type); 
+            HERMES_DEBUG2("  m_out_address: \"{}\" ({} -> {}),", 
+                          m_out_address, fmt::ptr(&m_out_address), 
+                          fmt::ptr(m_out_address.c_str()));
+            HERMES_DEBUG2("  m_out_nsid: \"{}\" ({} -> {}),", 
+                          m_out_nsid, fmt::ptr(&m_out_nsid),
+                          fmt::ptr(m_out_nsid.c_str()));
+            HERMES_DEBUG2("  m_out_resource_name: \"{}\" ({} -> {}),", 
+                          m_out_resource_name, fmt::ptr(&m_out_resource_name),
+                          fmt::ptr(m_out_resource_name.c_str()));
+            HERMES_DEBUG2("  m_backend_type: {},", 
+                          m_backend_type); 
+            HERMES_DEBUG2("  m_out_buffers: {...},"); 
+            HERMES_DEBUG2("}}");
+        }
+#endif // ! HERMES_DEBUG_BUILD
+
+//TODO: make private
+        explicit
+        input(const hermes::detail::pull_resource_in_t& other) :
+            m_in_nsid(other.in_nsid),
+            m_in_resource_name(other.in_resource_name),
+            m_in_resource_type(other.in_resource_type),
+            m_out_address(other.out_address),
+            m_out_nsid(other.out_nsid),
+            m_out_resource_name(other.out_resource_name),
+            m_out_buffers(other.out_buffers) { 
+
+#ifdef HERMES_DEBUG_BUILD
+            this->print("this", __PRETTY_FUNCTION__);
+            rhs.print("other", __PRETTY_FUNCTION__);
+#endif
+        }
+        
+        explicit
+        operator hermes::detail::pull_resource_in_t() {
+            return {m_in_nsid.c_str(), 
+                    m_in_resource_name.c_str(), 
+                    m_in_resource_type, 
+                    m_out_address.c_str(),
+                    m_out_nsid.c_str(), 
+                    m_out_resource_name.c_str(), 
+                    hg_bulk_t(m_out_buffers)};
+        }
+
+
+    private:
+        std::string m_in_nsid;
+        std::string m_in_resource_name;
+        uint32_t m_in_resource_type;
+        std::string m_out_address;
+        std::string m_out_nsid;
+        std::string m_out_resource_name;
+        hermes::exposed_memory m_out_buffers;
+    };
+
+    class output {
+
+        template <typename ExecutionContext>
+        friend hg_return_t hermes::detail::post_to_mercury(ExecutionContext*);
+
+    public:
+        output(uint32_t status,
+               uint32_t task_error,
+               uint32_t sys_errnum,
+               uint32_t elapsed_time) :
+            m_status(status),
+            m_task_error(task_error),
+            m_sys_errnum(sys_errnum),
+            m_elapsed_time(elapsed_time) {}
+
+        uint32_t
+        status() const {
+            return m_status;
+        }
+
+        void
+        set_retval(uint32_t status) {
+            m_status = status;
+        }
+
+        uint32_t 
+        task_error() const {
+            return m_task_error;
+        }
+
+        void 
+        set_task_error(uint32_t task_error) {
+            m_task_error = task_error;
+        }
+
+        uint32_t 
+        sys_errnum() const {
+            return m_sys_errnum;
+        }
+
+        uint32_t
+        elapsed_time() const {
+            return m_elapsed_time;
+        }
+
+        void 
+        set_sys_errnum(uint32_t errnum) {
+            m_sys_errnum = errnum;
+        }
+
+        explicit 
+        output(const hermes::detail::pull_resource_out_t& out) {
+            m_status = out.status;
+            m_task_error = out.task_error;
+            m_sys_errnum = out.sys_errnum;
+            m_elapsed_time = out.elapsed_time;
+        }
+
+        explicit 
+        operator hermes::detail::pull_resource_out_t() {
+            return {m_status, m_task_error, m_sys_errnum, m_elapsed_time};
+        }
+
+    private:
+        uint32_t m_status;
+        uint32_t m_task_error;
+        uint32_t m_sys_errnum;
+        uint32_t m_elapsed_time;
+    };
+};
+
 struct resource_stat {
     // forward declarations of public input/output types for this RPC
     class input;
@@ -421,7 +749,7 @@ struct resource_stat {
     using mercury_output_type = hermes::detail::resource_stat_out_t;
 
     // RPC public identifier
-    constexpr static const uint16_t public_id = 44;
+    constexpr static const uint16_t public_id = 45;
 
     // RPC internal Mercury identifier
     constexpr static const uint16_t mercury_id = public_id;
@@ -611,14 +939,28 @@ struct resource_stat {
         friend hg_return_t hermes::detail::post_to_mercury(ExecutionContext*);
 
     public:
-        output(uint32_t return_value,
+        output(uint32_t task_error,
+               uint32_t sys_errnum,
+               bool is_collection,
                uint64_t packed_size) :
-            m_return_value(return_value),
+            m_task_error(task_error),
+            m_sys_errnum(sys_errnum),
+            m_is_collection(is_collection),
             m_packed_size(packed_size) {}
 
         uint32_t
-        return_value() const {
-            return m_return_value;
+        task_error() const {
+            return m_task_error;
+        }
+
+        uint32_t
+        sys_errnum() const {
+            return m_sys_errnum;
+        }
+
+        bool
+        is_collection() const {
+            return m_is_collection;
         }
 
         uint64_t
@@ -628,17 +970,22 @@ struct resource_stat {
 
         explicit 
         output(const hermes::detail::resource_stat_out_t& out) {
-            m_return_value = out.return_value;
+            m_task_error = out.task_error;
+            m_sys_errnum = out.sys_errnum;
+            m_is_collection = out.is_collection;
             m_packed_size = out.packed_size;
         }
 
         explicit 
         operator hermes::detail::resource_stat_out_t() {
-            return {m_return_value, m_packed_size};
+            return {m_task_error, m_sys_errnum, 
+                    m_is_collection, m_packed_size};
         }
 
     private:
-        uint32_t m_return_value;
+        uint32_t m_task_error;
+        uint32_t m_sys_errnum;
+        bool m_is_collection;
         uint64_t m_packed_size;
     };
 };

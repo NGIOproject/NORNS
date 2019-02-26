@@ -77,6 +77,10 @@ extern "C" {
 #define NORNS_EFINISHED         -102
 #define NORNS_EFINISHEDWERROR   -103
 
+/* errors resources */
+#define NORNS_ERESOURCEEXISTS   -110
+#define NORNS_ENOSUCHRESOURCE   -111
+
 /* misc errors */
 #define NORNS_ENOTSUPPORTED     -200
 #define NORNS_ESYSTEMERROR      -201

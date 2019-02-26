@@ -61,6 +61,10 @@ const char* const norns_errlist[NORNS_ERRMAX + 1] = {
     [ERR_REMAP(NORNS_ETOOMANYTASKS)] = "Too many pending tasks",
     [ERR_REMAP(NORNS_ETASKSPENDING)] = "There are still pending tasks",
 
+    /* resource errors */
+    [ERR_REMAP(NORNS_ERESOURCEEXISTS)] = "Resource already exists",
+    [ERR_REMAP(NORNS_ENOSUCHRESOURCE)] =  "Resource does not exist",
+
     /* misc errors */
     [ERR_REMAP(NORNS_ENOTSUPPORTED)] = "Not supported",
     [ERR_REMAP(NORNS_ESYSTEMERROR)] = "Operating system error",

@@ -73,6 +73,7 @@ namespace ns {
 
 namespace rpc {
     struct remote_transfer;
+    struct pull_resource;
     struct resource_stat;
 }
 
@@ -124,6 +125,7 @@ private:
     response_ptr unknown_request_handler(const request_ptr req);
 
     void remote_transfer_handler(hermes::request<rpc::remote_transfer>&& req);
+    void pull_resource_handler(hermes::request<rpc::pull_resource>&& req);
     void resource_stat_handler(hermes::request<rpc::resource_stat>&& req);
 
     // TODO: add helpers for remove and update

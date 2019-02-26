@@ -190,8 +190,7 @@ urd_error urd::validate_iotask_args(iotask_type type,
         return urd_error::bad_args;
     }
 
-    // src_resource cannot be remote
-    if(src_rinfo->type() == data::resource_type::remote_posix_path) {
+    if(src_rinfo->is_remote() && dst_rinfo()->is_remote()) {
         return urd_error::not_supported;
     }
 
@@ -243,10 +242,10 @@ urd::iotask_create_handler(const request_ptr base_request) {
         goto log_and_return;
     }
 
-    if(src_rinfo->is_remote()) {
-        rv = urd_error::not_supported;
-        goto log_and_return;
-    }
+//    if(src_rinfo->is_remote()) {
+//        rv = urd_error::not_supported;
+//        goto log_and_return;
+//    }
 
     for(const auto& rinfo : {src_rinfo, dst_rinfo}) {
         if(rinfo) {
@@ -793,6 +792,114 @@ urd::remote_transfer_handler(hermes::request<rpc::remote_transfer>&& req) {
 }
 
 void
+urd::pull_resource_handler(hermes::request<rpc::pull_resource>&& req) {
+
+    const auto args = req.args();
+
+    LOGGER_WARN("incoming rpc::push_request(from: \"{}:{}\", to: \"{}@{}:{}\")", 
+                args.in_nsid(), 
+                args.in_resource_name(),
+                args.out_address(),
+                args.out_nsid(), 
+                args.out_resource_name());
+
+    urd_error rv = urd_error::success;
+    boost::optional<io::generic_task> tsk;
+    boost::optional<std::shared_ptr<storage::backend>> src_backend;
+    std::shared_ptr<storage::backend> dst_backend;
+
+    /// XXX this information should be retrievable from the backend
+    auto src_rtype = static_cast<data::resource_type>(args.in_resource_type());
+
+    auth::credentials auth; //XXX fake credentials for now
+
+    const auto create_rinfo = 
+        [&](const data::resource_type& rtype) -> 
+            std::shared_ptr<data::resource_info> {
+
+        switch(rtype) {
+            case data::resource_type::remote_resource:
+                return std::make_shared<data::remote_resource_info>(
+                        args.out_address(), args.out_nsid(), false, 
+                        args.out_resource_name(), args.out_buffers());
+            case data::resource_type::local_posix_path:
+            case data::resource_type::shared_posix_path:
+                return std::make_shared<data::local_path_info>(
+                        args.in_nsid(), args.in_resource_name());
+            default:
+                rv = urd_error::not_supported;
+                return {};
+        }
+    };
+
+    if(m_is_paused) {
+        rv = urd_error::accept_paused;
+        LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
+        m_network_endpoint->respond(std::move(req), 
+                    static_cast<uint32_t>(io::task_status::finished_with_error),
+                    static_cast<uint32_t>(rv),
+                    0,
+                    0);
+        return;
+    }
+
+    auto src_rinfo = create_rinfo(src_rtype);
+    auto dst_rinfo = create_rinfo(data::resource_type::remote_resource);
+
+    //TODO: check src_rinfo and dst_rinfo
+
+
+    // TODO: actually retrieve and validate credentials, etc
+
+    {
+        boost::shared_lock<boost::shared_mutex> lock(m_namespace_mgr_mutex);
+        src_backend = m_namespace_mgr->find(args.in_nsid());
+    }
+
+    if(!src_backend) {
+        rv = urd_error::no_such_namespace;
+        LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
+        m_network_endpoint->respond(std::move(req), 
+                static_cast<uint32_t>(io::task_status::finished_with_error),
+                static_cast<int32_t>(rv),
+                0,
+                0);
+        return;
+    }
+
+    LOGGER_DEBUG("nsid: {}, bptr: {}", args.in_nsid(), src_backend);
+
+    dst_backend = 
+        std::make_shared<storage::detail::remote_backend>(args.out_nsid());
+
+    auto ctx =
+        std::make_shared<hermes::request<rpc::pull_resource>>(std::move(req));
+
+    std::tie(rv, tsk) =
+        m_task_mgr->create_remote_initiated_task(
+                iotask_type::remote_transfer, auth, 
+                ctx, *src_backend, src_rinfo, 
+                dst_backend, dst_rinfo);
+
+    if(rv == urd_error::success) {
+        // run the task and check that it started correctly
+        (*tsk)();
+
+        auto req = std::move(*ctx);
+
+        if(tsk->info()->status() == io::task_status::finished_with_error) {
+            rv = tsk->info()->task_error();
+            LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
+            m_network_endpoint->respond(std::move(req), 
+                    static_cast<uint32_t>(io::task_status::finished_with_error),
+                    static_cast<int32_t>(tsk->info()->task_error()),
+                    static_cast<int32_t>(tsk->info()->sys_error().value()),
+                    0);
+        }
+    }
+}
+
+void
 urd::resource_stat_handler(hermes::request<rpc::resource_stat>&& req) {
 
     const auto args = req.args();
@@ -814,6 +921,12 @@ urd::resource_stat_handler(hermes::request<rpc::resource_stat>&& req) {
         LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
         m_network_endpoint->respond(std::move(req), 
                                     static_cast<uint32_t>(rv),
+                                    false,
+                                    //XXX ENOENT should not be required:
+                                    // the transfer() interface should be
+                                    // richer rather than returning only a
+                                    // std::error_code
+                                    ENOENT,
                                     0);
         return;
     }
@@ -830,23 +943,41 @@ urd::resource_stat_handler(hermes::request<rpc::resource_stat>&& req) {
                 return std::make_shared<data::local_path_info>(
                         args.nsid(), args.resource_name());
             default:
-                rv = urd_error::not_supported;
                 return {};
         }
     };
 
     auto rinfo = create_rinfo(rtype);
 
+    if(!rinfo) {
+        LOGGER_ERROR("Failed to access resource {}", rinfo->to_string());
+        rv = urd_error::not_supported;
+
+        LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
+        m_network_endpoint->respond(std::move(req), 
+                                    static_cast<uint32_t>(rv),
+                                    //XXX EOPNOTSUPP should not be required:
+                                    // the transfer() interface should be
+                                    // richer rather than returning only a
+                                    // std::error_code
+                                    EOPNOTSUPP, 
+                                    false,
+                                    0);
+        return;
+    }
+
     std::error_code ec;
     auto rsrc = (*dst_backend)->get_resource(rinfo, ec);
 
     if(ec) {
         LOGGER_ERROR("Failed to access resource {}", rinfo->to_string());
-        rv = urd_error::snafu;
+        rv = urd_error::no_such_resource;
 
         LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
         m_network_endpoint->respond(std::move(req), 
                                     static_cast<uint32_t>(rv),
+                                    ec.value(),
+                                    false,
                                     0);
         return;
     }
@@ -854,6 +985,8 @@ urd::resource_stat_handler(hermes::request<rpc::resource_stat>&& req) {
     LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
     m_network_endpoint->respond(std::move(req), 
             static_cast<uint32_t>(urd_error::success),
+            0,
+            rsrc->is_collection(),
             rsrc->packed_size());
 }
 
@@ -1080,6 +1213,10 @@ void urd::init_event_handlers() {
     /* remote event handlers */
     m_network_endpoint->register_handler<rpc::remote_transfer>(
             std::bind(&urd::remote_transfer_handler, this, 
+                      std::placeholders::_1));
+
+    m_network_endpoint->register_handler<rpc::pull_resource>(
+            std::bind(&urd::pull_resource_handler, this, 
                       std::placeholders::_1));
 
     m_network_endpoint->register_handler<rpc::resource_stat>(

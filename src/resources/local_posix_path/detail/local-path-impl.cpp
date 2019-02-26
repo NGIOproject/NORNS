@@ -71,10 +71,13 @@ local_path_resource::is_collection() const {
 std::size_t
 local_path_resource::packed_size() const {
     std::error_code ec;
-    std::size_t sz = 
-        utils::tar::estimate_size_once_packed(m_canonical_path, ec);
+    boost::system::error_code error;
 
-    return ec ? 0 : sz;
+    std::size_t sz = m_is_collection ?
+        utils::tar::estimate_size_once_packed(m_canonical_path, ec) :
+        bfs::file_size(m_canonical_path, error);
+
+    return (ec || error) ? 0 : sz;
 }
 
 const std::shared_ptr<const storage::backend>

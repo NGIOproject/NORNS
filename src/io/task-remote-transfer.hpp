@@ -61,8 +61,8 @@ task<iotask_type::remote_transfer>::operator()() {
 
     LOGGER_WARN("[{}] Starting I/O task", tid);
     LOGGER_WARN("[{}]   TYPE: {}", tid, utils::to_string(type));
-    LOGGER_WARN("[{}]   FROM: {}", tid, src_backend->to_string());
-    LOGGER_WARN("[{}]     TO: {}", tid, dst_backend->to_string());
+    LOGGER_WARN("[{}]   FROM: {}", tid, src_rinfo->to_string());//src_backend->to_string());
+    LOGGER_WARN("[{}]     TO: {}", tid, dst_rinfo->to_string());//dst_backend->to_string());
 
     m_task_info->update_status(task_status::running);
 
