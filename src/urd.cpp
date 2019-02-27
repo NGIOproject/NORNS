@@ -190,7 +190,7 @@ urd_error urd::validate_iotask_args(iotask_type type,
         return urd_error::bad_args;
     }
 
-    if(src_rinfo->is_remote() && dst_rinfo()->is_remote()) {
+    if(src_rinfo->is_remote() && dst_rinfo->is_remote()) {
         return urd_error::not_supported;
     }
 
