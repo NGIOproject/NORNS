@@ -30,6 +30,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <climits>
+#include "config.h"
 
 #include "utils.hpp"
 #include "logger.hpp"
@@ -71,15 +72,21 @@ do_sendfile(int in_fd, int out_fd) {
     }
 
     // preallocate output file
+#ifdef HAVE_FALLOCATE
     if(::fallocate(out_fd, 0, 0, sz) == -1) {
-        // filesystem doesn't support fallocate(), fallback to truncate()
-        if(errno == EOPNOTSUPP) {
-            if(::ftruncate(out_fd, sz) != 0) {
-                return static_cast<ssize_t>(-1);
-            }
+        if(errno != EOPNOTSUPP) {
+            return static_cast<ssize_t>(-1);
         }
-        return static_cast<ssize_t>(-1);
+#endif // HAVE_FALLOCATE
+
+        // filesystem doesn't support fallocate(), fallback to truncate()
+        if(::ftruncate(out_fd, sz) != 0) {
+            return static_cast<ssize_t>(-1);
+        }
+
+#ifdef HAVE_FALLOCATE
     }
+#endif // HAVE_FALLOCATE
 
     // copy data
 	off_t offset = 0;

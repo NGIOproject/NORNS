@@ -30,6 +30,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include "config.h"
 
 #include "utils.hpp"
 #include "logger.hpp"
@@ -58,17 +59,23 @@ create_file(const bfs::path& filename,
     }
 
     // preallocate output file
+#ifdef HAVE_FALLOCATE
     if(::fallocate(out_fd, 0, 0, size) == -1) {
-        // filesystem doesn't support fallocate(), fallback to truncate()
-        if(errno == EOPNOTSUPP) {
-            if(::ftruncate(out_fd, size) != 0) {
-                ec = std::make_error_code(static_cast<std::errc>(errno));
-                return std::make_tuple(ec, nullptr);
-            }
+        if(errno != EOPNOTSUPP) {
+            ec = std::make_error_code(static_cast<std::errc>(errno));
+            return std::make_tuple(ec, nullptr);
         }
-        ec = std::make_error_code(static_cast<std::errc>(errno));
-        return std::make_tuple(ec, nullptr);
+#endif // HAVE_FALLOCATE
+
+        // filesystem doesn't support fallocate(), fallback to truncate()
+        if(::ftruncate(out_fd, size) != 0) {
+            ec = std::make_error_code(static_cast<std::errc>(errno));
+            return std::make_tuple(ec, nullptr);
+        }
+
+#ifdef HAVE_FALLOCATE
     }
+#endif // HAVE_FALLOCATE
 
 retry_close:
     if(close(out_fd) == -1) {
@@ -213,10 +220,8 @@ local_path_to_remote_resource_transferor::transfer(
         LOGGER_DEBUG("};");
         LOGGER_FLUSH();
 
-        auto rpc = 
-            m_network_endpoint->post<rpc::remote_transfer>(endp, args);
-
-        auto resp = rpc.get();
+        auto resp = 
+            m_network_endpoint->post<rpc::remote_transfer>(endp, args).get();
 
         if(static_cast<task_status>(resp.at(0).status()) ==
             task_status::finished_with_error) {

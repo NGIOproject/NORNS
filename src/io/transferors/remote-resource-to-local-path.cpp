@@ -52,17 +52,23 @@ create_file(const bfs::path& filename,
     }
 
     // preallocate output file
+#ifdef HAVE_FALLOCATE
     if(::fallocate(out_fd, 0, 0, size) == -1) {
-        // filesystem doesn't support fallocate(), fallback to truncate()
-        if(errno == EOPNOTSUPP) {
-            if(::ftruncate(out_fd, size) != 0) {
-                ec = std::make_error_code(static_cast<std::errc>(errno));
-                return std::make_tuple(ec, nullptr);
-            }
+        if(errno != EOPNOTSUPP) {
+            ec = std::make_error_code(static_cast<std::errc>(errno));
+            return std::make_tuple(ec, nullptr);
         }
-        ec = std::make_error_code(static_cast<std::errc>(errno));
-        return std::make_tuple(ec, nullptr);
+#endif // HAVE_FALLOCATE
+
+        // filesystem doesn't support fallocate(), fallback to truncate()
+        if(::ftruncate(out_fd, size) != 0) {
+            ec = std::make_error_code(static_cast<std::errc>(errno));
+            return std::make_tuple(ec, nullptr);
+        }
+
+#ifdef HAVE_FALLOCATE
     }
+#endif // HAVE_FALLOCATE
 
 retry_close:
     if(close(out_fd) == -1) {

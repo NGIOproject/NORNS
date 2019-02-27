@@ -158,7 +158,13 @@ AC_SEARCH_LIBS([tar_open], [tar],
 AC_CHECK_HEADER_STDBOOL
 
 # Checks for library functions.
+AC_CHECK_FUNC([fallocate],[fallocate],[fallocate])
+AS_IF([test "x${PROTOC}" == "x"],
+          [AC_MSG_ERROR([ProtoBuf compiler "protoc" not found.])])
 
+AC_CHECK_FUNC([fallocate], 
+              [AC_DEFINE([HAVE_FALLOCATE], 
+                         [1], [Define if file preallocation is available])])
 
 ################################################################################
 ### write makefiles

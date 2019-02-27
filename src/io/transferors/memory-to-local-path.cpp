@@ -63,19 +63,26 @@ copy_memory_region(const std::shared_ptr<norns::io::task_info>& task_info,
         return std::make_error_code(static_cast<std::errc>(errno));
     }
 
+    // preallocate output file
+#ifdef HAVE_FALLOCATE
     if(::fallocate(out_fd, 0, 0, size) == -1) {
-        // filesystem doesn't support fallocate(), fallback to truncate()
-        if(errno == EOPNOTSUPP) {
-            if(::ftruncate(out_fd, size) != 0) {
-                LOGGER_ERROR("ftruncate() error on {}", dst);
-                rv = errno;
-                goto cleanup_on_error;
-            }
+        if(errno != EOPNOTSUPP) {
+            LOGGER_ERROR("fallocate() error");
+            rv = errno;
+            goto cleanup_on_error;
         }
-        LOGGER_ERROR("fallocate() error");
-        rv = errno;
-        goto cleanup_on_error;
+#endif // HAVE_FALLOCATE
+
+        // filesystem doesn't support fallocate(), fallback to truncate()
+        if(::ftruncate(out_fd, size) != 0) {
+            LOGGER_ERROR("ftruncate() error on {}", dst);
+            rv = errno;
+            goto cleanup_on_error;
+        }
+
+#ifdef HAVE_FALLOCATE
     }
+#endif // HAVE_FALLOCATE
 
     dst_addr = ::mmap(NULL, size, PROT_WRITE, MAP_SHARED, out_fd, 0);
 
