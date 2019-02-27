@@ -207,7 +207,7 @@ test:ubuntu:latest:
         - make -j$(nproc)
         - cd tests
         - make -j$(nproc) core
-        - ./core -as
+        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./core -as
         - make -j$(nproc) api
 #        - NORNS_DEBUG_OUTPUT_TO_STDERR=1 NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_register_namespace]"
