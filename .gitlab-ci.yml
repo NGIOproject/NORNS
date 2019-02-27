@@ -227,7 +227,14 @@ test:ubuntu:latest:
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_status]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_send_command]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_remove_local_posix_files]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_remote_copy_local_posix_files]"
+        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_errors]"          
+        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_to_posix_file]"   
+        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_to_posix_subdir]" 
+        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_links]"           
+        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_pull_errors]"          
+        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_pull_to_posix_file]"   
+        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_pull_to_posix_subdir]" 
+        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_pull_links]"           
 
     after_script:
         - pwd
