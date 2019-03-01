@@ -189,8 +189,11 @@ liburd_aux_la_SOURCES = \
 	urd.hpp	\
 	utils.cpp \
 	utils.hpp \
+	utils/file-handle.hpp \
 	utils/tar-archive.cpp \
-	utils/tar-archive.hpp
+	utils/tar-archive.hpp \
+	utils/temporary-file.hpp \
+	utils/temporary-file.cpp
 
 nodist_liburd_aux_la_SOURCES = \
 	config/defaults.cpp \

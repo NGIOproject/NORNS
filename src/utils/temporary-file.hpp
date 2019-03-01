@@ -1,5 +1,5 @@
 /*************************************************************************
- * Copyright (C) 2017-2018 Barcelona Supercomputing Center               *
+ * Copyright (C) 2017-2019 Barcelona Supercomputing Center               *
  *                         Centro Nacional de Supercomputacion           *
  * All rights reserved.                                                  *
  *                                                                       *
@@ -25,56 +25,64 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#ifndef NORNS_UTILS_HPP
-#define NORNS_UTILS_HPP
+#ifndef NORNS_UTILS_TEMP_FILE_HPP
+#define NORNS_UTILS_TEMP_FILE_HPP
 
-#include <boost/version.hpp>
 #include <boost/filesystem.hpp>
 #include <system_error>
-#include <sstream>
-#include <iomanip>
-#include <cstdint>
 
-#include "common.hpp"
-#include "utils/tar-archive.hpp"
-#include "utils/temporary-file.hpp"
+namespace bfs = boost::filesystem;
 
 namespace norns {
 namespace utils {
 
-uint64_t parse_size(const std::string& str);
+struct temporary_file {
 
-template <typename T> 
-std::string n2hexstr(T i, bool zero_pad=false) {
-    std::stringstream ss;
+    temporary_file() noexcept;
 
-    if(zero_pad) {
-       ss << std::setfill('0') << std::setw(sizeof(T) << 1);
-    }
+    // create an empty temporary file from pattern at parent_dir
+    temporary_file(const std::string& pattern,
+                   const bfs::path& parent_dir,
+                   std::error_code& ec) noexcept;
 
-    ss << std::showbase << std::hex << i;
-    return ss.str();
-}
+    // create a temporary file of size 'prealloc_size' from pattern at parent_dir
+    temporary_file(const std::string& pattern,
+                   const bfs::path& parent_dir,
+                   std::size_t prealloc_size,
+                   std::error_code& ec) noexcept;
 
-boost::filesystem::path lexical_normalize(const boost::filesystem::path& pathname,
-                                          bool as_directory=false);
+    // initialize temporary file from an already existing file
+    temporary_file(const bfs::path& filename,
+                   std::error_code& ec) noexcept;
 
-boost::filesystem::path
-remove_trailing_separator(const boost::filesystem::path& pathname);
+    temporary_file(const temporary_file& other) = delete;
+
+    temporary_file(temporary_file&& rhs) = default;
+
+    temporary_file& operator=(const temporary_file& other) = delete;
+
+    temporary_file& operator=(temporary_file&& rhs) = default;
+
+    ~temporary_file();
+
+    bfs::path 
+    path() const noexcept;
+
+    void
+    reserve(std::size_t size, 
+            std::error_code& ec) const noexcept;
+
+    void
+    manage(const bfs::path& filename,
+           std::error_code& ec) noexcept;
+
+    bfs::path
+    release() noexcept;
+
+    bfs::path m_filename;
+};
 
 } // namespace utils
 } // namespace norns
 
-#if BOOST_VERSION <= 106000 // 1.6.0
-
-#include <boost/filesystem.hpp>
-
-namespace boost { namespace filesystem {
-
-path relative(path from_path, path to_path);
-
-}} // namespace boost::filesystem
-
-#endif
-
-#endif // NORNS_UTILS_HPP
+#endif // NORNS_UTILS_TEMP_FILE_HPP

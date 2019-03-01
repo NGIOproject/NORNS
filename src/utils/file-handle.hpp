@@ -1,5 +1,5 @@
 /*************************************************************************
- * Copyright (C) 2017-2018 Barcelona Supercomputing Center               *
+ * Copyright (C) 2017-2019 Barcelona Supercomputing Center               *
  *                         Centro Nacional de Supercomputacion           *
  * All rights reserved.                                                  *
  *                                                                       *
@@ -25,56 +25,63 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#ifndef NORNS_UTILS_HPP
-#define NORNS_UTILS_HPP
-
-#include <boost/version.hpp>
-#include <boost/filesystem.hpp>
-#include <system_error>
-#include <sstream>
-#include <iomanip>
-#include <cstdint>
-
-#include "common.hpp"
-#include "utils/tar-archive.hpp"
-#include "utils/temporary-file.hpp"
+#include "logger.hpp"
 
 namespace norns {
 namespace utils {
 
-uint64_t parse_size(const std::string& str);
+struct file_handle {
 
-template <typename T> 
-std::string n2hexstr(T i, bool zero_pad=false) {
-    std::stringstream ss;
+    constexpr static const int init_value{-1};
 
-    if(zero_pad) {
-       ss << std::setfill('0') << std::setw(sizeof(T) << 1);
+    file_handle() = default;
+
+    explicit file_handle(int fd) noexcept :
+        m_fd(fd) { }
+
+    file_handle(file_handle&& rhs) = default;
+    file_handle(const file_handle& other) = delete;
+    file_handle& operator=(file_handle&& rhs) = default;
+    file_handle& operator=(const file_handle& other) = delete;
+
+    explicit operator bool() const noexcept {
+        return valid();
     }
 
-    ss << std::showbase << std::hex << i;
-    return ss.str();
-}
+    bool operator!() const noexcept {
+        return !valid();
+    }
 
-boost::filesystem::path lexical_normalize(const boost::filesystem::path& pathname,
-                                          bool as_directory=false);
+    bool
+    valid() const noexcept {
+        return m_fd != init_value;
+    }
 
-boost::filesystem::path
-remove_trailing_separator(const boost::filesystem::path& pathname);
+    int
+    native() const noexcept {
+        return m_fd;
+    }
+
+    int
+    release() noexcept {
+        int ret = m_fd;
+        m_fd = init_value;
+        return ret;
+    }
+
+    ~file_handle() {
+        if(m_fd != init_value) {
+            if(::close(m_fd) == -1) {
+                LOGGER_ERROR("Failed to close file descriptor: {}",
+                             logger::errno_message(errno));
+            }
+        }
+    }
+
+    int m_fd;
+};
+
+
 
 } // namespace utils
 } // namespace norns
-
-#if BOOST_VERSION <= 106000 // 1.6.0
-
-#include <boost/filesystem.hpp>
-
-namespace boost { namespace filesystem {
-
-path relative(path from_path, path to_path);
-
-}} // namespace boost::filesystem
-
-#endif
-
-#endif // NORNS_UTILS_HPP

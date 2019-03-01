@@ -153,6 +153,8 @@ SCENARIO("send control commands to urd", "[api::nornsctl_send_command]") {
                 }
             }
         }
+
+        env.notify_success();
     }
 
 #ifndef USE_REAL_DAEMON

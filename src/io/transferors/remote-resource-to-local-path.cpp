@@ -37,61 +37,82 @@
 
 namespace {
 
-std::tuple<std::error_code, std::shared_ptr<hermes::mapped_buffer>>
-create_file(const bfs::path& filename,
-            std::size_t size) {
+struct archive_entry {
+    bool m_is_directory;
+    bfs::path m_realpath;
+    bfs::path m_archive_path;
+};
 
-    std::error_code ec;
+bfs::path
+pack_archive(const std::string& name_pattern,
+             const bfs::path& parent_path,
+             const std::vector<archive_entry>& entries,
+             std::error_code& ec) {
 
-    int out_fd = 
-        ::open(filename.c_str(), O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
+    using norns::utils::tar;
 
-    if(out_fd == -1) {
-        ec = std::make_error_code(static_cast<std::errc>(errno));
-        return std::make_tuple(ec, nullptr);
-    }
+    bfs::path ar_path = parent_path / bfs::unique_path(name_pattern);
 
-    // preallocate output file
-#ifdef HAVE_FALLOCATE
-    if(::fallocate(out_fd, 0, 0, size) == -1) {
-        if(errno != EOPNOTSUPP) {
-            ec = std::make_error_code(static_cast<std::errc>(errno));
-            return std::make_tuple(ec, nullptr);
-        }
-#endif // HAVE_FALLOCATE
-
-        // filesystem doesn't support fallocate(), fallback to truncate()
-        if(::ftruncate(out_fd, size) != 0) {
-            ec = std::make_error_code(static_cast<std::errc>(errno));
-            return std::make_tuple(ec, nullptr);
-        }
-
-#ifdef HAVE_FALLOCATE
-    }
-#endif // HAVE_FALLOCATE
-
-retry_close:
-    if(close(out_fd) == -1) {
-        if(errno == EINTR) {
-            goto retry_close;
-        }
-
-        ec = std::make_error_code(static_cast<std::errc>(errno));
-        return std::make_tuple(ec, nullptr);
-    }
-
-    auto output_data = 
-        std::make_shared<hermes::mapped_buffer>(
-            filename.string(), 
-            hermes::access_mode::write_only,
-            &ec);
+    tar ar(ar_path, tar::create, ec);
 
     if(ec) {
-        LOGGER_ERROR("Failed mapping output data: {}", ec.value());
-        return std::make_tuple(ec, output_data);
+        LOGGER_ERROR("Failed to create archive: {}", ec.message());
+        return {};
     }
 
-    return std::make_tuple(ec, output_data);
+    LOGGER_INFO("Archive created in {}", ar.path());
+
+    for(auto&& e : entries) {
+        e.m_is_directory ?
+            ar.add_directory(e.m_realpath, e.m_archive_path, ec) :
+            ar.add_file(e.m_realpath, e.m_archive_path, ec);
+
+        if(ec) {
+            LOGGER_ERROR("Failed to add entry to archive: {}", ec.message());
+            return {};
+        }
+    }
+
+    return ar.path();
+}
+
+std::error_code
+unpack_archive(const bfs::path& archive_path,
+               const bfs::path& parent_path) {
+
+    using norns::utils::tar;
+    std::error_code ec;
+
+    boost::system::error_code bec;
+    tar ar(archive_path, tar::open, ec);
+
+    if(ec) {
+        LOGGER_ERROR("Failed to open archive {}: {}", 
+                     archive_path, ec.message());
+        return ec;
+    }
+
+    ar.extract(parent_path, ec);
+
+    if(ec) {
+        LOGGER_ERROR("Failed to extract archive {} into {}: {}",
+                     ar.path(), parent_path, ec.message());
+        return ec;
+    }
+
+    LOGGER_DEBUG("Archive {} extracted into {}, removing archive", 
+                 ar.path(), parent_path);
+
+    bfs::remove(ar.path(), bec);
+
+    if(bec) {
+        LOGGER_ERROR("Failed to remove archive {}: {}", 
+                        ar.path(), bec.message());
+        ec.assign(bec.value(), std::generic_category());
+        return ec;
+    }
+
+    return ec;
 }
 
 } // anonymous namespace
@@ -124,10 +145,8 @@ remote_resource_to_local_path_transferor::transfer(
         const std::shared_ptr<const data::resource>& dst) const {
 
     (void) auth;
-    (void) src;
-    (void) dst;
-    (void) task_info;
 
+    std::error_code ec;
     const auto& d_src = 
         reinterpret_cast<const data::remote_resource&>(*src);
     const auto& d_dst = 
@@ -138,14 +157,15 @@ remote_resource_to_local_path_transferor::transfer(
 
     hermes::endpoint endp = m_network_endpoint->lookup(d_src.address());
 
-    rpc::resource_stat::input args(
-            m_network_endpoint->self_address(),
-            d_src.parent()->nsid(),
-            static_cast<uint32_t>(data::resource_type::local_posix_path), 
-            d_src.name());
-
     auto resp = 
-        m_network_endpoint->post<rpc::resource_stat>(endp, args).get();
+        m_network_endpoint->post<rpc::resource_stat>(
+            endp, 
+            rpc::resource_stat::input{
+                m_network_endpoint->self_address(),
+                d_src.parent()->nsid(),
+                static_cast<uint32_t>(data::resource_type::local_posix_path), 
+                d_src.name()
+            }).get();
 
     LOGGER_DEBUG("remote_stat returned [task_error: {}, sys_errnum: {}, "
                  "is_collection: {}, packed_size: {}]", 
@@ -160,16 +180,35 @@ remote_resource_to_local_path_transferor::transfer(
             static_cast<std::errc>(resp.at(0).sys_errnum()));
     }
 
-    bfs::path output_path = 
-        resp.at(0).is_collection() ? "/tmp/test.tar" : d_dst.canonical_path();
+    utils::temporary_file tempfile(
+        /* output_path */
+        {resp.at(0).is_collection() ?
+            "norns-archive-%%%%-%%%%-%%%%.tar" :
+            d_dst.name()},
+        /* parent_dir */
+        {resp.at(0).is_collection() ? 
+            "/tmp" : 
+            d_dst.parent()->mount()},
+        resp.at(0).packed_size(), 
+        ec);
 
-    LOGGER_DEBUG("creating local resource: {}", output_path);
+    if(ec) {
+        LOGGER_ERROR("Failed to create temporary file: {}", ec.message());
+        return ec;
+    }
 
-    std::error_code ec;
-    std::shared_ptr<hermes::mapped_buffer> output_buffer;
+    LOGGER_DEBUG("created local resource: {}", tempfile.path());
 
-    std::tie(ec, output_buffer) = 
-        ::create_file(output_path, resp.at(0).packed_size());
+    auto output_buffer = 
+        std::make_shared<hermes::mapped_buffer>(
+                tempfile.path().string(),
+                hermes::access_mode::write_only,
+                &ec);
+
+    if(ec) {
+        LOGGER_ERROR("Failed mmapping output buffer: {}", ec.value());
+        return ec;
+    }
 
     // let's prepare some local buffers
     std::vector<hermes::mutable_buffer> bufseq{
@@ -179,22 +218,24 @@ remote_resource_to_local_path_transferor::transfer(
     hermes::exposed_memory local_buffers =
         m_network_endpoint->expose(bufseq, hermes::access_mode::write_only);
 
-    rpc::pull_resource::input args2(
-            d_src.parent()->nsid(),
-            d_src.name(),
-            // XXX this resource_type should not be needed, but we cannot
-            // XXX (easily) find it out right now in the server, for now we
-            // XXX propagate it, but we should implement a lookup()/stat()
-            // XXX function in backends to retrieve this information from the
-            // XXX resource id
-            static_cast<uint32_t>(data::resource_type::local_posix_path), 
-            m_network_endpoint->self_address(),
-            d_dst.parent()->nsid(), 
-            d_dst.name(),
-            local_buffers);
-
     auto resp2 = 
-        m_network_endpoint->post<rpc::pull_resource>(endp, args2).get();
+        m_network_endpoint->post<rpc::pull_resource>(
+            endp,
+            rpc::pull_resource::input{
+                d_src.parent()->nsid(), 
+                d_src.name(),
+                // XXX this resource_type should not be needed, but we
+                // XXX cannot (easily) find it out right now in the server, 
+                // XXX for now we propagate it, but we should implement
+                // XXX a lookup()/stat() function in backends to retrieve
+                // XXX this information from the resource id
+                static_cast<uint32_t>(
+                    data::resource_type::local_posix_path),
+                m_network_endpoint->self_address(), 
+                d_dst.parent()->nsid(),
+                d_dst.name(), 
+                local_buffers
+            }).get();
 
     LOGGER_DEBUG("Remote push request completed with output "
                  "{{status: {}, task_error: {}, sys_errnum: {}}} "
@@ -211,40 +252,13 @@ remote_resource_to_local_path_transferor::transfer(
     }
 
     if(resp.at(0).is_collection()) {
-        using utils::tar;
-
-        std::error_code ec;
-        boost::system::error_code bec;
-        tar ar(output_path, tar::open, ec);
-
-        if(ec) {
-            LOGGER_ERROR("Failed to open archive {}: {}", 
-                         output_path, logger::errno_message(ec.value()));
-
-            return std::make_error_code(static_cast<std::errc>(ec.value()));
-        }
-
-        ar.extract(d_dst.parent()->mount(), ec);
-
-        if(ec) {
-            LOGGER_ERROR("Failed to extact archive into {}: {}",
-                         ar.path(), d_dst.parent()->mount(), ec.message());
-            return std::make_error_code(static_cast<std::errc>(ec.value()));
-        }
-
-        LOGGER_DEBUG("Archive {} extracted into {}", 
-                     ar.path(), d_dst.parent()->mount());
-
-        bfs::remove(ar.path(), bec);
-
-        if(bec) {
-            LOGGER_ERROR("Failed to remove archive {}: {}", 
-                         ar.path(), ec.message());
-            return std::make_error_code(static_cast<std::errc>(ec.value()));
-        }
+        return ::unpack_archive(tempfile.path(), d_dst.parent()->mount());
     }
 
-    return std::make_error_code(static_cast<std::errc>(0));
+    // prevent output file from being removed by tempfile's destructor
+    (void) tempfile.release();
+
+    return ec;
 }
 
 
@@ -256,50 +270,44 @@ remote_resource_to_local_path_transferor::accept_transfer(
         const std::shared_ptr<const data::resource>& dst) const {
 
     (void) auth;
-    (void) task_info;
-    (void) src;
-    (void) dst;
 
+    std::error_code ec;
     const auto& d_src = 
         reinterpret_cast<const data::local_path_resource&>(*src);
     const auto& d_dst = 
         reinterpret_cast<const data::remote_resource&>(*dst);
-    std::error_code ec;
+    auto tempfile = std::make_shared<utils::temporary_file>();
 
-    std::string input_path = d_src.canonical_path().string();
-    bool is_collection = d_src.is_collection();
+    bfs::path input_path = 
+        !d_src.is_collection() ? 
+        d_src.canonical_path() : 
+        [&]() -> bfs::path {
 
-    if(is_collection) {
-        using utils::tar;
+            LOGGER_DEBUG("[{}] Creating temporary archive from local directory", 
+                         task_info->id());
 
-        LOGGER_DEBUG("[{}] Creating archive from local directory", 
-                     task_info->id());
+            const bfs::path ar_path =
+                ::pack_archive("norns-archive-%%%%-%%%%-%%%%.tar",
+                               "/tmp",
+                               {{true, d_src.canonical_path(), d_dst.name()}},
+                               ec);
 
-        bfs::path ar_path = 
-            "/tmp" / bfs::unique_path("norns-archive-%%%%-%%%%-%%%%.tar");
-        
-        tar ar(ar_path, tar::create, ec);
+            if(ec) {
+                LOGGER_ERROR("Failed to create temporary archive: {}", 
+                             ec.message());
+                return {};
+            }
 
-        if(ec) {
-            LOGGER_ERROR("Failed to create archive: {}", 
-                         logger::errno_message(ec.value()));
-            return ec;
-        }
+            tempfile->manage(ar_path, ec);
 
-        LOGGER_INFO("Archive created in {}", ar.path());
+            if(ec) {
+                LOGGER_ERROR("Failed to create temporary archive: {}", 
+                             ec.message());
+                return {};
+            }
 
-        ar.add_directory(d_src.canonical_path(), 
-                         d_dst.name(),
-                         ec);
-
-        if(ec) {
-            LOGGER_ERROR("Failed to add directory to archive: {}", 
-                         logger::errno_message(ec.value()));
-            return ec;
-        }
-
-        input_path = ar.path().string();
-    }
+            return tempfile->path();
+        }(); // <<== XXX (IILE)
 
     // retrieve task context
     const auto ctx = boost::any_cast<
@@ -312,12 +320,14 @@ remote_resource_to_local_path_transferor::accept_transfer(
 
     // create local buffers from local input data
     auto input_buffer = 
-        std::make_shared<hermes::mapped_buffer>(input_path,
-                                                hermes::access_mode::read_only,
-                                                &ec);
+        std::make_shared<hermes::mapped_buffer>(
+                input_path.string(),
+                hermes::access_mode::read_only,
+                &ec);
 
     if(ec) {
         LOGGER_ERROR("Failed mapping input data: {}", ec.message());
+        *ctx = std::move(req); // restore ctx
         return ec;
     }
 
@@ -335,11 +345,15 @@ remote_resource_to_local_path_transferor::accept_transfer(
                  remote_buffers.count(),
                  remote_buffers.size());
 
-    // N.B. IMPORTANT: we NEED to capture input_buffer by value here so that
+    // N.B. IMPORTANT: we NEED to capture 'input_buffer' by value here so that
     // the mapped_buffer doesn't get released before completion_callback()
     // is called.
+    // We also capture 'tempfile' by value so that it gets automatically 
+    // released (and the associated file erased) when the callback finishes
+    // FIXME: with C++14 we could simply std::move both into the capture rather
+    // than using shared_ptrs :/
     const auto completion_callback =
-        [this, is_collection, input_path, input_buffer](
+        [this, tempfile, input_buffer](
                 hermes::request<rpc::pull_resource>&& req) { 
 
         // default response
@@ -352,24 +366,6 @@ remote_resource_to_local_path_transferor::accept_transfer(
         //TODO: hermes offers no way to check for an error yet
         LOGGER_DEBUG("Push completed");
 
-        if(is_collection) {
-            boost::system::error_code bec;
-            bfs::remove(input_path, bec);
-
-            if(bec) {
-                LOGGER_ERROR("Failed to remove archive {}: {}", 
-                             input_path, bec.message());
-                out = std::move(rpc::pull_resource::output{
-                    static_cast<uint32_t>(task_status::finished_with_error),
-                    static_cast<uint32_t>(urd_error::system_error),
-                    static_cast<uint32_t>(bec.value()),
-                    0
-                });
-                goto respond;
-            }
-        }
-
-respond:
         if(req.requires_response()) {
             m_network_endpoint->respond<rpc::pull_resource>(
                     std::move(req), 
@@ -382,7 +378,7 @@ respond:
                                    std::move(req),
                                    completion_callback);
 
-    return std::make_error_code(static_cast<std::errc>(0));
+    return ec;
 }
 
 std::string 
