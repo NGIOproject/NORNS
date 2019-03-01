@@ -213,32 +213,27 @@ local_path_to_remote_resource_transferor::transfer(
             hermes::mutable_buffer{input_buffer.data(), input_buffer.size()}
         };
 
-        auto buffers = 
+        auto local_buffers = 
             m_network_endpoint->expose(bufvec, hermes::access_mode::read_only);
 
-        rpc::remote_transfer::input args(
-                m_network_endpoint->self_address(),
-                d_src.parent()->nsid(),
-                d_dst.parent()->nsid(), 
-                static_cast<uint32_t>(backend_type::posix_filesystem),
-                static_cast<uint32_t>(data::resource_type::local_posix_path), 
-                d_src.is_collection(),
-                d_dst.name(),
-                buffers);
-
         auto resp = 
-            m_network_endpoint->post<rpc::remote_transfer>(
+            m_network_endpoint->post<rpc::push_resource>(
                 endp, 
-                rpc::remote_transfer::input{
+                rpc::push_resource::input{
                     m_network_endpoint->self_address(),
                     d_src.parent()->nsid(),
                     d_dst.parent()->nsid(), 
-                    static_cast<uint32_t>(backend_type::posix_filesystem),
+                    // XXX this resource_type should not be needed, but we
+                    // XXX cannot (easily) find it out right now in the server, 
+                    // XXX for now we propagate it, but we should implement
+                    // XXX a lookup()/stat() function in backends to retrieve
+                    // XXX this information locally from the resource id
                     static_cast<uint32_t>(
                         data::resource_type::local_posix_path), 
                     d_src.is_collection(),
+                    d_src.name(),
                     d_dst.name(),
-                    buffers
+                    local_buffers
                 }).get();
 
         if(static_cast<task_status>(resp.at(0).status()) ==
@@ -285,7 +280,7 @@ local_path_to_remote_resource_transferor::accept_transfer(
     // retrieve task context
     const auto ctx = boost::any_cast<
         std::shared_ptr<
-            hermes::request<rpc::remote_transfer>>>(task_info->context());
+            hermes::request<rpc::push_resource>>>(task_info->context());
     auto req = std::move(*ctx);
 
     LOGGER_DEBUG("[{}] accept_push: {} -> {}", task_info->id(),
@@ -351,7 +346,7 @@ local_path_to_remote_resource_transferor::accept_transfer(
     // is called.
     const auto completion_callback = 
         [this, is_collection, tempfile, d_dst, output_buffer, start](
-            hermes::request<rpc::remote_transfer>&& req) {
+            hermes::request<rpc::push_resource>&& req) {
 
         uint32_t usecs = 
             std::chrono::duration_cast<std::chrono::microseconds>(
@@ -361,7 +356,7 @@ local_path_to_remote_resource_transferor::accept_transfer(
         LOGGER_DEBUG("Pull completed ({} usecs)", usecs);
 
         // default response (success)
-        rpc::remote_transfer::output out = {
+        rpc::push_resource::output out = {
                 static_cast<uint32_t>(task_status::finished),
                 static_cast<uint32_t>(urd_error::success),
                 0,
@@ -372,7 +367,7 @@ local_path_to_remote_resource_transferor::accept_transfer(
                 ::unpack_archive(tempfile->path(), d_dst.parent()->mount());
 
             if(ec) {
-                out = rpc::remote_transfer::output{
+                out = rpc::push_resource::output{
                         static_cast<uint32_t>(
                             task_status::finished_with_error),
                         static_cast<uint32_t>(urd_error::system_error),
@@ -393,7 +388,7 @@ local_path_to_remote_resource_transferor::accept_transfer(
 
 respond:
         if(req.requires_response()) {
-            m_network_endpoint->respond<rpc::remote_transfer>(
+            m_network_endpoint->respond<rpc::push_resource>(
                     std::move(req), out);
         }
     };

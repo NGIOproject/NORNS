@@ -158,9 +158,9 @@ remote_resource_to_local_path_transferor::transfer(
     hermes::endpoint endp = m_network_endpoint->lookup(d_src.address());
 
     auto resp = 
-        m_network_endpoint->post<rpc::resource_stat>(
+        m_network_endpoint->post<rpc::stat_resource>(
             endp, 
-            rpc::resource_stat::input{
+            rpc::stat_resource::input{
                 m_network_endpoint->self_address(),
                 d_src.parent()->nsid(),
                 static_cast<uint32_t>(data::resource_type::local_posix_path), 
@@ -228,7 +228,7 @@ remote_resource_to_local_path_transferor::transfer(
                 // XXX cannot (easily) find it out right now in the server, 
                 // XXX for now we propagate it, but we should implement
                 // XXX a lookup()/stat() function in backends to retrieve
-                // XXX this information from the resource id
+                // XXX this information locally from the resource id
                 static_cast<uint32_t>(
                     data::resource_type::local_posix_path),
                 m_network_endpoint->self_address(), 

@@ -51,10 +51,6 @@ struct resource_info;
 struct resource;
 }
 
-namespace rpc {
-struct remote_transfer;
-}
-
 namespace io {
 
 struct remote_resource_to_local_path_transferor : public transferor {
@@ -85,10 +81,6 @@ struct remote_resource_to_local_path_transferor : public transferor {
     to_string() const override final;
 
 private:
-
-    void
-    do_accept(hermes::request<norns::rpc::remote_transfer>&& req);
-
     std::shared_ptr<hermes::async_engine> m_network_endpoint;
 };
 

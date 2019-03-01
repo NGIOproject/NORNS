@@ -668,40 +668,22 @@ response_ptr urd::unknown_request_handler(const request_ptr /*base_request*/) {
 // N.B. This function is called by the progress thread internal to 
 // m_network_endpoint rather than by the main execution thread
 void
-urd::remote_transfer_handler(hermes::request<rpc::remote_transfer>&& req) {
+urd::push_resource_handler(hermes::request<rpc::push_resource>&& req) {
 
     const auto args = req.args();
 
-    LOGGER_WARN("incoming rpc::remote_transfer(from: \"{}@{}:{}\", to: \"{}:{}\")", 
+    LOGGER_WARN("incoming rpc::push_resource(from: \"{}@{}:{}\", to: \"{}:{}\")", 
                 args.in_nsid(), 
-                args.address(),
-                args.resource_name(),
+                args.in_address(),
+                args.in_resource_name(),
                 args.out_nsid(),
-                args.resource_name());
-
-    LOGGER_DEBUG("rpc::out::args{{");
-    LOGGER_DEBUG("  address: \"{}\",", args.address()); 
-    LOGGER_DEBUG("  in_nsid: \"{}\",", args.in_nsid());
-    LOGGER_DEBUG("  out_nsid: \"{}\",", args.out_nsid());
-    LOGGER_DEBUG("  btype: {} ({}),", 
-                 args.backend_type(),
-                 utils::to_string(
-                     static_cast<backend_type>(args.backend_type())));
-    LOGGER_DEBUG("  rtype: {} ({}),",
-                 args.resource_type(),
-                 utils::to_string(
-                     static_cast<data::resource_type>(args.resource_type())));
-    LOGGER_DEBUG("  is_collection: {}", args.is_collection());
-    LOGGER_DEBUG("  rname: \"{}\",", args.resource_name());
-    LOGGER_DEBUG("  buffers: {{...}}");
-    LOGGER_DEBUG("};");
-    LOGGER_FLUSH();
+                args.out_resource_name());
 
     urd_error rv = urd_error::success;
     boost::optional<io::generic_task> t;
     std::shared_ptr<storage::backend> src_backend;
     boost::optional<std::shared_ptr<storage::backend>> dst_backend;
-    auto dst_rtype = static_cast<data::resource_type>(args.resource_type());
+    auto dst_rtype = static_cast<data::resource_type>(args.out_resource_type());
     auth::credentials auth; //XXX fake credentials for now
 
     const auto create_rinfo = 
@@ -711,12 +693,13 @@ urd::remote_transfer_handler(hermes::request<rpc::remote_transfer>&& req) {
         switch(rtype) {
             case data::resource_type::remote_resource:
                 return std::make_shared<data::remote_resource_info>(
-                        args.address(), args.in_nsid(), args.is_collection(),
-                        args.resource_name(), args.buffers());
+                        args.in_address(), args.in_nsid(), 
+                        args.in_is_collection(), args.in_resource_name(), 
+                        args.in_buffers());
             case data::resource_type::local_posix_path:
             case data::resource_type::shared_posix_path:
                 return std::make_shared<data::local_path_info>(
-                        args.out_nsid(), args.resource_name());
+                        args.out_nsid(), args.out_resource_name());
             default:
                 rv = urd_error::not_supported;
                 return {};
@@ -765,7 +748,7 @@ urd::remote_transfer_handler(hermes::request<rpc::remote_transfer>&& req) {
     LOGGER_DEBUG("nsid: {}, bptr: {}", args.in_nsid(), dst_backend);
 
     auto ctx =
-        std::make_shared<hermes::request<rpc::remote_transfer>>(std::move(req));
+        std::make_shared<hermes::request<rpc::push_resource>>(std::move(req));
 
     std::tie(rv, t) =
         m_task_mgr->create_remote_initiated_task(
@@ -900,11 +883,11 @@ urd::pull_resource_handler(hermes::request<rpc::pull_resource>&& req) {
 }
 
 void
-urd::resource_stat_handler(hermes::request<rpc::resource_stat>&& req) {
+urd::stat_resource_handler(hermes::request<rpc::stat_resource>&& req) {
 
     const auto args = req.args();
 
-    LOGGER_WARN("incoming rpc::resource_stat(\"{}:{}\")", 
+    LOGGER_WARN("incoming rpc::stat_resource(\"{}:{}\")", 
                 args.nsid(), 
                 args.resource_name());
 
@@ -1211,16 +1194,16 @@ void urd::init_event_handlers() {
             std::bind(&urd::unknown_request_handler, this, std::placeholders::_1));
 
     /* remote event handlers */
-    m_network_endpoint->register_handler<rpc::remote_transfer>(
-            std::bind(&urd::remote_transfer_handler, this, 
+    m_network_endpoint->register_handler<rpc::push_resource>(
+            std::bind(&urd::push_resource_handler, this, 
                       std::placeholders::_1));
 
     m_network_endpoint->register_handler<rpc::pull_resource>(
             std::bind(&urd::pull_resource_handler, this, 
                       std::placeholders::_1));
 
-    m_network_endpoint->register_handler<rpc::resource_stat>(
-            std::bind(&urd::resource_stat_handler, this, 
+    m_network_endpoint->register_handler<rpc::stat_resource>(
+            std::bind(&urd::stat_resource_handler, this, 
                       std::placeholders::_1));
 
 
