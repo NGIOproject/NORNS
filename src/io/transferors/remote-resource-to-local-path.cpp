@@ -251,6 +251,9 @@ remote_resource_to_local_path_transferor::transfer(
             static_cast<std::errc>(resp2.at(0).sys_errnum()));
     }
 
+    task_info->record_transfer(output_buffer->size(), 
+                               resp2.at(0).elapsed_time());
+
     if(resp.at(0).is_collection()) {
         return ::unpack_archive(tempfile.path(), d_dst.parent()->mount());
     }
@@ -345,6 +348,8 @@ remote_resource_to_local_path_transferor::accept_transfer(
                  remote_buffers.count(),
                  remote_buffers.size());
 
+    auto start = std::chrono::steady_clock::now();
+
     // N.B. IMPORTANT: we NEED to capture 'input_buffer' by value here so that
     // the mapped_buffer doesn't get released before completion_callback()
     // is called.
@@ -353,15 +358,19 @@ remote_resource_to_local_path_transferor::accept_transfer(
     // FIXME: with C++14 we could simply std::move both into the capture rather
     // than using shared_ptrs :/
     const auto completion_callback =
-        [this, tempfile, input_buffer](
+        [this, tempfile, input_buffer, start](
                 hermes::request<rpc::pull_resource>&& req) { 
+
+        uint32_t usecs = 
+            std::chrono::duration_cast<std::chrono::microseconds>(
+                std::chrono::steady_clock::now() - start).count();
 
         // default response
         rpc::pull_resource::output out(
                 static_cast<uint32_t>(task_status::finished),
                 static_cast<uint32_t>(urd_error::success),
                 0,
-                0);
+                usecs);
 
         //TODO: hermes offers no way to check for an error yet
         LOGGER_DEBUG("Push completed");

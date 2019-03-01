@@ -87,7 +87,9 @@ task<iotask_type::copy>::operator()() {
         return;
     }
 
-    LOGGER_WARN("[{}] I/O task completed successfully", tid);
+    LOGGER_WARN("[{}] I/O task completed successfully [{} MiB/s]", 
+                tid, m_task_info->bandwidth());
+
     m_task_info->update_status(task_status::finished, urd_error::success, 
                     std::make_error_code(static_cast<std::errc>(ec.value())));
 }

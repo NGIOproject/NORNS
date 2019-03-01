@@ -251,7 +251,7 @@ local_path_to_remote_resource_transferor::transfer(
         task_info->record_transfer(input_buffer.size(), 
                                    resp.at(0).elapsed_time());
 
-        LOGGER_DEBUG("Remote request completed with output "
+        LOGGER_DEBUG("Remote pull request completed with output "
                      "{{status: {}, task_error: {}, sys_errnum: {}}} "
                      "({} bytes, {} usecs)",
                     resp.at(0).status(), resp.at(0).task_error(), 
@@ -365,7 +365,7 @@ local_path_to_remote_resource_transferor::accept_transfer(
                 static_cast<uint32_t>(task_status::finished),
                 static_cast<uint32_t>(urd_error::success),
                 0,
-                0};
+                usecs};
 
         if(is_collection) {
             std::error_code ec = 
