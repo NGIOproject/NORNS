@@ -471,7 +471,7 @@ task_manager::enqueue_task(io::generic_task&& t) {
     // of the consumed bandwidth by each task
     // N.B: we use capture-by-value here so that the task_info_ptr is valid when 
     // the callback is invoked.
-    const auto completion_callback = [=]() {
+    const auto completion_callback = [this, t]() {
         assert(t.info()->status() == task_status::finished ||
                t.info()->status() == task_status::finished_with_error);
 

@@ -174,6 +174,8 @@ liburd_aux_la_SOURCES = \
 	io/transferors/memory-to-shared-path.hpp \
 	io/transferors/memory-to-remote-path.cpp \
 	io/transferors/memory-to-remote-path.hpp \
+	io/transferors/memory-to-remote-resource.cpp \
+	io/transferors/memory-to-remote-resource.hpp \
 	io/transferor-registry.cpp \
 	io/transferor-registry.hpp \
 	job.hpp \

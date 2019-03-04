@@ -25,16 +25,59 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#ifndef __IO_TRANSFERORS_HPP__
-#define __IO_TRANSFERORS_HPP__
+#ifndef __IO_MEM_TO_REMOTE_RESOURCE_TX__
+#define __IO_MEM_TO_REMOTE_RESOURCE_TX__
 
-#include "transferors/local-path-to-local-path.hpp"
-#include "transferors/local-path-to-shared-path.hpp"
-#include "transferors/local-path-to-remote-resource.hpp"
-#include "transferors/memory-to-local-path.hpp"
-#include "transferors/memory-to-shared-path.hpp"
-#include "transferors/memory-to-remote-path.hpp"
-#include "transferors/remote-resource-to-local-path.hpp"
-#include "transferors/memory-to-remote-resource.hpp"
+#include <memory>
+#include <system_error>
+#include "transferor.hpp"
 
-#endif /* __IO_TRANSFERORS_HPP__ */
+namespace norns {
+
+// forward declarations
+namespace auth {
+struct credentials;
+}
+
+namespace data {
+struct resource_info;
+struct resource;
+}
+
+namespace io {
+
+struct memory_region_to_remote_resource_transferor : public transferor {
+
+    memory_region_to_remote_resource_transferor(
+            std::shared_ptr<hermes::async_engine> network_endpoint);
+
+    bool 
+    validate(const std::shared_ptr<data::resource_info>& src_info,
+             const std::shared_ptr<data::resource_info>& dst_info) 
+        const override final;
+
+    std::error_code 
+    transfer(const auth::credentials& auth,                
+             const std::shared_ptr<task_info>& task_info,
+             const std::shared_ptr<const data::resource>& src,  
+             const std::shared_ptr<const data::resource>& dst) 
+        const override final;
+
+    std::error_code 
+    accept_transfer(const auth::credentials& auth,                
+                const std::shared_ptr<task_info>& task_info,
+                const std::shared_ptr<const data::resource>& src,  
+                const std::shared_ptr<const data::resource>& dst) 
+        const override final;
+
+    std::string 
+    to_string() const override final;
+
+private:
+    std::shared_ptr<hermes::async_engine> m_network_endpoint;
+};
+
+} // namespace io
+} // namespace norns
+
+#endif /* __MEM_TO_REMOTE_RESOURCE_TX__ */

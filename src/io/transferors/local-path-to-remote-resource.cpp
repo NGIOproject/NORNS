@@ -271,6 +271,11 @@ local_path_to_remote_resource_transferor::accept_transfer(
 
     (void) auth;
 
+//    LOGGER_CRITICAL("accept_remote_request: {}",
+//                    std::chrono::duration_cast<std::chrono::nanoseconds>(
+//                        std::chrono::steady_clock::now().time_since_epoch())
+//                        .count());
+
     std::error_code ec;
     const auto& d_src = 
         reinterpret_cast<const data::remote_resource&>(*src);
@@ -295,6 +300,17 @@ local_path_to_remote_resource_transferor::accept_transfer(
     assert(remote_buffers.count() == 1);
 
     bool is_collection = d_src.is_collection();
+
+    // TODO this should probably go into validate(), but we need to change
+    // its interface to accept resources rather than resource_infos
+    // to be able to determine whether d_dst is a directory
+    if(d_src.name().empty() && bfs::is_directory(d_dst.canonical_path())) {
+        LOGGER_ERROR("Failed to transfer unnamed resource to directory "
+                     "(target should be a named file)");
+        ec.assign(EISDIR, std::generic_category());
+        *ctx = std::move(req); // restore ctx
+        return ec;
+    }
 
     auto tempfile = 
         std::make_shared<utils::temporary_file>(
@@ -348,6 +364,11 @@ local_path_to_remote_resource_transferor::accept_transfer(
         [this, is_collection, tempfile, d_dst, output_buffer, start](
             hermes::request<rpc::push_resource>&& req) {
 
+//        LOGGER_CRITICAL("completion_callback invoked: {}",
+//                        std::chrono::duration_cast<std::chrono::nanoseconds>(
+//                            std::chrono::steady_clock::now().time_since_epoch())
+//                            .count());
+
         uint32_t usecs = 
             std::chrono::duration_cast<std::chrono::microseconds>(
                 std::chrono::steady_clock::now() - start).count();
@@ -392,6 +413,11 @@ respond:
                     std::move(req), out);
         }
     };
+
+//    LOGGER_CRITICAL("async_pull posted: {}",
+//                    std::chrono::duration_cast<std::chrono::nanoseconds>(
+//                        std::chrono::steady_clock::now().time_since_epoch())
+//                        .count());
 
     m_network_endpoint->async_pull(remote_buffers,
                                    local_buffers,

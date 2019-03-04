@@ -156,8 +156,8 @@ SCENARIO("submit request", "[api::norns_submit]") {
 
             norns_error_t rv = norns_submit(&task);
 
-            THEN("NORNS_ENOTSUPPORTED is returned") {
-                REQUIRE(rv == NORNS_ENOTSUPPORTED);
+            THEN("norns_submit() returns NORNS_SUCCESS") {
+                REQUIRE(rv == NORNS_SUCCESS);
             }
         }
 
@@ -347,8 +347,8 @@ SCENARIO("submit request", "[api::norns_submit]") {
 
             norns_error_t rv = norns_submit(&task);
 
-            THEN("NORNS_ENOTSUPPORTED is returned") {
-                REQUIRE(rv == NORNS_ENOTSUPPORTED);
+            THEN("norns_submit() returns NORNS_SUCCESS") {
+                REQUIRE(rv == NORNS_SUCCESS);
             }
         }
 

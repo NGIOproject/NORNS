@@ -194,10 +194,10 @@ urd_error urd::validate_iotask_args(iotask_type type,
         return urd_error::not_supported;
     }
 
-    // dst_resource cannot be a memory region
-    if(dst_rinfo->type() == data::resource_type::memory_region) {
-        return urd_error::not_supported;
-    }
+//    // dst_resource cannot be a memory region
+//    if(dst_rinfo->type() == data::resource_type::memory_region) {
+//        return urd_error::not_supported;
+//    }
 
     return urd_error::success;
 }
@@ -1351,9 +1351,11 @@ void urd::load_transfer_plugins() {
                 std::make_shared<io::memory_region_to_shared_path_transferor>());
 
     // memory region -> remote path
-    load_plugin(data::resource_type::memory_region, 
-                data::resource_type::remote_posix_path, 
-                std::make_shared<io::memory_region_to_remote_path_transferor>());
+    load_plugin(
+        data::resource_type::memory_region,
+        data::resource_type::remote_resource,
+        std::make_shared<io::memory_region_to_remote_resource_transferor>(
+            m_network_endpoint));
 
     // local path -> local path
     load_plugin(data::resource_type::local_posix_path, 

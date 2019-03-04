@@ -115,7 +115,8 @@ temporary_file::temporary_file(const std::string& pattern,
 
     if(!fh) {
         ec.assign(errno, std::generic_category());
-        // LOGGER_ERROR("Failed to create temporary file: {}", ec.message());
+        LOGGER_ERROR("Failed to create temporary file {}: {}", 
+                     filename, ec.message());
         return;
     }
 

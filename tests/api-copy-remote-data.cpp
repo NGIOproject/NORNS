@@ -299,8 +299,6 @@ SCENARIO("errors copying local POSIX path to remote POSIX path",
         WHEN("copying a NORNS_LOCAL_PATH file from a subdir without "
              "appropriate permissions to access it") {
 
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
             norns_iotask_t task = 
                 NORNS_IOTASK(NORNS_IOTASK_COPY,
                              NORNS_LOCAL_PATH(nsid0, src_noperms_file1.c_str()),
@@ -530,7 +528,6 @@ SCENARIO("errors copying local POSIX path to remote POSIX path",
             }
         }
 #endif
-
 
         env.notify_success();
     }
@@ -1515,6 +1512,431 @@ SCENARIO("copy local POSIX file to remote POSIX subdir",
 
         env.notify_success();
     }
+}
+
+/******************************************************************************/
+/* tests for push transfers (memory buffers)                                  */
+/******************************************************************************/
+SCENARIO("copy local memory region to remote POSIX file", 
+         "[api::norns_submit_push_memory_to_posix_file]") {
+
+    GIVEN("a running urd instance") {
+
+        /**********************************************************************/
+        /* setup common environment                                           */
+        /**********************************************************************/
+        test_env env;
+
+        const char* nsid0 = "tmp0";
+        const char* remote_host = "127.0.0.1:42000";
+        bfs::path dst_mnt;
+
+        // create namespaces
+        std::tie(std::ignore, dst_mnt) = env.create_namespace(nsid0, "mnt/tmp0", 16384);
+
+        // create input data buffer (around 40MiBs)
+        std::vector<int> input_data(10000000, 42);
+        void* region_addr = input_data.data();
+        size_t region_size = input_data.size() * sizeof(int);
+
+        // output names
+        const bfs::path dst_file_at_root0   = "/file0";
+        const bfs::path dst_file_at_subdir0 = "/a/b/c/d/file0";
+        const bfs::path dst_root            = "/";
+        const bfs::path dst_subdir0         = "/output_dir0/"; // existing
+        const bfs::path dst_subdir1         = "/output_dir0"; // existing but does not look as a directory
+        const bfs::path dst_subdir2         = "/output_dir0/a/b/c/d/"; // existing
+        const bfs::path dst_subdir3         = "/output_dir0/a/b/c/d"; // existing but does not look as a directory
+        const bfs::path dst_subdir4         = "/output_dir1/"; // non-existing
+        const bfs::path dst_subdir5         = "/output_dir1/a/b/c/d/"; // non-existing
+
+        // create required output directories
+        env.add_to_namespace(nsid0, dst_subdir0);
+        env.add_to_namespace(nsid0, dst_subdir2);
+
+        // 
+        WHEN("copying a valid memory region to a NORNS_REMOTE_PATH file "
+             "located at DST's namespace root '/'") {
+
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY, 
+                             NORNS_MEMORY_REGION(region_addr, region_size), 
+                             NORNS_REMOTE_PATH(nsid0, 
+                                               remote_host,
+                                               dst_file_at_root0.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("norns_submit() returns NORNS_SUCCESS") {
+                REQUIRE(rv == NORNS_SUCCESS);
+                REQUIRE(task.t_id != 0);
+
+                // wait until the task completes
+                rv = norns_wait(&task);
+
+                THEN("norns_wait() return NORNS_SUCCESS") {
+                    REQUIRE(rv == NORNS_SUCCESS);
+
+                    THEN("norns_status() reports NORNS_EFINISHED") {
+                        norns_stat_t stats;
+                        rv = norns_status(&task, &stats);
+
+                        REQUIRE(rv == NORNS_SUCCESS);
+                        REQUIRE(stats.st_status == NORNS_EFINISHED);
+
+                        THEN("Output file contains buffer data") {
+
+                            bfs::path dst = 
+                                env.get_from_namespace(
+                                        nsid0, dst_file_at_root0);
+
+                            REQUIRE(compare(input_data, dst) == true);
+                        }
+                    }
+                }
+            }
+        }
+
+        WHEN("copying a valid memory region to a NORNS_REMOTE_PATH file "
+             "located at a DST's subdir") {
+
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY, 
+                             NORNS_MEMORY_REGION(region_addr, region_size), 
+                             NORNS_REMOTE_PATH(nsid0, 
+                                               remote_host,
+                                               dst_file_at_subdir0.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("norns_submit() returns NORNS_SUCCESS") {
+                REQUIRE(rv == NORNS_SUCCESS);
+                REQUIRE(task.t_id != 0);
+
+                // wait until the task completes
+                rv = norns_wait(&task);
+
+                THEN("norns_status() reports NORNS_EFINISHED") {
+                    norns_stat_t stats;
+                    rv = norns_status(&task, &stats);
+
+                    REQUIRE(rv == NORNS_SUCCESS);
+                    REQUIRE(stats.st_status == NORNS_EFINISHED);
+
+                    THEN("norns_wait() return NORNS_SUCCESS") {
+                        REQUIRE(rv == NORNS_SUCCESS);
+
+                        THEN("Output file contains buffer data") {
+
+                            bfs::path dst = 
+                                env.get_from_namespace(
+                                        nsid0, dst_file_at_subdir0);
+
+                            REQUIRE(compare(input_data, dst) == true);
+                        }
+                    }
+                }
+            }
+        }
+
+        env.notify_success();
+    }
+
+#ifndef USE_REAL_DAEMON
+    GIVEN("a non-running urd instance") {
+        WHEN("attempting to request a transfer") {
+
+            norns_iotask_t task = NORNS_IOTASK(
+                NORNS_IOTASK_COPY,
+                NORNS_LOCAL_PATH("nvml0://", "/a/b/c/"),
+                NORNS_REMOTE_PATH("nvml0://", "node1", "/a/b/d/"));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("NORNS_ECONNFAILED is returned") {
+                REQUIRE(rv == NORNS_ECONNFAILED);
+            }
+        }
+    }
+#endif
+}
+
+
+/******************************************************************************/
+/* tests for push transfers (memory buffers, errors)                          */
+/******************************************************************************/
+SCENARIO("errors copying local memory region to remote POSIX file", 
+         "[api::norns_submit_push_memory_to_posix_file_errors]") {
+
+    GIVEN("a running urd instance") {
+
+        /**********************************************************************/
+        /* setup common environment                                           */
+        /**********************************************************************/
+        test_env env;
+
+        const char* nsid0 = "tmp0";
+        const char* remote_host = "127.0.0.1:42000";
+        bfs::path dst_mnt;
+
+        // create namespaces
+        std::tie(std::ignore, dst_mnt) = env.create_namespace(nsid0, "mnt/tmp0", 16384);
+
+        // create input data buffer (around 40MiBs)
+        std::vector<int> input_data(10000000, 42);
+        void* region_addr = input_data.data();
+        size_t region_size = input_data.size() * sizeof(int);
+
+        // output names
+        const bfs::path dst_file_at_root0   = "/file0";
+        const bfs::path dst_file_at_subdir0 = "/a/b/c/d/file0";
+        const bfs::path dst_root            = "/";
+        const bfs::path dst_subdir0         = "/output_dir0/"; // existing
+        const bfs::path dst_subdir1         = "/output_dir0"; // existing but does not look as a directory
+        const bfs::path dst_subdir2         = "/output_dir0/a/b/c/d/"; // existing
+        const bfs::path dst_subdir3         = "/output_dir0/a/b/c/d"; // existing but does not look as a directory
+        const bfs::path dst_subdir4         = "/output_dir1/"; // non-existing
+        const bfs::path dst_subdir5         = "/output_dir1/a/b/c/d/"; // non-existing
+
+        // create required output directories
+        env.add_to_namespace(nsid0, dst_subdir0);
+        env.add_to_namespace(nsid0, dst_subdir2);
+
+        //TODO
+        // - copy a valid but removed memory region (cannot control => undefined behavior)
+        // - providing a non-existing directory path (i.e. finished with /) as output name
+        // - providing an existing path that points to a directory as output name
+        WHEN("copying an invalid memory region to a NORNS_REMOTE_PATH") {
+
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_MEMORY_REGION((void*) 0x42, 42000),
+                             NORNS_REMOTE_PATH(nsid0, 
+                                               remote_host,
+                                               dst_file_at_root0.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("norns_submit() returns NORNS_SUCCESS") {
+                REQUIRE(rv == NORNS_SUCCESS);
+                REQUIRE(task.t_id != 0);
+
+                // wait until the task completes
+                rv = norns_wait(&task);
+
+                THEN("norns_wait() return NORNS_SUCCESS") {
+                    REQUIRE(rv == NORNS_SUCCESS);
+
+                    THEN("norns_status() reports NORNS_ESYSTEMERROR and "
+                         "EFAULT") {
+                        norns_stat_t stats;
+                        rv = norns_status(&task, &stats);
+
+                        REQUIRE(rv == NORNS_SUCCESS);
+                        REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
+                        REQUIRE(stats.st_task_error == NORNS_ESYSTEMERROR);
+                        REQUIRE(stats.st_sys_errno == EFAULT);
+                    }
+                }
+            }
+        }
+
+        WHEN("copying a valid memory region to a NORNS_REMOTE_PATH at "
+             "DST's /") {
+
+            // create input data buffer
+            std::vector<int> input_data(100, 42);
+            void* region_addr = input_data.data();
+            size_t region_size = input_data.size() * sizeof(int);
+
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_MEMORY_REGION(region_addr, region_size),
+                             NORNS_REMOTE_PATH(nsid0, 
+                                               remote_host, 
+                                               dst_root.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("norns_submit() returns NORNS_EBADARGS") {
+                REQUIRE(rv == NORNS_EBADARGS);
+            }
+        }
+
+        WHEN("copying a valid memory region to a NORNS_REMOTE_PATH existing "
+             "directory at DST's /") {
+
+            // create input data buffer
+            std::vector<int> input_data(100, 42);
+            void* region_addr = input_data.data();
+            size_t region_size = input_data.size() * sizeof(int);
+
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_MEMORY_REGION(region_addr, region_size),
+                             NORNS_REMOTE_PATH(nsid0, 
+                                               remote_host, 
+                                               dst_subdir0.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("norns_submit() returns NORNS_EBADARGS") {
+                REQUIRE(rv == NORNS_EBADARGS);
+            }
+        }
+
+        WHEN("copying a valid memory region to a NORNS_REMOTE_PATH existing "
+             "directory at / that does not look like a directory") {
+
+            // create input data buffer
+            std::vector<int> input_data(100, 42);
+            void* region_addr = input_data.data();
+            size_t region_size = input_data.size() * sizeof(int);
+
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_MEMORY_REGION(region_addr, region_size),
+                             NORNS_REMOTE_PATH(nsid0, 
+                                               remote_host, 
+                                               dst_subdir1.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("norns_submit() returns NORNS_SUCCESS") {
+                REQUIRE(rv == NORNS_SUCCESS);
+                REQUIRE(task.t_id != 0);
+
+                // wait until the task completes
+                rv = norns_wait(&task);
+
+                THEN("norns_wait() return NORNS_SUCCESS") {
+                    REQUIRE(rv == NORNS_SUCCESS);
+
+                    THEN("norns_status() reports NORNS_ESYSTEMERROR and "
+                         "EISDIR") {
+                        norns_stat_t stats;
+                        rv = norns_status(&task, &stats);
+
+                        REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
+                        REQUIRE(stats.st_task_error == NORNS_ESYSTEMERROR);
+                        REQUIRE(stats.st_sys_errno == EISDIR);
+                    }
+                }
+            }
+        }
+
+        WHEN("copying a valid memory region to a NORNS_REMOTE_PATH existing "
+             "directory at a DST's arbitary subdir") {
+
+            // create input data buffer
+            std::vector<int> input_data(100, 42);
+            void* region_addr = input_data.data();
+            size_t region_size = input_data.size() * sizeof(int);
+
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_MEMORY_REGION(region_addr, region_size),
+                             NORNS_REMOTE_PATH(nsid0, 
+                                               remote_host, 
+                                               dst_subdir2.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("norns_submit() returns NORNS_EBADARGS") {
+                REQUIRE(rv == NORNS_EBADARGS);
+            }
+        }
+
+        WHEN("copying a valid memory region to a NORNS_REMOTE_PATH existing "
+             "directory at a DST's arbitary subdir that does not look like "
+             "a directory") {
+
+            // create input data buffer
+            std::vector<int> input_data(100, 42);
+            void* region_addr = input_data.data();
+            size_t region_size = input_data.size() * sizeof(int);
+
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_MEMORY_REGION(region_addr, region_size),
+                             NORNS_REMOTE_PATH(nsid0, 
+                                               remote_host, 
+                                               dst_subdir3.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("norns_submit() returns NORNS_SUCCESS") {
+                REQUIRE(rv == NORNS_SUCCESS);
+                REQUIRE(task.t_id != 0);
+
+                // wait until the task completes
+                rv = norns_wait(&task);
+
+                THEN("norns_wait() return NORNS_SUCCESS") {
+                    REQUIRE(rv == NORNS_SUCCESS);
+
+                    THEN("norns_status() reports NORNS_ESYSTEMERROR and "
+                         "EISDIR") {
+                        norns_stat_t stats;
+                        rv = norns_status(&task, &stats);
+
+                        REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
+                        REQUIRE(stats.st_task_error == NORNS_ESYSTEMERROR);
+                        REQUIRE(stats.st_sys_errno == EISDIR);
+                    }
+                }
+            }
+        }
+
+
+        // i.e. a destination path that 'looks like' a directory
+        WHEN("copying a valid memory region to a NORNS_REMOTE_PATH "
+             "corresponding to a non-existing directory at DST's /") {
+
+            // create input data buffer
+            std::vector<int> input_data(100, 42);
+            void* region_addr = input_data.data();
+            size_t region_size = input_data.size() * sizeof(int);
+
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_MEMORY_REGION(region_addr, region_size),
+                             NORNS_REMOTE_PATH(nsid0, 
+                                               remote_host, 
+                                               dst_subdir4.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("norns_submit() returns NORNS_EBADARGS") {
+                REQUIRE(rv == NORNS_EBADARGS);
+            }
+        }
+
+        WHEN("copying a valid memory region to a NORNS_REMOTE_PATH "
+             "non-existing arbitrary subdir at DST") {
+
+            // create input data buffer
+            std::vector<int> input_data(100, 42);
+            void* region_addr = input_data.data();
+            size_t region_size = input_data.size() * sizeof(int);
+
+            norns_iotask_t task = 
+                NORNS_IOTASK(NORNS_IOTASK_COPY,
+                             NORNS_MEMORY_REGION(region_addr, region_size),
+                             NORNS_REMOTE_PATH(nsid0, 
+                                               remote_host,
+                                               dst_subdir5.c_str()));
+
+            norns_error_t rv = norns_submit(&task);
+
+            THEN("norns_submit() returns NORNS_EBADARGS") {
+                REQUIRE(rv == NORNS_EBADARGS);
+            }
+        }
+
+
+        env.notify_success();
+    }
 
 #ifndef USE_REAL_DAEMON
     GIVEN("a non-running urd instance") {
@@ -1739,8 +2161,6 @@ SCENARIO("copy local POSIX path to remote POSIX path involving links",
 
         WHEN("copying a single NORNS_LOCAL_PATH arbitrary subdir"
              "through a symlink also located at '/'" ) {
-
-            norns_op_t task_op = NORNS_IOTASK_COPY;
 
             norns_iotask_t task = 
                 NORNS_IOTASK(NORNS_IOTASK_COPY,
@@ -3639,8 +4059,6 @@ SCENARIO("copy remote POSIX path to local POSIX path involving links",
         WHEN("copying a single NORNS_REMOTE_PATH arbitrary subdir"
              "through a symlink also located at '/'" ) {
 
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
             norns_iotask_t task = 
                 NORNS_IOTASK(NORNS_IOTASK_COPY,
                              NORNS_REMOTE_PATH(nsid0, 
@@ -3820,285 +4238,3 @@ SCENARIO("copy remote POSIX path to local POSIX path involving links",
         env.notify_success();
     }
 }
-
-
-#if 0
-SCENARIO("copy local memory buffer to local POSIX file", "[api::norns_submit_copy_buffer_to_file]") {
-    GIVEN("a running urd instance") {
-
-        /**********************************************************************/
-        /* setup common environment                                           */
-        /**********************************************************************/
-        test_env env;
-
-        const char* nsid0 = "tmp0";
-        bfs::path dst_mnt;
-
-        // create namespaces
-        std::tie(std::ignore, dst_mnt) = env.create_namespace(nsid0, "mnt/tmp0", 16384);
-
-        // create input data buffer
-        std::vector<int> input_data(100, 42);
-        void* region_addr = input_data.data();
-        size_t region_size = input_data.size() * sizeof(int);
-
-        // output names
-        const bfs::path dst_file_at_root0   = "/file0";
-        const bfs::path dst_file_at_subdir0 = "/a/b/c/d/file0";
-        const bfs::path dst_root            = "/";
-        const bfs::path dst_subdir0         = "/output_dir0/"; // existing
-        const bfs::path dst_subdir1         = "/output_dir0"; // existing but does not look as a directory
-        const bfs::path dst_subdir2         = "/output_dir0/a/b/c/d/"; // existing
-        const bfs::path dst_subdir3         = "/output_dir0/a/b/c/d"; // existing but does not look as a directory
-        const bfs::path dst_subdir4         = "/output_dir1/"; // non-existing
-        const bfs::path dst_subdir5         = "/output_dir1/a/b/c/d/"; // non-existing
-
-        // create required output directories
-        env.add_to_namespace(nsid0, dst_subdir0);
-        env.add_to_namespace(nsid0, dst_subdir2);
-
-        /**************************************************************************************************************/
-        /* tests for error conditions                                                                                 */
-        /**************************************************************************************************************/
-        //TODO
-        // - copy a valid but removed memory region (cannot control => undefined behavior)
-        // - providing a non-existing directory path (i.e. finished with /) as output name
-        // - providing an existing path that points to a directory as output name
-        WHEN("copying an invalid memory region to a local POSIX file") {
-
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_MEMORY_REGION((void*) 0x42, region_size),
-                                               NORNS_LOCAL_PATH(nsid0, dst_file_at_root0.c_str()));
-
-            norns_error_t rv = norns_submit(&task);
-
-            THEN("norns_submit() returns NORNS_SUCCESS") {
-                REQUIRE(rv == NORNS_SUCCESS);
-                REQUIRE(task.t_id != 0);
-
-                // wait until the task completes
-                rv = norns_wait(&task);
-
-                THEN("norns_wait() return NORNS_SUCCESS") {
-                    REQUIRE(rv == NORNS_SUCCESS);
-
-                    THEN("norns_status() reports NORNS_ESYSTEMERROR and EFAULT") {
-                        norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
-
-                        REQUIRE(rv == NORNS_SUCCESS);
-                        REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
-                        REQUIRE(stats.st_task_error == NORNS_ESYSTEMERROR);
-                        REQUIRE(stats.st_sys_errno == EFAULT);
-                    }
-                }
-            }
-        }
-
-        WHEN("copying a valid memory region to a local POSIX file located at '/'") {
-
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_MEMORY_REGION(region_addr, region_size),
-                                               NORNS_LOCAL_PATH(nsid0, dst_file_at_root0.c_str()));
-
-            norns_error_t rv = norns_submit(&task);
-
-            THEN("norns_submit() returns NORNS_SUCCESS") {
-                REQUIRE(rv == NORNS_SUCCESS);
-                REQUIRE(task.t_id != 0);
-
-                // wait until the task completes
-                rv = norns_wait(&task);
-
-                THEN("norns_wait() return NORNS_SUCCESS") {
-                    REQUIRE(rv == NORNS_SUCCESS);
-
-                    THEN("Output file contains buffer data") {
-
-                        bfs::path dst = env.get_from_namespace(nsid0, dst_file_at_root0);
-
-                        REQUIRE(compare(input_data, dst) == true);
-                    }
-                }
-            }
-        }
-
-        WHEN("copying a valid memory region to a local POSIX file located at a subdir") {
-
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_MEMORY_REGION(region_addr, region_size),
-                                               NORNS_LOCAL_PATH(nsid0, dst_file_at_subdir0.c_str()));
-
-            norns_error_t rv = norns_submit(&task);
-
-            THEN("norns_submit() returns NORNS_SUCCESS") {
-                REQUIRE(rv == NORNS_SUCCESS);
-                REQUIRE(task.t_id != 0);
-
-                // wait until the task completes
-                rv = norns_wait(&task);
-
-                THEN("norns_wait() return NORNS_SUCCESS") {
-                    REQUIRE(rv == NORNS_SUCCESS);
-
-                    THEN("Output file contains buffer data") {
-
-                        bfs::path dst = env.get_from_namespace(nsid0, dst_file_at_subdir0);
-
-                        REQUIRE(compare(input_data, dst) == true);
-                    }
-                }
-            }
-        }
-
-        WHEN("copying a valid memory region to a local POSIX /") {
-
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_MEMORY_REGION(region_addr, region_size),
-                                               NORNS_LOCAL_PATH(nsid0, dst_root.c_str()));
-
-            norns_error_t rv = norns_submit(&task);
-
-            THEN("norns_submit() returns NORNS_EBADARGS") {
-                REQUIRE(rv == NORNS_EBADARGS);
-            }
-        }
-
-        WHEN("copying a valid memory region to a local POSIX existing directory at /") {
-
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_MEMORY_REGION(region_addr, region_size),
-                                               NORNS_LOCAL_PATH(nsid0, dst_subdir0.c_str()));
-
-            norns_error_t rv = norns_submit(&task);
-
-            THEN("norns_submit() returns NORNS_EBADARGS") {
-                REQUIRE(rv == NORNS_EBADARGS);
-            }
-        }
-
-        WHEN("copying a valid memory region to a local POSIX existing directory at /") {
-
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_MEMORY_REGION(region_addr, region_size),
-                                               NORNS_LOCAL_PATH(nsid0, dst_subdir1.c_str()));
-
-            norns_error_t rv = norns_submit(&task);
-
-            THEN("norns_submit() returns NORNS_SUCCESS") {
-                REQUIRE(rv == NORNS_SUCCESS);
-                REQUIRE(task.t_id != 0);
-
-                // wait until the task completes
-                rv = norns_wait(&task);
-
-                THEN("norns_wait() return NORNS_SUCCESS") {
-                    REQUIRE(rv == NORNS_SUCCESS);
-
-                    THEN("norns_status() reports NORNS_ESYSTEMERROR and EISDIR") {
-                        norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
-
-                        REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
-                        REQUIRE(stats.st_task_error == NORNS_ESYSTEMERROR);
-                        REQUIRE(stats.st_sys_errno == EISDIR);
-                    }
-                }
-            }
-        }
-
-        WHEN("copying a valid memory region to a local POSIX existing directory at an arbitary subdir") {
-
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_MEMORY_REGION(region_addr, region_size),
-                                               NORNS_LOCAL_PATH(nsid0, dst_subdir2.c_str()));
-
-            norns_error_t rv = norns_submit(&task);
-
-            THEN("norns_submit() returns NORNS_EBADARGS") {
-                REQUIRE(rv == NORNS_EBADARGS);
-            }
-        }
-
-        WHEN("copying a valid memory region to a local POSIX existing directory at an arbitary subdir") {
-
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_MEMORY_REGION(region_addr, region_size),
-                                               NORNS_LOCAL_PATH(nsid0, dst_subdir3.c_str()));
-
-            norns_error_t rv = norns_submit(&task);
-
-            THEN("norns_submit() returns NORNS_SUCCESS") {
-                REQUIRE(rv == NORNS_SUCCESS);
-                REQUIRE(task.t_id != 0);
-
-                // wait until the task completes
-                rv = norns_wait(&task);
-
-                THEN("norns_wait() return NORNS_SUCCESS") {
-                    REQUIRE(rv == NORNS_SUCCESS);
-
-                    THEN("norns_status() reports NORNS_ESYSTEMERROR and EISDIR") {
-                        norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
-
-                        REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
-                        REQUIRE(stats.st_task_error == NORNS_ESYSTEMERROR);
-                        REQUIRE(stats.st_sys_errno == EISDIR);
-                    }
-                }
-            }
-        }
-
-
-        // i.e. a destination path that 'looks like' a directory
-        WHEN("copying a valid memory region to a local POSIX non-existing directory") {
-
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_MEMORY_REGION(region_addr, region_size),
-                                               NORNS_LOCAL_PATH(nsid0, dst_subdir4.c_str()));
-
-            norns_error_t rv = norns_submit(&task);
-
-            THEN("norns_submit() returns NORNS_EBADARGS") {
-                REQUIRE(rv == NORNS_EBADARGS);
-            }
-        }
-
-        WHEN("copying a valid memory region to a local POSIX non-existing directory") {
-
-            norns_op_t task_op = NORNS_IOTASK_COPY;
-
-            norns_iotask_t task = NORNS_IOTASK(task_op,
-                                               NORNS_MEMORY_REGION(region_addr, region_size),
-                                               NORNS_LOCAL_PATH(nsid0, dst_subdir5.c_str()));
-
-            norns_error_t rv = norns_submit(&task);
-
-            THEN("norns_submit() returns NORNS_EBADARGS") {
-                REQUIRE(rv == NORNS_EBADARGS);
-            }
-        }
-
-        env.notify_success();
-    }
-}
-#endif
