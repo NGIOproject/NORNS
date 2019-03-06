@@ -6,8 +6,7 @@ LCOV=`which lcov`
 ${LCOV} \
     `find ${GIT_ROOTDIR} -name "*.gcda" 2>/dev/null | xargs -I{} dirname {} | uniq | xargs -I {} echo -n " --directory "{}` \
     --capture \
-    --output-file gcov.info \
-    2&>1 /dev/null
+    --output-file gcov.info
 
 ${LCOV} \
     --remove gcov.info \
@@ -17,8 +16,7 @@ ${LCOV} \
         '*/spdlog/*' \
         '*/build*/*' \
         '*/tests/*' \
-    -o norns.info \
-    2&>1 /dev/null
+    -o norns.info
 
 ${LCOV} -l norns.info
 
