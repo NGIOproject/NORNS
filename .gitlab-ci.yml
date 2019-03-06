@@ -158,7 +158,6 @@ test:ubuntu:latest:
             libcap2-bin
             valgrind
             cmake
-            gcov
             lcov
 
         - pushd . &&
