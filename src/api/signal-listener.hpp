@@ -37,16 +37,17 @@ namespace ba = boost::asio;
 namespace norns {
 namespace api {
 
+template <class F>
+void do_for(F /*f*/) {
+    // Parameter pack is empty.
+}
+
 template <class F, class First, class... Rest>
 void do_for(F f, First first, Rest... rest) {
     f(first);
     do_for(f, rest...);
 }
 
-template <class F>
-void do_for(F /*f*/) {
-    // Parameter pack is empty.
-}
 
 struct signal_listener {
 

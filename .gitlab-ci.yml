@@ -158,6 +158,8 @@ test:ubuntu:latest:
             libcap2-bin
             valgrind
             cmake
+            gcov
+            lcov
 
         - pushd . &&
           git clone https://github.com/ofiwg/libfabric.git &&
@@ -198,6 +200,9 @@ test:ubuntu:latest:
         - mkdir build && cd build
         - ../configure 
             --enable-tests 
+            CFLAGS="-O0 --coverage"
+            CXXFLAGS="-O0 --coverage"
+            LDFLAGS="--coverage"
 #            CFLAGS="-fsanitize=address"
 #            CXXFLAGS="-fsanitize=address"
 #            LDFLAGS="-fsanitize=address"
@@ -237,8 +242,9 @@ test:ubuntu:latest:
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_update_job]"
 
     after_script:
+        - (cd build && ../gencov.sh)
         - pwd
-        - if [[ -e tests.log ]]; 
+        - if [[ -e build/tests.log ]]; 
           then
-              cat $(tail -1 tests.log)/config/urd.log;
+              cat $(tail -1 build/tests.log)/config/urd.log;
           fi
