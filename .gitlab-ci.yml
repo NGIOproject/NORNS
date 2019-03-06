@@ -241,6 +241,8 @@ test:ubuntu:latest:
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_update_job]"
 
     after_script:
+        - pwd
+        - ls -lR
         - (cd build && ../gencov.sh)
         - pwd
         - if [[ -e build/tests.log ]]; 
