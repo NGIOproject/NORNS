@@ -46,6 +46,8 @@ struct fake_daemon_cfg {
 
 struct fake_daemon {
 
+    static const norns::config::settings default_cfg;
+
     fake_daemon();
     ~fake_daemon();
     void configure(const bfs::path& config_file, const fake_daemon_cfg& override_cfg);

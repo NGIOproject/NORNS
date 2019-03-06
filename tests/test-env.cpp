@@ -69,6 +69,16 @@ create_config_file(const bfs::path& basedir,
         REQUIRE(res == true);
     }
 
+    const bfs::path stagingdir = cfgdir / 
+        fake_daemon::default_cfg.m_staging_directory;
+
+    if(!bfs::exists(stagingdir)) {
+        bool res = bfs::create_directory(stagingdir);
+        REQUIRE(res == true);
+    }
+
+    const auto stdir = bfs::canonical(stagingdir);
+
     const std::string name = "test.conf" + alias;
 
     const bfs::path config_file = cfgdir / name;
@@ -76,6 +86,10 @@ create_config_file(const bfs::path& basedir,
     auto outstr = boost::regex_replace(config_file::cftemplate,
                                              boost::regex("@localstatedir@"),
                                              cfgdir.string());
+
+    outstr = boost::regex_replace(outstr, 
+            boost::regex("(staging_directory:)\\s*?\".*?\"(,?)$"),
+                         "\\1 \"" + stdir.string() + "\"\\2");
 
     for(const auto& r : reps) {
         outstr = boost::regex_replace(outstr, boost::regex(r.first), r.second);

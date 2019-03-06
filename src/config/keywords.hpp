@@ -52,6 +52,7 @@ constexpr static const auto bind_address = "bind_address";
 constexpr static const auto remote_port = "remote_port";
 constexpr static const auto pidfile = "pidfile";
 constexpr static const auto workers = "workers";
+constexpr static const auto staging_directory = "staging_directory";
 
 // option names for 'namespaces' section
 constexpr static const auto nsid = "nsid";

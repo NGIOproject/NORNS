@@ -89,6 +89,7 @@ public:
     int run();
     void shutdown();
     void teardown();
+    void teardown_and_exit();
 
 private:
     int daemonize();
@@ -101,6 +102,7 @@ private:
     void load_backend_plugins();
     void load_transfer_plugins();
     void load_default_namespaces();
+    void check_configuration();
     void print_greeting();
     void print_configuration();
     void print_farewell();

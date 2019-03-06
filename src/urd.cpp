@@ -1397,6 +1397,28 @@ void urd::load_default_namespaces() {
     }
 }
 
+void
+urd::check_configuration() {
+
+    // check that the staging directory exists and that we can write to it
+    if(!bfs::exists(m_settings->staging_directory())) {
+        LOGGER_ERROR("Staging directory {} does not exist", 
+                     m_settings->staging_directory());
+        teardown_and_exit();
+    }
+
+    auto s = bfs::status(m_settings->staging_directory()); 
+
+    auto expected_perms = bfs::perms::owner_read | 
+                          bfs::perms::owner_write;
+    
+    if((s.permissions() & expected_perms) != expected_perms) {
+        LOGGER_ERROR("Unable to read from/write to staging directory {}",
+                     m_settings->staging_directory());
+        teardown_and_exit();
+    }
+}
+
 void urd::print_greeting() {
     const char greeting[] = "Starting {} daemon (pid {})";
     const auto gsep = std::string(sizeof(greeting) - 4 + 
@@ -1426,6 +1448,7 @@ void urd::print_configuration() {
     LOGGER_INFO("  - pidfile: {}", m_settings->pidfile());
     LOGGER_INFO("  - control socket: {}", m_settings->control_socket());
     LOGGER_INFO("  - global socket: {}", m_settings->global_socket());
+    LOGGER_INFO("  - staging directory: {}", m_settings->staging_directory());
     LOGGER_INFO("  - port for remote requests: {}", m_settings->remote_port());
     LOGGER_INFO("  - workers: {}", m_settings->workers_in_pool());
     LOGGER_INFO("");
@@ -1494,6 +1517,9 @@ int urd::run() {
 
     // initialize logging facilities
     init_logger();
+
+    // validate settings
+    check_configuration();
 
     // daemonize if needed
     if(m_settings->daemonize() && daemonize() != 0) {
@@ -1570,6 +1596,12 @@ void urd::teardown() {
         m_task_mgr->stop_all_tasks();
         m_task_mgr.reset();
     }
+}
+
+void
+urd::teardown_and_exit() {
+    teardown();
+    exit(EXIT_FAILURE);
 }
 
 void urd::shutdown() {

@@ -52,6 +52,7 @@ namespace defaults {
     extern const in_port_t  remote_port;
     extern const char*      pidfile;
     extern const uint32_t   workers_in_pool;
+    extern const char*      staging_directory;
     extern const uint32_t   backlog_size;
     extern const char*      config_file;
 

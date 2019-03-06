@@ -261,6 +261,7 @@ config/defaults.cpp: Makefile
 	   echo "    const char* pidfile              = \"$(localstatedir)/urd.pid\";"; \
 \
 	   echo "    const uint32_t workers_in_pool   = std::thread::hardware_concurrency();"; \
+	   echo "    const char* staging_directory    = \"/tmp/urd/\";"; \
 	   echo "    const uint32_t backlog_size      = 128;"; \
 	   echo "    const char* config_file          = \"$(sysconfdir)/norns.conf\";"; \
 	   echo "} // namespace defaults"; \

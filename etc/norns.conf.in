@@ -25,7 +25,10 @@ global_settings: [
   remote_port: 42000,
   
   # number of worker threads to serve I/O requests
-  workers: 4
+  workers: 4,
+
+  # staging dir for temporary resources
+  staging_directory: "/tmp/urd/"
 ]
 
 ## list of namespaces available by default when service starts

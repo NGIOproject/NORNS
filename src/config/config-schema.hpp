@@ -102,6 +102,11 @@ const file_schema valid_options = declare_file({
                     keywords::workers, 
                     opt_type::mandatory, 
                     converter<uint32_t>(parsers::parse_number)), 
+
+            declare_option<bfs::path>(
+                    keywords::staging_directory, 
+                    opt_type::mandatory, 
+                    converter<bfs::path>(parsers::parse_path)), 
         })
     ),
 
