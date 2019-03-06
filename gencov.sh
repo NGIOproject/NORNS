@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 GIT_ROOTDIR=`git rev-parse --show-toplevel`
 LCOV=`which lcov`
