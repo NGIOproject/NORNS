@@ -146,7 +146,7 @@ void fake_daemon::configure(const bfs::path& config_file,
 #endif
 }
 
-extern "C" void __gcov_flush (void);
+//extern "C" void __gcov_flush (void);
 
 void fake_daemon::run() {
 
@@ -178,7 +178,7 @@ void fake_daemon::run() {
             std::cerr << "[" << getpid() << "] exitting...\n";
 #endif
 
-            __gcov_flush();
+//            __gcov_flush();
             exit(0);
         }
 
