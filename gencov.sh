@@ -14,7 +14,7 @@ ${LCOV} \
         '/usr/local/include/*' \
         '*/externals/*' \
         '*/spdlog/*' \
-        '*/build*/*' \
+        '*/build/*' \
         '*/tests/*' \
     -o norns.info
 
