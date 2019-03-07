@@ -1036,7 +1036,7 @@ void urd::init_event_handlers() {
     // create (but not start) the API listener 
     // and register handlers for each request type
     try {
-        m_ipc_endpoint = std::make_unique<api_listener>();
+        m_ipc_service = std::make_unique<api_listener>();
     }
     catch(const std::exception& e) {
         LOGGER_ERROR("Failed to create the event listener. This should "
@@ -1065,7 +1065,7 @@ void urd::init_event_handlers() {
     ::umask(S_IXUSR | S_IRWXG | S_IRWXO); // u=rw-, g=---, o=---
 
     try {
-        m_ipc_endpoint->register_endpoint(m_settings->control_socket());
+        m_ipc_service->register_endpoint(m_settings->control_socket());
     }
     catch(const std::exception& e) {
         LOGGER_ERROR("Failed to create control API socket: {}", e.what());
@@ -1088,7 +1088,7 @@ void urd::init_event_handlers() {
     ::umask(S_IXUSR | S_IXGRP | S_IXOTH); // u=rw-, g=rw-, o=rw-
 
     try {
-        m_ipc_endpoint->register_endpoint(m_settings->global_socket());
+        m_ipc_service->register_endpoint(m_settings->global_socket());
     }
     catch(const std::exception& e) {
         LOGGER_ERROR("Failed to create user API socket: {}", e.what());
@@ -1120,7 +1120,7 @@ void urd::init_event_handlers() {
 #if 0
     // setup socket for remote connections
     try {
-        m_ipc_endpoint->register_endpoint(m_settings->remote_port());
+        m_ipc_service->register_endpoint(m_settings->remote_port());
     }
     catch(const std::exception& e) {
         LOGGER_ERROR("Failed to create socket for remote connections: {}",
@@ -1134,62 +1134,62 @@ void urd::init_event_handlers() {
     LOGGER_INFO(" * Installing message handlers...");
 
     /* user-level functionalities */
-    m_ipc_endpoint->register_callback(
+    m_ipc_service->register_callback(
             api::request_type::iotask_create,
             std::bind(&urd::iotask_create_handler, this, std::placeholders::_1));
 
-    m_ipc_endpoint->register_callback(
+    m_ipc_service->register_callback(
             api::request_type::iotask_status,
             std::bind(&urd::iotask_status_handler, this, std::placeholders::_1));
 
-    m_ipc_endpoint->register_callback(
+    m_ipc_service->register_callback(
             api::request_type::ping,
             std::bind(&urd::ping_handler, this, std::placeholders::_1));
 
     /* admin-level functionalities */
-    m_ipc_endpoint->register_callback(
+    m_ipc_service->register_callback(
             api::request_type::job_register,
             std::bind(&urd::job_register_handler, this, std::placeholders::_1));
 
-    m_ipc_endpoint->register_callback(
+    m_ipc_service->register_callback(
             api::request_type::job_update,
             std::bind(&urd::job_update_handler, this, std::placeholders::_1));
 
-    m_ipc_endpoint->register_callback(
+    m_ipc_service->register_callback(
             api::request_type::job_unregister,
             std::bind(&urd::job_remove_handler, this, std::placeholders::_1));
 
-    m_ipc_endpoint->register_callback(
+    m_ipc_service->register_callback(
             api::request_type::process_register,
             std::bind(&urd::process_add_handler, this, std::placeholders::_1));
 
-    m_ipc_endpoint->register_callback(
+    m_ipc_service->register_callback(
             api::request_type::process_unregister,
             std::bind(&urd::process_remove_handler, this, std::placeholders::_1));
 
-    m_ipc_endpoint->register_callback(
+    m_ipc_service->register_callback(
         api::request_type::backend_register,
         std::bind(&urd::namespace_register_handler, this,
                   std::placeholders::_1));
 
-    /*    m_ipc_endpoint->register_callback(
+    /*    m_ipc_service->register_callback(
                 api::request_type::backend_update,
                 std::bind(&urd::namespace_update_handler, this,
        std::placeholders::_1));*/
 
-    m_ipc_endpoint->register_callback(
+    m_ipc_service->register_callback(
             api::request_type::backend_unregister,
             std::bind(&urd::namespace_remove_handler, this, std::placeholders::_1));
 
-    m_ipc_endpoint->register_callback(
+    m_ipc_service->register_callback(
             api::request_type::global_status,
             std::bind(&urd::global_status_handler, this, std::placeholders::_1));
 
-    m_ipc_endpoint->register_callback(
+    m_ipc_service->register_callback(
             api::request_type::command,
             std::bind(&urd::command_handler, this, std::placeholders::_1));
 
-    m_ipc_endpoint->register_callback(
+    m_ipc_service->register_callback(
             api::request_type::bad_request,
             std::bind(&urd::unknown_request_handler, this, std::placeholders::_1));
 
@@ -1210,7 +1210,7 @@ void urd::init_event_handlers() {
     // signal handlers must be installed AFTER daemonizing
     LOGGER_INFO(" * Installing signal handlers...");
 
-    m_ipc_endpoint->set_signal_handler(
+    m_ipc_service->set_signal_handler(
         std::bind(&urd::signal_handler, this, std::placeholders::_1),
         SIGHUP, SIGTERM, SIGINT);
 }
@@ -1550,7 +1550,7 @@ int urd::run() {
 
     // N.B. This call blocks here, which means that everything after it
     // will only run when a shutdown command is received
-    m_ipc_endpoint->run();
+    m_ipc_service->run();
 
     print_farewell();
     teardown();
@@ -1570,10 +1570,10 @@ void urd::teardown() {
 //        //m_signal_listener.reset();
 //    }
 
-    if(m_ipc_endpoint) {
+    if(m_ipc_service) {
         LOGGER_INFO("* Stopping API listener...");
-        m_ipc_endpoint->stop();
-        m_ipc_endpoint.reset();
+        m_ipc_service->stop();
+        m_ipc_service.reset();
     }
 
     api_listener::cleanup();
@@ -1605,8 +1605,8 @@ urd::teardown_and_exit() {
 }
 
 void urd::shutdown() {
-    if(m_ipc_endpoint) {
-        m_ipc_endpoint->stop();
+    if(m_ipc_service) {
+        m_ipc_service->stop();
     }
 }
 

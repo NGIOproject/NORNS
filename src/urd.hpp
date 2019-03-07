@@ -147,7 +147,7 @@ private:
     std::shared_ptr<config::settings>                    m_settings;
     std::unique_ptr<io::transferor_registry> m_transferor_registry;
 
-    std::unique_ptr<api_listener> m_ipc_endpoint;
+    std::unique_ptr<api_listener> m_ipc_service;
 
     std::shared_ptr<hermes::async_engine> m_network_service;
 
