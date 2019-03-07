@@ -361,6 +361,8 @@ test:optimized:
 pages:
   image: alpine:latest
   stage: deploy
+  before_script:
+    - ''
   dependencies: 
     - test:coverage
   script:
