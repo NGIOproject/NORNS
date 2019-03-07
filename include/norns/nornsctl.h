@@ -32,9 +32,7 @@
 #define NORNSCTL_API_VERSION 10
 #endif
 
-#include <sys/types.h>
-#include <stdbool.h>
-#include "nornsctl_types.h"
+#include "norns_types.h"
 #include "norns_error.h"
 
 #ifdef __NORNS_DEBUG__
