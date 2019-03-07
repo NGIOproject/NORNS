@@ -120,9 +120,10 @@ unpack_archive(const bfs::path& archive_path,
 namespace norns {
 namespace io {
 
-remote_resource_to_local_path_transferor::remote_resource_to_local_path_transferor(
-        std::shared_ptr<hermes::async_engine> network_service) :
-    m_network_service(network_service) { }
+remote_resource_to_local_path_transferor::
+    remote_resource_to_local_path_transferor(const context& ctx) :
+        m_staging_directory(ctx.staging_directory()),
+        m_network_service(ctx.network_service()) { }
 
 bool
 remote_resource_to_local_path_transferor::validate(
@@ -187,7 +188,7 @@ remote_resource_to_local_path_transferor::transfer(
             d_dst.name()},
         /* parent_dir */
         {resp.at(0).is_collection() ? 
-            "/tmp" : 
+            m_staging_directory : 
             d_dst.parent()->mount()},
         resp.at(0).packed_size(), 
         ec);
@@ -291,7 +292,7 @@ remote_resource_to_local_path_transferor::accept_transfer(
 
             const bfs::path ar_path =
                 ::pack_archive("norns-archive-%%%%-%%%%-%%%%.tar",
-                               "/tmp",
+                               m_staging_directory,
                                {{true, d_src.canonical_path(), d_dst.name()}},
                                ec);
 

@@ -58,6 +58,7 @@
 #include "fmt.hpp"
 #include "hermes.hpp"
 #include "rpcs.hpp"
+#include "context.hpp"
 #include "urd.hpp"
 
 namespace norns {
@@ -1340,44 +1341,50 @@ void urd::load_transfer_plugins() {
                     utils::to_string(t1), utils::to_string(t2));
     };
 
+    context ctx(m_settings->staging_directory(),
+                m_network_service);
+
     // memory region -> local path
-    load_plugin(data::resource_type::memory_region, 
-                data::resource_type::local_posix_path, 
-                std::make_shared<io::memory_region_to_local_path_transferor>());
+    load_plugin(
+        data::resource_type::memory_region, 
+        data::resource_type::local_posix_path, 
+        std::make_shared<io::memory_region_to_local_path_transferor>(ctx));
 
     // memory region -> shared path
-    load_plugin(data::resource_type::memory_region, 
-                data::resource_type::shared_posix_path, 
-                std::make_shared<io::memory_region_to_shared_path_transferor>());
+    load_plugin(
+        data::resource_type::memory_region, 
+        data::resource_type::shared_posix_path, 
+        std::make_shared<io::memory_region_to_shared_path_transferor>(ctx));
 
     // memory region -> remote path
     load_plugin(
         data::resource_type::memory_region,
         data::resource_type::remote_resource,
-        std::make_shared<io::memory_region_to_remote_resource_transferor>(
-            m_network_service));
+        std::make_shared<io::memory_region_to_remote_resource_transferor>(ctx));
 
     // local path -> local path
-    load_plugin(data::resource_type::local_posix_path, 
-                data::resource_type::local_posix_path, 
-                std::make_shared<io::local_path_to_local_path_transferor>());
+    load_plugin(
+        data::resource_type::local_posix_path, 
+        data::resource_type::local_posix_path, 
+        std::make_shared<io::local_path_to_local_path_transferor>(ctx));
 
     // local path -> shared path
-    load_plugin(data::resource_type::local_posix_path, 
-                data::resource_type::shared_posix_path, 
-                std::make_shared<io::local_path_to_shared_path_transferor>());
+    load_plugin(
+        data::resource_type::local_posix_path, 
+        data::resource_type::shared_posix_path, 
+        std::make_shared<io::local_path_to_shared_path_transferor>(ctx));
 
     // local path -> remote resource
-    load_plugin(data::resource_type::local_posix_path, 
-                data::resource_type::remote_resource, 
-                std::make_shared<io::local_path_to_remote_resource_transferor>(
-                    m_network_service));
+    load_plugin(
+        data::resource_type::local_posix_path, 
+        data::resource_type::remote_resource, 
+        std::make_shared<io::local_path_to_remote_resource_transferor>(ctx));
 
     // remote resource -> local path
-    load_plugin(data::resource_type::remote_resource, 
-                data::resource_type::local_posix_path, 
-                std::make_shared<io::remote_resource_to_local_path_transferor>(
-                    m_network_service));
+    load_plugin(
+        data::resource_type::remote_resource, 
+        data::resource_type::local_posix_path, 
+        std::make_shared<io::remote_resource_to_local_path_transferor>(ctx));
 }
 
 void urd::load_default_namespaces() {
@@ -1538,8 +1545,11 @@ int urd::run() {
     init_event_handlers();
     init_namespace_manager();
     load_backend_plugins();
-    load_transfer_plugins();
     load_default_namespaces();
+
+    // load plugins now so that when we propagate the daemon context to them 
+    // everything is set up
+    load_transfer_plugins();
 
     // start the listener for remote transfers
     // N.B. This call returns immediately

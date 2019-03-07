@@ -34,6 +34,10 @@
 namespace norns {
 namespace io {
 
+memory_region_to_shared_path_transferor::
+    memory_region_to_shared_path_transferor(const context &ctx) :
+        m_ctx(ctx) { }
+
 bool 
 memory_region_to_shared_path_transferor::validate(
         const std::shared_ptr<data::resource_info>& src_info,

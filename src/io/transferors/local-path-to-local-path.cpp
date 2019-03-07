@@ -199,6 +199,10 @@ copy_directory(const std::shared_ptr<norns::io::task_info>& task_info,
 namespace norns {
 namespace io {
 
+local_path_to_local_path_transferor::local_path_to_local_path_transferor(
+    const context& ctx) :
+        m_ctx(ctx) {}
+
 bool 
 local_path_to_local_path_transferor::validate(
         const std::shared_ptr<data::resource_info>& src_info,

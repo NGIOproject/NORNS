@@ -1,5 +1,5 @@
 /*************************************************************************
- * Copyright (C) 2017-2018 Barcelona Supercomputing Center               *
+ * Copyright (C) 2017-2019 Barcelona Supercomputing Center               *
  *                         Centro Nacional de Supercomputacion           *
  * All rights reserved.                                                  *
  *                                                                       *
@@ -25,59 +25,41 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#ifndef __IO_LOCAL_PATH_TO_SHARED_PATH_TX__
-#define __IO_LOCAL_PATH_TO_SHARED_PATH_TX__
+#ifndef NORNS_CONTEXT_HPP
+#define NORNS_CONTEXT_HPP
 
+#include <boost/filesystem.hpp>
 #include <memory>
-#include <system_error>
-#include "context.hpp"
-#include "transferor.hpp"
+
+namespace bfs = boost::filesystem;
+
+namespace hermes {
+    class async_engine;
+} // namespace hermes
 
 namespace norns {
 
-// forward declarations
-namespace auth {
-struct credentials;
-}
+struct context {
 
-namespace data {
-struct resource_info;
-struct resource;
-}
+    context(bfs::path staging_directory,
+            std::shared_ptr<hermes::async_engine> network_service) :
+        m_staging_directory(std::move(staging_directory)),
+        m_network_service(std::move(network_service)) { }
 
-namespace io {
+    bfs::path 
+    staging_directory() const {
+        return m_staging_directory;
+    }
 
-struct local_path_to_shared_path_transferor : public transferor {
+    std::shared_ptr<hermes::async_engine>
+    network_service() const {
+        return m_network_service;
+    }
 
-    local_path_to_shared_path_transferor(const context& ctx);
-
-    bool 
-    validate(const std::shared_ptr<data::resource_info>& src_info,
-             const std::shared_ptr<data::resource_info>& dst_info) 
-        const override final;
-
-    std::error_code 
-    transfer(const auth::credentials& auth,                
-             const std::shared_ptr<task_info>& task_info,
-             const std::shared_ptr<const data::resource>& src,  
-             const std::shared_ptr<const data::resource>& dst) 
-        const override final;
-
-    std::error_code 
-    accept_transfer(const auth::credentials& auth,                
-                const std::shared_ptr<task_info>& task_info,
-                const std::shared_ptr<const data::resource>& src,  
-                const std::shared_ptr<const data::resource>& dst) 
-        const override final;
-
-    std::string 
-    to_string() const override final;
-
-private:
-    context m_ctx;
+    bfs::path m_staging_directory;
+    std::shared_ptr<hermes::async_engine> m_network_service;
 };
 
-} // namespace io
 } // namespace norns
 
-#endif /* __LOCAL_PATH_TO_SHARED_PATH_TX__ */
+#endif // NORNS_CONTEXT_HPP

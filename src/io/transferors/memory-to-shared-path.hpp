@@ -30,6 +30,7 @@
 
 #include <memory>
 #include <system_error>
+#include "context.hpp"
 #include "transferor.hpp"
 
 namespace norns {
@@ -47,6 +48,8 @@ struct resource;
 namespace io {
 
 struct memory_region_to_shared_path_transferor : public transferor {
+
+    memory_region_to_shared_path_transferor(const context& ctx);
 
     bool 
     validate(const std::shared_ptr<data::resource_info>& src_info,
@@ -69,6 +72,8 @@ struct memory_region_to_shared_path_transferor : public transferor {
 
     std::string 
     to_string() const override final;
+
+    context m_ctx;
 };
 
 } // namespace io

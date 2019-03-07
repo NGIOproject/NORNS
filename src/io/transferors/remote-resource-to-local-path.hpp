@@ -28,8 +28,10 @@
 #ifndef __IO_REMOTE_RESOURCE_TO_LOCAL_PATH_TX__
 #define __IO_REMOTE_RESOURCE_TO_LOCAL_PATH_TX__
 
+#include <string>
 #include <memory>
 
+#include "context.hpp"
 #include "transferor.hpp"
 
 namespace hermes {
@@ -55,8 +57,7 @@ namespace io {
 
 struct remote_resource_to_local_path_transferor : public transferor {
 
-    remote_resource_to_local_path_transferor(
-            std::shared_ptr<hermes::async_engine> network_service);
+    remote_resource_to_local_path_transferor(const context& ctx);
 
     bool 
     validate(const std::shared_ptr<data::resource_info>& src_info,
@@ -81,6 +82,7 @@ struct remote_resource_to_local_path_transferor : public transferor {
     to_string() const override final;
 
 private:
+    bfs::path m_staging_directory;
     std::shared_ptr<hermes::async_engine> m_network_service;
 };
 

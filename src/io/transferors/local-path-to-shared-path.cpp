@@ -41,6 +41,10 @@
 namespace norns {
 namespace io {
 
+local_path_to_shared_path_transferor::local_path_to_shared_path_transferor(
+    const context& ctx) :
+        m_ctx(ctx) { }
+
 bool 
 local_path_to_shared_path_transferor::validate(
         const std::shared_ptr<data::resource_info>& src_info,

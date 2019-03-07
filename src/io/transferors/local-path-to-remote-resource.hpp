@@ -30,6 +30,7 @@
 
 #include <memory>
 #include <system_error>
+#include "context.hpp"
 #include "transferor.hpp"
 
 namespace hermes {
@@ -55,8 +56,7 @@ namespace io {
 
 struct local_path_to_remote_resource_transferor : public transferor {
 
-    local_path_to_remote_resource_transferor(
-            std::shared_ptr<hermes::async_engine> network_service);
+    local_path_to_remote_resource_transferor(const context& ctx);
 
     bool 
     validate(const std::shared_ptr<data::resource_info>& src_info,
@@ -81,6 +81,7 @@ struct local_path_to_remote_resource_transferor : public transferor {
     to_string() const override final;
 
 private:
+    bfs::path m_staging_directory;
     std::shared_ptr<hermes::async_engine> m_network_service;
 
 };

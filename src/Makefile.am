@@ -145,6 +145,7 @@ liburd_aux_la_SOURCES = \
 	config/parsers.cpp \
 	config/parsers.hpp \
 	config/defaults.hpp \
+	context.hpp \
 	io.hpp \
 	io/task.hpp \
 	io/task-copy.hpp \

@@ -82,9 +82,9 @@ namespace norns {
 namespace io {
 
 memory_region_to_remote_resource_transferor::
-    memory_region_to_remote_resource_transferor(
-        std::shared_ptr<hermes::async_engine> network_service) :
-    m_network_service(network_service) {}
+    memory_region_to_remote_resource_transferor(const context& ctx) :
+        m_staging_directory(ctx.staging_directory()),
+        m_network_service(ctx.network_service()) {}
 
 bool 
 memory_region_to_remote_resource_transferor::validate(
@@ -134,7 +134,7 @@ memory_region_to_remote_resource_transferor::transfer(
     auto tempfile =
         std::make_shared<utils::temporary_file>(
             std::string{"norns-tempfile-%%%%-%%%%-%%%%"},
-            bfs::path{"/tmp"},
+            bfs::path{m_staging_directory},
             d_src.size(),
             ec);
 
