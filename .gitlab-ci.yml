@@ -359,6 +359,7 @@ test:optimized:
           fi
 
 pages:
+  image: alpine:latest
   stage: deploy
   dependencies: 
     - test:coverage
