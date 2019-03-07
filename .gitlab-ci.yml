@@ -9,6 +9,7 @@ variables:
 stages:
     - build
     - test
+    - deploy
 
 # Install dependencies for GCC builds
 before_script:
