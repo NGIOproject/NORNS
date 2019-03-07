@@ -56,7 +56,7 @@ namespace io {
 struct remote_resource_to_local_path_transferor : public transferor {
 
     remote_resource_to_local_path_transferor(
-            std::shared_ptr<hermes::async_engine> network_endpoint);
+            std::shared_ptr<hermes::async_engine> network_service);
 
     bool 
     validate(const std::shared_ptr<data::resource_info>& src_info,
@@ -81,7 +81,7 @@ struct remote_resource_to_local_path_transferor : public transferor {
     to_string() const override final;
 
 private:
-    std::shared_ptr<hermes::async_engine> m_network_endpoint;
+    std::shared_ptr<hermes::async_engine> m_network_service;
 };
 
 } // namespace io

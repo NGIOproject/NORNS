@@ -128,8 +128,8 @@ namespace norns {
 namespace io {
 
 local_path_to_remote_resource_transferor::local_path_to_remote_resource_transferor(
-        std::shared_ptr<hermes::async_engine> network_endpoint) :
-    m_network_endpoint(network_endpoint) { }
+        std::shared_ptr<hermes::async_engine> network_service) :
+    m_network_service(network_service) { }
 
 bool 
 local_path_to_remote_resource_transferor::validate(
@@ -197,7 +197,7 @@ local_path_to_remote_resource_transferor::transfer(
     LOGGER_DEBUG("[{}] start_transfer: {} -> {}", 
                  task_info->id(), d_src.canonical_path(), d_dst.to_string());
 
-    hermes::endpoint endp = m_network_endpoint->lookup(d_dst.address());
+    hermes::endpoint endp = m_network_service->lookup(d_dst.address());
 
     try {
         hermes::mapped_buffer input_buffer(input_path.string(),
@@ -214,13 +214,13 @@ local_path_to_remote_resource_transferor::transfer(
         };
 
         auto local_buffers = 
-            m_network_endpoint->expose(bufvec, hermes::access_mode::read_only);
+            m_network_service->expose(bufvec, hermes::access_mode::read_only);
 
         auto resp = 
-            m_network_endpoint->post<rpc::push_resource>(
+            m_network_service->post<rpc::push_resource>(
                 endp, 
                 rpc::push_resource::input{
-                    m_network_endpoint->self_address(),
+                    m_network_service->self_address(),
                     d_src.parent()->nsid(),
                     d_dst.parent()->nsid(), 
                     // XXX this resource_type should not be needed, but we
@@ -351,7 +351,7 @@ local_path_to_remote_resource_transferor::accept_transfer(
     };
 
     hermes::exposed_memory local_buffers =
-        m_network_endpoint->expose(bufseq, hermes::access_mode::write_only);
+        m_network_service->expose(bufseq, hermes::access_mode::write_only);
 
     LOGGER_DEBUG("pulling remote data into {}", tempfile->path());
 
@@ -409,7 +409,7 @@ local_path_to_remote_resource_transferor::accept_transfer(
 
 respond:
         if(req.requires_response()) {
-            m_network_endpoint->respond<rpc::push_resource>(
+            m_network_service->respond<rpc::push_resource>(
                     std::move(req), out);
         }
     };
@@ -419,10 +419,10 @@ respond:
 //                        std::chrono::steady_clock::now().time_since_epoch())
 //                        .count());
 
-    m_network_endpoint->async_pull(remote_buffers,
-                                   local_buffers,
-                                   std::move(req),
-                                   completion_callback);
+    m_network_service->async_pull(remote_buffers,
+                                  local_buffers,
+                                  std::move(req),
+                                  completion_callback);
 
     return ec;
 }

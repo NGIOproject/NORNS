@@ -149,7 +149,7 @@ private:
 
     std::unique_ptr<api_listener> m_ipc_endpoint;
 
-    std::shared_ptr<hermes::async_engine> m_network_endpoint;
+    std::shared_ptr<hermes::async_engine> m_network_service;
 
     std::unique_ptr<ns::namespace_manager> m_namespace_mgr;
     mutable boost::shared_mutex m_namespace_mgr_mutex;

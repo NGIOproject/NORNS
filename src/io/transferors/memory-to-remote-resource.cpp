@@ -83,8 +83,8 @@ namespace io {
 
 memory_region_to_remote_resource_transferor::
     memory_region_to_remote_resource_transferor(
-        std::shared_ptr<hermes::async_engine> network_endpoint) :
-    m_network_endpoint(network_endpoint) {}
+        std::shared_ptr<hermes::async_engine> network_service) :
+    m_network_service(network_service) {}
 
 bool 
 memory_region_to_remote_resource_transferor::validate(
@@ -175,14 +175,14 @@ memory_region_to_remote_resource_transferor::transfer(
 
     try {
 
-        hermes::endpoint endp = m_network_endpoint->lookup(d_dst.address());
+        hermes::endpoint endp = m_network_service->lookup(d_dst.address());
 
         std::vector<hermes::mutable_buffer> bufvec{
             hermes::mutable_buffer{output_buffer->data(), output_buffer->size()}
         };
 
         auto local_buffers = 
-            m_network_endpoint->expose(bufvec, hermes::access_mode::read_only);
+            m_network_service->expose(bufvec, hermes::access_mode::read_only);
 
 //        LOGGER_CRITICAL("push_resource RPC posted: {}",
 //                        std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -190,10 +190,10 @@ memory_region_to_remote_resource_transferor::transfer(
 //                            .count());
 
         auto resp = 
-            m_network_endpoint->post<rpc::push_resource>(
+            m_network_service->post<rpc::push_resource>(
                 endp, 
                 rpc::push_resource::input{
-                    m_network_endpoint->self_address(),
+                    m_network_service->self_address(),
                     d_src.parent()->nsid(),
                     d_dst.parent()->nsid(), 
                     // XXX this resource_type should not be needed, but we

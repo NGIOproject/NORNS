@@ -666,7 +666,7 @@ response_ptr urd::unknown_request_handler(const request_ptr /*base_request*/) {
 }
 
 // N.B. This function is called by the progress thread internal to 
-// m_network_endpoint rather than by the main execution thread
+// m_network_service rather than by the main execution thread
 void
 urd::push_resource_handler(hermes::request<rpc::push_resource>&& req) {
 
@@ -709,7 +709,7 @@ urd::push_resource_handler(hermes::request<rpc::push_resource>&& req) {
     if(m_is_paused) {
         rv = urd_error::accept_paused;
         LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
-        m_network_endpoint->respond(std::move(req), 
+        m_network_service->respond(std::move(req), 
                     static_cast<uint32_t>(io::task_status::finished_with_error),
                     static_cast<uint32_t>(rv),
                     0,
@@ -737,7 +737,7 @@ urd::push_resource_handler(hermes::request<rpc::push_resource>&& req) {
     if(!dst_backend) {
         rv = urd_error::no_such_namespace;
         LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
-        m_network_endpoint->respond(std::move(req), 
+        m_network_service->respond(std::move(req), 
                 static_cast<uint32_t>(io::task_status::finished_with_error),
                 static_cast<int32_t>(rv),
                 0,
@@ -765,7 +765,7 @@ urd::push_resource_handler(hermes::request<rpc::push_resource>&& req) {
         if(t->info()->status() == io::task_status::finished_with_error) {
             rv = t->info()->task_error();
             LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
-            m_network_endpoint->respond(std::move(req), 
+            m_network_service->respond(std::move(req), 
                     static_cast<uint32_t>(io::task_status::finished_with_error),
                     static_cast<int32_t>(t->info()->task_error()),
                     static_cast<int32_t>(t->info()->sys_error().value()),
@@ -818,7 +818,7 @@ urd::pull_resource_handler(hermes::request<rpc::pull_resource>&& req) {
     if(m_is_paused) {
         rv = urd_error::accept_paused;
         LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
-        m_network_endpoint->respond(std::move(req), 
+        m_network_service->respond(std::move(req), 
                     static_cast<uint32_t>(io::task_status::finished_with_error),
                     static_cast<uint32_t>(rv),
                     0,
@@ -842,7 +842,7 @@ urd::pull_resource_handler(hermes::request<rpc::pull_resource>&& req) {
     if(!src_backend) {
         rv = urd_error::no_such_namespace;
         LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
-        m_network_endpoint->respond(std::move(req), 
+        m_network_service->respond(std::move(req), 
                 static_cast<uint32_t>(io::task_status::finished_with_error),
                 static_cast<int32_t>(rv),
                 0,
@@ -873,7 +873,7 @@ urd::pull_resource_handler(hermes::request<rpc::pull_resource>&& req) {
         if(tsk->info()->status() == io::task_status::finished_with_error) {
             rv = tsk->info()->task_error();
             LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
-            m_network_endpoint->respond(std::move(req), 
+            m_network_service->respond(std::move(req), 
                     static_cast<uint32_t>(io::task_status::finished_with_error),
                     static_cast<int32_t>(tsk->info()->task_error()),
                     static_cast<int32_t>(tsk->info()->sys_error().value()),
@@ -902,7 +902,7 @@ urd::stat_resource_handler(hermes::request<rpc::stat_resource>&& req) {
     if(!dst_backend) {
         rv = urd_error::no_such_namespace;
         LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
-        m_network_endpoint->respond(std::move(req), 
+        m_network_service->respond(std::move(req), 
                                     static_cast<uint32_t>(rv),
                                     false,
                                     //XXX ENOENT should not be required:
@@ -937,7 +937,7 @@ urd::stat_resource_handler(hermes::request<rpc::stat_resource>&& req) {
         rv = urd_error::not_supported;
 
         LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
-        m_network_endpoint->respond(std::move(req), 
+        m_network_service->respond(std::move(req), 
                                     static_cast<uint32_t>(rv),
                                     //XXX EOPNOTSUPP should not be required:
                                     // the transfer() interface should be
@@ -957,7 +957,7 @@ urd::stat_resource_handler(hermes::request<rpc::stat_resource>&& req) {
         rv = urd_error::no_such_resource;
 
         LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
-        m_network_endpoint->respond(std::move(req), 
+        m_network_service->respond(std::move(req), 
                                     static_cast<uint32_t>(rv),
                                     ec.value(),
                                     false,
@@ -966,7 +966,7 @@ urd::stat_resource_handler(hermes::request<rpc::stat_resource>&& req) {
     }
 
     LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
-    m_network_endpoint->respond(std::move(req), 
+    m_network_service->respond(std::move(req), 
             static_cast<uint32_t>(urd_error::success),
             0,
             rsrc->is_collection(),
@@ -1105,7 +1105,7 @@ void urd::init_event_handlers() {
             m_settings->bind_address() + ":" +
             std::to_string(m_settings->remote_port());
 
-        m_network_endpoint = 
+        m_network_service = 
             std::make_shared<hermes::async_engine>(
                     hermes::transport::ofi_tcp,
                     bind_address,
@@ -1194,15 +1194,15 @@ void urd::init_event_handlers() {
             std::bind(&urd::unknown_request_handler, this, std::placeholders::_1));
 
     /* remote event handlers */
-    m_network_endpoint->register_handler<rpc::push_resource>(
+    m_network_service->register_handler<rpc::push_resource>(
             std::bind(&urd::push_resource_handler, this, 
                       std::placeholders::_1));
 
-    m_network_endpoint->register_handler<rpc::pull_resource>(
+    m_network_service->register_handler<rpc::pull_resource>(
             std::bind(&urd::pull_resource_handler, this, 
                       std::placeholders::_1));
 
-    m_network_endpoint->register_handler<rpc::stat_resource>(
+    m_network_service->register_handler<rpc::stat_resource>(
             std::bind(&urd::stat_resource_handler, this, 
                       std::placeholders::_1));
 
@@ -1355,7 +1355,7 @@ void urd::load_transfer_plugins() {
         data::resource_type::memory_region,
         data::resource_type::remote_resource,
         std::make_shared<io::memory_region_to_remote_resource_transferor>(
-            m_network_endpoint));
+            m_network_service));
 
     // local path -> local path
     load_plugin(data::resource_type::local_posix_path, 
@@ -1371,13 +1371,13 @@ void urd::load_transfer_plugins() {
     load_plugin(data::resource_type::local_posix_path, 
                 data::resource_type::remote_resource, 
                 std::make_shared<io::local_path_to_remote_resource_transferor>(
-                    m_network_endpoint));
+                    m_network_service));
 
     // remote resource -> local path
     load_plugin(data::resource_type::remote_resource, 
                 data::resource_type::local_posix_path, 
                 std::make_shared<io::remote_resource_to_local_path_transferor>(
-                    m_network_endpoint));
+                    m_network_service));
 }
 
 void urd::load_default_namespaces() {
@@ -1543,7 +1543,7 @@ int urd::run() {
 
     // start the listener for remote transfers
     // N.B. This call returns immediately
-    m_network_endpoint->run();
+    m_network_service->run();
 
     LOGGER_INFO("");
     LOGGER_INFO("[[ Start up successful, awaiting requests... ]]");

@@ -121,8 +121,8 @@ namespace norns {
 namespace io {
 
 remote_resource_to_local_path_transferor::remote_resource_to_local_path_transferor(
-        std::shared_ptr<hermes::async_engine> network_endpoint) :
-    m_network_endpoint(network_endpoint) { }
+        std::shared_ptr<hermes::async_engine> network_service) :
+    m_network_service(network_service) { }
 
 bool
 remote_resource_to_local_path_transferor::validate(
@@ -155,13 +155,13 @@ remote_resource_to_local_path_transferor::transfer(
     LOGGER_DEBUG("[{}] request_transfer: {} -> {}", 
                  task_info->id(), d_src.to_string(), d_dst.canonical_path());
 
-    hermes::endpoint endp = m_network_endpoint->lookup(d_src.address());
+    hermes::endpoint endp = m_network_service->lookup(d_src.address());
 
     auto resp = 
-        m_network_endpoint->post<rpc::stat_resource>(
+        m_network_service->post<rpc::stat_resource>(
             endp, 
             rpc::stat_resource::input{
-                m_network_endpoint->self_address(),
+                m_network_service->self_address(),
                 d_src.parent()->nsid(),
                 static_cast<uint32_t>(data::resource_type::local_posix_path), 
                 d_src.name()
@@ -216,10 +216,10 @@ remote_resource_to_local_path_transferor::transfer(
     };
 
     hermes::exposed_memory local_buffers =
-        m_network_endpoint->expose(bufseq, hermes::access_mode::write_only);
+        m_network_service->expose(bufseq, hermes::access_mode::write_only);
 
     auto resp2 = 
-        m_network_endpoint->post<rpc::pull_resource>(
+        m_network_service->post<rpc::pull_resource>(
             endp,
             rpc::pull_resource::input{
                 d_src.parent()->nsid(), 
@@ -231,7 +231,7 @@ remote_resource_to_local_path_transferor::transfer(
                 // XXX this information locally from the resource id
                 static_cast<uint32_t>(
                     data::resource_type::local_posix_path),
-                m_network_endpoint->self_address(), 
+                m_network_service->self_address(), 
                 d_dst.parent()->nsid(),
                 d_dst.name(), 
                 local_buffers
@@ -339,7 +339,7 @@ remote_resource_to_local_path_transferor::accept_transfer(
     };
 
     auto local_buffers = 
-        m_network_endpoint->expose(bufvec, hermes::access_mode::read_only);
+        m_network_service->expose(bufvec, hermes::access_mode::read_only);
 
     // retrieve remote buffers descriptor
     hermes::exposed_memory remote_buffers = d_dst.buffers();
@@ -376,16 +376,16 @@ remote_resource_to_local_path_transferor::accept_transfer(
         LOGGER_DEBUG("Push completed");
 
         if(req.requires_response()) {
-            m_network_endpoint->respond<rpc::pull_resource>(
+            m_network_service->respond<rpc::pull_resource>(
                     std::move(req), 
                     out);
         }
     };
 
-    m_network_endpoint->async_push(local_buffers, 
-                                   remote_buffers, 
-                                   std::move(req),
-                                   completion_callback);
+    m_network_service->async_push(local_buffers, 
+                                  remote_buffers, 
+                                  std::move(req),
+                                  completion_callback);
 
     return ec;
 }
