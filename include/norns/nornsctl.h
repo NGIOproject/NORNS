@@ -173,6 +173,35 @@ nornsctl_update_namespace(const char* nsid,
 norns_error_t 
 nornsctl_unregister_namespace(const char* nsid) __THROW;
 
+
+/* Initialize an asynchronous I/O task */
+void 
+nornsctl_iotask_init(norns_iotask_t* task, 
+                     norns_op_t operation,
+                     norns_resource_t* src, 
+                     norns_resource_t* dst) __THROW;
+norns_iotask_t 
+NORNSCTL_IOTASK(norns_op_t operation, 
+                norns_resource_t src, ...) __THROW;
+
+
+/* Submit an asynchronous I/O task */
+norns_error_t 
+nornsctl_submit(norns_iotask_t* task) __THROW;
+
+/* wait for the completion of the I/O task associated to 'task' */
+norns_error_t 
+nornsctl_wait(norns_iotask_t* task) __THROW;
+
+/* Try to cancel an asynchronous I/O task associated with task */
+norns_error_t 
+nornsctl_cancel(norns_iotask_t* task) __THROW;
+
+/* Check the status of a submitted I/O task */
+norns_error_t 
+nornsctl_error(norns_iotask_t* task, 
+               norns_stat_t* stats) __THROW;
+
 /* Return a string describing the error number */
 char* 
 nornsctl_strerror(norns_error_t errnum) __THROW;
