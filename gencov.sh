@@ -20,4 +20,4 @@ ${LCOV} \
 
 ${LCOV} -l norns.info
 
-#genhtml -o html/coverage norns.info 2>/dev/null
+#genhtml -o buiild/html/coverage norns.info

@@ -202,16 +202,11 @@ test:ubuntu:latest:
             CFLAGS="-O0 --coverage"
             CXXFLAGS="-O0 --coverage"
             LDFLAGS="--coverage"
-#            CFLAGS="-fsanitize=address"
-#            CXXFLAGS="-fsanitize=address"
-#            LDFLAGS="-fsanitize=address"
-#            CPPFLAGS="-D__LOGGER_ENABLE_DEBUG__"
         - make -j$(nproc)
         - cd tests
         - make -j$(nproc) core
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./core -as
         - make -j$(nproc) api
-#        - NORNS_DEBUG_OUTPUT_TO_STDERR=1 NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::NORNS_TASK]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_iotask_init]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_resource_init]"
@@ -241,11 +236,26 @@ test:ubuntu:latest:
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_update_job]"
 
     after_script:
-        - pwd
-        - ls -lR
         - (cd build && ../gencov.sh)
-        - pwd
+        - genhtml -o build/html/coverage norns.info
         - if [[ -e build/tests.log ]]; 
           then
               cat $(tail -1 build/tests.log)/config/urd.log;
           fi
+
+    artifacts:
+      paths:
+        - build/html/coverage/
+
+pages:
+  stage: deploy
+  dependencies: 
+    - test:ubuntu:latest
+  script:
+    - mv coverage/ public/
+  artifacts:
+    paths:
+      - public
+    expire_in: 30 days
+  only:
+    - master 
