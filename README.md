@@ -1,5 +1,6 @@
 # Norns
 [![pipeline status](https://storage.bsc.es/gitlab/hpc/norns/badges/master/pipeline.svg)](https://storage.bsc.es/gitlab/hpc/norns/commits/master)
+[![coverage report](https://storage.bsc.es/gitlab/hpc/norns/badges/21-add-support-for-remote-transfers-2/coverage.svg)](https://storage.bsc.es/gitlab/hpc/norns/commits/21-add-support-for-remote-transfers-2)
 
 Norns is an open-source data scheduling service that orchestrates asynchronous
 data transfers between different storage backends in an HPC cluster. Through
