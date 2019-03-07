@@ -366,7 +366,7 @@ pages:
   dependencies: 
     - test:coverage
   script:
-    - mv coverage/ public/
+    - mv build/html/coverage/ public/
   artifacts:
     paths:
       - public
