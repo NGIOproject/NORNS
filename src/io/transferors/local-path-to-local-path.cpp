@@ -30,6 +30,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <climits>
+#include "config.h"
 
 #include "utils.hpp"
 #include "logger.hpp"
@@ -71,15 +72,21 @@ do_sendfile(int in_fd, int out_fd) {
     }
 
     // preallocate output file
+#ifdef HAVE_FALLOCATE
     if(::fallocate(out_fd, 0, 0, sz) == -1) {
-        // filesystem doesn't support fallocate(), fallback to truncate()
-        if(errno == EOPNOTSUPP) {
-            if(::ftruncate(out_fd, sz) != 0) {
-                return static_cast<ssize_t>(-1);
-            }
+        if(errno != EOPNOTSUPP) {
+            return static_cast<ssize_t>(-1);
         }
-        return static_cast<ssize_t>(-1);
+#endif // HAVE_FALLOCATE
+
+        // filesystem doesn't support fallocate(), fallback to truncate()
+        if(::ftruncate(out_fd, sz) != 0) {
+            return static_cast<ssize_t>(-1);
+        }
+
+#ifdef HAVE_FALLOCATE
     }
+#endif // HAVE_FALLOCATE
 
     // copy data
 	off_t offset = 0;
@@ -192,6 +199,10 @@ copy_directory(const std::shared_ptr<norns::io::task_info>& task_info,
 namespace norns {
 namespace io {
 
+local_path_to_local_path_transferor::local_path_to_local_path_transferor(
+    const context& ctx) :
+        m_ctx(ctx) {}
+
 bool 
 local_path_to_local_path_transferor::validate(
         const std::shared_ptr<data::resource_info>& src_info,
@@ -229,6 +240,22 @@ local_path_to_local_path_transferor::transfer(
 
     return ::copy_file(task_info, d_src.canonical_path(), 
                        d_dst.canonical_path());
+}
+
+std::error_code 
+local_path_to_local_path_transferor::accept_transfer(
+        const auth::credentials& auth, 
+        const std::shared_ptr<task_info>& task_info,
+        const std::shared_ptr<const data::resource>& src,  
+        const std::shared_ptr<const data::resource>& dst) const {
+
+    (void) auth;
+    (void) task_info;
+    (void) src;
+    (void) dst;
+
+    LOGGER_ERROR("This function should never be called for this transfer type");
+    return std::make_error_code(static_cast<std::errc>(0));
 }
 
 std::string 

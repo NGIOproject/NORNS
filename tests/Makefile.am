@@ -41,6 +41,7 @@ api_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/rpc \
 	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/externals/hermes/include \
 	-D__NORNS_DEBUG__ \
 	$(END)
 
@@ -50,6 +51,7 @@ api_SOURCES = \
 	api-namespace-register.cpp \
 	api-namespace-unregister.cpp \
 	api-copy-local-data.cpp \
+	api-copy-remote-data.cpp \
 	api-remove-local-data.cpp \
 	api-job-register.cpp \
 	api-job-update.cpp \
@@ -80,6 +82,7 @@ api_LDFLAGS = \
     @BOOST_THREAD_LIB@ \
     @BOOST_REGEX_LIB@ \
 	@PROTOBUF_LIBS@ \
+	-no-install \
 	-Wl,-rpath,$(top_builddir)/lib/.libs \
 	$(top_builddir)/src/liburd_aux.la \
 	$(top_builddir)/lib/libnorns_debug.la \
@@ -132,17 +135,23 @@ core_CXXFLAGS = \
 
 core_CPPFLAGS = \
 	-I$(top_srcdir)/include \
+	-I$(top_srcdir)/src/externals/hermes/include \
 	-I$(top_srcdir)/rpc \
 	-I$(top_srcdir)/src \
+	-DUSE_REAL_DAEMON \
 	$(END)
 
 core_SOURCES = \
 	catch.hpp \
 	api-main.cpp \
 	utils-path-normalize.cpp \
+	utils-tar.cpp \
+	test-env.cpp \
+	test-env.hpp \
 	$(END)
 
 core_LDFLAGS = \
+	-no-install \
     @BOOST_ASIO_LIB@ \
 	@BOOST_LDFLAGS@	\
 	@BOOST_FILESYSTEM_LIB@ \

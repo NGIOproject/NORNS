@@ -137,7 +137,8 @@ task_manager::register_transfer_plugin(const data::resource_type t1,
 
 
 std::tuple<urd_error, boost::optional<iotask_id>>
-task_manager::create_task(iotask_type type, const auth::credentials& auth,
+task_manager::create_task(iotask_type type, 
+                          const auth::credentials& auth,
                           const std::vector<backend_ptr>& backend_ptrs,
                           const std::vector<resource_info_ptr>& rinfo_ptrs) {
 
@@ -168,7 +169,7 @@ task_manager::create_task(iotask_type type, const auth::credentials& auth,
 
         auto it = m_task_info.end();
         std::tie(it, std::ignore) = m_task_info.emplace(tid,
-                std::make_shared<task_info>(tid, type, auth, 
+                std::make_shared<task_info>(tid, type, false, auth,
                                             src_backend, src_rinfo,
                                             dst_backend, dst_rinfo));
         return it->second;
@@ -292,6 +293,228 @@ task_manager::create_task(iotask_type type, const auth::credentials& auth,
     }
 
     return std::make_tuple(urd_error::success, tid);
+}
+
+std::tuple<urd_error, boost::optional<io::generic_task>>
+task_manager::create_local_initiated_task(iotask_type type,
+                            const auth::credentials& auth,
+                            const std::vector<backend_ptr>& backend_ptrs,
+                            const std::vector<resource_info_ptr>& rinfo_ptrs) {
+
+    boost::unique_lock<boost::shared_mutex> lock(m_mutex);
+
+    // fetch an iotask_id for this task
+    iotask_id tid = ++m_id_base;
+
+    if(m_task_info.count(tid) != 0) {
+        --m_id_base;
+        return std::make_tuple(urd_error::too_many_tasks, boost::none);
+    }
+
+    // immediately-invoked lambda to create the appropriate metadata for the task
+    // and register it into m_task_info
+    const auto task_info_ptr = [&]() {
+
+        assert(backend_ptrs.size() == 1 || backend_ptrs.size() == 2);
+
+        const backend_ptr src_backend = backend_ptrs[0];
+        const resource_info_ptr src_rinfo = rinfo_ptrs[0];
+        const backend_ptr dst_backend = (backend_ptrs.size() == 1 ? 
+                                            nullptr : backend_ptrs[1]);
+        const resource_info_ptr dst_rinfo = (rinfo_ptrs.size() == 1 ? 
+                                            nullptr : rinfo_ptrs[1]);
+
+        auto it = m_task_info.end();
+        std::tie(it, std::ignore) = m_task_info.emplace(tid,
+                std::make_shared<task_info>(tid, type, false, auth,
+                                            src_backend, src_rinfo,
+                                            dst_backend, dst_rinfo));
+        return it->second;
+    }();
+
+
+    std::shared_ptr<io::transferor> tx_ptr;
+
+    if(type == iotask_type::copy || type == iotask_type::move) {
+
+        assert(backend_ptrs.size() == 2);
+
+        tx_ptr = m_transferor_registry.get(rinfo_ptrs[0]->type(), 
+                                           rinfo_ptrs[1]->type());
+        if(!tx_ptr) {
+            return std::make_tuple(urd_error::not_supported, boost::none);
+        }
+
+        LOGGER_DEBUG("Selected plugin: {}", tx_ptr->to_string());
+
+        if(!tx_ptr->validate(rinfo_ptrs[0], rinfo_ptrs[1])) {
+            return std::make_tuple(urd_error::bad_args, boost::none);
+        }
+    }
+
+    if(m_dry_run) {
+        type = iotask_type::noop;
+    }
+
+    switch(type) {
+        case iotask_type::remove:
+        {
+            assert(backend_ptrs.size() == 1);
+
+            return std::make_tuple(
+                    urd_error::success, 
+                    generic_task(type,
+                        io::task<iotask_type::remove>(
+                            std::move(task_info_ptr))));
+        }
+
+        case iotask_type::copy:
+        {
+            return std::make_tuple(
+                    urd_error::success,
+                    generic_task(type,
+                        io::task<iotask_type::copy>(
+                            std::move(task_info_ptr), std::move(tx_ptr))));
+            break;
+        }
+
+        case iotask_type::move:
+        {
+
+            return std::make_tuple(
+                    urd_error::success,
+                    generic_task(type,
+                        io::task<iotask_type::move>(
+                            std::move(task_info_ptr), std::move(tx_ptr))));
+            break;
+        }
+
+        case iotask_type::noop:
+        {
+            return std::make_tuple(
+                    urd_error::success,
+                    generic_task(type,
+                        io::task<iotask_type::noop>(
+                            std::move(task_info_ptr), m_dry_run_duration)));
+            break;
+        }
+
+        default:
+            break;
+    }
+
+    return std::make_tuple(urd_error::bad_args, boost::none);
+}
+
+std::tuple<urd_error, boost::optional<io::generic_task>>
+task_manager::create_remote_initiated_task(iotask_type task_type,
+                                    const auth::credentials& auth,
+                                    const boost::any& ctx,
+                                    const backend_ptr src_backend,
+                                    const resource_info_ptr src_rinfo,
+                                    const backend_ptr dst_backend,
+                                    const resource_info_ptr dst_rinfo) {
+
+    boost::unique_lock<boost::shared_mutex> lock(m_mutex);
+
+    // fetch an iotask_id for this task
+    iotask_id tid = ++m_id_base;
+
+    if(m_task_info.count(tid) != 0) {
+        --m_id_base;
+        return std::make_tuple(urd_error::too_many_tasks, boost::none);
+    }
+
+    // immediately-invoked lambda to create the appropriate metadata for the task
+    // and register it into m_task_info
+    const auto task_info_ptr = [&]() {
+
+        auto it = m_task_info.end();
+        std::tie(it, std::ignore) = m_task_info.emplace(tid,
+                std::make_shared<task_info>(tid, task_type, true, auth, 
+                                            src_backend, src_rinfo,
+                                            dst_backend, dst_rinfo,
+                                            ctx));
+        return it->second;
+    }();
+
+    //auto tx_ptr = 
+    //    m_transferor_registry.get(src_rinfo->type(), dst_rinfo->type());
+
+    // XXX for a remote-initiated task the order of the types
+    // is swapped
+    auto tx_ptr = 
+        m_transferor_registry.get(dst_rinfo->type(), src_rinfo->type());
+
+    if(!tx_ptr) {
+        return std::make_tuple(urd_error::not_supported, boost::none);
+    }
+
+    LOGGER_DEBUG("Selected plugin: {}", tx_ptr->to_string());
+
+    if(!tx_ptr->validate(src_rinfo, dst_rinfo)) {
+        return std::make_tuple(urd_error::bad_args, boost::none);
+    }
+
+    return std::make_tuple(
+            urd_error::success,
+            generic_task(task_type,
+                io::task<iotask_type::remote_transfer>(
+                    std::move(task_info_ptr), std::move(tx_ptr))));
+}
+
+
+urd_error
+task_manager::enqueue_task(io::generic_task&& t) {
+
+    // helper lambda to register the completion of tasks so that we can keep track
+    // of the consumed bandwidth by each task
+    // N.B: we use capture-by-value here so that the task_info_ptr is valid when 
+    // the callback is invoked.
+    const auto completion_callback = [this, t]() {
+        assert(t.info()->status() == task_status::finished ||
+               t.info()->status() == task_status::finished_with_error);
+
+        LOGGER_DEBUG("Task {} finished [{} MiB/s]", 
+                t.info()->id(), t.info()->bandwidth());
+
+        auto bw = t.info()->bandwidth();
+
+        // bw might be nan if the task did not finish correctly
+        if(!std::isnan(bw)) {
+
+            const auto key = std::make_pair(t.info()->src_rinfo()->nsid(),
+                                            t.info()->dst_rinfo()->nsid());
+
+            if(!m_bandwidth_backlog.count(key)) {
+                m_bandwidth_backlog.emplace(key, 
+                        boost::circular_buffer<double>(m_backlog_size));
+            }
+
+            m_bandwidth_backlog.at(key).push_back(bw);
+        }
+    };
+
+    switch(t.m_type) {
+        case iotask_type::remove:
+        case iotask_type::noop:
+        {
+            m_runners.submit_and_forget(t);
+            break;
+        }
+
+        case iotask_type::copy:
+        case iotask_type::move:
+        {
+            m_runners.submit_with_epilog_and_forget(t, completion_callback);
+            break;
+        }
+
+        default:
+            return urd_error::bad_args;
+    }
+
+    return urd_error::success;
 }
 
 std::shared_ptr<task_info>

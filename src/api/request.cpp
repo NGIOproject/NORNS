@@ -166,6 +166,7 @@ create_from(const norns::rpc::Request_Task_Resource& res) {
     using norns::data::local_path_info;
     using norns::data::shared_path_info;
     using norns::data::remote_path_info;
+    using norns::data::remote_resource_info;
 
     assert(is_valid(res));
 
@@ -187,9 +188,13 @@ create_from(const norns::rpc::Request_Task_Resource& res) {
 
         // R_REMOTE
         assert(res.type() & R_REMOTE);
-        return std::make_shared<remote_path_info>(res.path().nsid(),
-                                                  res.path().hostname(), 
-                                                  res.path().datapath());
+        //return std::make_shared<remote_path_info>(res.path().nsid(),
+        //                                          res.path().hostname(), 
+        //                                          res.path().datapath());
+
+        return std::make_shared<remote_resource_info>(res.path().hostname(),
+                                                      res.path().nsid(),
+                                                      res.path().datapath());
     }
 
     assert(res.type() & NORNS_NULL_RESOURCE);

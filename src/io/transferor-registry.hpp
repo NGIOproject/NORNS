@@ -47,27 +47,18 @@ struct transferor;
 
 struct transferor_registry {
 
-    struct transferor_hash {
-        template <typename T, typename U>
-        std::size_t operator()(const std::pair<T, U> &x) const {
-            std::size_t seed = 0;
-            boost::hash_combine(seed, x.first);
-            boost::hash_combine(seed, x.second);
-            return seed;
-        }
-    };
-
     bool add(const data::resource_type t1, 
              const data::resource_type t2, 
              std::shared_ptr<io::transferor>&& tr);
     std::shared_ptr<io::transferor> get(const data::resource_type t1, 
                                         const data::resource_type t2) const;
 
-    std::unordered_map<std::pair<
-                            const data::resource_type, 
-                            const data::resource_type>, 
+    using key_type = 
+        std::pair<const data::resource_type, const data::resource_type>;
+
+    std::unordered_map<key_type,
                        std::shared_ptr<io::transferor>, 
-                       transferor_hash> m_transferors;
+                       boost::hash<key_type>> m_transferors;
 };
 
 } // namespace io

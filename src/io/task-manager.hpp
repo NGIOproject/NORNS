@@ -91,6 +91,24 @@ struct task_manager {
                 const std::vector<std::shared_ptr<storage::backend>>& backend_ptrs,
                 const std::vector<std::shared_ptr<data::resource_info>>& rinfo_ptrs);
 
+    std::tuple<urd_error, boost::optional<io::generic_task>>
+    create_local_initiated_task(iotask_type type,
+                        const auth::credentials& auth,
+                        const std::vector<backend_ptr>& backend_ptrs,
+                        const std::vector<resource_info_ptr>& rinfo_ptrs);
+
+    std::tuple<urd_error, boost::optional<io::generic_task>>
+    create_remote_initiated_task(iotask_type task_type,
+                        const auth::credentials& auth,
+                        const boost::any& ctx,
+                        const backend_ptr src_backend,
+                        const resource_info_ptr src_rinfo,
+                        const backend_ptr dst_backend,
+                        const resource_info_ptr dst_rinfo);
+
+    urd_error
+    enqueue_task(io::generic_task&& t);
+
     std::shared_ptr<task_info>
     find(iotask_id) const;
 

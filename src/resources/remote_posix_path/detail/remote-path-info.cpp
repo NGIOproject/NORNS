@@ -59,6 +59,11 @@ std::string remote_path_info::to_string() const {
     return "REMOTE_PATH[\"" + m_hostname + "\", \"" + m_nsid + "\", \"" + m_datapath + "\"]";
 }
 
+std::string 
+remote_path_info::hostname() const {
+    return m_hostname;
+}
+
 std::string remote_path_info::datapath() const {
     return m_datapath;
 }

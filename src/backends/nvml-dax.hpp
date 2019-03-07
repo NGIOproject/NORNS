@@ -40,8 +40,9 @@ namespace storage {
 
 class nvml_dax final : public storage::backend {
 public:
-    nvml_dax(bool track, const bfs::path& mount, uint32_t quota);
+    nvml_dax(const std::string& nsid, bool track, const bfs::path& mount, uint32_t quota);
 
+    std::string nsid() const override final;
     bool is_tracked() const override final;
     bool is_empty() const override final;
     bfs::path mount() const override final;
@@ -56,9 +57,10 @@ public:
     std::string to_string() const final;
 
 private:
-    bool      m_track;
-    bfs::path m_mount;
-    uint32_t  m_quota;
+    std::string m_nsid;
+    bool        m_track;
+    bfs::path   m_mount;
+    uint32_t    m_quota;
 };
 
 //NORNS_REGISTER_BACKEND(backend_type::nvml, nvml_dax);

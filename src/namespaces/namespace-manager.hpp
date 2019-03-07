@@ -94,7 +94,7 @@ struct namespace_manager {
 
         if(is_remote) {
             return static_cast<std::shared_ptr<storage::backend>>(
-                    std::make_shared<storage::detail::remote_backend>());
+                    std::make_shared<storage::detail::remote_backend>(nsid));
         }
 
         if(m_namespaces.count(nsid) == 0) {

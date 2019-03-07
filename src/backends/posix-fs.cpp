@@ -55,11 +55,19 @@ bool contains(const bfs::path& p1, const bfs::path& p2) {
 namespace norns {
 namespace storage {
 
-posix_filesystem::posix_filesystem(bool track, const bfs::path& mount, 
+posix_filesystem::posix_filesystem(const std::string& nsid, 
+                                   bool track, 
+                                   const bfs::path& mount, 
                                    uint32_t quota)
-    : m_track(track),
+    : m_nsid(nsid),
+      m_track(track),
       m_mount(mount), 
       m_quota(quota) { }
+
+std::string
+posix_filesystem::nsid() const {
+    return m_nsid;
+}
 
 bool
 posix_filesystem::is_tracked() const {

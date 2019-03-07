@@ -48,6 +48,7 @@ enum class iotask_type {
     copy,
     move,
     remove,
+    remote_transfer,
     noop,
     unknown
 };
@@ -106,6 +107,10 @@ enum class urd_error : norns_error_t {
     no_such_task      = NORNS_ENOSUCHTASK,
     too_many_tasks    = NORNS_ETOOMANYTASKS,
     tasks_pending     = NORNS_ETASKSPENDING,
+
+    /* errors about resources */
+    resource_exists   = NORNS_ERESOURCEEXISTS,
+    no_such_resource  = NORNS_ENOSUCHRESOURCE,
 };
 
 namespace utils {

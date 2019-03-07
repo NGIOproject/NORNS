@@ -48,6 +48,11 @@ liburd_resources_la_SOURCES = \
 	resources/memory_buffer/detail/memory-region-impl.hpp \
 	resources/memory_buffer/detail/memory-region-info.cpp \
 	resources/memory_buffer/detail/memory-region-info.hpp \
+	resources/remote_resource/remote-resource.hpp \
+	resources/remote_resource/detail/remote-resource-impl.cpp \
+	resources/remote_resource/detail/remote-resource-impl.hpp \
+	resources/remote_resource/detail/remote-resource-info.cpp \
+	resources/remote_resource/detail/remote-resource-info.hpp \
 	resources/remote_posix_path/remote-path.hpp \
 	resources/remote_posix_path/detail/remote-path-impl.cpp \
 	resources/remote_posix_path/detail/remote-path-impl.hpp \
@@ -67,9 +72,11 @@ liburd_resources_la_CXXFLAGS = \
 
 liburd_resources_la_CPPFLAGS = \
 	-DSPDLOG_ENABLE_SYSLOG \
+	-DHERMES_DISABLE_INTERNAL_MAKE_UNIQUE \
 	@BOOST_CPPFLAGS@ \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/src	\
+	-I$(top_srcdir)/src/externals/hermes/include \
 	-I$(top_srcdir)/src/resources \
 	-I$(top_srcdir)/rpc	\
 	-I$(top_builddir)/rpc
@@ -81,7 +88,9 @@ liburd_resources_la_LDFLAGS = \
     @BOOST_PROGRAM_OPTIONS_LIB@	\
     @BOOST_SYSTEM_LIB@ \
     @BOOST_THREAD_LIB@ \
+    @MERCURY_LIBS@ \
 	@PROTOBUF_LIBS@ \
+	@TAR_LIBS@ \
 	-pthread
 
 
@@ -136,13 +145,18 @@ liburd_aux_la_SOURCES = \
 	config/parsers.cpp \
 	config/parsers.hpp \
 	config/defaults.hpp \
+	context.hpp \
 	io.hpp \
-	io/task.cpp \
 	io/task.hpp \
+	io/task-copy.hpp \
 	io/task-info.cpp \
 	io/task-info.hpp \
 	io/task-manager.cpp \
 	io/task-manager.hpp \
+	io/task-move.hpp \
+	io/task-noop.hpp \
+	io/task-remote-transfer.hpp \
+	io/task-remove.hpp \
 	io/task-stats.cpp \
 	io/task-stats.hpp \
 	io/transferors.hpp \
@@ -151,19 +165,25 @@ liburd_aux_la_SOURCES = \
 	io/transferors/local-path-to-local-path.hpp \
 	io/transferors/local-path-to-shared-path.cpp \
 	io/transferors/local-path-to-shared-path.hpp \
-	io/transferors/local-path-to-remote-path.cpp \
-	io/transferors/local-path-to-remote-path.hpp \
+	io/transferors/local-path-to-remote-resource.cpp \
+	io/transferors/local-path-to-remote-resource.hpp \
+	io/transferors/remote-resource-to-local-path.cpp \
+	io/transferors/remote-resource-to-local-path.hpp \
 	io/transferors/memory-to-local-path.cpp \
 	io/transferors/memory-to-local-path.hpp \
 	io/transferors/memory-to-shared-path.cpp \
 	io/transferors/memory-to-shared-path.hpp \
 	io/transferors/memory-to-remote-path.cpp \
 	io/transferors/memory-to-remote-path.hpp \
+	io/transferors/memory-to-remote-resource.cpp \
+	io/transferors/memory-to-remote-resource.hpp \
 	io/transferor-registry.cpp \
 	io/transferor-registry.hpp \
 	job.hpp \
 	logger.hpp \
 	resources.hpp \
+	rpcs.cpp \
+	rpcs.hpp \
 	signal-listener.hpp \
 	thread-pool.hpp \
 	thread-pool/thread-pool.hpp \
@@ -171,7 +191,12 @@ liburd_aux_la_SOURCES = \
 	urd.cpp	\
 	urd.hpp	\
 	utils.cpp \
-	utils.hpp
+	utils.hpp \
+	utils/file-handle.hpp \
+	utils/tar-archive.cpp \
+	utils/tar-archive.hpp \
+	utils/temporary-file.hpp \
+	utils/temporary-file.cpp
 
 nodist_liburd_aux_la_SOURCES = \
 	config/defaults.cpp \
@@ -183,9 +208,11 @@ liburd_aux_la_CXXFLAGS = \
 
 liburd_aux_la_CPPFLAGS = \
 	-DSPDLOG_ENABLE_SYSLOG \
+	-DHERMES_DISABLE_INTERNAL_MAKE_UNIQUE \
 	@BOOST_CPPFLAGS@ \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/src	\
+	-I$(top_srcdir)/src/externals/hermes/include \
 	-I$(top_srcdir)/src/resources \
 	-I$(top_srcdir)/rpc	\
 	-I$(top_builddir)/rpc
@@ -197,8 +224,10 @@ liburd_aux_la_LDFLAGS = \
     @BOOST_PROGRAM_OPTIONS_LIB@	\
     @BOOST_SYSTEM_LIB@ \
     @BOOST_THREAD_LIB@ \
+    @MERCURY_LIBS@ \
 	@PROTOBUF_LIBS@ \
 	@YAMLCPP_LIBS@ \
+	@TAR_LIBS@ \
 	liburd_resources.la \
 	-pthread
 
@@ -228,10 +257,12 @@ config/defaults.cpp: Makefile
 \
 	   echo "    const char* global_socket        = \"$(localstatedir)/global.socket.2\";"; \
 	   echo "    const char* control_socket       = \"$(localstatedir)/control.socket.2\";"; \
+	   echo "    const char* bind_address         = \"127.0.0.1\";"; \
 	   echo "    const in_port_t remote_port      = 42000;"; \
 	   echo "    const char* pidfile              = \"$(localstatedir)/urd.pid\";"; \
 \
 	   echo "    const uint32_t workers_in_pool   = std::thread::hardware_concurrency();"; \
+	   echo "    const char* staging_directory    = \"/tmp/urd/\";"; \
 	   echo "    const uint32_t backlog_size      = 128;"; \
 	   echo "    const char* config_file          = \"$(sysconfdir)/norns.conf\";"; \
 	   echo "} // namespace defaults"; \
@@ -256,9 +287,11 @@ urd_CXXFLAGS = \
 
 urd_CPPFLAGS = \
 	-DSPDLOG_ENABLE_SYSLOG \
+	-DHERMES_DISABLE_INTERNAL_MAKE_UNIQUE \
 	@BOOST_CPPFLAGS@ \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/src	\
+	-I$(top_srcdir)/src/externals/hermes/include \
 	-I$(top_srcdir)/rpc	\
 	-I$(top_builddir)/rpc
 
@@ -269,7 +302,9 @@ urd_LDFLAGS = \
     @BOOST_PROGRAM_OPTIONS_LIB@	\
     @BOOST_SYSTEM_LIB@ \
     @BOOST_THREAD_LIB@ \
+    @MERCURY_LIBS@ \
 	@PROTOBUF_LIBS@ \
+	@TAR_LIBS@ \
 	liburd_aux.la
 
 # we also need to include it as an additional dependency, since automake

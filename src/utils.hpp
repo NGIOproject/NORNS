@@ -25,6 +25,9 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
+#ifndef NORNS_UTILS_HPP
+#define NORNS_UTILS_HPP
+
 #include <boost/version.hpp>
 #include <boost/filesystem.hpp>
 #include <system_error>
@@ -33,6 +36,8 @@
 #include <cstdint>
 
 #include "common.hpp"
+#include "utils/tar-archive.hpp"
+#include "utils/temporary-file.hpp"
 
 namespace norns {
 namespace utils {
@@ -54,6 +59,9 @@ std::string n2hexstr(T i, bool zero_pad=false) {
 boost::filesystem::path lexical_normalize(const boost::filesystem::path& pathname,
                                           bool as_directory=false);
 
+boost::filesystem::path
+remove_trailing_separator(const boost::filesystem::path& pathname);
+
 } // namespace utils
 } // namespace norns
 
@@ -68,3 +76,5 @@ path relative(path from_path, path to_path);
 }} // namespace boost::filesystem
 
 #endif
+
+#endif // NORNS_UTILS_HPP

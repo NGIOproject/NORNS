@@ -44,7 +44,9 @@ namespace bfs = boost::filesystem;
 namespace norns {
 namespace config {
 
-settings::settings() { }
+settings::settings() { 
+    this->load_defaults();
+}
 
 settings::settings(const std::string& progname, 
                    bool daemonize, 
@@ -56,9 +58,11 @@ settings::settings(const std::string& progname,
                    uint32_t dry_run_duration, 
                    const bfs::path& global_socket, 
                    const bfs::path& control_socket, 
+                   const std::string& bind_address,
                    uint32_t remote_port,
                    const bfs::path& pidfile, 
                    uint32_t workers,
+                   const bfs::path& staging_directory,
                    uint32_t backlog_size, 
                    const bfs::path& cfgfile, 
                    const std::list<namespace_def>& defns) :
@@ -72,14 +76,17 @@ settings::settings(const std::string& progname,
     m_dry_run_duration(dry_run_duration),
     m_global_socket(global_socket),
     m_control_socket(control_socket),
+    m_bind_address(bind_address),
     m_remote_port(remote_port),
     m_daemon_pidfile(pidfile),
     m_workers_in_pool(workers),
+    m_staging_directory(staging_directory),
     m_backlog_size(backlog_size),
     m_config_file(cfgfile),
     m_default_namespaces(defns) { }
 
-void settings::load_defaults() {
+void 
+settings::load_defaults() {
     m_progname = defaults::progname;
     m_daemonize = defaults::daemonize;
     m_use_syslog = defaults::use_syslog;
@@ -90,15 +97,18 @@ void settings::load_defaults() {
     m_dry_run_duration = defaults::dry_run_duration;
     m_global_socket = defaults::global_socket;
     m_control_socket = defaults::control_socket;
+    m_bind_address = defaults::bind_address;
     m_remote_port = defaults::remote_port;
     m_daemon_pidfile = defaults::pidfile;
     m_workers_in_pool = defaults::workers_in_pool;
+    m_staging_directory = defaults::staging_directory;
     m_backlog_size = defaults::backlog_size;
     m_config_file = defaults::config_file;
     m_default_namespaces.clear();
 }
 
-void settings::load_from_file(const bfs::path& filename) {
+void 
+settings::load_from_file(const bfs::path& filename) {
 
     file_options::options_map opt_map;
     file_options::parse_yaml_file(filename, config::valid_options, opt_map);
@@ -124,9 +134,12 @@ void settings::load_from_file(const bfs::path& filename) {
     m_dry_run_duration = defaults::dry_run_duration;
     m_global_socket = gsettings.get_as<bfs::path>(keywords::global_socket);
     m_control_socket = gsettings.get_as<bfs::path>(keywords::control_socket);
+    m_bind_address = gsettings.get_as<std::string>(keywords::bind_address);
     m_remote_port = gsettings.get_as<uint32_t>(keywords::remote_port);
     m_daemon_pidfile = gsettings.get_as<bfs::path>(keywords::pidfile);
     m_workers_in_pool = gsettings.get_as<uint32_t>(keywords::workers);
+    m_staging_directory =
+        gsettings.get_as<bfs::path>(keywords::staging_directory);
     m_backlog_size = defaults::backlog_size;
 
     // load definitions for default namespaces
@@ -144,7 +157,8 @@ void settings::load_from_file(const bfs::path& filename) {
     }
 }
 
-std::string settings::to_string() const {
+std::string 
+settings::to_string() const {
     std::string str = std::string("settings {\n") +
            "  m_progname: "          + m_progname + ",\n" +
            "  m_daemonize: "         + (m_daemonize ? "true" : "false") + ",\n" +
@@ -156,9 +170,11 @@ std::string settings::to_string() const {
            "  m_dry_run_duration: "  + std::to_string(m_dry_run_duration) +  ",\n" +
            "  m_global_socket: "     + m_global_socket.string() + ",\n" +
            "  m_control_socket: "    + m_control_socket.string() + ",\n" +
+           "  m_bind_address: "      + m_bind_address + ",\n" +
            "  m_remote_port: "       + std::to_string(m_remote_port) + ",\n" +
            "  m_pidfile: "           + m_daemon_pidfile.string() + ",\n" +
            "  m_workers: "           + std::to_string(m_workers_in_pool) + ",\n" +
+           "  m_staging_directory: " + m_staging_directory.string() + ",\n" +
            "  m_backlog_size: "      + std::to_string(m_backlog_size) + ",\n" +
            "  m_config_file: "       + m_config_file.string() + ",\n" +
            "};";
@@ -166,70 +182,186 @@ std::string settings::to_string() const {
     return str;
 }
 
-std::string& settings::progname() {
+std::string
+settings::progname() const {
     return m_progname;
 }
 
-bool& settings::daemonize() {
+void
+settings::progname(const std::string& progname) {
+    m_progname = progname;
+}
+
+bool
+settings::daemonize() const {
     return m_daemonize;
 }
 
-bool& settings::use_syslog() {
+void
+settings::daemonize(bool daemonize) {
+    m_daemonize = daemonize;
+}
+
+bool
+settings::use_syslog() const {
     return m_use_syslog;
 }
 
-bool& settings::use_console() {
+void
+settings::use_syslog(bool use_syslog) {
+    m_use_syslog = use_syslog;
+}
+
+bool
+settings::use_console() const {
     return m_use_console;
 }
 
-bfs::path& settings::log_file() {
+void
+settings::use_console(bool use_console) {
+    m_use_console = use_console;
+}
+
+bfs::path
+settings::log_file() const {
     return m_log_file;
 }
 
-uint32_t& settings::log_file_max_size() {
+void
+settings::log_file(const bfs::path& log_file) {
+    m_log_file = log_file;
+}
+
+uint32_t
+settings::log_file_max_size() const {
     return m_log_file_max_size;
 }
 
-bool& settings::dry_run() {
+void
+settings::log_file_max_size(uint32_t log_file_max_size) {
+    m_log_file_max_size = log_file_max_size;
+}
+
+bool
+settings::dry_run() const {
     return m_dry_run;
 }
 
-uint32_t& settings::dry_run_duration() {
+void
+settings::dry_run(bool dry_run) {
+    m_dry_run = dry_run;
+}
+
+uint32_t
+settings::dry_run_duration() const {
     return m_dry_run_duration;
 }
 
-bfs::path& settings::global_socket() {
+void
+settings::dry_run_duration(uint32_t dry_run_duration) {
+    m_dry_run_duration = dry_run_duration;
+}
+
+bfs::path
+settings::global_socket() const {
     return m_global_socket;
 }
 
-bfs::path& settings::control_socket() {
+void
+settings::global_socket(const bfs::path& global_socket) {
+    m_global_socket = global_socket;
+}
+
+bfs::path
+settings::control_socket() const {
     return m_control_socket;
 }
 
-in_port_t& settings::remote_port() {
+void
+settings::control_socket(const bfs::path& control_socket) {
+    m_control_socket = control_socket;
+}
+
+std::string
+settings::bind_address() const {
+    return m_bind_address;
+}
+
+void
+settings::bind_address(const std::string& bind_address) {
+    m_bind_address = bind_address;
+}
+
+in_port_t
+settings::remote_port() const {
     return m_remote_port;
 }
 
-bfs::path& settings::pidfile() {
+void
+settings::remote_port(in_port_t remote_port) {
+    m_remote_port = remote_port;
+}
+
+bfs::path
+settings::pidfile() const {
     return m_daemon_pidfile;
 }
 
-uint32_t& settings::workers_in_pool() {
+void
+settings::pidfile(const bfs::path& pidfile) {
+    m_daemon_pidfile = pidfile;
+}
+
+uint32_t
+settings::workers_in_pool() const {
     return m_workers_in_pool;
 }
 
-uint32_t& settings::backlog_size() {
+void
+settings::workers_in_pool(uint32_t workers_in_pool) {
+    m_workers_in_pool = workers_in_pool;
+}
+
+bfs::path
+settings::staging_directory() const {
+    return m_staging_directory;
+}
+
+void
+settings::staging_directory(const bfs::path& staging_directory) {
+    m_staging_directory = staging_directory;
+}
+
+uint32_t
+settings::backlog_size() const {
     return m_backlog_size;
 }
 
-bfs::path& settings::config_file() {
+void
+settings::backlog_size(uint32_t backlog_size) {
+    m_backlog_size = backlog_size;
+}
+
+bfs::path 
+settings::config_file() const {
     return m_config_file;
 }
 
-std::list<namespace_def>& settings::default_namespaces() {
+void
+settings::config_file(const bfs::path& config_file) {
+    m_config_file = config_file;
+}
+
+std::list<namespace_def>
+settings::default_namespaces() const {
     return m_default_namespaces;
+}
+
+void 
+settings::default_namespaces(
+    const std::list<namespace_def>& default_namespaces) {
+    m_default_namespaces = default_namespaces;
 }
 
 } // namespace config
 } // namespace norns
-

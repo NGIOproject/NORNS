@@ -58,6 +58,11 @@ bool memory_region_resource::is_collection() const {
     return false;
 }
 
+std::size_t
+memory_region_resource::packed_size() const {
+    return m_size;
+}
+
 const std::shared_ptr<const storage::backend>
 memory_region_resource::parent() const {
     return std::static_pointer_cast<const storage::backend>(m_parent);

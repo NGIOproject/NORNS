@@ -25,56 +25,60 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#include <sys/sendfile.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#ifndef __IO_MEM_TO_REMOTE_RESOURCE_TX__
+#define __IO_MEM_TO_REMOTE_RESOURCE_TX__
 
-#include "utils.hpp"
-#include "logger.hpp"
-#include "resources.hpp"
-#include "auth.hpp"
-#include "io/task-info.hpp"
-#include "backends/posix-fs.hpp"
-#include "local-path-to-remote-path.hpp"
+#include <memory>
+#include <system_error>
+#include "context.hpp"
+#include "transferor.hpp"
 
 namespace norns {
+
+// forward declarations
+namespace auth {
+struct credentials;
+}
+
+namespace data {
+struct resource_info;
+struct resource;
+}
+
 namespace io {
 
-bool 
-local_path_to_remote_path_transferor::validate(
-        const std::shared_ptr<data::resource_info>& src_info,
-        const std::shared_ptr<data::resource_info>& dst_info) const {
+struct memory_region_to_remote_resource_transferor : public transferor {
 
-    (void) src_info;
-    (void) dst_info;
+    memory_region_to_remote_resource_transferor(const context& ctx);
 
-    LOGGER_WARN("Validation not implemented");
+    bool 
+    validate(const std::shared_ptr<data::resource_info>& src_info,
+             const std::shared_ptr<data::resource_info>& dst_info) 
+        const override final;
 
-    return true;
-}
+    std::error_code 
+    transfer(const auth::credentials& auth,                
+             const std::shared_ptr<task_info>& task_info,
+             const std::shared_ptr<const data::resource>& src,  
+             const std::shared_ptr<const data::resource>& dst) 
+        const override final;
 
-std::error_code 
-local_path_to_remote_path_transferor::transfer(
-        const auth::credentials& auth, 
-        const std::shared_ptr<task_info>& task_info,
-        const std::shared_ptr<const data::resource>& src,  
-        const std::shared_ptr<const data::resource>& dst) const {
+    std::error_code 
+    accept_transfer(const auth::credentials& auth,                
+                const std::shared_ptr<task_info>& task_info,
+                const std::shared_ptr<const data::resource>& src,  
+                const std::shared_ptr<const data::resource>& dst) 
+        const override final;
 
-    (void) auth;
-    (void) task_info;
-    (void) src;
-    (void) dst;
+    std::string 
+    to_string() const override final;
 
-    LOGGER_WARN("Transfer not implemented");
-
-    return std::make_error_code(static_cast<std::errc>(0));
-}
-
-std::string 
-local_path_to_remote_path_transferor::to_string() const {
-    return "transferor[local_path => remote_path]";
-}
+private:
+    bfs::path m_staging_directory;
+    std::shared_ptr<hermes::async_engine> m_network_service;
+};
 
 } // namespace io
 } // namespace norns
+
+#endif /* __MEM_TO_REMOTE_RESOURCE_TX__ */

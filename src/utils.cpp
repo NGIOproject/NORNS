@@ -152,6 +152,26 @@ boost::filesystem::path lexical_normalize(const boost::filesystem::path& pathnam
 }
 
 
+// remove a trailing separator
+// (adapted from boost::filesystem::path::remove_trailing_separator())
+boost::filesystem::path
+remove_trailing_separator(const boost::filesystem::path& pathname) {
+
+    using boost::filesystem::path;
+
+    std::string str{pathname.generic_string()};
+
+    auto is_directory_separator = [](path::value_type c) {
+        return c == '/';
+    };
+
+    if(!str.empty() && is_directory_separator(str[str.size() - 1])) {
+        str.erase(str.size() - 1);
+    }
+
+    return path{str};
+}
+
 } // namespace utils
 } // namespace norns
 

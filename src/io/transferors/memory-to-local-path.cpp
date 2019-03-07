@@ -63,19 +63,26 @@ copy_memory_region(const std::shared_ptr<norns::io::task_info>& task_info,
         return std::make_error_code(static_cast<std::errc>(errno));
     }
 
+    // preallocate output file
+#ifdef HAVE_FALLOCATE
     if(::fallocate(out_fd, 0, 0, size) == -1) {
-        // filesystem doesn't support fallocate(), fallback to truncate()
-        if(errno == EOPNOTSUPP) {
-            if(::ftruncate(out_fd, size) != 0) {
-                LOGGER_ERROR("ftruncate() error on {}", dst);
-                rv = errno;
-                goto cleanup_on_error;
-            }
+        if(errno != EOPNOTSUPP) {
+            LOGGER_ERROR("fallocate() error");
+            rv = errno;
+            goto cleanup_on_error;
         }
-        LOGGER_ERROR("fallocate() error");
-        rv = errno;
-        goto cleanup_on_error;
+#endif // HAVE_FALLOCATE
+
+        // filesystem doesn't support fallocate(), fallback to truncate()
+        if(::ftruncate(out_fd, size) != 0) {
+            LOGGER_ERROR("ftruncate() error on {}", dst);
+            rv = errno;
+            goto cleanup_on_error;
+        }
+
+#ifdef HAVE_FALLOCATE
     }
+#endif // HAVE_FALLOCATE
 
     dst_addr = ::mmap(NULL, size, PROT_WRITE, MAP_SHARED, out_fd, 0);
 
@@ -141,6 +148,10 @@ retry_close:
 namespace norns {
 namespace io {
 
+memory_region_to_local_path_transferor::
+    memory_region_to_local_path_transferor(const context &ctx) :
+        m_ctx(ctx) { }
+
 bool 
 memory_region_to_local_path_transferor::validate(
         const std::shared_ptr<data::resource_info>& src_info,
@@ -181,6 +192,22 @@ memory_region_to_local_path_transferor::transfer(
     return ::copy_memory_region(task_info, auth.pid(), 
                                 reinterpret_cast<void*>(d_src.address()), 
                                 d_src.size(), d_dst.canonical_path());
+}
+
+std::error_code 
+memory_region_to_local_path_transferor::accept_transfer(
+        const auth::credentials& auth, 
+        const std::shared_ptr<task_info>& task_info,
+        const std::shared_ptr<const data::resource>& src,  
+        const std::shared_ptr<const data::resource>& dst) const {
+
+    (void) auth;
+    (void) task_info;
+    (void) src;
+    (void) dst;
+
+    LOGGER_ERROR("This function should never be called for this transfer type");
+    return std::make_error_code(static_cast<std::errc>(0));
 }
 
 std::string 

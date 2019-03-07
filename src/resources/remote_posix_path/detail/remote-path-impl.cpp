@@ -43,11 +43,13 @@ namespace detail {
 // remote alias for convenience
 using remote_path_resource = resource_impl<resource_type::remote_posix_path>;
 
-remote_path_resource::resource_impl(const std::shared_ptr<const storage::backend> parent) :
-    m_parent(std::static_pointer_cast<const storage::detail::remote_backend>(std::move(parent))) { }
+remote_path_resource::resource_impl(
+    const std::shared_ptr<const storage::backend> parent)
+    : m_parent(std::static_pointer_cast<const storage::detail::remote_backend>(
+          std::move(parent))) {}
 
 std::string remote_path_resource::name() const {
-    return "PENDING";
+    return "PENDING: " + m_parent->to_string();
 }
 
 resource_type remote_path_resource::type() const {
@@ -56,6 +58,11 @@ resource_type remote_path_resource::type() const {
 
 bool remote_path_resource::is_collection() const {
     return false;
+}
+
+std::size_t
+remote_path_resource::packed_size() const {
+    return 0;
 }
 
 const std::shared_ptr<const storage::backend>

@@ -41,8 +41,11 @@ backend_factory::get() {
 }
 
 std::shared_ptr<backend>
-backend_factory::create(const backend_type type, bool track, 
-                        const bfs::path& mount, uint32_t quota) const {
+backend_factory::create(const backend_type type, 
+                        const std::string& nsid, 
+                        bool track, 
+                        const bfs::path& mount, 
+                        uint32_t quota) const {
 
     boost::system::error_code ec;
 
@@ -58,7 +61,8 @@ backend_factory::create(const backend_type type, bool track,
     const auto& it = m_registrar.find(id);
 
     if(it != m_registrar.end()){
-        return std::shared_ptr<backend>(it->second(track, canonical_mount, quota));
+        return std::shared_ptr<backend>(
+                it->second(nsid, track, canonical_mount, quota));
     }
     else{
         throw std::invalid_argument("Unrecognized backend type!");

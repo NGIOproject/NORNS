@@ -33,10 +33,16 @@
 namespace norns {
 namespace storage {
 
-lustre::lustre(bool track, const bfs::path& mount, uint32_t quota) 
-    : m_track(track),
+lustre::lustre(const std::string& nsid, bool track, const bfs::path& mount, uint32_t quota) 
+    : m_nsid(nsid),
+      m_track(track),
       m_mount(mount), 
       m_quota(quota) { }
+
+std::string
+lustre::nsid() const {
+    return m_nsid;
+}
 
 bool
 lustre::is_tracked() const {

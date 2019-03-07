@@ -34,23 +34,34 @@
 namespace norns {
 namespace io {
 
-task_info::task_info(const iotask_id tid, const iotask_type type,
-            const auth::credentials& auth,
-            const backend_ptr src_backend, const resource_info_ptr src_rinfo,
-            const backend_ptr dst_backend, const resource_info_ptr dst_rinfo) :
+task_info::task_info(const iotask_id tid, 
+                     const iotask_type type,
+                     const bool is_remote,
+                     const auth::credentials& auth,
+                     const backend_ptr src_backend, 
+                     const resource_info_ptr src_rinfo,
+                     const backend_ptr dst_backend, 
+                     const resource_info_ptr dst_rinfo,
+                     const boost::any& ctx) :
     m_id(tid),
     m_type(type),
+    m_is_remote(is_remote),
     m_auth(auth),
     m_src_backend(src_backend),
     m_src_rinfo(src_rinfo),
     m_dst_backend(dst_backend),
     m_dst_rinfo(dst_rinfo),
+    m_ctx(ctx),
     m_status(task_status::pending),
     m_task_error(urd_error::success),
     m_sys_error(),
     m_bandwidth(std::numeric_limits<double>::quiet_NaN()),
     m_sent_bytes(),
     m_total_bytes() {
+
+    if(!src_rinfo) {
+        return;
+    }
 
     std::error_code ec;
     m_total_bytes = src_backend->get_size(src_rinfo, ec);
@@ -61,6 +72,8 @@ task_info::task_info(const iotask_id tid, const iotask_type type,
     }
 }
 
+task_info::~task_info() { }
+
 iotask_id
 task_info::id() const {
     return m_id;
@@ -69,6 +82,11 @@ task_info::id() const {
 iotask_type
 task_info::type() const {
     return m_type;
+}
+
+bool 
+task_info::is_remote() const {
+    return m_is_remote;
 }
 
 auth::credentials 
@@ -96,6 +114,16 @@ task_info::dst_rinfo() const {
     return m_dst_rinfo;
 }
 
+boost::any
+task_info::context() const {
+    return m_ctx;
+}
+
+void 
+task_info::set_context(const boost::any& ctx) {
+    m_ctx = ctx;
+}
+
 task_status
 task_info::status() const {
     boost::shared_lock<boost::shared_mutex> lock(m_mutex);
@@ -116,6 +144,17 @@ task_info::update_status(const task_status st, const urd_error ec,
     m_status = st;
     m_task_error = ec;
     m_sys_error = sc;
+}
+
+urd_error 
+task_info::task_error() const {
+    boost::shared_lock<boost::shared_mutex> lock(m_mutex);
+    return m_task_error;
+}
+
+std::error_code 
+task_info::sys_error() const {
+    return m_sys_error;
 }
 
 std::size_t

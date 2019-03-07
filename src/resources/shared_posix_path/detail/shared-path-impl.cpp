@@ -45,13 +45,13 @@ using shared_path_resource = resource_impl<resource_type::shared_posix_path>;
 
 shared_path_resource::resource_impl(const std::shared_ptr<const storage::backend> parent, 
                                     const bfs::path& name) :
-    m_namespace_name(name),
+    m_name_in_namespace(name),
     m_canonical_path(parent->mount() / name),
     m_is_collection(bfs::is_directory(m_canonical_path)),
     m_parent(std::static_pointer_cast<const storage::posix_filesystem>(std::move(parent))) { }
 
 std::string shared_path_resource::name() const {
-    return m_namespace_name.string();
+    return m_name_in_namespace.string();
 }
 
 resource_type shared_path_resource::type() const {
@@ -60,6 +60,11 @@ resource_type shared_path_resource::type() const {
 
 bool shared_path_resource::is_collection() const {
     return m_is_collection;
+}
+
+std::size_t
+shared_path_resource::packed_size() const {
+    return 0;
 }
 
 const std::shared_ptr<const storage::backend>

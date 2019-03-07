@@ -55,6 +55,8 @@ std::string to_string(iotask_type type) {
             return "DATA_MOVE";
         case iotask_type::remove:
             return "DATA_REMOVE";
+        case iotask_type::remote_transfer:
+            return "DATA_TRANSFER";
         default:
             return "UNKNOWN_IOTASK";
     }
@@ -107,6 +109,10 @@ std::string to_string(urd_error ecode) {
             return "NORNS_ETASKSPENDING";
         case urd_error::accept_paused:
             return "NORNS_EACCEPTPAUSED";
+        case urd_error::resource_exists:
+            return "NORNS_ERESOURCEEXISTS";
+        case urd_error::no_such_resource:
+            return "NORNS_ENOSUCHRESOURCE";
         default:
             return "UNKNOWN_ERROR";
     }

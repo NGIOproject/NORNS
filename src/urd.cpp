@@ -42,6 +42,8 @@
 #include <string.h>
 #include <ctime>
 
+#include <boost/optional.hpp>
+#include <boost/optional/optional_io.hpp>
 #include <boost/atomic.hpp>
 #include <functional>
 
@@ -54,6 +56,9 @@
 #include "io.hpp"
 #include "namespaces.hpp"
 #include "fmt.hpp"
+#include "hermes.hpp"
+#include "rpcs.hpp"
+#include "context.hpp"
 #include "urd.hpp"
 
 namespace norns {
@@ -186,15 +191,14 @@ urd_error urd::validate_iotask_args(iotask_type type,
         return urd_error::bad_args;
     }
 
-    // src_resource cannot be remote
-    if(src_rinfo->type() == data::resource_type::remote_posix_path) {
+    if(src_rinfo->is_remote() && dst_rinfo->is_remote()) {
         return urd_error::not_supported;
     }
 
-    // dst_resource cannot be a memory region
-    if(dst_rinfo->type() == data::resource_type::memory_region) {
-        return urd_error::not_supported;
-    }
+//    // dst_resource cannot be a memory region
+//    if(dst_rinfo->type() == data::resource_type::memory_region) {
+//        return urd_error::not_supported;
+//    }
 
     return urd_error::success;
 }
@@ -204,10 +208,13 @@ urd_error urd::validate_iotask_args(iotask_type type,
 //                 handlers for user requests
 ///////////////////////////////////////////////////////////////////////////////
 
-response_ptr urd::iotask_create_handler(const request_ptr base_request) {
+response_ptr 
+urd::iotask_create_handler(const request_ptr base_request) {
 
     // downcast the generic request to the concrete implementation
-    auto request = utils::static_unique_ptr_cast<api::iotask_create_request>(std::move(base_request));
+    auto request = 
+        utils::static_unique_ptr_cast<api::iotask_create_request>(
+                std::move(base_request));
 
     const auto type = request->get<0>();
     const auto src_rinfo = request->get<1>();
@@ -219,6 +226,7 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
     std::vector<std::shared_ptr<data::resource_info>> rinfo_ptrs;
     boost::optional<iotask_id> tid;
     boost::optional<auth::credentials> auth;
+    boost::optional<io::generic_task> t;
     response_ptr resp;
     urd_error rv = urd_error::success;
 
@@ -234,6 +242,11 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
         rv = urd_error::snafu; // TODO: invalid_credentials? eaccess? eperm?
         goto log_and_return;
     }
+
+//    if(src_rinfo->is_remote()) {
+//        rv = urd_error::not_supported;
+//        goto log_and_return;
+//    }
 
     for(const auto& rinfo : {src_rinfo, dst_rinfo}) {
         if(rinfo) {
@@ -277,7 +290,35 @@ response_ptr urd::iotask_create_handler(const request_ptr base_request) {
     }
 #endif
 
-    std::tie(rv, tid) = m_task_mgr->create_task(type, *auth, backend_ptrs, rinfo_ptrs);
+
+    //FIXME: use appropriate args for each task rather than a vector of nullptrs
+    switch(type) {
+        case iotask_type::move:
+        case iotask_type::copy:
+            std::tie(rv, t) = 
+                m_task_mgr->create_local_initiated_task(type, *auth, backend_ptrs, rinfo_ptrs);
+            break;
+        case iotask_type::remove:
+            std::tie(rv, t) =
+                m_task_mgr->create_local_initiated_task(type, *auth, backend_ptrs, rinfo_ptrs);
+            break;
+        case iotask_type::noop:
+            std::tie(rv, t) = 
+                m_task_mgr->create_local_initiated_task(type, *auth, backend_ptrs, rinfo_ptrs);
+            break;
+        default:
+            rv = urd_error::bad_args;
+            goto log_and_return;
+    }
+
+    if(rv == urd_error::success) {
+        tid = t->id();
+
+        // enqueue task so that it's eventually run by a worker thread
+        m_task_mgr->enqueue_task(std::move(*t));
+    }
+
+//    std::tie(rv, tid) = m_task_mgr->create_task(type, *auth, backend_ptrs, rinfo_ptrs);
 
 log_and_return:
     resp = std::make_unique<api::iotask_create_response>(tid.get_value_or(0));
@@ -417,7 +458,7 @@ response_ptr urd::process_add_handler(const request_ptr base_request) {
     auto request = utils::static_unique_ptr_cast<api::process_register_request>(std::move(base_request));
 
     uint32_t jobid = request->get<0>();
-    pid_t uid = request->get<1>();
+    //pid_t uid = request->get<1>();
     gid_t gid = request->get<2>();
     pid_t pid = request->get<3>();
 
@@ -446,7 +487,7 @@ response_ptr urd::process_remove_handler(const request_ptr base_request) {
     auto request = utils::static_unique_ptr_cast<api::process_unregister_request>(std::move(base_request));
 
     uint32_t jobid = request->get<0>();
-    pid_t uid = request->get<1>();
+    //pid_t uid = request->get<1>();
     gid_t gid = request->get<2>();
     pid_t pid = request->get<3>();
 
@@ -495,7 +536,7 @@ urd_error urd::create_namespace(const std::string& nsid, backend_type type,
     }
 
     if(auto bptr = storage::backend_factory::create_from(
-                type, track, mount, quota)) {
+                type, nsid, track, mount, quota)) {
         m_namespace_mgr->add(nsid, bptr);
         return urd_error::success;
     }
@@ -625,6 +666,315 @@ response_ptr urd::unknown_request_handler(const request_ptr /*base_request*/) {
     return resp;
 }
 
+// N.B. This function is called by the progress thread internal to 
+// m_network_service rather than by the main execution thread
+void
+urd::push_resource_handler(hermes::request<rpc::push_resource>&& req) {
+
+    const auto args = req.args();
+
+    LOGGER_WARN("incoming rpc::push_resource(from: \"{}@{}:{}\", to: \"{}:{}\")", 
+                args.in_nsid(), 
+                args.in_address(),
+                args.in_resource_name(),
+                args.out_nsid(),
+                args.out_resource_name());
+
+    urd_error rv = urd_error::success;
+    boost::optional<io::generic_task> t;
+    std::shared_ptr<storage::backend> src_backend;
+    boost::optional<std::shared_ptr<storage::backend>> dst_backend;
+    auto dst_rtype = static_cast<data::resource_type>(args.out_resource_type());
+    auth::credentials auth; //XXX fake credentials for now
+
+    const auto create_rinfo = 
+        [&](const data::resource_type& rtype) -> 
+            std::shared_ptr<data::resource_info> {
+
+        switch(rtype) {
+            case data::resource_type::remote_resource:
+                return std::make_shared<data::remote_resource_info>(
+                        args.in_address(), args.in_nsid(), 
+                        args.in_is_collection(), args.in_resource_name(), 
+                        args.in_buffers());
+            case data::resource_type::local_posix_path:
+            case data::resource_type::shared_posix_path:
+                return std::make_shared<data::local_path_info>(
+                        args.out_nsid(), args.out_resource_name());
+            default:
+                rv = urd_error::not_supported;
+                return {};
+        }
+    };
+
+    if(m_is_paused) {
+        rv = urd_error::accept_paused;
+        LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
+        m_network_service->respond(std::move(req), 
+                    static_cast<uint32_t>(io::task_status::finished_with_error),
+                    static_cast<uint32_t>(rv),
+                    0,
+                    0);
+        return;
+    }
+
+    auto src_rinfo = create_rinfo(data::resource_type::remote_resource);
+    auto dst_rinfo = create_rinfo(dst_rtype);
+
+    //TODO: check src_rinfo and dst_rinfo
+
+
+    // TODO: actually retrieve and validate credentials, etc
+
+
+    src_backend = 
+        std::make_shared<storage::detail::remote_backend>(args.in_nsid());
+
+    {
+        boost::shared_lock<boost::shared_mutex> lock(m_namespace_mgr_mutex);
+        dst_backend = m_namespace_mgr->find(args.out_nsid());
+    }
+
+    if(!dst_backend) {
+        rv = urd_error::no_such_namespace;
+        LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
+        m_network_service->respond(std::move(req), 
+                static_cast<uint32_t>(io::task_status::finished_with_error),
+                static_cast<int32_t>(rv),
+                0,
+                0);
+        return;
+    }
+
+    LOGGER_DEBUG("nsid: {}, bptr: {}", args.in_nsid(), dst_backend);
+
+    auto ctx =
+        std::make_shared<hermes::request<rpc::push_resource>>(std::move(req));
+
+    std::tie(rv, t) =
+        m_task_mgr->create_remote_initiated_task(
+                iotask_type::remote_transfer, auth, 
+                ctx, src_backend, src_rinfo, 
+                *dst_backend, dst_rinfo);
+
+    if(rv == urd_error::success) {
+        // run the task and check that it started correctly
+        (*t)();
+
+        auto req = std::move(*ctx);
+
+        if(t->info()->status() == io::task_status::finished_with_error) {
+            rv = t->info()->task_error();
+            LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
+            m_network_service->respond(std::move(req), 
+                    static_cast<uint32_t>(io::task_status::finished_with_error),
+                    static_cast<int32_t>(t->info()->task_error()),
+                    static_cast<int32_t>(t->info()->sys_error().value()),
+                    0);
+        }
+    }
+}
+
+void
+urd::pull_resource_handler(hermes::request<rpc::pull_resource>&& req) {
+
+    const auto args = req.args();
+
+    LOGGER_WARN("incoming rpc::push_request(from: \"{}:{}\", to: \"{}@{}:{}\")", 
+                args.in_nsid(), 
+                args.in_resource_name(),
+                args.out_address(),
+                args.out_nsid(), 
+                args.out_resource_name());
+
+    urd_error rv = urd_error::success;
+    boost::optional<io::generic_task> tsk;
+    boost::optional<std::shared_ptr<storage::backend>> src_backend;
+    std::shared_ptr<storage::backend> dst_backend;
+
+    /// XXX this information should be retrievable from the backend
+    auto src_rtype = static_cast<data::resource_type>(args.in_resource_type());
+
+    auth::credentials auth; //XXX fake credentials for now
+
+    const auto create_rinfo = 
+        [&](const data::resource_type& rtype) -> 
+            std::shared_ptr<data::resource_info> {
+
+        switch(rtype) {
+            case data::resource_type::remote_resource:
+                return std::make_shared<data::remote_resource_info>(
+                        args.out_address(), args.out_nsid(), false, 
+                        args.out_resource_name(), args.out_buffers());
+            case data::resource_type::local_posix_path:
+            case data::resource_type::shared_posix_path:
+                return std::make_shared<data::local_path_info>(
+                        args.in_nsid(), args.in_resource_name());
+            default:
+                rv = urd_error::not_supported;
+                return {};
+        }
+    };
+
+    if(m_is_paused) {
+        rv = urd_error::accept_paused;
+        LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
+        m_network_service->respond(std::move(req), 
+                    static_cast<uint32_t>(io::task_status::finished_with_error),
+                    static_cast<uint32_t>(rv),
+                    0,
+                    0);
+        return;
+    }
+
+    auto src_rinfo = create_rinfo(src_rtype);
+    auto dst_rinfo = create_rinfo(data::resource_type::remote_resource);
+
+    //TODO: check src_rinfo and dst_rinfo
+
+
+    // TODO: actually retrieve and validate credentials, etc
+
+    {
+        boost::shared_lock<boost::shared_mutex> lock(m_namespace_mgr_mutex);
+        src_backend = m_namespace_mgr->find(args.in_nsid());
+    }
+
+    if(!src_backend) {
+        rv = urd_error::no_such_namespace;
+        LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
+        m_network_service->respond(std::move(req), 
+                static_cast<uint32_t>(io::task_status::finished_with_error),
+                static_cast<int32_t>(rv),
+                0,
+                0);
+        return;
+    }
+
+    LOGGER_DEBUG("nsid: {}, bptr: {}", args.in_nsid(), src_backend);
+
+    dst_backend = 
+        std::make_shared<storage::detail::remote_backend>(args.out_nsid());
+
+    auto ctx =
+        std::make_shared<hermes::request<rpc::pull_resource>>(std::move(req));
+
+    std::tie(rv, tsk) =
+        m_task_mgr->create_remote_initiated_task(
+                iotask_type::remote_transfer, auth, 
+                ctx, *src_backend, src_rinfo, 
+                dst_backend, dst_rinfo);
+
+    if(rv == urd_error::success) {
+        // run the task and check that it started correctly
+        (*tsk)();
+
+        auto req = std::move(*ctx);
+
+        if(tsk->info()->status() == io::task_status::finished_with_error) {
+            rv = tsk->info()->task_error();
+            LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
+            m_network_service->respond(std::move(req), 
+                    static_cast<uint32_t>(io::task_status::finished_with_error),
+                    static_cast<int32_t>(tsk->info()->task_error()),
+                    static_cast<int32_t>(tsk->info()->sys_error().value()),
+                    0);
+        }
+    }
+}
+
+void
+urd::stat_resource_handler(hermes::request<rpc::stat_resource>&& req) {
+
+    const auto args = req.args();
+
+    LOGGER_WARN("incoming rpc::stat_resource(\"{}:{}\")", 
+                args.nsid(), 
+                args.resource_name());
+
+    urd_error rv = urd_error::success;
+    boost::optional<std::shared_ptr<storage::backend>> dst_backend;
+
+    {
+        boost::shared_lock<boost::shared_mutex> lock(m_namespace_mgr_mutex);
+        dst_backend = m_namespace_mgr->find(args.nsid());
+    }
+
+    if(!dst_backend) {
+        rv = urd_error::no_such_namespace;
+        LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
+        m_network_service->respond(std::move(req), 
+                                    static_cast<uint32_t>(rv),
+                                    false,
+                                    //XXX ENOENT should not be required:
+                                    // the transfer() interface should be
+                                    // richer rather than returning only a
+                                    // std::error_code
+                                    ENOENT,
+                                    0);
+        return;
+    }
+
+    auto rtype = static_cast<data::resource_type>(args.resource_type());
+
+    const auto create_rinfo = 
+        [&](const data::resource_type& rtype) -> 
+            std::shared_ptr<data::resource_info> {
+
+        switch(rtype) {
+            case data::resource_type::local_posix_path:
+            case data::resource_type::shared_posix_path:
+                return std::make_shared<data::local_path_info>(
+                        args.nsid(), args.resource_name());
+            default:
+                return {};
+        }
+    };
+
+    auto rinfo = create_rinfo(rtype);
+
+    if(!rinfo) {
+        LOGGER_ERROR("Failed to access resource {}", rinfo->to_string());
+        rv = urd_error::not_supported;
+
+        LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
+        m_network_service->respond(std::move(req), 
+                                    static_cast<uint32_t>(rv),
+                                    //XXX EOPNOTSUPP should not be required:
+                                    // the transfer() interface should be
+                                    // richer rather than returning only a
+                                    // std::error_code
+                                    EOPNOTSUPP, 
+                                    false,
+                                    0);
+        return;
+    }
+
+    std::error_code ec;
+    auto rsrc = (*dst_backend)->get_resource(rinfo, ec);
+
+    if(ec) {
+        LOGGER_ERROR("Failed to access resource {}", rinfo->to_string());
+        rv = urd_error::no_such_resource;
+
+        LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
+        m_network_service->respond(std::move(req), 
+                                    static_cast<uint32_t>(rv),
+                                    ec.value(),
+                                    false,
+                                    0);
+        return;
+    }
+
+    LOGGER_INFO("IOTASK_RECEIVE() = {}", utils::to_string(rv));
+    m_network_service->respond(std::move(req), 
+            static_cast<uint32_t>(urd_error::success),
+            0,
+            rsrc->is_collection(),
+            rsrc->packed_size());
+}
+
+
 void urd::configure(const config::settings& settings) {
     m_settings = std::make_shared<config::settings>(settings);
 }
@@ -687,7 +1037,7 @@ void urd::init_event_handlers() {
     // create (but not start) the API listener 
     // and register handlers for each request type
     try {
-        m_api_listener = std::make_unique<api_listener>();
+        m_ipc_service = std::make_unique<api_listener>();
     }
     catch(const std::exception& e) {
         LOGGER_ERROR("Failed to create the event listener. This should "
@@ -716,7 +1066,7 @@ void urd::init_event_handlers() {
     ::umask(S_IXUSR | S_IRWXG | S_IRWXO); // u=rw-, g=---, o=---
 
     try {
-        m_api_listener->register_endpoint(m_settings->control_socket());
+        m_ipc_service->register_endpoint(m_settings->control_socket());
     }
     catch(const std::exception& e) {
         LOGGER_ERROR("Failed to create control API socket: {}", e.what());
@@ -739,7 +1089,7 @@ void urd::init_event_handlers() {
     ::umask(S_IXUSR | S_IXGRP | S_IXOTH); // u=rw-, g=rw-, o=rw-
 
     try {
-        m_api_listener->register_endpoint(m_settings->global_socket());
+        m_ipc_service->register_endpoint(m_settings->global_socket());
     }
     catch(const std::exception& e) {
         LOGGER_ERROR("Failed to create user API socket: {}", e.what());
@@ -747,9 +1097,31 @@ void urd::init_event_handlers() {
         exit(EXIT_FAILURE);
     }
 
+    // restore the umask
+    ::umask(old_mask);
+
+    try {
+
+        const std::string bind_address = 
+            m_settings->bind_address() + ":" +
+            std::to_string(m_settings->remote_port());
+
+        m_network_service = 
+            std::make_shared<hermes::async_engine>(
+                    hermes::transport::ofi_tcp,
+                    bind_address,
+                    true);
+    }
+    catch(const std::exception& e) {
+        LOGGER_ERROR("Failed to create remote listener: {}", e.what());
+        teardown();
+        exit(EXIT_FAILURE);
+    }
+
+#if 0
     // setup socket for remote connections
     try {
-        m_api_listener->register_endpoint(m_settings->remote_port());
+        m_ipc_service->register_endpoint(m_settings->remote_port());
     }
     catch(const std::exception& e) {
         LOGGER_ERROR("Failed to create socket for remote connections: {}",
@@ -757,74 +1129,89 @@ void urd::init_event_handlers() {
         teardown();
         exit(EXIT_FAILURE);
     }
+#endif
 
-    // restore the umask
-    ::umask(old_mask);
 
     LOGGER_INFO(" * Installing message handlers...");
 
     /* user-level functionalities */
-    m_api_listener->register_callback(
+    m_ipc_service->register_callback(
             api::request_type::iotask_create,
             std::bind(&urd::iotask_create_handler, this, std::placeholders::_1));
 
-    m_api_listener->register_callback(
+    m_ipc_service->register_callback(
             api::request_type::iotask_status,
             std::bind(&urd::iotask_status_handler, this, std::placeholders::_1));
 
-    m_api_listener->register_callback(
+    m_ipc_service->register_callback(
             api::request_type::ping,
             std::bind(&urd::ping_handler, this, std::placeholders::_1));
 
     /* admin-level functionalities */
-    m_api_listener->register_callback(
+    m_ipc_service->register_callback(
             api::request_type::job_register,
             std::bind(&urd::job_register_handler, this, std::placeholders::_1));
 
-    m_api_listener->register_callback(
+    m_ipc_service->register_callback(
             api::request_type::job_update,
             std::bind(&urd::job_update_handler, this, std::placeholders::_1));
 
-    m_api_listener->register_callback(
+    m_ipc_service->register_callback(
             api::request_type::job_unregister,
             std::bind(&urd::job_remove_handler, this, std::placeholders::_1));
 
-    m_api_listener->register_callback(
+    m_ipc_service->register_callback(
             api::request_type::process_register,
             std::bind(&urd::process_add_handler, this, std::placeholders::_1));
 
-    m_api_listener->register_callback(
+    m_ipc_service->register_callback(
             api::request_type::process_unregister,
             std::bind(&urd::process_remove_handler, this, std::placeholders::_1));
 
-    m_api_listener->register_callback(
-            api::request_type::backend_register,
-            std::bind(&urd::namespace_register_handler, this, std::placeholders::_1));
+    m_ipc_service->register_callback(
+        api::request_type::backend_register,
+        std::bind(&urd::namespace_register_handler, this,
+                  std::placeholders::_1));
 
-/*    m_api_listener->register_callback(
-            api::request_type::backend_update,
-            std::bind(&urd::namespace_update_handler, this, std::placeholders::_1));*/
+    /*    m_ipc_service->register_callback(
+                api::request_type::backend_update,
+                std::bind(&urd::namespace_update_handler, this,
+       std::placeholders::_1));*/
 
-    m_api_listener->register_callback(
+    m_ipc_service->register_callback(
             api::request_type::backend_unregister,
             std::bind(&urd::namespace_remove_handler, this, std::placeholders::_1));
 
-    m_api_listener->register_callback(
+    m_ipc_service->register_callback(
             api::request_type::global_status,
             std::bind(&urd::global_status_handler, this, std::placeholders::_1));
 
-    m_api_listener->register_callback(
+    m_ipc_service->register_callback(
             api::request_type::command,
             std::bind(&urd::command_handler, this, std::placeholders::_1));
 
-    m_api_listener->register_callback(
+    m_ipc_service->register_callback(
             api::request_type::bad_request,
             std::bind(&urd::unknown_request_handler, this, std::placeholders::_1));
+
+    /* remote event handlers */
+    m_network_service->register_handler<rpc::push_resource>(
+            std::bind(&urd::push_resource_handler, this, 
+                      std::placeholders::_1));
+
+    m_network_service->register_handler<rpc::pull_resource>(
+            std::bind(&urd::pull_resource_handler, this, 
+                      std::placeholders::_1));
+
+    m_network_service->register_handler<rpc::stat_resource>(
+            std::bind(&urd::stat_resource_handler, this, 
+                      std::placeholders::_1));
+
 
     // signal handlers must be installed AFTER daemonizing
     LOGGER_INFO(" * Installing signal handlers...");
 
-    m_api_listener->set_signal_handler(
+    m_ipc_service->set_signal_handler(
         std::bind(&urd::signal_handler, this, std::placeholders::_1),
         SIGHUP, SIGTERM, SIGINT);
 }
@@ -874,9 +1261,10 @@ void urd::load_backend_plugins() {
     storage::backend_factory::get().
         register_backend<storage::posix_filesystem>(
             backend_type::posix_filesystem,
-            [](bool track, const bfs::path& mount, uint32_t quota) {
+            [](const std::string& nsid, bool track, 
+               const bfs::path& mount, uint32_t quota) {
                 return std::shared_ptr<storage::posix_filesystem>(
-                        new storage::posix_filesystem(track, mount, quota));
+                        new storage::posix_filesystem(nsid, track, mount, quota));
             });
 
     storage::backend_factory::get().
@@ -888,9 +1276,10 @@ void urd::load_backend_plugins() {
     storage::backend_factory::get().
         register_backend<storage::nvml_dax>(
             backend_type::nvml,
-            [](bool track, const bfs::path& mount, uint32_t quota) {
+            [](const std::string& nsid, bool track, 
+               const bfs::path& mount, uint32_t quota) {
                 return std::shared_ptr<storage::nvml_dax>(
-                        new storage::nvml_dax(track, mount, quota));
+                        new storage::nvml_dax(nsid, track, mount, quota));
             });
 
     storage::backend_factory::get().
@@ -900,9 +1289,10 @@ void urd::load_backend_plugins() {
     storage::backend_factory::get().
         register_backend<storage::lustre>(
             backend_type::lustre,
-            [](bool track, const bfs::path& mount, uint32_t quota) {
+            [](const std::string& nsid, bool track, 
+               const bfs::path& mount, uint32_t quota) {
                 return std::shared_ptr<storage::lustre>(
-                        new storage::lustre(track, mount, quota));
+                        new storage::lustre(nsid, track, mount, quota));
             });
     storage::backend_factory::get().
         register_alias("Lustre", backend_type::lustre);
@@ -925,6 +1315,7 @@ void urd::load_transfer_plugins() {
                                  const data::resource_type t2, 
                           std::shared_ptr<io::transferor>&& trp) {
 
+#if 0
         // if(!m_transferor_registry->add(t1, t2, 
         //             std::forward<std::shared_ptr<io::transferor>>(trp))) {
 
@@ -935,49 +1326,65 @@ void urd::load_transfer_plugins() {
         //     return;
         // }
 
+#else
         if(!m_task_mgr->register_transfer_plugin(t1, t2,
                     std::forward<std::shared_ptr<io::transferor>>(trp))) {
             LOGGER_WARN("    Failed to load transfer plugin ({} to {}):\n"
-                        "    Another plugin was already registered for this "
+                        "    Another plugin was already registered for this\n"
                         "    combination (Plugin ignored)",
                         utils::to_string(t1), utils::to_string(t2));
             return;
         }
-
+#endif
 
         LOGGER_INFO("    Loaded transfer plugin ({} => {})", 
                     utils::to_string(t1), utils::to_string(t2));
     };
 
+    context ctx(m_settings->staging_directory(),
+                m_network_service);
+
     // memory region -> local path
-    load_plugin(data::resource_type::memory_region, 
-                data::resource_type::local_posix_path, 
-                std::make_shared<io::memory_region_to_local_path_transferor>());
+    load_plugin(
+        data::resource_type::memory_region, 
+        data::resource_type::local_posix_path, 
+        std::make_shared<io::memory_region_to_local_path_transferor>(ctx));
 
     // memory region -> shared path
-    load_plugin(data::resource_type::memory_region, 
-                data::resource_type::shared_posix_path, 
-                std::make_shared<io::memory_region_to_shared_path_transferor>());
+    load_plugin(
+        data::resource_type::memory_region, 
+        data::resource_type::shared_posix_path, 
+        std::make_shared<io::memory_region_to_shared_path_transferor>(ctx));
 
     // memory region -> remote path
-    load_plugin(data::resource_type::memory_region, 
-                data::resource_type::remote_posix_path, 
-                std::make_shared<io::memory_region_to_remote_path_transferor>());
+    load_plugin(
+        data::resource_type::memory_region,
+        data::resource_type::remote_resource,
+        std::make_shared<io::memory_region_to_remote_resource_transferor>(ctx));
 
     // local path -> local path
-    load_plugin(data::resource_type::local_posix_path, 
-                data::resource_type::local_posix_path, 
-                std::make_shared<io::local_path_to_local_path_transferor>());
+    load_plugin(
+        data::resource_type::local_posix_path, 
+        data::resource_type::local_posix_path, 
+        std::make_shared<io::local_path_to_local_path_transferor>(ctx));
 
     // local path -> shared path
-    load_plugin(data::resource_type::local_posix_path, 
-                data::resource_type::shared_posix_path, 
-                std::make_shared<io::local_path_to_shared_path_transferor>());
+    load_plugin(
+        data::resource_type::local_posix_path, 
+        data::resource_type::shared_posix_path, 
+        std::make_shared<io::local_path_to_shared_path_transferor>(ctx));
 
-    // local path -> remote path
-    load_plugin(data::resource_type::local_posix_path, 
-                data::resource_type::remote_posix_path, 
-                std::make_shared<io::local_path_to_remote_path_transferor>());
+    // local path -> remote resource
+    load_plugin(
+        data::resource_type::local_posix_path, 
+        data::resource_type::remote_resource, 
+        std::make_shared<io::local_path_to_remote_resource_transferor>(ctx));
+
+    // remote resource -> local path
+    load_plugin(
+        data::resource_type::remote_resource, 
+        data::resource_type::local_posix_path, 
+        std::make_shared<io::remote_resource_to_local_path_transferor>(ctx));
 }
 
 void urd::load_default_namespaces() {
@@ -994,6 +1401,28 @@ void urd::load_default_namespaces() {
         LOGGER_INFO("    Loaded namespace \"{}://\" -> {} (type: {}, {})", 
                     nsdef.nsid(), nsdef.mountpoint(), nsdef.alias(), 
                     (nsdef.track() ? "tracked" : "untracked"));
+    }
+}
+
+void
+urd::check_configuration() {
+
+    // check that the staging directory exists and that we can write to it
+    if(!bfs::exists(m_settings->staging_directory())) {
+        LOGGER_ERROR("Staging directory {} does not exist", 
+                     m_settings->staging_directory());
+        teardown_and_exit();
+    }
+
+    auto s = bfs::status(m_settings->staging_directory()); 
+
+    auto expected_perms = bfs::perms::owner_read | 
+                          bfs::perms::owner_write;
+    
+    if((s.permissions() & expected_perms) != expected_perms) {
+        LOGGER_ERROR("Unable to read from/write to staging directory {}",
+                     m_settings->staging_directory());
+        teardown_and_exit();
     }
 }
 
@@ -1026,6 +1455,7 @@ void urd::print_configuration() {
     LOGGER_INFO("  - pidfile: {}", m_settings->pidfile());
     LOGGER_INFO("  - control socket: {}", m_settings->control_socket());
     LOGGER_INFO("  - global socket: {}", m_settings->global_socket());
+    LOGGER_INFO("  - staging directory: {}", m_settings->staging_directory());
     LOGGER_INFO("  - port for remote requests: {}", m_settings->remote_port());
     LOGGER_INFO("  - workers: {}", m_settings->workers_in_pool());
     LOGGER_INFO("");
@@ -1095,6 +1525,9 @@ int urd::run() {
     // initialize logging facilities
     init_logger();
 
+    // validate settings
+    check_configuration();
+
     // daemonize if needed
     if(m_settings->daemonize() && daemonize() != 0) {
         /* parent clean ups and exits, child continues */
@@ -1112,13 +1545,22 @@ int urd::run() {
     init_event_handlers();
     init_namespace_manager();
     load_backend_plugins();
-    load_transfer_plugins();
     load_default_namespaces();
+
+    // load plugins now so that when we propagate the daemon context to them 
+    // everything is set up
+    load_transfer_plugins();
+
+    // start the listener for remote transfers
+    // N.B. This call returns immediately
+    m_network_service->run();
 
     LOGGER_INFO("");
     LOGGER_INFO("[[ Start up successful, awaiting requests... ]]");
 
-    m_api_listener->run();
+    // N.B. This call blocks here, which means that everything after it
+    // will only run when a shutdown command is received
+    m_ipc_service->run();
 
     print_farewell();
     teardown();
@@ -1138,10 +1580,10 @@ void urd::teardown() {
 //        //m_signal_listener.reset();
 //    }
 
-    if(m_api_listener) {
+    if(m_ipc_service) {
         LOGGER_INFO("* Stopping API listener...");
-        m_api_listener->stop();
-        m_api_listener.reset();
+        m_ipc_service->stop();
+        m_ipc_service.reset();
     }
 
     api_listener::cleanup();
@@ -1166,9 +1608,15 @@ void urd::teardown() {
     }
 }
 
+void
+urd::teardown_and_exit() {
+    teardown();
+    exit(EXIT_FAILURE);
+}
+
 void urd::shutdown() {
-    if(m_api_listener) {
-        m_api_listener->stop();
+    if(m_ipc_service) {
+        m_ipc_service->stop();
     }
 }
 

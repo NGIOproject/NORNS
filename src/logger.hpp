@@ -31,8 +31,16 @@
 
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/ostr.h>
+#include <spdlog/fmt/bundled/format.h>
 #include <boost/filesystem.hpp>
 #include <sstream>
+
+#if FMT_VERSION < 50000
+namespace fmt {
+template <typename T>
+inline const void *ptr(const T *p) { return p; }
+} // namespace fmt
+#endif // FMT_VERSION
 
 namespace bfs = boost::filesystem;
 
@@ -123,30 +131,65 @@ public:
         return global_logger();
     }
 
-    // some macros to make it more convenient to use the global logger
+// some macros to make it more convenient to use the global logger
+#define LOGGER_INFO(...)                                    \
+do {                                                        \
+    if(logger::get_global_logger()) {                       \
+        logger::get_global_logger()->info(__VA_ARGS__);     \
+    }                                                       \
+} while(0);
 
-#define LOGGER_INFO(...) \
-    logger::get_global_logger()->info(__VA_ARGS__)
 
 #ifdef __LOGGER_ENABLE_DEBUG__
+
 #define LOGGER_DEBUG(...) \
-    logger::get_global_logger()->debug(__VA_ARGS__)
+do {                                                        \
+    if(logger::get_global_logger()) {                       \
+        logger::get_global_logger()->debug(__VA_ARGS__);    \
+    }                                                       \
+} while(0);
+
+#define LOGGER_FLUSH() \
+do {                                                        \
+    if(logger::get_global_logger()) {                       \
+        logger::get_global_logger()->flush();               \
+    }                                                       \
+} while(0);
+
 #else
-#define LOGGER_DEBUG(...) \
-    do {} while(0)
-#endif
+
+#define LOGGER_DEBUG(...) do {} while(0);
+#define LOGGER_FLUSH() do {} while(0);
+
+#endif // __LOGGER_ENABLE_DEBUG__
 
 #define LOGGER_WARN(...) \
-    logger::get_global_logger()->warn(__VA_ARGS__)
+do {                                                        \
+    if(logger::get_global_logger()) {                       \
+        logger::get_global_logger()->warn(__VA_ARGS__);     \
+    }                                                       \
+} while(0);
 
 #define LOGGER_ERROR(...) \
-    logger::get_global_logger()->error(__VA_ARGS__)
+do {                                                        \
+    if(logger::get_global_logger()) {                       \
+        logger::get_global_logger()->error(__VA_ARGS__);    \
+    }                                                       \
+} while(0);
 
 #define LOGGER_ERRNO(...) \
-    logger::get_global_logger()->error_errno(__VA_ARGS__)
+do {                                                        \
+    if(logger::get_global_logger()) {                       \
+    logger::get_global_logger()->error_errno(__VA_ARGS__);  \
+    }                                                       \
+} while(0);
 
 #define LOGGER_CRITICAL(...) \
-    logger::get_global_logger()->critical(__VA_ARGS__)
+do {                                                        \
+    if(logger::get_global_logger()) {                       \
+        logger::get_global_logger()->critical(__VA_ARGS__); \
+    }                                                       \
+} while(0);
 
     // the following member functions can be used to interact 
     // with a specific logger instance
@@ -176,6 +219,15 @@ public:
     template <typename... Args>
     inline void error(const char* fmt, const Args&... args) {
         m_internal_logger->error(fmt, args...);
+    }
+
+    static inline std::string
+    errno_message(int errno_value) {
+        // 1024 should be more than enough for most locales
+        constexpr const std::size_t MAX_ERROR_MSG = 1024;
+        std::array<char, MAX_ERROR_MSG> errstr;
+        char* msg = strerror_r(errno_value, errstr.data(), MAX_ERROR_MSG);
+        return std::string{msg};
     }
 
     template <typename... Args>
@@ -250,5 +302,50 @@ private:
     std::shared_ptr<spdlog::logger> m_internal_logger;
     std::string                     m_type;
 };
+
+// override the logging macros of the hermes library
+// and replace it with ours, which use the same fmt definitions
+// to format message strings
+#ifdef HERMES_INFO 
+#undef HERMES_INFO 
+#endif
+#define HERMES_INFO(...)     LOGGER_INFO(__VA_ARGS__)
+
+#ifdef HERMES_WARNING 
+#undef HERMES_WARNING
+#endif
+#define HERMES_WARNING(...)  LOGGER_WARN(__VA_ARGS__)
+
+#ifdef HERMES_DEBUG
+#undef HERMES_DEBUG
+#endif
+#define HERMES_DEBUG(...)    LOGGER_DEBUG(__VA_ARGS__)
+
+#ifdef HERMES_DEBUG2
+#undef HERMES_DEBUG2
+#endif
+#define HERMES_DEBUG2(...)   LOGGER_DEBUG(__VA_ARGS__)
+
+#ifdef HERMES_DEBUG3
+#undef HERMES_DEBUG3
+#endif
+#define HERMES_DEBUG3(...)   LOGGER_DEBUG(__VA_ARGS__)
+
+#ifdef HERMES_DEBUG4
+#undef HERMES_DEBUG4
+#endif
+#define HERMES_DEBUG4(...)   // LOGGER_DEBUG(__VA_ARGS__)
+
+#ifdef HERMES_ERROR
+#undef HERMES_ERROR
+#endif
+#define HERMES_ERROR(...)    LOGGER_ERROR(__VA_ARGS__)
+
+#ifdef HERMES_FATAL
+#undef HERMES_FATAL
+#endif
+#define HERMES_FATAL(...)    LOGGER_CRITICAL(__VA_ARGS__)
+
+#include <hermes/logging.hpp>
 
 #endif /* __LOGGER_HPP__ */

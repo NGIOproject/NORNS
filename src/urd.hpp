@@ -39,15 +39,16 @@
 
 #include "job.hpp"
 
-
-
+namespace hermes {
+    class async_engine;
+    template <typename T> class request;
+}
 
 namespace norns {
 
 
 /*! Aliases for convenience */
 using api_listener = api::listener<api::message<api::request, api::response>>;
-using api_listener_ptr = std::unique_ptr<api_listener>;
 
 using request_ptr = std::unique_ptr<api::request>;
 using response_ptr = std::unique_ptr<api::response>;
@@ -70,6 +71,12 @@ namespace ns {
     struct namespace_manager;
 }
 
+namespace rpc {
+    struct push_resource;
+    struct pull_resource;
+    struct stat_resource;
+}
+
 enum class urd_error;
 
 class urd {
@@ -82,6 +89,7 @@ public:
     int run();
     void shutdown();
     void teardown();
+    void teardown_and_exit();
 
 private:
     int daemonize();
@@ -94,6 +102,7 @@ private:
     void load_backend_plugins();
     void load_transfer_plugins();
     void load_default_namespaces();
+    void check_configuration();
     void print_greeting();
     void print_configuration();
     void print_farewell();
@@ -117,6 +126,10 @@ private:
     response_ptr command_handler(const request_ptr req);
     response_ptr unknown_request_handler(const request_ptr req);
 
+    void push_resource_handler(hermes::request<rpc::push_resource>&& req);
+    void pull_resource_handler(hermes::request<rpc::pull_resource>&& req);
+    void stat_resource_handler(hermes::request<rpc::stat_resource>&& req);
+
     // TODO: add helpers for remove and update
     urd_error create_namespace(const config::namespace_def& nsdef);
     urd_error create_namespace(const std::string& nsid, backend_type type,
@@ -134,7 +147,9 @@ private:
     std::shared_ptr<config::settings>                    m_settings;
     std::unique_ptr<io::transferor_registry> m_transferor_registry;
 
-    api_listener_ptr                                    m_api_listener;
+    std::unique_ptr<api_listener> m_ipc_service;
+
+    std::shared_ptr<hermes::async_engine> m_network_service;
 
     std::unique_ptr<ns::namespace_manager> m_namespace_mgr;
     mutable boost::shared_mutex m_namespace_mgr_mutex;

@@ -59,6 +59,7 @@ protected:
 public:
     virtual ~backend() {};
 
+    virtual std::string nsid() const = 0;
     virtual bool is_tracked() const = 0;
     virtual bool is_empty() const = 0;
     virtual bfs::path mount() const = 0;
@@ -85,8 +86,13 @@ public:
 
 class backend_factory {
 
-    using creator_function = std::function<
-        std::shared_ptr<backend>(bool track, const bfs::path&, uint32_t)>;
+    using creator_function = 
+        std::function<
+            std::shared_ptr<backend>(
+                    const std::string&, 
+                    bool track, 
+                    const bfs::path&, 
+                    uint32_t)>;
 
 
 public:
@@ -98,7 +104,7 @@ public:
         try {
             return get().create(std::forward<Args>(args)...);
         }
-        catch(std::invalid_argument) {
+        catch(const std::invalid_argument&) {
             return std::shared_ptr<backend>();
         }
     }
@@ -140,8 +146,8 @@ public:
 
 private:
     std::shared_ptr<backend> 
-    create(const backend_type type, bool track, const bfs::path& mount, 
-           uint32_t quota) const;
+    create(const backend_type type, const std::string&, bool track, 
+           const bfs::path& mount, uint32_t quota) const;
 
 protected:
     backend_factory() {}

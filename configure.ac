@@ -40,6 +40,9 @@ AC_CONFIG_HEADERS([config.h])
 
 AM_INIT_AUTOMAKE([1.9 foreign subdir-objects])
 
+AC_LANG([C])
+AC_LANG([C++])
+
 # Checks for programs.
 AC_PROG_AWK
 AC_PROG_SED
@@ -119,6 +122,9 @@ AS_IF([test "x$is_enabled_build_tests" = "xyes"],
         AC_CONFIG_FILES(tests/Makefile)
       ], [])
 
+# check for mercury
+PKG_CHECK_MODULES([MERCURY], [mercury >= 0.26])
+
 # check for libyaml-cpp
 PKG_CHECK_MODULES([YAMLCPP], [yaml-cpp >= 0.5.1])
 
@@ -141,7 +147,13 @@ AS_IF([test "x${PROTOC}" == "x"],
 AC_SEARCH_LIBS([yaml_parser_initialize], [yaml], 
                [YAML_LIBS="-lyaml"
                 AC_SUBST(YAML_LIBS)], 
-               [AC_MSG_ERROR([This software required libyaml >= 0.1.4])])
+               [AC_MSG_ERROR([This software requires libyaml >= 0.1.4])])
+
+# check for libtar manually (since it doesn't provide a pkgconfig file)
+AC_SEARCH_LIBS([tar_open], [tar],
+               [TAR_LIBS="-ltar"
+                AC_SUBST(TAR_LIBS)],
+               [AC_MSG_ERROR([This software requires libtar >= 1.2.0])])
 
 # Checks for header files.
 
@@ -149,7 +161,13 @@ AC_SEARCH_LIBS([yaml_parser_initialize], [yaml],
 AC_CHECK_HEADER_STDBOOL
 
 # Checks for library functions.
+AC_CHECK_FUNC([fallocate],[fallocate],[fallocate])
+AS_IF([test "x${PROTOC}" == "x"],
+          [AC_MSG_ERROR([ProtoBuf compiler "protoc" not found.])])
 
+AC_CHECK_FUNC([fallocate], 
+              [AC_DEFINE([HAVE_FALLOCATE], 
+                         [1], [Define if file preallocation is available])])
 
 ################################################################################
 ### write makefiles

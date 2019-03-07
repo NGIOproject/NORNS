@@ -63,7 +63,7 @@ main(int argc, char* argv[]) {
             ->default_value(false)
             ->notifier(
                 [&](const bool& flag_value) {
-                    cfg.daemonize() = !flag_value;
+                    cfg.daemonize(!flag_value);
                 }),
          "foreground operation")
 
@@ -74,8 +74,8 @@ main(int argc, char* argv[]) {
             ->implicit_value(100)
             ->notifier(
                 [&](const uint32_t& duration_value) {
-                    cfg.dry_run() = true;
-                    cfg.dry_run_duration() = duration_value;
+                    cfg.dry_run(true);
+                    cfg.dry_run_duration(duration_value);
                 }),
          "don't actually execute tasks, but wait N microseconds per task if "
          "an argument is provided")
@@ -87,7 +87,7 @@ main(int argc, char* argv[]) {
             ->zero_tokens()
             ->notifier(
                 [&](const std::string&) {
-                    cfg.use_console() = true;
+                    cfg.use_console(true);
                 }),
          "override any logging options defined in configuration files and "
          "send all daemon output to the console"
