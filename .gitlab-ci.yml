@@ -238,7 +238,7 @@ test:ubuntu:latest:
 
     after_script:
         - (cd build && ../gencov.sh)
-        - genhtml -o build/html/coverage norns.info
+        - genhtml -o build/html/coverage build/norns.info
         - if [[ -e build/tests.log ]]; 
           then
               cat $(tail -1 build/tests.log)/config/urd.log;
