@@ -160,7 +160,7 @@ SCENARIO("copy local POSIX file to local POSIX file", "[api::norns_submit_copy_l
 
                     THEN("NORNS_ESYSTEMERROR and ENOENT are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -194,7 +194,7 @@ SCENARIO("copy local POSIX file to local POSIX file", "[api::norns_submit_copy_l
 
                     THEN("NORNS_ESYSTEMERROR and ENOENT are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -228,7 +228,7 @@ SCENARIO("copy local POSIX file to local POSIX file", "[api::norns_submit_copy_l
 
                     THEN("NORNS_SUCCESS and ENOENT are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -267,7 +267,7 @@ SCENARIO("copy local POSIX file to local POSIX file", "[api::norns_submit_copy_l
 
                     THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -303,7 +303,7 @@ SCENARIO("copy local POSIX file to local POSIX file", "[api::norns_submit_copy_l
 
                     THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -339,7 +339,7 @@ SCENARIO("copy local POSIX file to local POSIX file", "[api::norns_submit_copy_l
 
                     THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -375,7 +375,7 @@ SCENARIO("copy local POSIX file to local POSIX file", "[api::norns_submit_copy_l
 
                     THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -411,7 +411,7 @@ SCENARIO("copy local POSIX file to local POSIX file", "[api::norns_submit_copy_l
 
                     THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -447,7 +447,7 @@ SCENARIO("copy local POSIX file to local POSIX file", "[api::norns_submit_copy_l
 
                     THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -485,7 +485,7 @@ SCENARIO("copy local POSIX file to local POSIX file", "[api::norns_submit_copy_l
 
                     THEN("NORNS_ESYSTEMERROR and ENOENT are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -1296,9 +1296,9 @@ SCENARIO("copy local memory buffer to local POSIX file", "[api::norns_submit_cop
                 THEN("norns_wait() return NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_ESYSTEMERROR and EFAULT") {
+                    THEN("norns_error() reports NORNS_ESYSTEMERROR and EFAULT") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -1419,9 +1419,9 @@ SCENARIO("copy local memory buffer to local POSIX file", "[api::norns_submit_cop
                 THEN("norns_wait() return NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_ESYSTEMERROR and EISDIR") {
+                    THEN("norns_error() reports NORNS_ESYSTEMERROR and EISDIR") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
                         REQUIRE(stats.st_task_error == NORNS_ESYSTEMERROR);
@@ -1466,9 +1466,9 @@ SCENARIO("copy local memory buffer to local POSIX file", "[api::norns_submit_cop
                 THEN("norns_wait() return NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_ESYSTEMERROR and EISDIR") {
+                    THEN("norns_error() reports NORNS_ESYSTEMERROR and EISDIR") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
                         REQUIRE(stats.st_task_error == NORNS_ESYSTEMERROR);

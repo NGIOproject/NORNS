@@ -157,7 +157,7 @@ SCENARIO("remove a local POSIX file", "[api::norns_submit_remove_local_posix_fil
 
                     THEN("NORNS_ESYSTEMERROR and ENOENT are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -189,7 +189,7 @@ SCENARIO("remove a local POSIX file", "[api::norns_submit_remove_local_posix_fil
 
                     THEN("NORNS_ESYSTEMERROR and ENOENT are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -226,7 +226,7 @@ SCENARIO("remove a local POSIX file", "[api::norns_submit_remove_local_posix_fil
 
                     THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -262,7 +262,7 @@ SCENARIO("remove a local POSIX file", "[api::norns_submit_remove_local_posix_fil
 
                     THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -298,7 +298,7 @@ SCENARIO("remove a local POSIX file", "[api::norns_submit_remove_local_posix_fil
 
                     THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -334,7 +334,7 @@ SCENARIO("remove a local POSIX file", "[api::norns_submit_remove_local_posix_fil
 
                     THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -370,7 +370,7 @@ SCENARIO("remove a local POSIX file", "[api::norns_submit_remove_local_posix_fil
 
                     THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -406,7 +406,7 @@ SCENARIO("remove a local POSIX file", "[api::norns_submit_remove_local_posix_fil
 
                     THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);

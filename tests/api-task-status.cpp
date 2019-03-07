@@ -31,7 +31,7 @@
 #include "test-env.hpp"
 #include "catch.hpp"
 
-SCENARIO("check request", "[api::norns_status]") {
+SCENARIO("check request", "[api::norns_error]") {
     GIVEN("a running urd instance") {
 
         test_env env(
@@ -80,7 +80,7 @@ SCENARIO("check request", "[api::norns_status]") {
                 REQUIRE(task.t_id != 0);
 
                 norns_stat_t stats;
-                rv = norns_status(&task, &stats);
+                rv = norns_error(&task, &stats);
 
                 THEN("NORNS_SUCCESS is returned and task status is valid") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -107,7 +107,7 @@ SCENARIO("check request", "[api::norns_status]") {
 
 retry:
                 norns_stat_t stats;
-                rv = norns_status(&task, &stats);
+                rv = norns_error(&task, &stats);
 
                 THEN("NORNS_SUCCESS is returned and task status is valid") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -1143,7 +1143,7 @@ SCENARIO("check requests", "[api::nornsctl_status]") {
                     for(size_t i=0; i<ntasks; ++i) {
                         if(!finished_tasks[i]) {
                             norns_stat_t stats;
-                            norns_status(&tasks[i], &stats);
+                            norns_error(&tasks[i], &stats);
 
                             if(stats.st_status == NORNS_EFINISHED ||
                                stats.st_status == NORNS_EFINISHEDWERROR) {

@@ -209,9 +209,9 @@ test:coverage:
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./core -as
         - make -j$(nproc) api
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::NORNS_TASK]"
+        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_error]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_iotask_init]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_resource_init]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_status]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_copy_buffer_to_file]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_copy_local_posix_files]"
@@ -325,9 +325,9 @@ test:optimized:
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./core -as
         - make -j$(nproc) api
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::NORNS_TASK]"
+        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_error]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_iotask_init]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_resource_init]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_status]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_copy_buffer_to_file]"
         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_copy_local_posix_files]"

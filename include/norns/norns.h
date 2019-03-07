@@ -97,7 +97,7 @@ norns_cancel(norns_iotask_t* task) __THROW;
 
 /* Check the status of a submitted I/O task */
 norns_error_t 
-norns_status(norns_iotask_t* task, norns_stat_t* stats) __THROW;
+norns_error(norns_iotask_t* task, norns_stat_t* stats) __THROW;
 
 /* Return a string describing the error number */
 char* norns_strerror(norns_error_t errnum) __THROW;

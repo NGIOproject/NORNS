@@ -170,7 +170,7 @@ SCENARIO("errors copying local POSIX path to remote POSIX path",
 
                     THEN("NORNS_ESYSTEMERROR and ENOENT are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -205,7 +205,7 @@ SCENARIO("errors copying local POSIX path to remote POSIX path",
 
                     THEN("NORNS_ESYSTEMERROR and ENOENT are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -240,7 +240,7 @@ SCENARIO("errors copying local POSIX path to remote POSIX path",
 
                     THEN("NORNS_SUCCESS and ENOENT are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -282,7 +282,7 @@ SCENARIO("errors copying local POSIX path to remote POSIX path",
                     THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL "
                          "are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -320,7 +320,7 @@ SCENARIO("errors copying local POSIX path to remote POSIX path",
 
                     THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -359,7 +359,7 @@ SCENARIO("errors copying local POSIX path to remote POSIX path",
                     THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL "
                          "are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -399,7 +399,7 @@ SCENARIO("errors copying local POSIX path to remote POSIX path",
                     THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL "
                          "are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -438,7 +438,7 @@ SCENARIO("errors copying local POSIX path to remote POSIX path",
 
                     THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -478,7 +478,7 @@ SCENARIO("errors copying local POSIX path to remote POSIX path",
                     THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL "
                          "are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -517,7 +517,7 @@ SCENARIO("errors copying local POSIX path to remote POSIX path",
 
                     THEN("NORNS_ESYSTEMERROR and ENOENT are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -672,9 +672,9 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -720,9 +720,9 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -767,9 +767,9 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -816,9 +816,9 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -863,9 +863,9 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -910,9 +910,9 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -957,9 +957,9 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -1004,9 +1004,9 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -1051,9 +1051,9 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -1098,9 +1098,9 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -1262,9 +1262,9 @@ SCENARIO("copy local POSIX file to remote POSIX subdir",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -1306,9 +1306,9 @@ SCENARIO("copy local POSIX file to remote POSIX subdir",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -1352,9 +1352,9 @@ SCENARIO("copy local POSIX file to remote POSIX subdir",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -1398,9 +1398,9 @@ SCENARIO("copy local POSIX file to remote POSIX subdir",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -1444,9 +1444,9 @@ SCENARIO("copy local POSIX file to remote POSIX subdir",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -1490,9 +1490,9 @@ SCENARIO("copy local POSIX file to remote POSIX subdir",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -1577,9 +1577,9 @@ SCENARIO("copy local memory region to remote POSIX file",
                 THEN("norns_wait() return NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -1616,9 +1616,9 @@ SCENARIO("copy local memory region to remote POSIX file",
                 // wait until the task completes
                 rv = norns_wait(&task);
 
-                THEN("norns_status() reports NORNS_EFINISHED") {
+                THEN("norns_error() reports NORNS_EFINISHED") {
                     norns_stat_t stats;
-                    rv = norns_status(&task, &stats);
+                    rv = norns_error(&task, &stats);
 
                     REQUIRE(rv == NORNS_SUCCESS);
                     REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -1727,10 +1727,10 @@ SCENARIO("errors copying local memory region to remote POSIX file",
                 THEN("norns_wait() return NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_ESYSTEMERROR and "
+                    THEN("norns_error() reports NORNS_ESYSTEMERROR and "
                          "EFAULT") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -1812,10 +1812,10 @@ SCENARIO("errors copying local memory region to remote POSIX file",
                 THEN("norns_wait() return NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_ESYSTEMERROR and "
+                    THEN("norns_error() reports NORNS_ESYSTEMERROR and "
                          "EISDIR") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
                         REQUIRE(stats.st_task_error == NORNS_ESYSTEMERROR);
@@ -1875,10 +1875,10 @@ SCENARIO("errors copying local memory region to remote POSIX file",
                 THEN("norns_wait() return NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_ESYSTEMERROR and "
+                    THEN("norns_error() reports NORNS_ESYSTEMERROR and "
                          "EISDIR") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
                         REQUIRE(stats.st_task_error == NORNS_ESYSTEMERROR);
@@ -2094,9 +2094,9 @@ SCENARIO("copy local POSIX path to remote POSIX path involving links",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -2138,9 +2138,9 @@ SCENARIO("copy local POSIX path to remote POSIX path involving links",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -2182,9 +2182,9 @@ SCENARIO("copy local POSIX path to remote POSIX path involving links",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -2226,9 +2226,9 @@ SCENARIO("copy local POSIX path to remote POSIX path involving links",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -2271,9 +2271,9 @@ SCENARIO("copy local POSIX path to remote POSIX path involving links",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -2316,9 +2316,9 @@ SCENARIO("copy local POSIX path to remote POSIX path involving links",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -2480,7 +2480,7 @@ SCENARIO("errors copying remote POSIX path to local POSIX path",
 
                     THEN("NORNS_ESYSTEMERROR and ENOENT are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -2516,7 +2516,7 @@ SCENARIO("errors copying remote POSIX path to local POSIX path",
 
                     THEN("NORNS_ESYSTEMERROR and ENOENT are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -2552,7 +2552,7 @@ SCENARIO("errors copying remote POSIX path to local POSIX path",
 
                     THEN("NORNS_SUCCESS and ENOENT are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -2595,7 +2595,7 @@ SCENARIO("errors copying remote POSIX path to local POSIX path",
                     THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL "
                          "are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -2635,7 +2635,7 @@ SCENARIO("errors copying remote POSIX path to local POSIX path",
 
                     THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -2674,7 +2674,7 @@ SCENARIO("errors copying remote POSIX path to local POSIX path",
                     THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL "
                          "are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -2714,7 +2714,7 @@ SCENARIO("errors copying remote POSIX path to local POSIX path",
                     THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL "
                          "are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -2753,7 +2753,7 @@ SCENARIO("errors copying remote POSIX path to local POSIX path",
 
                     THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -2793,7 +2793,7 @@ SCENARIO("errors copying remote POSIX path to local POSIX path",
                     THEN("NORNS_ESYSTEMERROR and EACCES|EPERM|EINVAL "
                          "are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -2832,7 +2832,7 @@ SCENARIO("errors copying remote POSIX path to local POSIX path",
 
                     THEN("NORNS_ESYSTEMERROR and ENOENT are reported") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -2988,9 +2988,9 @@ SCENARIO("copy remote POSIX file to local POSIX file",
                 THEN("norns_wait() return NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -3035,9 +3035,9 @@ SCENARIO("copy remote POSIX file to local POSIX file",
                 THEN("norns_wait() return NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -3081,9 +3081,9 @@ SCENARIO("copy remote POSIX file to local POSIX file",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -3129,9 +3129,9 @@ SCENARIO("copy remote POSIX file to local POSIX file",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -3177,9 +3177,9 @@ SCENARIO("copy remote POSIX file to local POSIX file",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -3225,9 +3225,9 @@ SCENARIO("copy remote POSIX file to local POSIX file",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -3273,9 +3273,9 @@ SCENARIO("copy remote POSIX file to local POSIX file",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -3321,9 +3321,9 @@ SCENARIO("copy remote POSIX file to local POSIX file",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -3369,9 +3369,9 @@ SCENARIO("copy remote POSIX file to local POSIX file",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -3417,9 +3417,9 @@ SCENARIO("copy remote POSIX file to local POSIX file",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -3579,9 +3579,9 @@ SCENARIO("copy remote POSIX subdir to local POSIX subdir",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -3624,9 +3624,9 @@ SCENARIO("copy remote POSIX subdir to local POSIX subdir",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -3671,9 +3671,9 @@ SCENARIO("copy remote POSIX subdir to local POSIX subdir",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -3718,9 +3718,9 @@ SCENARIO("copy remote POSIX subdir to local POSIX subdir",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -3765,9 +3765,9 @@ SCENARIO("copy remote POSIX subdir to local POSIX subdir",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -3812,9 +3812,9 @@ SCENARIO("copy remote POSIX subdir to local POSIX subdir",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -3991,9 +3991,9 @@ SCENARIO("copy remote POSIX path to local POSIX path involving links",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -4035,9 +4035,9 @@ SCENARIO("copy remote POSIX path to local POSIX path involving links",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -4079,9 +4079,9 @@ SCENARIO("copy remote POSIX path to local POSIX path involving links",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -4123,9 +4123,9 @@ SCENARIO("copy remote POSIX path to local POSIX path involving links",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -4168,9 +4168,9 @@ SCENARIO("copy remote POSIX path to local POSIX path involving links",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -4213,9 +4213,9 @@ SCENARIO("copy remote POSIX path to local POSIX path involving links",
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_status() reports NORNS_EFINISHED") {
+                    THEN("norns_error() reports NORNS_EFINISHED") {
                         norns_stat_t stats;
-                        rv = norns_status(&task, &stats);
+                        rv = norns_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
