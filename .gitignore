@@ -16,3 +16,4 @@ config.log
 src/old-sources
 src/spdlog_0.12/
 build
+build.*
