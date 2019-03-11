@@ -332,6 +332,24 @@ nornsctl_job_init(nornsctl_job_t* job, const char** hosts, size_t nhosts,
     job->j_nlimits = nlimits;
 }
 
+norns_iotask_t
+NORNSCTL_IOTASK(norns_op_t optype, norns_resource_t src, ...) {
+    norns_iotask_t task;
+
+    if(optype == NORNS_IOTASK_REMOVE) {
+        nornsctl_iotask_init(&task, optype, &src, NULL);
+        return task;
+    }
+
+    va_list ap;
+    va_start(ap, src);
+    norns_resource_t dst = va_arg(ap, norns_resource_t);
+    nornsctl_iotask_init(&task, optype, &src, &dst);
+    va_end(ap);
+
+    return task;
+}
+
 void 
 nornsctl_iotask_init(norns_iotask_t* task, 
                      norns_op_t optype,
