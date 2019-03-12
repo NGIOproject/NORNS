@@ -50,7 +50,7 @@ enum class task_status;
 struct task_stats;
 struct task_info;
 
-struct task_manager {
+struct task_manager : public std::enable_shared_from_this<task_manager> {
 
     struct pair_hash {
         template <typename T, typename U>

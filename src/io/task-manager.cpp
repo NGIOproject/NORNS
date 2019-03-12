@@ -175,11 +175,13 @@ task_manager::create_task(iotask_type type,
         return it->second;
     }();
 
-    // helper lambda to register the completion of tasks so that we can keep track
-    // of the consumed bandwidth by each task
-    // N.B: we use capture-by-value here so that the task_info_ptr is valid when 
-    // the callback is invoked.
-    const auto register_completion = [=]() {
+    auto self(std::enable_shared_from_this<task_manager>::shared_from_this());
+
+    // helper lambda to register the completion of tasks so that we can keep
+    // track of the consumed bandwidth by each task
+    // N.B: we capture self and task_info_ptr (both shared_ptrs) by value to
+    // make sure that they will still be alive when the callback is invoked.
+    const auto register_completion = [self, task_info_ptr]() {
         assert(task_info_ptr->status() == task_status::finished ||
                task_info_ptr->status() == task_status::finished_with_error);
 
@@ -194,12 +196,12 @@ task_manager::create_task(iotask_type type,
             const auto key = std::make_pair(task_info_ptr->src_rinfo()->nsid(),
                                             task_info_ptr->dst_rinfo()->nsid());
 
-            if(!m_bandwidth_backlog.count(key)) {
-                m_bandwidth_backlog.emplace(key, 
-                        boost::circular_buffer<double>(m_backlog_size));
+            if(!self->m_bandwidth_backlog.count(key)) {
+                self->m_bandwidth_backlog.emplace(key, 
+                        boost::circular_buffer<double>(self->m_backlog_size));
             }
 
-            m_bandwidth_backlog.at(key).push_back(bw);
+            self->m_bandwidth_backlog.at(key).push_back(bw);
         }
     };
 
