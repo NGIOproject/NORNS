@@ -63,6 +63,12 @@ api_SOURCES = \
 	api-task-submit.cpp \
 	api-task-status.cpp \
 	api-send-command.cpp \
+	api-ctl-copy-local-data.cpp \
+	api-ctl-task-init.cpp \
+	api-ctl-task-submit.cpp \
+	api-ctl-task-status.cpp \
+	api-ctl-copy-remote-data.cpp \
+	api-ctl-remove-local-data.cpp \
 	compare-files.cpp \
 	compare-files.hpp \
 	config-template.cpp \

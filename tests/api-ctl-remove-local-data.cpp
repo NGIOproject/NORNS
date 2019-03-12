@@ -25,15 +25,15 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#include "norns.h"
+#include "nornsctl.h"
 #include "test-env.hpp"
 #include "compare-files.hpp"
 #include "catch.hpp"
 
 namespace bfs = boost::filesystem;
 
-SCENARIO("remove a local POSIX file", 
-         "[api::norns_submit_remove_local_posix_files]") {
+SCENARIO("remove a local POSIX file (admin)", 
+         "[api::nornsctl_submit_remove_local_posix_files]") {
     GIVEN("a running urd instance") {
 
         test_env env;
@@ -143,25 +143,25 @@ SCENARIO("remove a local POSIX file",
         WHEN("removing a non-existing NORNS_LOCAL_PATH file") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_REMOVE, 
+                NORNSCTL_IOTASK(NORNS_IOTASK_REMOVE, 
                              NORNS_LOCAL_PATH(nsid0, src_invalid_file.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_error() reports NORNS_ESYSTEMERROR and "
+                    THEN("nornsctl_error() reports NORNS_ESYSTEMERROR and "
                          "ENOENT") {
                         norns_stat_t stats;
-                        rv = norns_error(&task, &stats);
+                        rv = nornsctl_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -177,25 +177,25 @@ SCENARIO("remove a local POSIX file",
         WHEN("removing a non-existing NORNS_LOCAL_PATH directory") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_REMOVE, 
+                NORNSCTL_IOTASK(NORNS_IOTASK_REMOVE, 
                              NORNS_LOCAL_PATH(nsid0, src_invalid_dir.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_error() reports NORNS_ESYSTEMERROR and "
+                    THEN("nornsctl_error() reports NORNS_ESYSTEMERROR and "
                          "ENOENT") {
                         norns_stat_t stats;
-                        rv = norns_error(&task, &stats);
+                        rv = nornsctl_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -214,28 +214,28 @@ SCENARIO("remove a local POSIX file",
              "permissions to access it") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
                              NORNS_LOCAL_PATH(nsid0, 
                                  src_noperms_file0.c_str()), 
                              NORNS_LOCAL_PATH(nsid1, 
                                  dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_error() reports NORNS_ESYSTEMERROR and "
+                    THEN("nornsctl_error() reports NORNS_ESYSTEMERROR and "
                          "EACCES|EPERM|EINVAL") {
                         norns_stat_t stats;
-                        rv = norns_error(&task, &stats);
+                        rv = nornsctl_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -253,27 +253,27 @@ SCENARIO("remove a local POSIX file",
              "appropriate permissions to access it") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
                              NORNS_LOCAL_PATH(nsid0, src_noperms_file1.c_str()), 
                              NORNS_LOCAL_PATH(nsid1, 
                                  dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_error() reports NORNS_ESYSTEMERROR and "
+                    THEN("nornsctl_error() reports NORNS_ESYSTEMERROR and "
                          "EACCES|EPERM|EINVAL") {
                         norns_stat_t stats;
-                        rv = norns_error(&task, &stats);
+                        rv = nornsctl_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -291,27 +291,27 @@ SCENARIO("remove a local POSIX file",
              "appropriate permissions to access a parent") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
                              NORNS_LOCAL_PATH(nsid0, src_noperms_file2.c_str()), 
                              NORNS_LOCAL_PATH(nsid1, 
                                  dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_error() reports NORNS_ESYSTEMERROR and "
+                    THEN("nornsctl_error() reports NORNS_ESYSTEMERROR and "
                          "EACCES|EPERM|EINVAL") {
                         norns_stat_t stats;
-                        rv = norns_error(&task, &stats);
+                        rv = nornsctl_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -329,28 +329,28 @@ SCENARIO("remove a local POSIX file",
              "appropriate permissions to access it") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
                              NORNS_LOCAL_PATH(nsid0, 
                                  src_noperms_subdir0.c_str()), 
                              NORNS_LOCAL_PATH(nsid1, 
                                  dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_error() reports NORNS_ESYSTEMERROR and "
+                    THEN("nornsctl_error() reports NORNS_ESYSTEMERROR and "
                          "EACCES|EPERM|EINVAL") {
                         norns_stat_t stats;
-                        rv = norns_error(&task, &stats);
+                        rv = nornsctl_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -368,28 +368,28 @@ SCENARIO("remove a local POSIX file",
              "appropriate permissions to access it") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
                              NORNS_LOCAL_PATH(nsid0, 
                                  src_noperms_subdir1.c_str()), 
                              NORNS_LOCAL_PATH(nsid1, 
                                  dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_error() reports NORNS_ESYSTEMERROR and "
+                    THEN("nornsctl_error() reports NORNS_ESYSTEMERROR and "
                          "EACCES|EPERM|EINVAL") {
                         norns_stat_t stats;
-                        rv = norns_error(&task, &stats);
+                        rv = nornsctl_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -407,28 +407,28 @@ SCENARIO("remove a local POSIX file",
              "appropriate permissions to access a parent") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
                              NORNS_LOCAL_PATH(nsid0, 
                                  src_noperms_subdir2.c_str()), 
                              NORNS_LOCAL_PATH(nsid1, 
                                  dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_error() reports NORNS_ESYSTEMERROR and "
+                    THEN("nornsctl_error() reports NORNS_ESYSTEMERROR and "
                          "EACCES|EPERM|EINVAL") {
                         norns_stat_t stats;
-                        rv = norns_error(&task, &stats);
+                        rv = nornsctl_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -449,20 +449,20 @@ SCENARIO("remove a local POSIX file",
         WHEN("removing a single NORNS_LOCAL_PATH from src namespace's root") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_REMOVE, 
+                NORNSCTL_IOTASK(NORNS_IOTASK_REMOVE, 
                              NORNS_LOCAL_PATH(nsid0, src_file_at_root.c_str()));
             const bfs::path p = env.get_from_namespace(nsid0, src_file_at_root);
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("File no longer exists") {
@@ -477,22 +477,22 @@ SCENARIO("remove a local POSIX file",
               "subdir") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_REMOVE, 
+                NORNSCTL_IOTASK(NORNS_IOTASK_REMOVE, 
                              NORNS_LOCAL_PATH(nsid0, 
                                  src_file_at_subdir.c_str()));
             const bfs::path p = 
                 env.get_from_namespace(nsid0, src_file_at_subdir);
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("File no longer exists") {
@@ -510,20 +510,20 @@ SCENARIO("remove a local POSIX file",
              "namespace's root") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_REMOVE, 
+                NORNSCTL_IOTASK(NORNS_IOTASK_REMOVE, 
                              NORNS_LOCAL_PATH(nsid0, src_subdir0.c_str()));
             const bfs::path p = env.get_from_namespace(nsid0, src_subdir0);
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Directory no longer exists") {
@@ -537,20 +537,20 @@ SCENARIO("remove a local POSIX file",
         WHEN("removing the contents of a NORNS_LOCAL_PATH arbitrary subdir") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_REMOVE, 
+                NORNSCTL_IOTASK(NORNS_IOTASK_REMOVE, 
                              NORNS_LOCAL_PATH(nsid0, src_subdir1.c_str()));
             const bfs::path p = env.get_from_namespace(nsid0, src_subdir1);
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Directory no longer exists") {
@@ -563,20 +563,20 @@ SCENARIO("remove a local POSIX file",
         WHEN("removing an empty NORNS_LOCAL_PATH directory") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_REMOVE, 
+                NORNSCTL_IOTASK(NORNS_IOTASK_REMOVE, 
                              NORNS_LOCAL_PATH(nsid0, src_empty_dir.c_str()));
             const bfs::path p = env.get_from_namespace(nsid0, src_empty_dir);
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Directory no longer exists") {
@@ -594,22 +594,22 @@ SCENARIO("remove a local POSIX file",
              "through a symlink also located at '/'" ) {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_REMOVE, 
+                NORNSCTL_IOTASK(NORNS_IOTASK_REMOVE, 
                              NORNS_LOCAL_PATH(nsid0, 
                                  src_symlink_at_root0.c_str()));
             const bfs::path p = 
                 env.get_from_namespace(nsid0, "/") / src_symlink_at_root0;
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("symlink no longer exists and original file is left "
@@ -626,22 +626,22 @@ SCENARIO("remove a local POSIX file",
              "through a symlink located at '/'" ) {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_REMOVE, 
+                NORNSCTL_IOTASK(NORNS_IOTASK_REMOVE, 
                              NORNS_LOCAL_PATH(nsid0, 
                                  src_symlink_at_root2.c_str()));
             const bfs::path p = 
                 env.get_from_namespace(nsid0, "/") / src_symlink_at_root2;
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("symlink no longer exists and original file is left "
@@ -658,22 +658,22 @@ SCENARIO("remove a local POSIX file",
              "through a symlink located in a subdir" ) {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_REMOVE, 
+                NORNSCTL_IOTASK(NORNS_IOTASK_REMOVE, 
                              NORNS_LOCAL_PATH(nsid0, 
                                  src_symlink_at_subdir0.c_str()));
             const bfs::path p = 
                 env.get_from_namespace(nsid0, "/") / src_symlink_at_subdir0;
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("symlink no longer exists and original file is left "
@@ -690,22 +690,22 @@ SCENARIO("remove a local POSIX file",
              "'/' through a symlink also located at subdir") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_REMOVE, 
+                NORNSCTL_IOTASK(NORNS_IOTASK_REMOVE, 
                              NORNS_LOCAL_PATH(nsid0, 
                                  src_symlink_at_subdir1.c_str()));
             const bfs::path p = 
                 env.get_from_namespace(nsid0, "/") / src_symlink_at_subdir1;
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("symlink no longer exists and original file is left "
@@ -721,22 +721,22 @@ SCENARIO("remove a local POSIX file",
              "through a symlink also located at a subdir" ) {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_REMOVE, 
+                NORNSCTL_IOTASK(NORNS_IOTASK_REMOVE, 
                              NORNS_LOCAL_PATH(nsid0, 
                                  src_symlink_at_subdir2.c_str()));
             const bfs::path p = 
                 env.get_from_namespace(nsid0, "/") / src_symlink_at_subdir2;
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("symlink no longer exists and original file is left "
@@ -757,12 +757,12 @@ SCENARIO("remove a local POSIX file",
     GIVEN("a non-running urd instance") {
         WHEN("attempting to request a transfer") {
 
-            norns_iotask_t task = NORNS_IOTASK(
+            norns_iotask_t task = NORNSCTL_IOTASK(
                 NORNS_IOTASK_COPY, 
                 NORNS_LOCAL_PATH("nvml0://", "/a/b/c/"),
                 NORNS_REMOTE_PATH("nvml0://", "node1", "/a/b/d/"));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
             THEN("NORNS_ECONNFAILED is returned") {
                 REQUIRE(rv == NORNS_ECONNFAILED);
@@ -771,3 +771,4 @@ SCENARIO("remove a local POSIX file",
     }
 #endif
 }
+

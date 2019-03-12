@@ -45,6 +45,7 @@
 #include "defaults.h"
 
 #define LIBNORNSCTL_LOG_PREFIX "libnornsctl"
+#define MIN_WAIT_TIME ((useconds_t) 250*1e3)
 
 static bool validate_job(nornsctl_job_t* job);
 static bool validate_namespace(nornsctl_backend_t* backend);
@@ -330,6 +331,108 @@ nornsctl_job_init(nornsctl_job_t* job, const char** hosts, size_t nhosts,
     job->j_limits = limits;
     job->j_nlimits = nlimits;
 }
+
+norns_iotask_t
+NORNSCTL_IOTASK(norns_op_t optype, norns_resource_t src, ...) {
+    norns_iotask_t task;
+
+    if(optype == NORNS_IOTASK_REMOVE) {
+        nornsctl_iotask_init(&task, optype, &src, NULL);
+        return task;
+    }
+
+    va_list ap;
+    va_start(ap, src);
+    norns_resource_t dst = va_arg(ap, norns_resource_t);
+    nornsctl_iotask_init(&task, optype, &src, &dst);
+    va_end(ap);
+
+    return task;
+}
+
+void 
+nornsctl_iotask_init(norns_iotask_t* task, 
+                     norns_op_t optype,
+                     norns_resource_t* src, 
+                     norns_resource_t* dst) {
+
+    if(task == NULL) {
+        return;
+    }
+
+    memset(task, 0, sizeof(*task));
+
+    if(src == NULL) {
+        return;
+    }
+
+    task->t_id = 0;
+    task->t_op = optype;
+    task->t_src = *src;
+
+    if(dst != NULL) {
+        task->t_dst = *dst;
+        return;
+    }
+
+    // dst is NULL, set r_flags so that we are aware of it later
+    task->t_dst.r_flags = NORNS_NULL_RESOURCE;
+}
+
+norns_error_t
+nornsctl_submit(norns_iotask_t* task) {
+
+    if(task == NULL) {
+        return NORNS_EBADARGS;
+    }
+
+    return send_submit_request(task);
+}
+
+norns_error_t
+nornsctl_error(norns_iotask_t* task, 
+               norns_stat_t* stats) {
+
+    if(task == NULL || stats == NULL) {
+        return NORNS_EBADARGS;
+    }
+
+    return send_status_request(task, stats);
+}
+
+/* wait for the completion of the I/O task associated to 'task' */
+norns_error_t
+nornsctl_wait(norns_iotask_t* task) {
+
+    norns_error_t rv;
+    norns_stat_t stats;
+
+    if(task == NULL) {
+        ERR("invalid arguments");
+        return NORNS_EBADARGS;
+    }
+
+    do {
+        rv = send_status_request(task, &stats);
+
+        if(rv != NORNS_SUCCESS) {
+            ERR("error waiting for request: %s", norns_strerror(rv));
+            return rv;
+        }
+
+        if(stats.st_status == NORNS_EFINISHED || 
+           stats.st_status == NORNS_EFINISHEDWERROR) {
+            return NORNS_SUCCESS;
+        }
+
+        // wait for 250 milliseconds
+        // before retrying
+        usleep(MIN_WAIT_TIME);
+    } while(true);
+
+    return NORNS_SUCCESS;
+}
+
 
 static bool
 validate_namespace(nornsctl_backend_t* backend) {

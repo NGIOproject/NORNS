@@ -29,7 +29,7 @@
 #include "test-env.hpp"
 #include "catch.hpp"
 
-SCENARIO("submit request", "[api::norns_submit]") {
+SCENARIO("submit control request", "[api::nornsctl_submit]") {
     GIVEN("a running urd instance") {
 
         test_env env(
@@ -72,13 +72,13 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "namespaces") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_MEMORY_REGION(src_mem_addr, src_mem_size), 
-                             NORNS_LOCAL_PATH("tmp2", dst_file0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_MEMORY_REGION(src_mem_addr, src_mem_size), 
+                                NORNS_LOCAL_PATH("tmp2", dst_file0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_ENOSUCHNAMESPACE") {
+            THEN("nornsctl_submit() returns NORNS_ENOSUCHNAMESPACE") {
                 REQUIRE(rv == NORNS_ENOSUCHNAMESPACE);
             }
         }
@@ -87,13 +87,13 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "namespace") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH("tmp2", src_file0.c_str()), 
-                             NORNS_SHARED_PATH(nsid3, dst_file0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH("tmp2", src_file0.c_str()), 
+                                NORNS_SHARED_PATH(nsid3, dst_file0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_ENOSUCHNAMESPACE") {
+            THEN("nornsctl_submit() returns NORNS_ENOSUCHNAMESPACE") {
                 REQUIRE(rv == NORNS_ENOSUCHNAMESPACE);
             }
         }
@@ -102,13 +102,13 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "namespace") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, src_file0.c_str()), 
-                             NORNS_SHARED_PATH("tmp2", dst_file0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, src_file0.c_str()), 
+                                NORNS_SHARED_PATH("tmp2", dst_file0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_ENOSUCHNAMESPACE") {
+            THEN("nornsctl_submit() returns NORNS_ENOSUCHNAMESPACE") {
                 REQUIRE(rv == NORNS_ENOSUCHNAMESPACE);
             }
         }
@@ -122,13 +122,13 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "NORNS_LOCAL_PATH") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_MEMORY_REGION(src_mem_addr, src_mem_size), 
-                             NORNS_LOCAL_PATH(nsid0, dst_file0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_MEMORY_REGION(src_mem_addr, src_mem_size), 
+                                NORNS_LOCAL_PATH(nsid0, dst_file0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
             }
@@ -138,13 +138,13 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "NORNS_SHARED_PATH") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_MEMORY_REGION(src_mem_addr, src_mem_size), 
-                             NORNS_SHARED_PATH(nsid0, dst_file0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_MEMORY_REGION(src_mem_addr, src_mem_size), 
+                                NORNS_SHARED_PATH(nsid0, dst_file0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
             }
@@ -154,15 +154,15 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "a NORNS_REMOTE_PATH") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_MEMORY_REGION(src_mem_addr, src_mem_size), 
-                             NORNS_REMOTE_PATH(nsid0, 
-                                               dst_host0, 
-                                               dst_file0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_MEMORY_REGION(src_mem_addr, src_mem_size), 
+                                NORNS_REMOTE_PATH(nsid0, 
+                                                  dst_host0, 
+                                                  dst_file0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
             }
         }
@@ -172,13 +172,13 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "NORNS_LOCAL_PATH") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, src_file1.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, dst_file0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, src_file1.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, dst_file0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
             }
@@ -188,13 +188,13 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "NORNS_SHARED_PATH") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, src_file1.c_str()), 
-                             NORNS_SHARED_PATH(nsid3, dst_file0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, src_file1.c_str()), 
+                                NORNS_SHARED_PATH(nsid3, dst_file0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
             }
@@ -204,15 +204,15 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "NORNS_REMOTE_PATH") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, src_file1.c_str()), 
-                             NORNS_REMOTE_PATH(nsid1, 
-                                               dst_host0, 
-                                               dst_file0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, src_file1.c_str()), 
+                                NORNS_REMOTE_PATH(nsid1, 
+                                                  dst_host0, 
+                                                  dst_file0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
             }
@@ -223,16 +223,16 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "NORNS_LOCAL_PATH") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_REMOTE_PATH(nsid0, 
-                                               src_host0, 
-                                               src_file0.c_str()),
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file1.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_REMOTE_PATH(nsid0, 
+                                                  src_host0, 
+                                                  src_file0.c_str()),
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file1.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() return NORNS_SUCCESS") {
+            THEN("nornsctl_submit() return NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
             }
         }
@@ -242,15 +242,15 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "NORNS_SHARED_PATH") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_REMOTE_PATH(nsid0, 
-                                               src_host0, 
-                                               src_file0.c_str()),
-                             NORNS_SHARED_PATH(nsid1, dst_file1.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_REMOTE_PATH(nsid0, 
+                                                  src_host0, 
+                                                  src_file0.c_str()),
+                                NORNS_SHARED_PATH(nsid1, dst_file1.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_ENOTSUPPORTED") {
+            THEN("nornsctl_submit() returns NORNS_ENOTSUPPORTED") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
             }
         }
@@ -260,17 +260,17 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "NORNS_REMOTE_PATH") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_REMOTE_PATH(nsid0, 
-                                               src_host0, 
-                                               src_file0.c_str()),
-                             NORNS_REMOTE_PATH(nsid1, 
-                                               dst_host0, 
-                                               dst_file1.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_REMOTE_PATH(nsid0, 
+                                                  src_host0, 
+                                                  src_file0.c_str()),
+                                NORNS_REMOTE_PATH(nsid1, 
+                                                  dst_host0, 
+                                                  dst_file1.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_ENOTSUPPORTED") {
+            THEN("nornsctl_submit() returns NORNS_ENOTSUPPORTED") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
             }
         }
@@ -280,13 +280,14 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "NORNS_MEMORY_REGION") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, src_file0.c_str()), 
-                             NORNS_MEMORY_REGION(dst_mem_addr, dst_mem_size));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, src_file0.c_str()), 
+                                NORNS_MEMORY_REGION(dst_mem_addr, 
+                                                    dst_mem_size));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_ENOTSUPPORTED") {
+            THEN("nornsctl_submit() returns NORNS_ENOTSUPPORTED") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
             }
         }
@@ -296,13 +297,14 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "NORNS_MEMORY_REGION") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_SHARED_PATH(nsid3, src_file0.c_str()), 
-                             NORNS_MEMORY_REGION(dst_mem_addr, dst_mem_size));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_SHARED_PATH(nsid3, src_file0.c_str()), 
+                                NORNS_MEMORY_REGION(dst_mem_addr, 
+                                                    dst_mem_size));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_ENOTSUPPORTED") {
+            THEN("nornsctl_submit() returns NORNS_ENOTSUPPORTED") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
             }
         }
@@ -312,35 +314,36 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "NORNS_MEMORY_REGION") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_REMOTE_PATH(nsid0, 
-                                               src_host0, 
-                                               src_file0.c_str()), 
-                             NORNS_MEMORY_REGION(dst_mem_addr, dst_mem_size));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_REMOTE_PATH(nsid0, 
+                                                  src_host0, 
+                                                  src_file0.c_str()), 
+                                NORNS_MEMORY_REGION(dst_mem_addr, 
+                                                    dst_mem_size));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_ENOTSUPPORTED") {
+            THEN("nornsctl_submit() returns NORNS_ENOTSUPPORTED") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
             }
         }
 
 
         /**********************************************************************/
-        /* tests for NORNS_IOTASK_MOVE                                        */
+        /* tests for NORNS_IOTASK_MOVE                                     */
         /**********************************************************************/
         /* move from process memory to .* */
         WHEN("submitting a request to move from NORNS_MEMORY_REGION to "
              "NORNS_LOCAL_PATH") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_MEMORY_REGION(src_mem_addr, src_mem_size), 
-                             NORNS_LOCAL_PATH(nsid1, dst_file0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_MOVE, 
+                                NORNS_MEMORY_REGION(src_mem_addr, src_mem_size), 
+                                NORNS_LOCAL_PATH(nsid1, dst_file0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
             }
@@ -350,13 +353,13 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "NORNS_SHARED_PATH") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_MEMORY_REGION(src_mem_addr, src_mem_size), 
-                             NORNS_SHARED_PATH(nsid1, dst_file0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_MOVE, 
+                                NORNS_MEMORY_REGION(src_mem_addr, src_mem_size), 
+                                NORNS_SHARED_PATH(nsid1, dst_file0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
             }
@@ -366,15 +369,15 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "NORNS_REMOTE_PATH") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_MOVE, 
-                             NORNS_MEMORY_REGION(src_mem_addr, src_mem_size), 
-                             NORNS_REMOTE_PATH(nsid1, 
-                                               dst_host0, 
-                                               dst_file0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_MOVE, 
+                                NORNS_MEMORY_REGION(src_mem_addr, src_mem_size), 
+                                NORNS_REMOTE_PATH(nsid1, 
+                                                  dst_host0, 
+                                                  dst_file0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
             }
         }
@@ -384,13 +387,13 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "NORNS_LOCAL_PATH") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, src_file1.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, dst_file0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_MOVE, 
+                                NORNS_LOCAL_PATH(nsid0, src_file1.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, dst_file0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
             }
@@ -400,13 +403,13 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "NORNS_SHARED_PATH") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, src_file1.c_str()), 
-                             NORNS_SHARED_PATH(nsid3, dst_file0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_MOVE, 
+                                NORNS_LOCAL_PATH(nsid0, src_file1.c_str()), 
+                                NORNS_SHARED_PATH(nsid3, dst_file0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
             }
@@ -416,15 +419,15 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "NORNS_REMOTE_PATH") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, src_file1.c_str()), 
-                             NORNS_REMOTE_PATH(nsid1, 
-                                               dst_host0, 
-                                               dst_file0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_MOVE, 
+                                NORNS_LOCAL_PATH(nsid0, src_file1.c_str()), 
+                                NORNS_REMOTE_PATH(nsid1, 
+                                                  dst_host0, 
+                                                  dst_file0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
             }
@@ -435,16 +438,16 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "NORNS_LOCAL_PATH") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_MOVE, 
-                             NORNS_REMOTE_PATH(nsid0, 
-                                               src_host0, 
-                                               src_file0.c_str()),
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file1.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_MOVE, 
+                                NORNS_REMOTE_PATH(nsid0, 
+                                                  src_host0, 
+                                                  src_file0.c_str()),
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file1.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
             }
         }
@@ -454,15 +457,15 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "NORNS_SHARED_PATH") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_REMOTE_PATH(nsid0, 
-                                               src_host0, 
-                                               src_file0.c_str()),
-                             NORNS_SHARED_PATH(nsid1, dst_file1.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_MOVE, 
+                                NORNS_REMOTE_PATH(nsid0, 
+                                                  src_host0, 
+                                                  src_file0.c_str()),
+                                NORNS_SHARED_PATH(nsid1, dst_file1.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_ENOTSUPPORTED") {
+            THEN("nornsctl_submit() returns NORNS_ENOTSUPPORTED") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
             }
         }
@@ -472,17 +475,17 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "NORNS_REMOTE_PATH") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_REMOTE_PATH(nsid0, 
-                                               src_host0, 
-                                               src_file0.c_str()),
-                             NORNS_REMOTE_PATH(nsid1, 
-                                               dst_host0, 
-                                               dst_file1.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_MOVE, 
+                                NORNS_REMOTE_PATH(nsid0, 
+                                                  src_host0, 
+                                                  src_file0.c_str()),
+                                NORNS_REMOTE_PATH(nsid1, 
+                                                  dst_host0, 
+                                                  dst_file1.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_ENOTSUPPORTED") {
+            THEN("nornsctl_submit() returns NORNS_ENOTSUPPORTED") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
             }
         }
@@ -492,13 +495,14 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "NORNS_MEMORY_REGION") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, src_file0.c_str()), 
-                             NORNS_MEMORY_REGION(dst_mem_addr, dst_mem_size));
+                NORNSCTL_IOTASK(NORNS_IOTASK_MOVE, 
+                                NORNS_LOCAL_PATH(nsid0, src_file0.c_str()), 
+                                NORNS_MEMORY_REGION(dst_mem_addr, 
+                                                    dst_mem_size));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_ENOTSUPPORTED") {
+            THEN("nornsctl_submit() returns NORNS_ENOTSUPPORTED") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
             }
         }
@@ -508,13 +512,13 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "NORNS_MEMORY_REGION") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
+                NORNSCTL_IOTASK(NORNS_IOTASK_MOVE, 
                              NORNS_SHARED_PATH(nsid3, src_file0.c_str()), 
                              NORNS_MEMORY_REGION(dst_mem_addr, dst_mem_size));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_ENOTSUPPORTED") {
+            THEN("nornsctl_submit() returns NORNS_ENOTSUPPORTED") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
             }
         }
@@ -524,15 +528,16 @@ SCENARIO("submit request", "[api::norns_submit]") {
              "NORNS_MEMORY_REGION") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_REMOTE_PATH(nsid0, 
-                                               src_host0, 
-                                               src_file0.c_str()), 
-                             NORNS_MEMORY_REGION(dst_mem_addr, dst_mem_size));
+                NORNSCTL_IOTASK(NORNS_IOTASK_MOVE, 
+                                NORNS_REMOTE_PATH(nsid0, 
+                                                  src_host0, 
+                                                  src_file0.c_str()), 
+                                NORNS_MEMORY_REGION(dst_mem_addr, 
+                                                    dst_mem_size));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_ENOTSUPPORTED") {
+            THEN("nornsctl_submit() returns NORNS_ENOTSUPPORTED") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
             }
         }
@@ -544,14 +549,16 @@ SCENARIO("submit request", "[api::norns_submit]") {
     GIVEN("a non-running urd instance") {
         WHEN("attempting to request a transfer") {
 
-            norns_iotask_t task = NORNS_IOTASK(
-                NORNS_IOTASK_COPY, 
-                NORNS_LOCAL_PATH("nvml0://", "/a/b/c/"),
-                NORNS_REMOTE_PATH("nvml0://", "node1", "/a/b/d/"));
+            norns_iotask_t task = 
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH("nvml0://", "/a/b/c/"),
+                                NORNS_REMOTE_PATH("nvml0://", 
+                                                  "node1", 
+                                                  "/a/b/d/"));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_ECONNFAILED") {
+            THEN("nornsctl_submit() returns NORNS_ECONNFAILED") {
                 REQUIRE(rv == NORNS_ECONNFAILED);
             }
         }

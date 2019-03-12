@@ -38,8 +38,6 @@
 
 #include "norns_types.h"
 #include "norns_error.h"
-#include "norns_backends.h"
-#include "norns_resources.h"
 
 #ifdef __NORNS_DEBUG__
 #include "norns_debug.h"
@@ -49,51 +47,37 @@
 extern "C" {
 #endif
 
-
-/* Descriptor for an I/O task */
-typedef struct {
-    norns_tid_t         t_id;   /* task identifier */
-    norns_op_t          t_op;   /* operation to be performed */
-    norns_resource_t    t_src;  /* source resource */
-    norns_resource_t    t_dst;  /* destination resource */
-} norns_iotask_t;
-
-/* Task types */
-#define NORNS_IOTASK_COPY   0x1
-#define NORNS_IOTASK_MOVE   0x2
-#define NORNS_IOTASK_REMOVE 0x3
-
-/* I/O task status descriptor */
-typedef struct {
-    norns_status_t st_status;     /* task current status */
-    norns_error_t  st_task_error; /* task return value */
-    int            st_sys_errno;  /* errno returned if st_task_error == NORNS_ESYSTEM_ERROR */
-    size_t         st_pending;    /* bytes pending in task */
-    size_t         st_total;      /* total bytes in task */
-} norns_stat_t;
-
 /**************************************************************************/
 /* Client API                                                             */
 /**************************************************************************/
 
 /* Initialize an asynchronous I/O task */
-void norns_iotask_init(norns_iotask_t* task, norns_op_t operation,
-                       norns_resource_t* src, norns_resource_t* dst) __THROW;
+void 
+norns_iotask_init(norns_iotask_t* task, 
+                  norns_op_t operation,
+                  norns_resource_t* src, 
+                  norns_resource_t* dst) __THROW;
 
 norns_iotask_t 
-NORNS_IOTASK(norns_op_t operation, norns_resource_t src, ...) __THROW;
+NORNS_IOTASK(norns_op_t operation, 
+             norns_resource_t src, ...) __THROW;
 
 /* Submit an asynchronous I/O task */
-norns_error_t norns_submit(norns_iotask_t* task) __THROW;
+norns_error_t 
+norns_submit(norns_iotask_t* task) __THROW;
 
 /* wait for the completion of the I/O task associated to 'task' */
-norns_error_t norns_wait(norns_iotask_t* task) __THROW;
+norns_error_t 
+norns_wait(norns_iotask_t* task) __THROW;
 
 /* Try to cancel an asynchronous I/O task associated with task */
-norns_error_t norns_cancel(norns_iotask_t* task) __THROW;
+norns_error_t 
+norns_cancel(norns_iotask_t* task) __THROW;
 
 /* Check the status of a submitted I/O task */
-norns_error_t norns_status(norns_iotask_t* task, norns_stat_t* stats) __THROW;
+norns_error_t 
+norns_error(norns_iotask_t* task, 
+            norns_stat_t* stats) __THROW;
 
 /* Return a string describing the error number */
 char* norns_strerror(norns_error_t errnum) __THROW;

@@ -204,7 +204,7 @@ norns_submit(norns_iotask_t* task) {
 }
 
 norns_error_t
-norns_status(norns_iotask_t* task, norns_stat_t* stats) {
+norns_error(norns_iotask_t* task, norns_stat_t* stats) {
 
     if(task == NULL || stats == NULL) {
         return NORNS_EBADARGS;

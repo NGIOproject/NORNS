@@ -31,7 +31,6 @@
 #include <system_error>
 #include <boost/filesystem.hpp>
 
-#include "norns/norns_backends.h"
 #include "backend-base.hpp"
 
 namespace bfs = boost::filesystem;

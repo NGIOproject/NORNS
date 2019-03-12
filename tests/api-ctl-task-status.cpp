@@ -26,11 +26,11 @@
  *************************************************************************/
 
 
-#include "norns.h"
+#include "nornsctl.h"
 #include "test-env.hpp"
 #include "catch.hpp"
 
-SCENARIO("check request", "[api::norns_error]") {
+SCENARIO("check control request", "[api::nornsctl_error]") {
     GIVEN("a running urd instance") {
 
         test_env env(
@@ -69,18 +69,18 @@ SCENARIO("check request", "[api::norns_error]") {
         WHEN("checking the status of an active request") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_MEMORY_REGION(src_buf, src_buf_size), 
-                             NORNS_LOCAL_PATH(nsid1, dst_file.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_MEMORY_REGION(src_buf, src_buf_size), 
+                                NORNS_LOCAL_PATH(nsid1, dst_file.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 norns_stat_t stats;
-                rv = norns_error(&task, &stats);
+                rv = nornsctl_error(&task, &stats);
 
                 THEN("NORNS_SUCCESS is returned and task status is valid") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -94,19 +94,19 @@ SCENARIO("check request", "[api::norns_error]") {
         WHEN("checking the status of an active request") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, src_file.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, dst_file.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, src_file.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, dst_file.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
 retry:
                 norns_stat_t stats;
-                rv = norns_error(&task, &stats);
+                rv = nornsctl_error(&task, &stats);
 
                 THEN("NORNS_SUCCESS is returned and task status is valid") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -130,11 +130,11 @@ retry:
             const char* dst_nsid = "tmp://";
             const char* dst_path = "/a/b/c";
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_COPY, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
                                                NORNS_MEMORY_REGION(src_addr, src_size), 
                                                NORNS_LOCAL_PATH(dst_nsid, dst_path));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
             THEN("NORNS_ENOSUCHBACKEND is returned") {
                 REQUIRE(rv == NORNS_ENOSUCHBACKEND);
@@ -157,11 +157,11 @@ retry:
 
             REQUIRE(rv == NORNS_SUCCESS);
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_COPY, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
                                                NORNS_LOCAL_PATH(src_nsid, src_path), 
                                                NORNS_SHARED_PATH(dst_nsid, dst_path));
 
-            rv = norns_submit(&task);
+            rv = nornsctl_submit(&task);
 
             THEN("NORNS_ENOSUCHBACKEND is returned") {
                 REQUIRE(rv == NORNS_ENOSUCHBACKEND);
@@ -187,11 +187,11 @@ retry:
 
             REQUIRE(rv == NORNS_SUCCESS);
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_COPY, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
                                                NORNS_LOCAL_PATH(src_nsid, src_path), 
                                                NORNS_SHARED_PATH(dst_nsid, dst_path));
 
-            rv = norns_submit(&task);
+            rv = nornsctl_submit(&task);
 
             THEN("NORNS_ENOSUCHBACKEND is returned") {
                 REQUIRE(rv == NORNS_ENOSUCHBACKEND);
@@ -223,11 +223,11 @@ retry:
             norns_error_t rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_COPY, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
                                                NORNS_MEMORY_REGION(src_nsid, src_addr, src_size), 
                                                NORNS_LOCAL_PATH(dst_nsid, dst_path));
 
-            rv = norns_submit(&task);
+            rv = nornsctl_submit(&task);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -257,11 +257,11 @@ retry:
             REQUIRE(rv == NORNS_SUCCESS);
 
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_COPY, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
                                                NORNS_MEMORY_REGION(src_nsid, src_addr, src_size), 
                                                NORNS_SHARED_PATH(dst_nsid, dst_path));
 
-            rv = norns_submit(&task);
+            rv = nornsctl_submit(&task);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -292,11 +292,11 @@ retry:
             REQUIRE(rv == NORNS_SUCCESS);
             */
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_COPY, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
                                                NORNS_MEMORY_REGION(src_nsid, src_addr, src_size), 
                                                NORNS_REMOTE_PATH(dst_nsid, dst_host, dst_path));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -327,11 +327,11 @@ retry:
             rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_COPY, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
                                                NORNS_LOCAL_PATH(src_nsid, src_path), 
                                                NORNS_LOCAL_PATH(dst_nsid, dst_path));
 
-            rv = norns_submit(&task);
+            rv = nornsctl_submit(&task);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -364,11 +364,11 @@ retry:
             rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_COPY, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
                                                NORNS_LOCAL_PATH(src_nsid, src_path), 
                                                NORNS_SHARED_PATH(dst_nsid, dst_path));
 
-            rv = norns_submit(&task);
+            rv = nornsctl_submit(&task);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -404,11 +404,11 @@ retry:
             REQUIRE(rv == NORNS_SUCCESS);
             */
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_COPY, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
                                                NORNS_LOCAL_PATH(src_nsid, src_path), 
                                                NORNS_REMOTE_PATH(dst_nsid, dst_host, dst_path));
 
-            rv = norns_submit(&task);
+            rv = nornsctl_submit(&task);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -435,11 +435,11 @@ retry:
             norns_error_t rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_COPY, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
                                                NORNS_REMOTE_PATH(src_nsid, src_host, src_path),
                                                NORNS_LOCAL_PATH(dst_nsid, dst_path));
 
-            rv = norns_submit(&task);
+            rv = nornsctl_submit(&task);
 
             THEN("NORNS_ENOTSUPPORTED is returned") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
@@ -465,11 +465,11 @@ retry:
             norns_error_t rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_COPY, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
                                                NORNS_REMOTE_PATH(src_nsid, src_host, src_path),
                                                NORNS_SHARED_PATH(dst_nsid, dst_path));
 
-            rv = norns_submit(&task);
+            rv = nornsctl_submit(&task);
 
             THEN("NORNS_ENOTSUPPORTED is returned") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
@@ -491,11 +491,11 @@ retry:
             const char* dst_host = "node1";
             const char* dst_path = "/b/c/d";
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_COPY, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
                                                NORNS_REMOTE_PATH(src_nsid, src_host, src_path),
                                                NORNS_REMOTE_PATH(dst_nsid, dst_host, dst_path));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
             THEN("NORNS_ENOTSUPPORTED is returned") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
@@ -518,11 +518,11 @@ retry:
             norns_error_t rv = nornsctl_register_namespace(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_COPY, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
                                                NORNS_LOCAL_PATH(src_nsid, src_path), 
                                                NORNS_MEMORY_REGION(dst_nsid, dst_addr, dst_size));
 
-            rv = norns_submit(&task);
+            rv = nornsctl_submit(&task);
 
             THEN("NORNS_ENOTSUPPORTED is returned") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
@@ -552,11 +552,11 @@ retry:
             norns_error_t rv = nornsctl_register_namespace(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_COPY, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
                                                NORNS_SHARED_PATH(src_nsid, src_path), 
                                                NORNS_MEMORY_REGION(dst_nsid, dst_addr, dst_size));
 
-            rv = norns_submit(&task);
+            rv = nornsctl_submit(&task);
 
             THEN("NORNS_ENOTSUPPORTED is returned") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
@@ -581,11 +581,11 @@ retry:
             void* dst_addr = (void*) 0xdeadbeef;
             size_t dst_size = (size_t) 42;
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_COPY, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
                                                NORNS_REMOTE_PATH(src_nsid, src_host, src_path), 
                                                NORNS_MEMORY_REGION(dst_nsid, dst_addr, dst_size));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
             THEN("NORNS_ENOTSUPPORTED is returned") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
@@ -614,11 +614,11 @@ retry:
             norns_error_t rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_MOVE, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_MOVE, 
                                                NORNS_MEMORY_REGION(src_nsid, src_addr, src_size), 
                                                NORNS_LOCAL_PATH(dst_nsid, dst_path));
 
-            rv = norns_submit(&task);
+            rv = nornsctl_submit(&task);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -648,11 +648,11 @@ retry:
             REQUIRE(rv == NORNS_SUCCESS);
 
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_MOVE, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_MOVE, 
                                                NORNS_MEMORY_REGION(src_nsid, src_addr, src_size), 
                                                NORNS_SHARED_PATH(dst_nsid, dst_path));
 
-            rv = norns_submit(&task);
+            rv = nornsctl_submit(&task);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -683,11 +683,11 @@ retry:
             REQUIRE(rv == NORNS_SUCCESS);
             */
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_MOVE, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_MOVE, 
                                                NORNS_MEMORY_REGION(src_nsid, src_addr, src_size), 
                                                NORNS_REMOTE_PATH(dst_nsid, dst_host, dst_path));
 
-            rv = norns_submit(&task);
+            rv = nornsctl_submit(&task);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -718,11 +718,11 @@ retry:
             rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_MOVE, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_MOVE, 
                                                NORNS_LOCAL_PATH(src_nsid, src_path), 
                                                NORNS_LOCAL_PATH(dst_nsid, dst_path));
 
-            rv = norns_submit(&task);
+            rv = nornsctl_submit(&task);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -755,11 +755,11 @@ retry:
             rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_MOVE, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_MOVE, 
                                                NORNS_LOCAL_PATH(src_nsid, src_path), 
                                                NORNS_SHARED_PATH(dst_nsid, dst_path));
 
-            rv = norns_submit(&task);
+            rv = nornsctl_submit(&task);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -795,11 +795,11 @@ retry:
             REQUIRE(rv == NORNS_SUCCESS);
             */
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_MOVE, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_MOVE, 
                                                NORNS_LOCAL_PATH(src_nsid, src_path), 
                                                NORNS_REMOTE_PATH(dst_nsid, dst_host, dst_path));
 
-            rv = norns_submit(&task);
+            rv = nornsctl_submit(&task);
 
             THEN("NORNS_SUCCESS is returned") {
                 REQUIRE(rv == NORNS_SUCCESS);
@@ -826,11 +826,11 @@ retry:
             norns_error_t rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_MOVE, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_MOVE, 
                                                NORNS_REMOTE_PATH(src_nsid, src_host, src_path),
                                                NORNS_LOCAL_PATH(dst_nsid, dst_path));
 
-            rv = norns_submit(&task);
+            rv = nornsctl_submit(&task);
 
             THEN("NORNS_ENOTSUPPORTED is returned") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
@@ -856,11 +856,11 @@ retry:
             norns_error_t rv = nornsctl_register_namespace(&bdst);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_MOVE, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_MOVE, 
                                                NORNS_REMOTE_PATH(src_nsid, src_host, src_path),
                                                NORNS_SHARED_PATH(dst_nsid, dst_path));
 
-            rv = norns_submit(&task);
+            rv = nornsctl_submit(&task);
 
             THEN("NORNS_ENOTSUPPORTED is returned") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
@@ -882,11 +882,11 @@ retry:
             const char* dst_host = "node1";
             const char* dst_path = "/b/c/d";
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_MOVE, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_MOVE, 
                                                NORNS_REMOTE_PATH(src_nsid, src_host, src_path),
                                                NORNS_REMOTE_PATH(dst_nsid, dst_host, dst_path));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
             THEN("NORNS_ENOTSUPPORTED is returned") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
@@ -909,11 +909,11 @@ retry:
             norns_error_t rv = nornsctl_register_namespace(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_MOVE, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_MOVE, 
                                                NORNS_LOCAL_PATH(src_nsid, src_path), 
                                                NORNS_MEMORY_REGION(dst_nsid, dst_addr, dst_size));
 
-            rv = norns_submit(&task);
+            rv = nornsctl_submit(&task);
 
             THEN("NORNS_ENOTSUPPORTED is returned") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
@@ -943,11 +943,11 @@ retry:
             norns_error_t rv = nornsctl_register_namespace(&bsrc);
             REQUIRE(rv == NORNS_SUCCESS);
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_MOVE, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_MOVE, 
                                                NORNS_SHARED_PATH(src_nsid, src_path), 
                                                NORNS_MEMORY_REGION(dst_nsid, dst_addr, dst_size));
 
-            rv = norns_submit(&task);
+            rv = nornsctl_submit(&task);
 
             THEN("NORNS_ENOTSUPPORTED is returned") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
@@ -972,11 +972,11 @@ retry:
             void* dst_addr = (void*) 0xdeadbeef;
             size_t dst_size = (size_t) 42;
 
-            norns_iotask_t task = NORNS_IOTASK(NORNS_IOTASK_MOVE, 
+            norns_iotask_t task = NORNSCTL_IOTASK(NORNS_IOTASK_MOVE, 
                                                NORNS_REMOTE_PATH(src_nsid, src_host, src_path), 
                                                NORNS_MEMORY_REGION(dst_nsid, dst_addr, dst_size));
 
-            rv = norns_submit(&task);
+            rv = nornsctl_submit(&task);
 
             THEN("NORNS_ENOTSUPPORTED is returned") {
                 REQUIRE(rv == NORNS_ENOTSUPPORTED);
@@ -994,12 +994,138 @@ retry:
     GIVEN("a non-running urd instance") {
         WHEN("attempting to request a transfer") {
 
-            norns_iotask_t task = NORNS_IOTASK(
-                NORNS_IOTASK_COPY, 
-                NORNS_LOCAL_PATH("nvml0://", "/a/b/c/"),
-                NORNS_REMOTE_PATH("nvml0://", "node1", "/a/b/d/"));
+            norns_iotask_t task = 
+                NORNSCTL_IOTASK(
+                    NORNS_IOTASK_COPY, 
+                    NORNS_LOCAL_PATH("nvml0://", "/a/b/c/"),
+                    NORNS_REMOTE_PATH("nvml0://", "node1", "/a/b/d/"));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
+
+            THEN("NORNS_ECONNFAILED is returned") {
+                REQUIRE(rv == NORNS_ECONNFAILED);
+            }
+        }
+    }
+#endif
+}
+
+
+SCENARIO("check requests", "[api::nornsctl_status]") {
+    GIVEN("a running urd instance") {
+
+        test_env env(
+            fake_daemon_cfg {
+                true /* dry_run? */
+            }
+        );
+
+        const char* nsid0 = "tmp0";
+        const char* nsid1 = "tmp1";
+        bfs::path src_mnt, dst_mnt;
+
+        // create namespaces
+        std::tie(std::ignore, src_mnt) = 
+            env.create_namespace(nsid0, "mnt/tmp0", 16384);
+        std::tie(std::ignore, dst_mnt) = 
+            env.create_namespace(nsid1, "mnt/tmp1", 16384);
+
+        // define input names
+        void* src_buf;
+        size_t src_buf_size __attribute__((unused));
+        const bfs::path src_file = "/a/b/c/file";
+        size_t src_file_size = 4096;
+
+        // define output names
+        const bfs::path dst_file = "/b/c/d/file";
+
+        // create input data
+        env.add_to_namespace(nsid0, src_file, 4096);
+
+        // 64MiB buffer
+        std::vector<int> input_data(16*1024*1024, 42);
+        src_buf = input_data.data();
+        src_buf_size = input_data.size() * sizeof(int);
+
+        WHEN("checking the status of all requests without actual requests running") {
+            nornsctl_stat_t global_stats;
+            norns_error_t rv = nornsctl_status(&global_stats);
+            REQUIRE(rv == NORNS_SUCCESS);
+            REQUIRE(global_stats.st_pending_tasks == 0);
+            REQUIRE(global_stats.st_running_tasks == 0);
+            REQUIRE(global_stats.st_eta == 0.0);
+        }
+
+        WHEN("checking the status of all requests") {
+            
+            const size_t ntasks = 10;
+            norns_iotask_t tasks[ntasks];
+            size_t sizes[] = 
+                { 4*1024*1024, 16*1024*1024, 32*1024*1024, 64*1024*1024 };
+
+            for(size_t i=0; i<ntasks; ++i) {
+
+                tasks[i] =
+                    NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                 NORNS_MEMORY_REGION(src_buf, sizes[i%4]), 
+                                 NORNS_LOCAL_PATH(nsid1, dst_file.c_str()));
+
+                norns_error_t rv = nornsctl_submit(&tasks[i]);
+                REQUIRE(rv == NORNS_SUCCESS);
+                REQUIRE(tasks[i].t_id == i + 1);
+            }
+
+            THEN("The status returned is consistent with status of the tasks "
+                 "sent") {
+                bool finished_tasks[ntasks];
+                memset(finished_tasks, 0, sizeof(finished_tasks));
+                size_t tasks_remaining = ntasks;
+                size_t tasks_completed = 0;
+
+                do {
+                    nornsctl_stat_t global_stats;
+                    norns_error_t rv = nornsctl_status(&global_stats);
+                    REQUIRE(rv == NORNS_SUCCESS);
+                    REQUIRE((global_stats.st_pending_tasks + 
+                             global_stats.st_running_tasks) <= ntasks);
+
+                    for(size_t i=0; i<ntasks; ++i) {
+                        if(!finished_tasks[i]) {
+                            norns_stat_t stats;
+                            nornsctl_error(&tasks[i], &stats);
+
+                            if(stats.st_status == NORNS_EFINISHED ||
+                               stats.st_status == NORNS_EFINISHEDWERROR) {
+                                finished_tasks[i] = true;
+                                --tasks_remaining;
+                                ++tasks_completed;
+                            }
+                        }
+                    }
+
+                    std::this_thread::sleep_for(std::chrono::microseconds(500));
+                }
+                while(tasks_remaining != 0);
+
+                THEN("The ETA returned is 0 when no tasks are left") {
+                    nornsctl_stat_t global_stats;
+                    norns_error_t rv = nornsctl_status(&global_stats);
+                    REQUIRE(rv == NORNS_SUCCESS);
+                    REQUIRE(global_stats.st_pending_tasks == 0);
+                    REQUIRE(global_stats.st_running_tasks == 0);
+                    REQUIRE(global_stats.st_eta == 0.0);
+                }
+            }
+        }
+
+        env.notify_success();
+    }
+
+#ifndef USE_REAL_DAEMON
+    GIVEN("a non-running urd instance") {
+        WHEN("checking the status of all requests") {
+            nornsctl_stat_t global_stats;
+            norns_error_t rv = nornsctl_status(&global_stats);
 
             THEN("NORNS_ECONNFAILED is returned") {
                 REQUIRE(rv == NORNS_ECONNFAILED);
