@@ -25,15 +25,15 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#include "norns.h"
+#include "nornsctl.h"
 #include "test-env.hpp"
 #include "compare-files.hpp"
 #include "catch.hpp"
 
 namespace bfs = boost::filesystem;
 
-SCENARIO("copy local POSIX file to local POSIX file", 
-         "[api::norns_submit_copy_local_posix_files]") {
+SCENARIO("copy local POSIX file to local POSIX file (admin)", 
+         "[api::nornsctl_submit_copy_local_posix_files]") {
     GIVEN("a running urd instance") {
 
         test_env env;
@@ -143,27 +143,28 @@ SCENARIO("copy local POSIX file to local POSIX file",
         WHEN("copying a non-existing NORNS_LOCAL_PATH file") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, src_invalid_file.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_root0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 src_invalid_file.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_error() reports NORNS_ESYSTEMERROR and "
+                    THEN("nornsctl_error() reports NORNS_ESYSTEMERROR and "
                          "ENOENT") {
                         norns_stat_t stats;
-                        rv = norns_error(&task, &stats);
+                        rv = nornsctl_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -178,27 +179,28 @@ SCENARIO("copy local POSIX file to local POSIX file",
         WHEN("copying a non-existing NORNS_LOCAL_PATH directory") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, src_invalid_dir.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_root0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 src_invalid_dir.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_wait() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_error() reports NORNS_ESYSTEMERROR and "
+                    THEN("nornsctl_error() reports NORNS_ESYSTEMERROR and "
                          "ENOENT") {
                         norns_stat_t stats;
-                        rv = norns_error(&task, &stats);
+                        rv = nornsctl_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -213,26 +215,27 @@ SCENARIO("copy local POSIX file to local POSIX file",
         WHEN("copying an empty NORNS_LOCAL_PATH directory") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, src_empty_dir.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_root0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 src_empty_dir.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_error() reports NORNS_SUCCESS and ENOENT") {
+                    THEN("nornsctl_error() reports NORNS_SUCCESS and ENOENT") {
                         norns_stat_t stats;
-                        rv = norns_error(&task, &stats);
+                        rv = nornsctl_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHED);
@@ -255,27 +258,28 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "permissions to access it") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, src_noperms_file0.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_root0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 src_noperms_file0.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_error() reports NORNS_ESYSTEMERROR and "
+                    THEN("nornsctl_error() reports NORNS_ESYSTEMERROR and "
                          "EACCES|EPERM|EINVAL") {
                         norns_stat_t stats;
-                        rv = norns_error(&task, &stats);
+                        rv = nornsctl_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -294,27 +298,28 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "appropriate permissions to access it") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, src_noperms_file1.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_root0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 src_noperms_file1.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_error() reports NORNS_ESYSTEMERROR and "
+                    THEN("nornsctl_error() reports NORNS_ESYSTEMERROR and "
                          "EACCES|EPERM|EINVAL") {
                         norns_stat_t stats;
-                        rv = norns_error(&task, &stats);
+                        rv = nornsctl_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -333,27 +338,28 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "appropriate permissions to access a parent") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, src_noperms_file2.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_root0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 src_noperms_file2.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_error() reports NORNS_ESYSTEMERROR and "
+                    THEN("nornsctl_error() reports NORNS_ESYSTEMERROR and "
                          "EACCES|EPERM|EINVAL") {
                         norns_stat_t stats;
-                        rv = norns_error(&task, &stats);
+                        rv = nornsctl_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -372,28 +378,28 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "appropriate permissions to access it") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, 
-                                              src_noperms_subdir0.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_root0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 src_noperms_subdir0.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_error() reports NORNS_ESYSTEMERROR and "
+                    THEN("nornsctl_error() reports NORNS_ESYSTEMERROR and "
                          "EACCES|EPERM|EINVAL") {
                         norns_stat_t stats;
-                        rv = norns_error(&task, &stats);
+                        rv = nornsctl_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -412,28 +418,28 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "appropriate permissions to access it") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, 
-                                              src_noperms_subdir1.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_root0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 src_noperms_subdir1.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_error() reports NORNS_ESYSTEMERROR and "
+                    THEN("nornsctl_error() reports NORNS_ESYSTEMERROR and "
                          "EACCES|EPERM|EINVAL") {
                         norns_stat_t stats;
-                        rv = norns_error(&task, &stats);
+                        rv = nornsctl_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -452,28 +458,28 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "appropriate permissions to access a parent") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, 
-                                              src_noperms_subdir2.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_root0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 src_noperms_subdir2.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_error() reports NORNS_ESYSTEMERROR and "
+                    THEN("nornsctl_error() reports NORNS_ESYSTEMERROR and "
                          "EACCES|EPERM|EINVAL") {
                         norns_stat_t stats;
-                        rv = norns_error(&task, &stats);
+                        rv = nornsctl_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -492,27 +498,27 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "out of the src namespace") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, out_symlink.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_root0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, out_symlink.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_error() reports NORNS_ESYSTEMERROR and "
+                    THEN("nornsctl_error() reports NORNS_ESYSTEMERROR and "
                          "ENOENT") {
                         norns_stat_t stats;
-                        rv = norns_error(&task, &stats);
+                        rv = nornsctl_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -533,21 +539,22 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "name)") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, src_file_at_root.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_root0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 src_file_at_root.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Files are equal") {
@@ -569,21 +576,22 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "name)") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, src_file_at_root.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_root1.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 src_file_at_root.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_root1.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Files are equal") {
@@ -605,22 +613,22 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "(keeping the name)") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, 
-                                              src_file_at_subdir.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_root0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 src_file_at_subdir.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Files are equal") {
@@ -642,22 +650,22 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "the name)") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, 
-                                              src_file_at_subdir.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_root1.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 src_file_at_subdir.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_root1.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Files are equal") {
@@ -679,22 +687,22 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "the name)") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, 
-                                              src_file_at_root.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_subdir0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 src_file_at_root.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_subdir0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Files are equal") {
@@ -716,22 +724,22 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "the name)") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, 
-                                              src_file_at_root.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_subdir1.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 src_file_at_root.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_subdir1.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Files are equal") {
@@ -753,22 +761,22 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "the name)") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, 
-                                              src_file_at_subdir.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_subdir0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 src_file_at_subdir.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_subdir0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Files are equal") {
@@ -790,22 +798,22 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "(changing the name)") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, 
-                                              src_file_at_subdir.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_subdir1.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 src_file_at_subdir.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_subdir1.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Files are equal") {
@@ -827,22 +835,22 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "(changing the parents names)") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, 
-                                              src_file_at_subdir.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_subdir2.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 src_file_at_subdir.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_subdir2.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Files are equal") {
@@ -864,22 +872,22 @@ SCENARIO("copy local POSIX file to local POSIX file",
             "the name)") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, 
-                                              src_file_at_subdir.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_subdir3.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 src_file_at_subdir.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_subdir3.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Files are equal") {
@@ -902,20 +910,20 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "namespace's root to dst namespace's root") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, src_subdir0.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, dst_root.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, src_subdir0.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, dst_root.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Copied files are identical to original") {
@@ -935,20 +943,20 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "dst namespace's root") {
             
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, src_subdir1.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, dst_root.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, src_subdir1.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, dst_root.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Copied files are identical to original") {
@@ -970,20 +978,20 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "namespace's root while changing its name") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, src_subdir0.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, dst_subdir0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, src_subdir0.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, dst_subdir0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Copied files are identical to original") {
@@ -1005,20 +1013,20 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "namespace's root while changing its name") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, src_subdir0.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, dst_subdir1.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, src_subdir0.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, dst_subdir1.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Copied files are identical to original") {
@@ -1040,20 +1048,20 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "namespace's root while changing its name") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, src_subdir1.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, dst_subdir0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, src_subdir1.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, dst_subdir0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Copied files are identical to original") {
@@ -1075,20 +1083,20 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "namespace's root while changing its name") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, src_subdir1.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, dst_subdir1.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, src_subdir1.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, dst_subdir1.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Copied files are identical to original") {
@@ -1110,22 +1118,22 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "through a symlink also located at '/'" ) {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, 
-                                              src_symlink_at_root0.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_root0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 src_symlink_at_root0.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Files are equal") {
@@ -1145,22 +1153,22 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "'/' through a symlink also located at '/'" ) {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, 
-                                              src_symlink_at_root1.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_root0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 src_symlink_at_root1.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Directories are equal") {
@@ -1180,22 +1188,22 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "through a symlink also located at '/'" ) {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, 
-                                              src_symlink_at_root2.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_root0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 src_symlink_at_root2.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Directories are equal") {
@@ -1215,22 +1223,22 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "through a symlink located in a subdir" ) {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, 
-                                              src_symlink_at_subdir0.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_root0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 src_symlink_at_subdir0.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Files are equal") {
@@ -1251,28 +1259,29 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "'/' through a symlink also located at subdir" ) {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, 
-                                              src_symlink_at_subdir1.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_root0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 src_symlink_at_subdir1.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Directories are equal") {
 
                         bfs::path src = 
-                            env.get_from_namespace(nsid0, src_symlink_at_subdir1);
+                            env.get_from_namespace(
+                                    nsid0, src_symlink_at_subdir1);
                         bfs::path dst = 
                             env.get_from_namespace(nsid1, dst_file_at_root0);
 
@@ -1286,22 +1295,22 @@ SCENARIO("copy local POSIX file to local POSIX file",
              "through a symlink also located at a subdir" ) {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_LOCAL_PATH(nsid0, 
-                                              src_symlink_at_subdir2.c_str()), 
-                             NORNS_LOCAL_PATH(nsid1, 
-                                              dst_file_at_root0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 src_symlink_at_subdir2.c_str()), 
+                                NORNS_LOCAL_PATH(nsid1, 
+                                                 dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() returns NORNS_SUCCESS") {
+                THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Directories are equal") {
@@ -1325,12 +1334,12 @@ SCENARIO("copy local POSIX file to local POSIX file",
     GIVEN("a non-running urd instance") {
         WHEN("attempting to request a transfer") {
 
-            norns_iotask_t task = NORNS_IOTASK(
+            norns_iotask_t task = NORNSCTL_IOTASK(
                 NORNS_IOTASK_COPY, 
                 NORNS_LOCAL_PATH("nvml0://", "/a/b/c/"),
                 NORNS_REMOTE_PATH("nvml0://", "node1", "/a/b/d/"));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
             THEN("NORNS_ECONNFAILED is returned") {
                 REQUIRE(rv == NORNS_ECONNFAILED);
@@ -1341,8 +1350,8 @@ SCENARIO("copy local POSIX file to local POSIX file",
 }
 
 
-SCENARIO("copy local memory buffer to local POSIX file", 
-         "[api::norns_submit_copy_buffer_to_file]") {
+SCENARIO("copy local memory buffer to local POSIX file (admin)", 
+         "[api::nornsctl_submit_copy_buffer_to_file]") {
     GIVEN("a running urd instance") {
 
         test_env env;
@@ -1387,27 +1396,27 @@ SCENARIO("copy local memory buffer to local POSIX file",
         WHEN("copying an invalid memory region to a local POSIX file") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_MEMORY_REGION((void*) 0x42, region_size), 
-                             NORNS_LOCAL_PATH(nsid0, 
-                                              dst_file_at_root0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_MEMORY_REGION((void*) 0x42, region_size), 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() return NORNS_SUCCESS") {
+                THEN("nornsctl_wait() return NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_error() reports NORNS_ESYSTEMERROR and "
+                    THEN("nornsctl_error() reports NORNS_ESYSTEMERROR and "
                          "EFAULT") {
                         norns_stat_t stats;
-                        rv = norns_error(&task, &stats);
+                        rv = nornsctl_error(&task, &stats);
 
                         REQUIRE(rv == NORNS_SUCCESS);
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
@@ -1422,21 +1431,21 @@ SCENARIO("copy local memory buffer to local POSIX file",
              "at '/'") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_MEMORY_REGION(region_addr, region_size), 
-                             NORNS_LOCAL_PATH(nsid0, 
-                                              dst_file_at_root0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_MEMORY_REGION(region_addr, region_size), 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 dst_file_at_root0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() return NORNS_SUCCESS") {
+                THEN("nornsctl_wait() return NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Output file contains buffer data") {
@@ -1454,21 +1463,21 @@ SCENARIO("copy local memory buffer to local POSIX file",
              "subdir") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_MEMORY_REGION(region_addr, region_size), 
-                             NORNS_LOCAL_PATH(nsid0, 
-                                              dst_file_at_subdir0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_MEMORY_REGION(region_addr, region_size), 
+                                NORNS_LOCAL_PATH(nsid0, 
+                                                 dst_file_at_subdir0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() return NORNS_SUCCESS") {
+                THEN("nornsctl_wait() return NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
                     THEN("Output file contains buffer data") {
@@ -1485,13 +1494,13 @@ SCENARIO("copy local memory buffer to local POSIX file",
         WHEN("copying a valid memory region to a local POSIX /") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_MEMORY_REGION(region_addr, region_size), 
-                             NORNS_LOCAL_PATH(nsid0, dst_root.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_MEMORY_REGION(region_addr, region_size), 
+                                NORNS_LOCAL_PATH(nsid0, dst_root.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_EBADARGS") {
+            THEN("nornsctl_submit() returns NORNS_EBADARGS") {
                 REQUIRE(rv == NORNS_EBADARGS);
             }
         }
@@ -1500,13 +1509,13 @@ SCENARIO("copy local memory buffer to local POSIX file",
              "directory at /") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_MEMORY_REGION(region_addr, region_size), 
-                             NORNS_LOCAL_PATH(nsid0, dst_subdir0.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_MEMORY_REGION(region_addr, region_size), 
+                                NORNS_LOCAL_PATH(nsid0, dst_subdir0.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_EBADARGS") {
+            THEN("nornsctl_submit() returns NORNS_EBADARGS") {
                 REQUIRE(rv == NORNS_EBADARGS);
             }
         }
@@ -1515,26 +1524,26 @@ SCENARIO("copy local memory buffer to local POSIX file",
              "directory at /") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_MEMORY_REGION(region_addr, region_size), 
-                             NORNS_LOCAL_PATH(nsid0, dst_subdir1.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_MEMORY_REGION(region_addr, region_size), 
+                                NORNS_LOCAL_PATH(nsid0, dst_subdir1.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() return NORNS_SUCCESS") {
+                THEN("nornsctl_wait() return NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_error() reports NORNS_ESYSTEMERROR and "
+                    THEN("nornsctl_error() reports NORNS_ESYSTEMERROR and "
                          "EISDIR") {
                         norns_stat_t stats;
-                        rv = norns_error(&task, &stats);
+                        rv = nornsctl_error(&task, &stats);
 
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
                         REQUIRE(stats.st_task_error == NORNS_ESYSTEMERROR);
@@ -1548,13 +1557,13 @@ SCENARIO("copy local memory buffer to local POSIX file",
              "directory at an arbitary subdir") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_MEMORY_REGION(region_addr, region_size), 
-                             NORNS_LOCAL_PATH(nsid0, dst_subdir2.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_MEMORY_REGION(region_addr, region_size), 
+                                NORNS_LOCAL_PATH(nsid0, dst_subdir2.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_EBADARGS") {
+            THEN("nornsctl_submit() returns NORNS_EBADARGS") {
                 REQUIRE(rv == NORNS_EBADARGS);
             }
         }
@@ -1563,26 +1572,26 @@ SCENARIO("copy local memory buffer to local POSIX file",
              "directory at an arbitary subdir") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_MEMORY_REGION(region_addr, region_size), 
-                             NORNS_LOCAL_PATH(nsid0, dst_subdir3.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_MEMORY_REGION(region_addr, region_size), 
+                                NORNS_LOCAL_PATH(nsid0, dst_subdir3.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_SUCCESS") {
+            THEN("nornsctl_submit() returns NORNS_SUCCESS") {
                 REQUIRE(rv == NORNS_SUCCESS);
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = nornsctl_wait(&task);
 
-                THEN("norns_wait() return NORNS_SUCCESS") {
+                THEN("nornsctl_wait() return NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("norns_error() reports NORNS_ESYSTEMERROR and "
+                    THEN("nornsctl_error() reports NORNS_ESYSTEMERROR and "
                          "EISDIR") {
                         norns_stat_t stats;
-                        rv = norns_error(&task, &stats);
+                        rv = nornsctl_error(&task, &stats);
 
                         REQUIRE(stats.st_status == NORNS_EFINISHEDWERROR);
                         REQUIRE(stats.st_task_error == NORNS_ESYSTEMERROR);
@@ -1598,13 +1607,13 @@ SCENARIO("copy local memory buffer to local POSIX file",
              "directory") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_MEMORY_REGION(region_addr, region_size), 
-                             NORNS_LOCAL_PATH(nsid0, dst_subdir4.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_MEMORY_REGION(region_addr, region_size), 
+                                NORNS_LOCAL_PATH(nsid0, dst_subdir4.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_EBADARGS") {
+            THEN("nornsctl_submit() returns NORNS_EBADARGS") {
                 REQUIRE(rv == NORNS_EBADARGS);
             }
         }
@@ -1613,13 +1622,13 @@ SCENARIO("copy local memory buffer to local POSIX file",
              "directory") {
 
             norns_iotask_t task = 
-                NORNS_IOTASK(NORNS_IOTASK_COPY, 
-                             NORNS_MEMORY_REGION(region_addr, region_size), 
-                             NORNS_LOCAL_PATH(nsid0, dst_subdir5.c_str()));
+                NORNSCTL_IOTASK(NORNS_IOTASK_COPY, 
+                                NORNS_MEMORY_REGION(region_addr, region_size), 
+                                NORNS_LOCAL_PATH(nsid0, dst_subdir5.c_str()));
 
-            norns_error_t rv = norns_submit(&task);
+            norns_error_t rv = nornsctl_submit(&task);
 
-            THEN("norns_submit() returns NORNS_EBADARGS") {
+            THEN("nornsctl_submit() returns NORNS_EBADARGS") {
                 REQUIRE(rv == NORNS_EBADARGS);
             }
         }

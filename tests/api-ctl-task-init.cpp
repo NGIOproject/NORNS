@@ -26,11 +26,11 @@
  *************************************************************************/
 
 #include <string.h>
-#include "norns.h"
+#include "nornsctl.h"
 #include "catch.hpp"
 
-SCENARIO("initialize a task with norns_iotask_init", 
-         "[api::norns_iotask_init]") {
+SCENARIO("initialize a task with nornsctl_iotask_init", 
+         "[api::nornsctl_iotask_init]") {
 
     GIVEN("invalid task information") {
         WHEN("initializing a task with NULL src and dst") {
@@ -38,7 +38,7 @@ SCENARIO("initialize a task with norns_iotask_init",
             norns_iotask_t task;
             norns_op_t task_op = NORNS_IOTASK_COPY;
 
-            norns_iotask_init(&task, task_op, NULL, NULL);
+            nornsctl_iotask_init(&task, task_op, NULL, NULL);
 
             AND_THEN("task is set to 0") {
                 norns_iotask_t dummy;
@@ -58,7 +58,7 @@ SCENARIO("initialize a task with norns_iotask_init",
             const char* dst_path = "/a/b/c";
             norns_resource_t dst = NORNS_LOCAL_PATH(dst_nsid, dst_path);
 
-            norns_iotask_init(&task, task_op, NULL, &dst);
+            nornsctl_iotask_init(&task, task_op, NULL, &dst);
 
             THEN("task is set to 0") {
                 norns_iotask_t dummy;
@@ -90,7 +90,7 @@ SCENARIO("initialize a task with norns_iotask_init",
             REQUIRE(strcmp(dst.r_posix_path.p_path, dst_path) == 0);
 
             norns_iotask_t task;
-            norns_iotask_init(&task, task_op, &src, &dst);
+            nornsctl_iotask_init(&task, task_op, &src, &dst);
 
             THEN("the norns_task structure is initialized as expected") {
                 REQUIRE(task.t_id == 0);
@@ -126,7 +126,7 @@ SCENARIO("initialize a task with norns_iotask_init",
             REQUIRE(strcmp(dst.r_posix_path.p_path, dst_path) == 0);
 
             norns_iotask_t task;
-            norns_iotask_init(&task, task_op, &src, &dst);
+            nornsctl_iotask_init(&task, task_op, &src, &dst);
 
             THEN("the norns_task structure is initialized as expected") {
                 REQUIRE(task.t_id == 0);
@@ -140,7 +140,7 @@ SCENARIO("initialize a task with norns_iotask_init",
     }
 }
 
-SCENARIO("initialize a task with NORNS_IOTASK", "[api::NORNS_IOTASK]") {
+SCENARIO("initialize a task with NORNSCTL_IOTASK", "[api::NORNSCTL_IOTASK]") {
 
     GIVEN("valid task information") {
         WHEN("initializing a task with src=NORNS_MEMORY_REGION and "
@@ -153,9 +153,9 @@ SCENARIO("initialize a task with NORNS_IOTASK", "[api::NORNS_IOTASK]") {
             const char* dst_path = "/a/b/c";
 
             norns_iotask_t task = 
-                NORNS_IOTASK(task_op, 
-                             NORNS_MEMORY_REGION(src_addr, src_size), 
-                             NORNS_LOCAL_PATH(dst_nsid, dst_path));
+                NORNSCTL_IOTASK(task_op, 
+                                NORNS_MEMORY_REGION(src_addr, src_size), 
+                                NORNS_LOCAL_PATH(dst_nsid, dst_path));
 
             THEN("the norns_task structure is initialized as expected") {
                 REQUIRE(task.t_id == 0);
@@ -178,9 +178,9 @@ SCENARIO("initialize a task with NORNS_IOTASK", "[api::NORNS_IOTASK]") {
             const char* dst_path = "/a/b/c";
 
             norns_iotask_t task = 
-                NORNS_IOTASK(task_op, 
-                             NORNS_MEMORY_REGION(src_addr, src_size), 
-                             NORNS_REMOTE_PATH(dst_nsid, dst_host, dst_path));
+                NORNSCTL_IOTASK(task_op, 
+                                NORNS_MEMORY_REGION(src_addr, src_size), 
+                                NORNS_REMOTE_PATH(dst_nsid, dst_host, dst_path));
 
             THEN("the norns_task structure is initialized as expected") {
                 REQUIRE(task.t_id == 0);
@@ -205,9 +205,9 @@ SCENARIO("initialize a task with NORNS_IOTASK", "[api::NORNS_IOTASK]") {
             const char* dst_path = "/a/b/c";
 
             norns_iotask_t task = 
-                NORNS_IOTASK(task_op, 
-                             NORNS_MEMORY_REGION(src_addr, src_size), 
-                             NORNS_SHARED_PATH(dst_nsid, dst_path));
+                NORNSCTL_IOTASK(task_op, 
+                                NORNS_MEMORY_REGION(src_addr, src_size), 
+                                NORNS_SHARED_PATH(dst_nsid, dst_path));
 
             THEN("the norns_task structure is initialized as expected") {
                 REQUIRE(task.t_id == 0);
@@ -221,3 +221,4 @@ SCENARIO("initialize a task with NORNS_IOTASK", "[api::NORNS_IOTASK]") {
         }
     }
 }
+
