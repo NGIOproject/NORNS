@@ -35,8 +35,6 @@ END =
 
 api_CXXFLAGS = \
 	-Wall -Wextra \
-	-fsanitize=address \
-	-fno-omit-frame-pointer \
 	$(END)
 
 api_CPPFLAGS = \
@@ -139,8 +137,6 @@ EXTRA_api_interactive_DEPENDENCIES = \
 
 core_CXXFLAGS = \
 	-Wall -Wextra \
-	-fsanitize=address \
-	-fno-omit-frame-pointer \
 	$(END)
 
 core_CPPFLAGS = \
