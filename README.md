@@ -65,7 +65,7 @@ $ apt-get install -y libboost-system-dev libboost-filesystem-dev \
                      libboost-program-options-dev libboost-thread-dev \
                      libboost-regex-dev libprotobuf-dev protobuf-compiler \
                      libprotobuf-c-dev protobuf-c-compiler \
-                     libyaml-cpp-dev libyaml-dev libtar-dev
+                     libyaml-cpp-dev libyaml-dev libarchive-dev
 
 # Building and installing libfabric (required for Mercury's OFI/libfabric plugin)
 $ git clone https://github.com/ofiwg/libfabric.git &&

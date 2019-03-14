@@ -35,6 +35,8 @@ END =
 
 api_CXXFLAGS = \
 	-Wall -Wextra \
+	-fsanitize=address \
+	-fno-omit-frame-pointer \
 	$(END)
 
 api_CPPFLAGS = \
@@ -137,6 +139,8 @@ EXTRA_api_interactive_DEPENDENCIES = \
 
 core_CXXFLAGS = \
 	-Wall -Wextra \
+	-fsanitize=address \
+	-fno-omit-frame-pointer \
 	$(END)
 
 core_CPPFLAGS = \
@@ -154,10 +158,14 @@ core_SOURCES = \
 	utils-tar.cpp \
 	test-env.cpp \
 	test-env.hpp \
+	compare-files.cpp \
+	compare-files.hpp \
 	$(END)
 
 core_LDFLAGS = \
 	-no-install \
+	-fsanitize=address \
+	-fno-omit-frame-pointer \
     @BOOST_ASIO_LIB@ \
 	@BOOST_LDFLAGS@	\
 	@BOOST_FILESYSTEM_LIB@ \

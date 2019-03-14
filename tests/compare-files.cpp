@@ -126,7 +126,10 @@ bool compare_directories(const bfs::path& dirname1, const bfs::path& dirname2) {
         }
 
         if(bfs::is_directory(*it) && bfs::is_directory(pdst)) {
-            continue;
+			if(!compare_directories(*it, pdst)) {
+				return false;
+			}
+			continue;
         }
         else if(bfs::is_directory(pdst)){
             return false;

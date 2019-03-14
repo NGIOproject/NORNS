@@ -299,7 +299,10 @@ bfs::path test_env::get_from_namespace(const std::string& nsid, const bfs::path&
 }
 
 
-bfs::path test_env::create_file(const bfs::path& name, const bfs::path& parent, std::size_t size) {
+bfs::path 
+test_env::create_file(const bfs::path& name, 
+                      const bfs::path& parent, 
+                      std::size_t size) {
 
     auto parent_dirs = bfs::relative(name.parent_path(), "/");
     auto abs_mnt = bfs::absolute(parent);
@@ -322,8 +325,9 @@ bfs::path test_env::create_file(const bfs::path& name, const bfs::path& parent, 
     REQUIRE(file);
 
     if(size != 0) {
-        std::vector<uint64_t> data(size/sizeof(uint64_t), 42);
-        file.write(reinterpret_cast<const char*>(&data[0]), size);
+        std::size_t n = std::ceil(static_cast<double>(size)/sizeof(uint64_t));
+        std::vector<uint64_t> bindata(n, 42);
+        file.write(reinterpret_cast<const char*>(bindata.data()), size);
     }
 
     return fname;

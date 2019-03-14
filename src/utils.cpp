@@ -172,6 +172,26 @@ remove_trailing_separator(const boost::filesystem::path& pathname) {
     return path{str};
 }
 
+// remove a leading separator
+// (adapted from boost::filesystem::path::remove_trailing_separator())
+boost::filesystem::path
+remove_leading_separator(const boost::filesystem::path& pathname) {
+
+    using boost::filesystem::path;
+
+    std::string str{pathname.generic_string()};
+
+    auto is_directory_separator = [](path::value_type c) {
+        return c == '/';
+    };
+
+    if(!str.empty() && is_directory_separator(str[0])) {
+        str.erase(0, 1);
+    }
+
+    return path{str};
+}
+
 } // namespace utils
 } // namespace norns
 
