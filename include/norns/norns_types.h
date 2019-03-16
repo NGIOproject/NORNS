@@ -29,8 +29,6 @@
 #define __NORNS_TYPES_H__ 1
 
 #include <sys/types.h>
-#include <stdint.h>     /* For uint32_t et al. */
-#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -45,7 +45,12 @@
 #include "defaults.h"
 
 #define LIBNORNSCTL_LOG_PREFIX "libnornsctl"
-#define MIN_WAIT_TIME ((useconds_t) 250*1e3)
+
+// default timeout is 250 microseconds
+const struct timespec LIBNORNSCTL_DEFAULT_TIMEOUT = {
+    .tv_sec = 0,
+    .tv_nsec = (250L*1e3L)
+};
 
 static bool validate_job(nornsctl_job_t* job);
 static bool validate_namespace(nornsctl_backend_t* backend);
@@ -402,7 +407,8 @@ nornsctl_error(norns_iotask_t* task,
 
 /* wait for the completion of the I/O task associated to 'task' */
 norns_error_t
-nornsctl_wait(norns_iotask_t* task) {
+nornsctl_wait(norns_iotask_t* task, 
+              const struct timespec* timeout) {
 
     norns_error_t rv;
     norns_stat_t stats;
@@ -412,7 +418,16 @@ nornsctl_wait(norns_iotask_t* task) {
         return NORNS_EBADARGS;
     }
 
+    // if user provided a timeout, suspend this thread for 
+    // (at least) the amount of time requested
+    struct timespec requested = 
+        timeout == NULL ? 
+            LIBNORNSCTL_DEFAULT_TIMEOUT :
+            *timeout;
+    struct timespec remaining;
+
     do {
+        // check if task has finished
         rv = send_status_request(task, &stats);
 
         if(rv != NORNS_SUCCESS) {
@@ -425,9 +440,31 @@ nornsctl_wait(norns_iotask_t* task) {
             return NORNS_SUCCESS;
         }
 
-        // wait for 250 milliseconds
-        // before retrying
-        usleep(MIN_WAIT_TIME);
+        // task not finished: sleep
+        if(nanosleep(&requested, &remaining) != 0) {
+            if(errno != EINTR) {
+                ERR("nanosleep error: %s", norns_strerror(rv));
+                if(errno == EINVAL) {
+                    return NORNS_EBADARGS;
+                }
+                return NORNS_ESNAFU;
+            }
+
+            // EINTR: we've been interrupted, check the task status again just
+            // in case it's finished and we can avoid sleeping again
+            requested = 
+                timeout == NULL ? 
+                    LIBNORNSCTL_DEFAULT_TIMEOUT :
+                    remaining; 
+            // fall through
+        }
+
+        if(timeout == NULL) {
+            continue;
+        }
+
+        return NORNS_ETIMEOUT;
+
     } while(true);
 
     return NORNS_SUCCESS;
