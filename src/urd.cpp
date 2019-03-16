@@ -42,6 +42,10 @@
 #include <string.h>
 #include <ctime>
 
+#ifdef __LOGGER_ENABLE_DEBUG__
+#include <sys/prctl.h>
+#endif
+
 #include <boost/optional.hpp>
 #include <boost/optional/optional_io.hpp>
 #include <boost/atomic.hpp>
@@ -1527,6 +1531,13 @@ int urd::run() {
 
     // validate settings
     check_configuration();
+
+#ifdef __LOGGER_ENABLE_DEBUG__
+    if(::prctl(PR_SET_DUMPABLE, 1) != 0) {
+        LOGGER_WARN("Failed to set PR_SET_DUMPABLE flag for process. "
+                    "Daemon will not produce core dumps.");
+    }
+#endif
 
     // daemonize if needed
     if(m_settings->daemonize() && daemonize() != 0) {

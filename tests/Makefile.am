@@ -154,10 +154,14 @@ core_SOURCES = \
 	utils-tar.cpp \
 	test-env.cpp \
 	test-env.hpp \
+	compare-files.cpp \
+	compare-files.hpp \
 	$(END)
 
 core_LDFLAGS = \
 	-no-install \
+	-fsanitize=address \
+	-fno-omit-frame-pointer \
     @BOOST_ASIO_LIB@ \
 	@BOOST_LDFLAGS@	\
 	@BOOST_FILESYSTEM_LIB@ \

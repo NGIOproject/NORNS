@@ -62,6 +62,9 @@ boost::filesystem::path lexical_normalize(const boost::filesystem::path& pathnam
 boost::filesystem::path
 remove_trailing_separator(const boost::filesystem::path& pathname);
 
+boost::filesystem::path
+remove_leading_separator(const boost::filesystem::path& pathname);
+
 } // namespace utils
 } // namespace norns
 

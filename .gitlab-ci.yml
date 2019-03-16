@@ -26,7 +26,7 @@ before_script:
         protobuf-c-compiler
         libyaml-cpp-dev
         libyaml-dev
-        libtar-dev
+        libarchive-dev
         cmake
 
     - pushd . &&
@@ -155,7 +155,7 @@ test:coverage:
             protobuf-c-compiler
             libyaml-cpp-dev
             libyaml-dev
-            libtar-dev
+            libarchive-dev
             libcap2-bin
             valgrind
             cmake
@@ -275,7 +275,7 @@ test:optimized:
             protobuf-c-compiler
             libyaml-cpp-dev
             libyaml-dev
-            libtar-dev
+            libarchive-dev
             libcap2-bin
             valgrind
             cmake

@@ -90,7 +90,7 @@ liburd_resources_la_LDFLAGS = \
     @BOOST_THREAD_LIB@ \
     @MERCURY_LIBS@ \
 	@PROTOBUF_LIBS@ \
-	@TAR_LIBS@ \
+	@LIBARCHIVE_LIBS@ \
 	-pthread
 
 
@@ -227,7 +227,7 @@ liburd_aux_la_LDFLAGS = \
     @MERCURY_LIBS@ \
 	@PROTOBUF_LIBS@ \
 	@YAMLCPP_LIBS@ \
-	@TAR_LIBS@ \
+	@LIBARCHIVE_LIBS@ \
 	liburd_resources.la \
 	-pthread
 
@@ -304,7 +304,6 @@ urd_LDFLAGS = \
     @BOOST_THREAD_LIB@ \
     @MERCURY_LIBS@ \
 	@PROTOBUF_LIBS@ \
-	@TAR_LIBS@ \
 	liburd_aux.la
 
 # we also need to include it as an additional dependency, since automake
