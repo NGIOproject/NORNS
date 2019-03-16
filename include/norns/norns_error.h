@@ -73,10 +73,11 @@ extern "C" {
 #define NORNS_ETASKSPENDING      -43
 
 /* task status */
-#define NORNS_EPENDING          -100
-#define NORNS_EINPROGRESS       -101
-#define NORNS_EFINISHED         -102
-#define NORNS_EFINISHEDWERROR   -103
+#define NORNS_EUNDEFINED        -100
+#define NORNS_EPENDING          -101
+#define NORNS_EINPROGRESS       -102
+#define NORNS_EFINISHED         -103
+#define NORNS_EFINISHEDWERROR   -104
 
 /* errors resources */
 #define NORNS_ERESOURCEEXISTS   -110

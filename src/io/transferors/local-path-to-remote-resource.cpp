@@ -362,7 +362,7 @@ local_path_to_remote_resource_transferor::accept_transfer(
     // the mapped_buffer doesn't get released before completion_callback()
     // is called.
     const auto completion_callback = 
-        [this, is_collection, tempfile, d_dst, output_buffer, start](
+        [this, is_collection, tempfile, d_dst, output_buffer, start, task_info](
             hermes::request<rpc::push_resource>&& req) {
 
 //        LOGGER_CRITICAL("completion_callback invoked: {}",
@@ -399,9 +399,6 @@ local_path_to_remote_resource_transferor::accept_transfer(
                 goto respond;
             }
 
-            LOGGER_DEBUG("Archive {} extracted into {}", 
-                         tempfile->path(), d_dst.parent()->mount());
-
             goto respond;
         }
 
@@ -413,6 +410,8 @@ respond:
             m_network_service->respond<rpc::push_resource>(
                     std::move(req), out);
         }
+
+        task_info->clear_context();
     };
 
 //    LOGGER_CRITICAL("async_pull posted: {}",

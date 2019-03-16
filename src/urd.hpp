@@ -158,7 +158,7 @@ private:
     std::unordered_map<uint32_t, std::shared_ptr<job>>    m_jobs;
     boost::shared_mutex                         m_jobs_mutex;
 
-    std::unique_ptr<io::task_manager> m_task_mgr;
+    std::shared_ptr<io::task_manager> m_task_mgr;
     mutable boost::shared_mutex  m_task_mgr_mutex;
 };
 

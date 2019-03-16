@@ -336,6 +336,11 @@ private:
 #endif
 #define HERMES_DEBUG4(...)   // LOGGER_DEBUG(__VA_ARGS__)
 
+#ifdef HERMES_DEBUG_FLUSH
+#undef HERMES_DEBUG_FLUSH
+#endif
+#define HERMES_DEBUG_FLUSH()  LOGGER_FLUSH()
+
 #ifdef HERMES_ERROR
 #undef HERMES_ERROR
 #endif

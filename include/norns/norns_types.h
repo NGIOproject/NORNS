@@ -123,14 +123,6 @@ typedef enum {
     NORNS_IOTASK_REMOVE = 0x3
 } norns_op_t;
 
-/* Descriptor for an I/O task */
-typedef struct {
-    norns_tid_t         t_id;   /* task identifier */
-    norns_op_t          t_op;   /* operation to be performed */
-    norns_resource_t    t_src;  /* source resource */
-    norns_resource_t    t_dst;  /* destination resource */
-} norns_iotask_t;
-
 /* I/O task status descriptor */
 typedef struct {
     norns_status_t st_status;     /* task current status */
@@ -140,7 +132,16 @@ typedef struct {
     size_t         st_total;      /* total bytes in task */
 } norns_stat_t;
 
+/* Descriptor for an I/O task */
+typedef struct {
+    norns_tid_t         t_id;   /* task identifier */
+    norns_op_t          t_op;   /* operation to be performed */
+    norns_resource_t    t_src;  /* source resource */
+    norns_resource_t    t_dst;  /* destination resource */
 
+    /* Internal members */
+    norns_stat_t        __t_status; /* cached task status */
+} norns_iotask_t;
 
 /* Additional administrative types */
 typedef enum {

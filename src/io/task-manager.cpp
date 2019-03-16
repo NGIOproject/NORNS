@@ -136,6 +136,7 @@ task_manager::register_transfer_plugin(const data::resource_type t1,
 /// }
 
 
+// XXX unused
 std::tuple<urd_error, boost::optional<iotask_id>>
 task_manager::create_task(iotask_type type, 
                           const auth::credentials& auth,
@@ -467,48 +468,50 @@ task_manager::create_remote_initiated_task(iotask_type task_type,
 
 
 urd_error
-task_manager::enqueue_task(io::generic_task&& t) {
+task_manager::enqueue_task(io::generic_task&& tsk) {
+
+    auto self(std::enable_shared_from_this<task_manager>::shared_from_this());
 
     // helper lambda to register the completion of tasks so that we can keep track
     // of the consumed bandwidth by each task
     // N.B: we use capture-by-value here so that the task_info_ptr is valid when 
     // the callback is invoked.
-    const auto completion_callback = [this, t]() {
-        assert(t.info()->status() == task_status::finished ||
-               t.info()->status() == task_status::finished_with_error);
+    const auto completion_callback = [self, tsk]() {
+        assert(tsk.info()->status() == task_status::finished ||
+               tsk.info()->status() == task_status::finished_with_error);
 
         LOGGER_DEBUG("Task {} finished [{} MiB/s]", 
-                t.info()->id(), t.info()->bandwidth());
+                tsk.info()->id(), tsk.info()->bandwidth());
 
-        auto bw = t.info()->bandwidth();
+        auto bw = tsk.info()->bandwidth();
 
         // bw might be nan if the task did not finish correctly
         if(!std::isnan(bw)) {
 
-            const auto key = std::make_pair(t.info()->src_rinfo()->nsid(),
-                                            t.info()->dst_rinfo()->nsid());
+            const auto key = std::make_pair(tsk.info()->src_rinfo()->nsid(),
+                                            tsk.info()->dst_rinfo()->nsid());
 
-            if(!m_bandwidth_backlog.count(key)) {
-                m_bandwidth_backlog.emplace(key, 
-                        boost::circular_buffer<double>(m_backlog_size));
+            if(!self->m_bandwidth_backlog.count(key)) {
+                self->m_bandwidth_backlog.emplace(key, 
+                        boost::circular_buffer<double>(self->m_backlog_size));
             }
 
-            m_bandwidth_backlog.at(key).push_back(bw);
+            self->m_bandwidth_backlog.at(key).push_back(bw);
         }
     };
 
-    switch(t.m_type) {
+    switch(tsk.m_type) {
         case iotask_type::remove:
         case iotask_type::noop:
         {
-            m_runners.submit_and_forget(t);
+            m_runners.submit_and_forget(tsk);
             break;
         }
 
         case iotask_type::copy:
         case iotask_type::move:
         {
-            m_runners.submit_with_epilog_and_forget(t, completion_callback);
+            m_runners.submit_with_epilog_and_forget(tsk, completion_callback);
             break;
         }
 
@@ -519,6 +522,8 @@ task_manager::enqueue_task(io::generic_task&& t) {
     return urd_error::success;
 }
 
+// XXX we could return the iterator here so that it can be reused for erase()
+// later
 std::shared_ptr<task_info>
 task_manager::find(iotask_id tid) const {
 
@@ -531,6 +536,21 @@ task_manager::find(iotask_id tid) const {
     }
 
     return nullptr;
+}
+
+bool
+task_manager::erase(iotask_id tid) {
+    boost::unique_lock<boost::shared_mutex> lock(m_mutex);
+
+    const auto it = m_task_info.find(tid);
+
+    if(it == m_task_info.end()) {
+        return false;
+    }
+
+    m_task_info.erase(it);
+
+    return true;
 }
 
 io::global_stats

@@ -25,6 +25,7 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
+#include <boost/version.hpp>
 #include <cmath>
 #include <limits>
 #include "task-stats.hpp"
@@ -122,6 +123,15 @@ task_info::context() const {
 void 
 task_info::set_context(const boost::any& ctx) {
     m_ctx = ctx;
+}
+
+void
+task_info::clear_context() {
+#if BOOST_VERSION <= 105500
+    m_ctx = boost::any();
+#else
+    m_ctx.clear();
+#endif
 }
 
 task_status

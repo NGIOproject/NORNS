@@ -88,6 +88,9 @@ struct task_info {
     void 
     set_context(const boost::any& ctx);
 
+    void 
+    clear_context();
+
     task_status 
     status() const;
 
