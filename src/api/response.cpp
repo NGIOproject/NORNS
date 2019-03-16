@@ -75,6 +75,8 @@ norns::rpc::Response_Type encode(norns::api::response_type type) {
     using norns::io::task_status;
 
     switch(status) {
+        case task_status::undefined:
+            return NORNS_EUNDEFINED;
         case task_status::pending:
             return NORNS_EPENDING;
         case task_status::running:

@@ -112,6 +112,9 @@ struct task_manager : public std::enable_shared_from_this<task_manager> {
     std::shared_ptr<task_info>
     find(iotask_id) const;
 
+    bool
+    erase(iotask_id);
+
     template <typename UnaryPredicate>
     std::size_t
     count_if(UnaryPredicate&& p) {

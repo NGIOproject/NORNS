@@ -333,12 +333,15 @@ log_and_return:
 }
 
 
-response_ptr urd::iotask_status_handler(const request_ptr base_request) const {
+response_ptr 
+urd::iotask_status_handler(const request_ptr base_request) const {
 
     auto resp = std::make_unique<api::iotask_status_response>();
 
     // downcast the generic request to the concrete implementation
-    auto request = utils::static_unique_ptr_cast<api::iotask_status_request>(std::move(base_request));
+    auto request = 
+        utils::static_unique_ptr_cast<api::iotask_status_request>(
+                std::move(base_request));
 
     auto task_info_ptr = m_task_mgr->find(request->get<0>());
 
@@ -348,12 +351,19 @@ response_ptr urd::iotask_status_handler(const request_ptr base_request) const {
         // stats provides a thread-safe view of a task status 
         // (locking is done internally)
         resp->set<0>(task_info_ptr->stats());
+
+        if(task_info_ptr->status() == io::task_status::finished ||
+           task_info_ptr->status() == io::task_status::finished_with_error) {
+            m_task_mgr->erase(request->get<0>());
+        }
+
     }
     else {
         resp->set_error_code(urd_error::no_such_task);
     }
 
-    LOGGER_INFO("IOTASK_STATUS({}) = {}", request->to_string(), resp->to_string());
+    LOGGER_INFO("IOTASK_STATUS({}) = {}", 
+                request->to_string(), resp->to_string());
 
     return std::move(resp);
 }

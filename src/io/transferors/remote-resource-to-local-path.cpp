@@ -359,7 +359,7 @@ remote_resource_to_local_path_transferor::accept_transfer(
     // FIXME: with C++14 we could simply std::move both into the capture rather
     // than using shared_ptrs :/
     const auto completion_callback =
-        [this, tempfile, input_buffer, start](
+        [this, tempfile, input_buffer, start, task_info](
                 hermes::request<rpc::pull_resource>&& req) { 
 
         uint32_t usecs = 
@@ -381,6 +381,8 @@ remote_resource_to_local_path_transferor::accept_transfer(
                     std::move(req), 
                     out);
         }
+
+        task_info->clear_context();
     };
 
     m_network_service->async_push(local_buffers, 

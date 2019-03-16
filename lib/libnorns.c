@@ -215,6 +215,14 @@ norns_error(norns_iotask_t* task, norns_stat_t* stats) {
         return NORNS_EBADARGS;
     }
 
+    // we might already have the task status cached in the task descriptor if
+    // the user called norns_wait() and the task completed
+    if(task->__t_status.st_status == NORNS_EFINISHED ||
+       task->__t_status.st_status == NORNS_EFINISHEDWERROR) {
+        *stats = task->__t_status;
+        return NORNS_SUCCESS;
+    }
+
     return send_status_request(task, stats);
 }
 
@@ -251,6 +259,10 @@ norns_wait(norns_iotask_t* task,
 
         if(stats.st_status == NORNS_EFINISHED || 
            stats.st_status == NORNS_EFINISHEDWERROR) {
+            // given that the task finished, we can save its completion status 
+            // so that future calls to norns_error() can retrieve it without
+            // having to contact the server
+            task->__t_status = stats;
             return NORNS_SUCCESS;
         }
 

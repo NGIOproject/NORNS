@@ -328,7 +328,6 @@ struct push_resource {
                     m_out_resource_name.c_str()};
         }
 
-
     private:
         std::string m_in_address;
         std::string m_in_nsid;
