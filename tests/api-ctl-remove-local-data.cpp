@@ -153,7 +153,7 @@ SCENARIO("remove a local POSIX file (admin)",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = nornsctl_wait(&task);
+                rv = nornsctl_wait(&task, NULL);
 
                 THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -187,7 +187,7 @@ SCENARIO("remove a local POSIX file (admin)",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = nornsctl_wait(&task);
+                rv = nornsctl_wait(&task, NULL);
 
                 THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -227,7 +227,7 @@ SCENARIO("remove a local POSIX file (admin)",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = nornsctl_wait(&task);
+                rv = nornsctl_wait(&task, NULL);
 
                 THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -265,7 +265,7 @@ SCENARIO("remove a local POSIX file (admin)",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = nornsctl_wait(&task);
+                rv = nornsctl_wait(&task, NULL);
 
                 THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -303,7 +303,7 @@ SCENARIO("remove a local POSIX file (admin)",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = nornsctl_wait(&task);
+                rv = nornsctl_wait(&task, NULL);
 
                 THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -342,7 +342,7 @@ SCENARIO("remove a local POSIX file (admin)",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = nornsctl_wait(&task);
+                rv = nornsctl_wait(&task, NULL);
 
                 THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -381,7 +381,7 @@ SCENARIO("remove a local POSIX file (admin)",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = nornsctl_wait(&task);
+                rv = nornsctl_wait(&task, NULL);
 
                 THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -420,7 +420,7 @@ SCENARIO("remove a local POSIX file (admin)",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = nornsctl_wait(&task);
+                rv = nornsctl_wait(&task, NULL);
 
                 THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -460,7 +460,7 @@ SCENARIO("remove a local POSIX file (admin)",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = nornsctl_wait(&task);
+                rv = nornsctl_wait(&task, NULL);
 
                 THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -490,7 +490,7 @@ SCENARIO("remove a local POSIX file (admin)",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = nornsctl_wait(&task);
+                rv = nornsctl_wait(&task, NULL);
 
                 THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -521,7 +521,7 @@ SCENARIO("remove a local POSIX file (admin)",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = nornsctl_wait(&task);
+                rv = nornsctl_wait(&task, NULL);
 
                 THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -548,7 +548,7 @@ SCENARIO("remove a local POSIX file (admin)",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = nornsctl_wait(&task);
+                rv = nornsctl_wait(&task, NULL);
 
                 THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -574,7 +574,7 @@ SCENARIO("remove a local POSIX file (admin)",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = nornsctl_wait(&task);
+                rv = nornsctl_wait(&task, NULL);
 
                 THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -607,7 +607,7 @@ SCENARIO("remove a local POSIX file (admin)",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = nornsctl_wait(&task);
+                rv = nornsctl_wait(&task, NULL);
 
                 THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -639,7 +639,7 @@ SCENARIO("remove a local POSIX file (admin)",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = nornsctl_wait(&task);
+                rv = nornsctl_wait(&task, NULL);
 
                 THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -671,7 +671,7 @@ SCENARIO("remove a local POSIX file (admin)",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = nornsctl_wait(&task);
+                rv = nornsctl_wait(&task, NULL);
 
                 THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -703,7 +703,7 @@ SCENARIO("remove a local POSIX file (admin)",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = nornsctl_wait(&task);
+                rv = nornsctl_wait(&task, NULL);
 
                 THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -734,7 +734,7 @@ SCENARIO("remove a local POSIX file (admin)",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = nornsctl_wait(&task);
+                rv = nornsctl_wait(&task, NULL);
 
                 THEN("nornsctl_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);

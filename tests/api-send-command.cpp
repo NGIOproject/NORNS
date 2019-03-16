@@ -144,7 +144,7 @@ SCENARIO("send control commands to urd", "[api::nornsctl_send_command]") {
                 REQUIRE(rv == NORNS_ETASKSPENDING);
 
                 AND_WHEN("all tasks complete") {
-                    rv = nornsctl_wait(&tasks[ntasks-1]);
+                    rv = nornsctl_wait(&tasks[ntasks-1], NULL);
 
                     THEN("nornsctl_send_command() returns NORNS_SUCCESS") {
                         rv = nornsctl_send_command(NORNSCTL_CMD_SHUTDOWN, NULL);

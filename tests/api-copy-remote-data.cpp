@@ -162,7 +162,7 @@ SCENARIO("errors copying local POSIX path to remote POSIX path",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -197,7 +197,7 @@ SCENARIO("errors copying local POSIX path to remote POSIX path",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -215,6 +215,7 @@ SCENARIO("errors copying local POSIX path to remote POSIX path",
             }
         }
 
+        //TODO this is no longer an error, we should move it to another section
         // - trying to copy an empty directory
         WHEN("copying an empty NORNS_LOCAL_PATH directory") {
 
@@ -232,12 +233,12 @@ SCENARIO("errors copying local POSIX path to remote POSIX path",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
 
-                    THEN("NORNS_SUCCESS and ENOENT are reported") {
+                    THEN("norns_error() reports NORNS_SUCCESS") {
                         norns_stat_t stats;
                         rv = norns_error(&task, &stats);
 
@@ -273,7 +274,7 @@ SCENARIO("errors copying local POSIX path to remote POSIX path",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -312,7 +313,7 @@ SCENARIO("errors copying local POSIX path to remote POSIX path",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -350,7 +351,7 @@ SCENARIO("errors copying local POSIX path to remote POSIX path",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -390,7 +391,7 @@ SCENARIO("errors copying local POSIX path to remote POSIX path",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -430,7 +431,7 @@ SCENARIO("errors copying local POSIX path to remote POSIX path",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -469,7 +470,7 @@ SCENARIO("errors copying local POSIX path to remote POSIX path",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -509,7 +510,7 @@ SCENARIO("errors copying local POSIX path to remote POSIX path",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -666,7 +667,7 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -714,7 +715,7 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -761,7 +762,7 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -810,7 +811,7 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -857,7 +858,7 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -904,7 +905,7 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -951,7 +952,7 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -998,7 +999,7 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -1045,7 +1046,7 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -1092,7 +1093,7 @@ SCENARIO("copy local POSIX file to remote POSIX file",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -1256,7 +1257,7 @@ SCENARIO("copy local POSIX file to remote POSIX subdir",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -1300,7 +1301,7 @@ SCENARIO("copy local POSIX file to remote POSIX subdir",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -1346,7 +1347,7 @@ SCENARIO("copy local POSIX file to remote POSIX subdir",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -1392,7 +1393,7 @@ SCENARIO("copy local POSIX file to remote POSIX subdir",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -1438,7 +1439,7 @@ SCENARIO("copy local POSIX file to remote POSIX subdir",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -1484,7 +1485,7 @@ SCENARIO("copy local POSIX file to remote POSIX subdir",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -1571,7 +1572,7 @@ SCENARIO("copy local memory region to remote POSIX file",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() return NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -1613,7 +1614,7 @@ SCENARIO("copy local memory region to remote POSIX file",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_error() reports NORNS_EFINISHED") {
                     norns_stat_t stats;
@@ -1721,7 +1722,7 @@ SCENARIO("errors copying local memory region to remote POSIX file",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() return NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -1806,7 +1807,7 @@ SCENARIO("errors copying local memory region to remote POSIX file",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() return NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -1869,7 +1870,7 @@ SCENARIO("errors copying local memory region to remote POSIX file",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() return NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -2088,7 +2089,7 @@ SCENARIO("copy local POSIX path to remote POSIX path involving links",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -2132,7 +2133,7 @@ SCENARIO("copy local POSIX path to remote POSIX path involving links",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -2176,7 +2177,7 @@ SCENARIO("copy local POSIX path to remote POSIX path involving links",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -2220,7 +2221,7 @@ SCENARIO("copy local POSIX path to remote POSIX path involving links",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -2265,7 +2266,7 @@ SCENARIO("copy local POSIX path to remote POSIX path involving links",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -2310,7 +2311,7 @@ SCENARIO("copy local POSIX path to remote POSIX path involving links",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -2472,7 +2473,7 @@ SCENARIO("errors copying remote POSIX path to local POSIX path",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -2508,7 +2509,7 @@ SCENARIO("errors copying remote POSIX path to local POSIX path",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -2526,6 +2527,7 @@ SCENARIO("errors copying remote POSIX path to local POSIX path",
             }
         }
 
+        //TODO this is no longer an error, we should move it to another section
         // - trying to copy an empty directory
         WHEN("copying an empty NORNS_LOCAL_PATH directory") {
 
@@ -2544,7 +2546,7 @@ SCENARIO("errors copying remote POSIX path to local POSIX path",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -2586,7 +2588,7 @@ SCENARIO("errors copying remote POSIX path to local POSIX path",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -2627,7 +2629,7 @@ SCENARIO("errors copying remote POSIX path to local POSIX path",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -2665,7 +2667,7 @@ SCENARIO("errors copying remote POSIX path to local POSIX path",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -2705,7 +2707,7 @@ SCENARIO("errors copying remote POSIX path to local POSIX path",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -2745,7 +2747,7 @@ SCENARIO("errors copying remote POSIX path to local POSIX path",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -2784,7 +2786,7 @@ SCENARIO("errors copying remote POSIX path to local POSIX path",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -2824,7 +2826,7 @@ SCENARIO("errors copying remote POSIX path to local POSIX path",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -2982,7 +2984,7 @@ SCENARIO("copy remote POSIX file to local POSIX file",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() return NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -3029,7 +3031,7 @@ SCENARIO("copy remote POSIX file to local POSIX file",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() return NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -3075,7 +3077,7 @@ SCENARIO("copy remote POSIX file to local POSIX file",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -3123,7 +3125,7 @@ SCENARIO("copy remote POSIX file to local POSIX file",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -3171,7 +3173,7 @@ SCENARIO("copy remote POSIX file to local POSIX file",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -3219,7 +3221,7 @@ SCENARIO("copy remote POSIX file to local POSIX file",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -3267,7 +3269,7 @@ SCENARIO("copy remote POSIX file to local POSIX file",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -3315,7 +3317,7 @@ SCENARIO("copy remote POSIX file to local POSIX file",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -3363,7 +3365,7 @@ SCENARIO("copy remote POSIX file to local POSIX file",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -3411,7 +3413,7 @@ SCENARIO("copy remote POSIX file to local POSIX file",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -3573,7 +3575,7 @@ SCENARIO("copy remote POSIX subdir to local POSIX subdir",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -3618,7 +3620,7 @@ SCENARIO("copy remote POSIX subdir to local POSIX subdir",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -3665,7 +3667,7 @@ SCENARIO("copy remote POSIX subdir to local POSIX subdir",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -3712,7 +3714,7 @@ SCENARIO("copy remote POSIX subdir to local POSIX subdir",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -3759,7 +3761,7 @@ SCENARIO("copy remote POSIX subdir to local POSIX subdir",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -3806,7 +3808,7 @@ SCENARIO("copy remote POSIX subdir to local POSIX subdir",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -3985,7 +3987,7 @@ SCENARIO("copy remote POSIX path to local POSIX path involving links",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -4029,7 +4031,7 @@ SCENARIO("copy remote POSIX path to local POSIX path involving links",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -4073,7 +4075,7 @@ SCENARIO("copy remote POSIX path to local POSIX path involving links",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -4117,7 +4119,7 @@ SCENARIO("copy remote POSIX path to local POSIX path involving links",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -4162,7 +4164,7 @@ SCENARIO("copy remote POSIX path to local POSIX path involving links",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
@@ -4207,7 +4209,7 @@ SCENARIO("copy remote POSIX path to local POSIX path involving links",
                 REQUIRE(task.t_id != 0);
 
                 // wait until the task completes
-                rv = norns_wait(&task);
+                rv = norns_wait(&task, NULL);
 
                 THEN("norns_wait() returns NORNS_SUCCESS") {
                     REQUIRE(rv == NORNS_SUCCESS);
