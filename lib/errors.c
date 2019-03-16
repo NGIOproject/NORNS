@@ -35,6 +35,7 @@ const char* const norns_errlist[NORNS_ERRMAX + 1] = {
     [ERR_REMAP(NORNS_EBADREQUEST)] = "Bad request",
     [ERR_REMAP(NORNS_EBADARGS)] = "Bad arguments",
     [ERR_REMAP(NORNS_ENOMEM)] = "Cannot allocate memory",
+    [ERR_REMAP(NORNS_ETIMEOUT)] = "Timeout exceeded",
 
     /* communication errors */
     [ERR_REMAP(NORNS_ECONNFAILED)] = "Cannot connect to daemon",

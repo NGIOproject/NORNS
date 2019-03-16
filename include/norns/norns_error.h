@@ -45,12 +45,13 @@ extern "C" {
 #define NORNS_EBADARGS            -2
 #define NORNS_EBADREQUEST         -3
 #define NORNS_ENOMEM              -4
+#define NORNS_ETIMEOUT            -5
 
 /* errors about communication */
-#define NORNS_ECONNFAILED         -5
-#define NORNS_ERPCSENDFAILED      -6
-#define NORNS_ERPCRECVFAILED      -7
-#define NORNS_EACCEPTPAUSED       -8
+#define NORNS_ECONNFAILED         -6
+#define NORNS_ERPCSENDFAILED      -7
+#define NORNS_ERPCRECVFAILED      -8
+#define NORNS_EACCEPTPAUSED       -9
 
 /* errors about jobs */
 #define NORNS_EJOBEXISTS         -10

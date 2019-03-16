@@ -32,9 +32,9 @@
 #define NORNS_API_VERSION 10
 #endif
 
-#include <sys/types.h>
-#include <stdint.h>
-#include <assert.h>
+#include <stdint.h>     /* For uint32_t et al. */
+#include <stdbool.h>    /* For bool */
+#include <time.h>       /* For struct timespec */
 
 #include "norns_types.h"
 #include "norns_error.h"
@@ -68,7 +68,8 @@ norns_submit(norns_iotask_t* task) __THROW;
 
 /* wait for the completion of the I/O task associated to 'task' */
 norns_error_t 
-norns_wait(norns_iotask_t* task) __THROW;
+norns_wait(norns_iotask_t* task,
+           const struct timespec* timeout) __THROW;
 
 /* Try to cancel an asynchronous I/O task associated with task */
 norns_error_t 
