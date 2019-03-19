@@ -94,8 +94,23 @@ pid_t urd::daemonize() {
         return 0;
     }
 
+    // We need to destroy the global logger before calling fork. Otherwise the
+    // logger will not function properly since its internal thread will not
+    // be duplicated by fork(). Furthermore, if we don't destroy pre-fork()
+    // and attempt to replace it post-fork(), the logger destructor will attempt
+    // to join the (now invalid) thread and end up blocking forever. To avoid
+    // this (and since we want to be able to output messages from all 
+    // processes), we destroy it now and recreate it post-fork() both in the
+    // parent process and in the child.
+    logger::destroy_global_logger();
+
     /* Fork off the parent process */
-    if((pid = fork()) < 0) {
+    pid = fork();
+
+    // re-initialize logging facilities (post-fork)
+    init_logger();
+
+    if(pid < 0) {
         LOGGER_ERRNO("Failed to create child process");
         exit(EXIT_FAILURE);
     }
@@ -1536,7 +1551,7 @@ urd_error urd::check_shutdown() {
 
 int urd::run() {
 
-    // initialize logging facilities
+    // initialize logging facilities (pre-fork)
     init_logger();
 
     // validate settings

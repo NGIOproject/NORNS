@@ -131,6 +131,10 @@ public:
         return global_logger();
     }
 
+    static inline void destroy_global_logger() {
+        global_logger().reset();
+    }
+
 // some macros to make it more convenient to use the global logger
 #define LOGGER_INFO(...)                                    \
 do {                                                        \
