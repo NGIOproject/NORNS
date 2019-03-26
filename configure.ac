@@ -81,23 +81,66 @@ fi
 ################################################################################
 is_enabled_build_tests="no"
 
+AC_MSG_CHECKING([whether tests should be built])
 AC_ARG_ENABLE([tests],
     AS_HELP_STRING([--enable-tests], [Build norns self tests]), 
     [
-        if test x$enableval = xyes -o x$enableval = x;
-        then
-            is_enabled_build_tests="yes"
-        else if test x$enableval = xno -o x$enableval = x;
-            then
-                is_enabled_build_tests="no"
-            else
-                AC_MSG_ERROR([This option can only be given 'yes' or 'no' values])
-            fi
-        fi
+        AS_IF(
+            [ test "x$enableval" = "xyes" -o \
+                   "x$enableval" = "x" ],
+            [
+                is_enabled_build_tests="yes"
+                AC_MSG_RESULT([yes])
+            ],
+            [
+                AS_IF(
+                    [ test "x$enableval" = "xno" ],
+                    [
+                        is_enabled_build_tests="no"
+                        AC_MSG_RESULT([no])
+                    ],
+                    [ AC_MSG_ERROR([This option can only be given 'yes' or 'no' values]) ]
+                )
+            ]
+
+        )
     ],
-    [ is_enabled_build_tests="no" ])
+    [ AC_MSG_RESULT([no]) ])
 
 AM_CONDITIONAL([BUILD_TESTS], test x$is_enabled_build_tests = xyes)
+
+
+################################################################################
+### check whether mpi tests should be built
+################################################################################
+
+is_enabled_build_mpi_tests="no"
+AC_MSG_CHECKING([whether MPI tests should be built])
+AC_ARG_ENABLE([mpi-tests],
+    AS_HELP_STRING([--enable-mpi-tests], [Build NORNS MPI tests]),
+    [
+        AS_IF(
+            [ test "x$enableval" = "xyes" -o \
+                   "x$enableval" = "x" ],
+            [ 
+                is_enabled_build_mpi_tests="yes" 
+                AC_MSG_RESULT([yes])
+            ],
+            [
+                AS_IF(
+                    [ test "x$enableval" = "xno" ],
+                    [ 
+                        is_enabled_build_mpi_tests="no" 
+                        AC_MSG_RESULT([no])
+                    ],
+                    [ AC_MSG_ERROR([This option can only be given 'yes' or 'no' values]) ]
+                )
+            ]
+        )
+    ],
+    [ AC_MSG_RESULT([no]) ])
+
+AM_CONDITIONAL([BUILD_MPI_TESTS], test x$is_enabled_build_mpi_tests = xyes)
 
 
 ################################################################################
@@ -121,6 +164,16 @@ AS_IF([test "x$is_enabled_build_tests" = "xyes"],
       [ AX_BOOST_REGEX 
         AC_CONFIG_FILES(tests/Makefile)
       ], [])
+
+# only check for MPI if we are building MPI tests
+AS_IF(
+    [ test "x$is_enabled_build_mpi_tests" = "xyes" ], 
+    [ AX_MPI(
+        [],
+        [AC_MSG_ERROR([MPI tests require MPI, but MPI was not found in this system])])
+      AC_CONFIG_FILES(tests/mpi/Makefile)
+    ], [])
+
 
 # check for mercury
 PKG_CHECK_MODULES([MERCURY], [mercury >= 0.26])

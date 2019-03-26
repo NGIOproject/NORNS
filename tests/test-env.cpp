@@ -233,7 +233,7 @@ void test_env::notify_success() {
     }
 }
 
-std::tuple<const char*, bfs::path> 
+std::tuple<std::string, bfs::path> 
 test_env::create_namespace(const std::string& nsid, const bfs::path& mnt, 
                            size_t quota) {
 
@@ -246,7 +246,7 @@ test_env::create_namespace(const std::string& nsid, const bfs::path& mnt,
 
     m_namespaces.emplace(nsid, abs_dir);
 
-    return std::make_tuple(nsid.c_str(), abs_dir);
+    return std::make_tuple(nsid, abs_dir);
 }
 
 bfs::path test_env::add_to_namespace(const std::string& nsid, const bfs::path& dirname) {

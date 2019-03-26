@@ -27,34 +27,33 @@
 
 include $(top_srcdir)/config/Make-inc.mk
 
+CXX = @MPICXX@
+
 AM_CPPFLAGS = -I m4
 
-#  XXX if WITH_MPI
-if BUILD_MPI_TESTS
-SUBDIRS = mpi
-endif
+TESTS = mpi_tests
 
-TESTS = api core
-
-check_PROGRAMS = $(TESTS) api_interactive
+check_PROGRAMS = mpi_tests
 
 COMMON_SOURCES = \
-	compare-files.cpp \
-	compare-files.hpp \
+	$(END)
+
+mpi_tests_SOURCES = \
+	$(top_srcdir)/tests/catch.hpp \
+	mpi-tests-main.cpp \
+	mpi-remote-transfers.cpp \
+	../fake-daemon.cpp \
+	../fake-daemon.hpp \
+	../test-env.cpp \
+	../test-env.hpp \
 	config-template.cpp \
 	config-template.hpp \
-	fake-daemon.cpp \
-	fake-daemon.hpp \
-	test-env.cpp \
-	test-env.hpp \
+	$(COMMON_SOURCES) \
 	$(END)
 
-api_CXXFLAGS = \
-	-Wall -Wextra \
-	$(END)
-
-api_CPPFLAGS = \
+mpi_tests_CPPFLAGS = \
 	@BOOST_CPPFLAGS@ \
+	-I$(top_srcdir)/tests \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/rpc \
 	-I$(top_srcdir)/src \
@@ -62,34 +61,12 @@ api_CPPFLAGS = \
 	-D__NORNS_DEBUG__ \
 	$(END)
 
-api_SOURCES = \
-	catch.hpp \
-	api-main.cpp \
-	api-namespace-register.cpp \
-	api-namespace-unregister.cpp \
-	api-copy-local-data.cpp \
-	api-copy-remote-data.cpp \
-	api-remove-local-data.cpp \
-	api-job-register.cpp \
-	api-job-update.cpp \
-	api-job-unregister.cpp \
-	api-process-add.cpp \
-	api-process-remove.cpp \
-	api-resource-init.cpp \
-	api-task-init.cpp \
-	api-task-submit.cpp \
-	api-task-status.cpp \
-	api-send-command.cpp \
-	api-ctl-copy-local-data.cpp \
-	api-ctl-task-init.cpp \
-	api-ctl-task-submit.cpp \
-	api-ctl-task-status.cpp \
-	api-ctl-copy-remote-data.cpp \
-	api-ctl-remove-local-data.cpp \
-	$(COMMON_SOURCES) \
+mpi_tests_CXXFLAGS = \
+	-Wall -Wextra \
 	$(END)
-
-api_LDFLAGS = \
+	
+mpi_tests_LDFLAGS = \
+	@MPILIBS@ \
 	@BOOST_ASIO_LIB@ \
 	@BOOST_LDFLAGS@	\
 	@BOOST_FILESYSTEM_LIB@ \
@@ -105,7 +82,7 @@ api_LDFLAGS = \
 	$(top_builddir)/lib/libnornsctl_debug.la \
 	$(END)
 
-EXTRA_api_DEPENDENCIES = \
+EXTRA_mpi_tests_DEPENDENCIES = \
 	$(top_builddir)/src/liburd_aux.la \
 	$(top_builddir)/lib/libnorns_debug.la \
 	$(top_builddir)/lib/libnornsctl_debug.la \
@@ -127,68 +104,3 @@ config-template.cpp: Makefile $(top_srcdir)/etc/norns.conf.in
 		$(edit) $(top_srcdir)/etc/norns.conf.in ; \
 		echo ";"; \
 	) > $@
-
-# The following produces a version of the api tests where the urd daemon 
-# is not started automatically by the test, so that a running daemon can be
-# tested interactively
-api_interactive_CXXFLAGS = \
-	$(api_CXXFLAGS)
-api_interactive_CPPFLAGS = \
-	$(api_CPPFLAGS) \
-	-DUSE_REAL_DAEMON \
-	-D__NORNS_DEBUG__
-api_interactive_SOURCES = \
-	$(api_SOURCES)
-api_interactive_LDFLAGS = \
-	$(api_LDFLAGS)
-EXTRA_api_interactive_DEPENDENCIES = \
-	$(EXTRA_api_DEPENDENCIES)
-
-
-core_CXXFLAGS = \
-	-Wall -Wextra \
-	$(END)
-
-core_CPPFLAGS = \
-	@BOOST_CPPFLAGS@ \
-	-I$(top_srcdir)/include \
-	-I$(top_srcdir)/rpc \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/externals/hermes/include \
-	-D__NORNS_DEBUG__ \
-	$(END)
-
-core_SOURCES = \
-	catch.hpp \
-	api-main.cpp \
-	utils-path-normalize.cpp \
-	utils-tar.cpp \
-	$(COMMON_SOURCES) \
-	$(END)
-
-core_LDFLAGS = \
-	-no-install \
-	@BOOST_ASIO_LIB@ \
-	@BOOST_LDFLAGS@	\
-	@BOOST_FILESYSTEM_LIB@ \
-	@BOOST_PROGRAM_OPTIONS_LIB@	\
-	@BOOST_SYSTEM_LIB@ \
-	@BOOST_THREAD_LIB@ \
-	@BOOST_REGEX_LIB@ \
-	@PROTOBUF_LIBS@ \
-	$(top_builddir)/src/liburd_aux.la \
-	$(top_builddir)/lib/libnorns_debug.la \
-	$(top_builddir)/lib/libnornsctl_debug.la \
-	$(END)
-
-EXTRA_core_DEPENDENCIES = \
-	$(top_builddir)/src/liburd_aux.la \
-	$(top_builddir)/lib/libnorns_debug.la \
-	$(top_builddir)/lib/libnornsctl_debug.la \
-	$(END)
-
-mpi_CXXFLAGS = \
-	-Wall -Wextra
-
-MOSTLYCLEANFILES = \
-	config-template.cpp
