@@ -25,56 +25,87 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#define CATCH_CONFIG_RUNNER
+#include <stdexcept>
+#include <stdlib.h>
 #include "mpi-helpers.hpp"
-#include "commands.hpp"
-#include "catch.hpp"
 
-bool
-is_top_level_section(const Catch::SectionInfo& info) {
-    const auto top_level_name("Given: ");
-    return info.name.rfind(top_level_name, info.name.length()) !=
-           std::string::npos;
+#ifdef MPI_TEST_DEBUG
+#include <iostream>
+#include <sstream>
+#endif // MPI_TEST_DEBUG
+
+
+namespace mpi {
+
+void
+initialize(int* argc, char** argv[]) {
+    if(::MPI_Init(argc, argv) != MPI_SUCCESS) {
+        throw std::runtime_error("Failed to initialize MPI");
+    }
 }
 
-struct TestListener : Catch::TestEventListenerBase {
-
-    using TestEventListenerBase::TestEventListenerBase; // inherit constructor
-
-    virtual void 
-    sectionStarting(const Catch::SectionInfo& sectionInfo) override {
-
-        (void) sectionInfo;
-
-        MPI_TEST_RUN_IF(MPI_RANK_EQ(0)) {
-            mpi::broadcast_command(server_command::restart);
-            mpi::barrier(); // wait until servers finish starting up:w
-        }
+void
+finalize() {
+    if(::MPI_Finalize() != MPI_SUCCESS) {
+        throw std::runtime_error("Failed to finalize MPI");
     }
+}
 
-    virtual void 
-    sectionEnded(const Catch::SectionStats& sectionStats) override {
-        (void) sectionStats;
-    }
-
-};
-
-CATCH_REGISTER_LISTENER(TestListener)
 
 int
-main(int argc, char* argv[]) {
-
-    mpi::initialize(&argc, &argv);
-
-    int result = Catch::Session().run(argc, argv);
-
-    MPI_TEST_RUN_IF(MPI_RANK_EQ(0)) {
-        std::cerr << "at main()\n";
-        mpi::barrier();
-        mpi::broadcast_command(server_command::shutdown);
+get_rank() {
+    int world_rank;
+    if(::MPI_Comm_rank(MPI_COMM_WORLD, &world_rank) != MPI_SUCCESS) {
+        throw std::runtime_error("Failed to determine own rank");
     }
 
-    mpi::finalize();
-
-    return result;
+    return world_rank;
 }
+
+void
+barrier() {
+
+#ifdef MPI_TEST_DEBUG
+    std::cerr << __PRETTY_FUNCTION__ << "\n";
+    std::cerr << "Entering MPI_Barrier()\n";
+#endif // MPI_TEST_DEBUG
+
+    ::MPI_Barrier(MPI_COMM_WORLD);
+
+#ifdef MPI_TEST_DEBUG
+    std::cerr << "Exiting MPI_Barrier()\n";
+#endif // MPI_TEST_DEBUG
+
+}
+
+server_command
+broadcast_command(server_command cmd) {
+
+    int c = static_cast<int>(cmd);
+
+#ifdef MPI_TEST_DEBUG
+    std::stringstream ss;
+    ss << __PRETTY_FUNCTION__ << "(" << c << ")" << "\n";
+    std::cerr << ss.str();
+    std::cerr << "Entering MPI_Bcast()\n";
+#endif // MPI_TEST_DEBUG
+
+    ::MPI_Bcast(&c, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+#ifdef MPI_TEST_DEBUG
+
+    MPI_TEST_RUN_IF(MPI_RANK_NEQ(0)) {
+        std::stringstream ss;
+        ss << "command was " << c << "\n";
+        std::cerr << ss.str();
+    }
+#endif
+
+#ifdef MPI_TEST_DEBUG
+    std::cerr << "Exiting MPI_Bcast()\n";
+#endif // MPI_TEST_DEBUG
+
+    return static_cast<server_command>(c);
+}
+
+} // namespace mpi

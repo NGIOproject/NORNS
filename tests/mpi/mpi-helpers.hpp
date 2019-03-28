@@ -25,56 +25,35 @@
  * <http://www.gnu.org/licenses/>.                                       *
  *************************************************************************/
 
-#define CATCH_CONFIG_RUNNER
-#include "mpi-helpers.hpp"
+#ifndef MPI_HELPERS_HPP
+#define MPI_HELPERS_HPP
+
+#include <mpi.h>
 #include "commands.hpp"
-#include "catch.hpp"
 
-bool
-is_top_level_section(const Catch::SectionInfo& info) {
-    const auto top_level_name("Given: ");
-    return info.name.rfind(top_level_name, info.name.length()) !=
-           std::string::npos;
-}
+// #define MPI_TEST_DEBUG
 
-struct TestListener : Catch::TestEventListenerBase {
+namespace mpi {
 
-    using TestEventListenerBase::TestEventListenerBase; // inherit constructor
+void
+initialize(int* argc, char** argv[]);
 
-    virtual void 
-    sectionStarting(const Catch::SectionInfo& sectionInfo) override {
-
-        (void) sectionInfo;
-
-        MPI_TEST_RUN_IF(MPI_RANK_EQ(0)) {
-            mpi::broadcast_command(server_command::restart);
-            mpi::barrier(); // wait until servers finish starting up:w
-        }
-    }
-
-    virtual void 
-    sectionEnded(const Catch::SectionStats& sectionStats) override {
-        (void) sectionStats;
-    }
-
-};
-
-CATCH_REGISTER_LISTENER(TestListener)
+void
+finalize();
 
 int
-main(int argc, char* argv[]) {
+get_rank();
 
-    mpi::initialize(&argc, &argv);
+server_command
+broadcast_command(server_command cmd = server_command::accept);
 
-    int result = Catch::Session().run(argc, argv);
+void
+barrier();
 
-    MPI_TEST_RUN_IF(MPI_RANK_EQ(0)) {
-        std::cerr << "at main()\n";
-        mpi::barrier();
-        mpi::broadcast_command(server_command::shutdown);
-    }
+} // namespace mpi
 
-    mpi::finalize();
+#define MPI_RANK_EQ(r) (mpi::get_rank() == r)
+#define MPI_RANK_NEQ(r) (mpi::get_rank() != r)
+#define MPI_TEST_RUN_IF(expr) if(expr)
 
-    return result;
-}
+#endif // MPI_HELPERS_HPP
