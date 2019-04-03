@@ -26,16 +26,14 @@
  *************************************************************************/
 
 #define CATCH_CONFIG_RUNNER
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
+#include <sstream>
 #include "mpi-helpers.hpp"
 #include "commands.hpp"
 #include "catch.hpp"
 
-bool
-is_top_level_section(const Catch::SectionInfo& info) {
-    const auto top_level_name("Given: ");
-    return info.name.rfind(top_level_name, info.name.length()) !=
-           std::string::npos;
-}
+namespace bfs = boost::filesystem;
 
 struct TestListener : Catch::TestEventListenerBase {
 
@@ -43,20 +41,13 @@ struct TestListener : Catch::TestEventListenerBase {
 
     virtual void 
     sectionStarting(const Catch::SectionInfo& sectionInfo) override {
-
         (void) sectionInfo;
-
-        MPI_TEST_RUN_IF(MPI_RANK_EQ(0)) {
-            mpi::broadcast_command(server_command::restart);
-            mpi::barrier(); // wait until servers finish starting up:w
-        }
     }
 
     virtual void 
     sectionEnded(const Catch::SectionStats& sectionStats) override {
         (void) sectionStats;
     }
-
 };
 
 CATCH_REGISTER_LISTENER(TestListener)
@@ -64,17 +55,36 @@ CATCH_REGISTER_LISTENER(TestListener)
 int
 main(int argc, char* argv[]) {
 
+    Catch::Session session;
+
+    std::string hostfile;
+
+    auto cli = session.cli()
+                | Catch::clara::Opt(hostfile, "filename")
+                ["-H"]
+                ["--hosts-file"]
+                ("file containing the hosts running the test (one per line)")
+                .required();
+
+    session.cli(cli);
+
+    int rv;
+    if((rv = session.applyCommandLine(argc, argv)) != 0) {
+        return rv;
+    }
+
+    if(hostfile.empty()) {
+        std::cerr << "Missing host file.\n";
+        return 1;
+    }
+
+    mpi::read_hosts(hostfile);
+
     mpi::initialize(&argc, &argv);
 
-    int result = Catch::Session().run(argc, argv);
-
-    MPI_TEST_RUN_IF(MPI_RANK_EQ(0)) {
-        std::cerr << "at main()\n";
-        mpi::barrier();
-        mpi::broadcast_command(server_command::shutdown);
-    }
+    rv = session.run(argc, argv);
 
     mpi::finalize();
 
-    return result;
+    return rv;
 }

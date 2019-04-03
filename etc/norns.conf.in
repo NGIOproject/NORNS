@@ -19,7 +19,7 @@ global_settings: [
   pidfile: "@localstatedir@/urd.pid",
 
   # address to bind to
-  bind_address: "127.0.0.1",
+  bind_address: "127.0.0.1:42000",
   
   # incoming port for remote connections
   remote_port: 42000,

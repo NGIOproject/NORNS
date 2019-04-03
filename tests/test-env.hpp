@@ -44,7 +44,7 @@ namespace bfs = boost::filesystem;
 
 struct test_env {
 
-    test_env(bool requires_remote_peer = false);
+    test_env();
     test_env(const fake_daemon_cfg& cfg);
     ~test_env();
 
@@ -65,6 +65,10 @@ struct test_env {
 
     void notify_success();
     void cleanup();
+
+    std::string
+    daemon_lookup_address() const;
+
 
     bool m_test_succeeded;
     std::string m_uid;

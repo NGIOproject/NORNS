@@ -30,15 +30,18 @@
 #include <iostream>
 #endif
 
+#include <boost/filesystem/fstream.hpp>
 #include <chrono>
 #include "nornsctl.h"
 #include "fake-daemon.hpp"
+
+namespace bfs = boost::filesystem;
 
 const norns::config::settings fake_daemon::default_cfg(
     "test_urd", /* progname */
     false, /* daemonize */
     false, /* use syslog */
-    false, /* use console */
+    true, /* use console */
     {},// "./test_urd.log", /* log file */
     0, /* unused */
     false, /* dry run */
@@ -169,6 +172,9 @@ void fake_daemon::run() {
                     throw std::runtime_error("Failed to reset Catch2 signal handler");
                 }
             }
+
+            // disown from father
+            ::setsid();
 
             m_daemon.configure(m_config);
             m_daemon.run();

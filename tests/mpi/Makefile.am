@@ -44,6 +44,7 @@ mpi_tests_SOURCES = \
 	mpi-remote-transfers.cpp \
 	mpi-helpers.hpp \
 	mpi-helpers.cpp \
+	commands.hpp \
 	../fake-daemon.cpp \
 	../fake-daemon.hpp \
 	../test-env.cpp \

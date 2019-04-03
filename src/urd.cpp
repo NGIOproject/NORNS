@@ -63,7 +63,66 @@
 #include "hermes.hpp"
 #include "rpcs.hpp"
 #include "context.hpp"
+#include "utils/file-handle.hpp"
 #include "urd.hpp"
+
+namespace {
+
+void
+write_pidfile(const bfs::path& pidfile) {
+
+    /* Check if daemon already exists:
+     * First instance of the daemon will lock the file so that other
+     * instances understand that an instance is already running. 
+     */
+    norns::utils::file_handle fh(
+        ::open(pidfile.c_str(), O_RDWR | O_CREAT, 0640));
+
+    if(!fh) {
+        LOGGER_ERRNO("Failed to create daemon lock file");
+        exit(EXIT_FAILURE);
+    }
+    
+    if(::lockf(fh.native(), F_TLOCK, 0) < 0) {
+        LOGGER_ERRNO("Failed to acquire lock on pidfile");
+        LOGGER_ERROR("Another instance of this daemon may already be running");
+        exit(EXIT_FAILURE);
+    }
+
+    /* record pid in lockfile */
+    std::string pid(std::to_string(::getpid()));
+
+    ssize_t n = static_cast<ssize_t>(pid.length());
+
+    if(::write(fh.native(), pid.c_str(), n) != n) {
+        LOGGER_ERRNO("Failed to write pidfile");
+        exit(EXIT_FAILURE);
+    }
+}
+
+bool
+append_to_pidfile(const bfs::path& pidfile, 
+                  const std::string& entry) {
+
+    const std::string tabbed_entry("\n" + entry + "\n");
+
+    norns::utils::file_handle fh(
+            ::open(pidfile.c_str(), O_WRONLY | O_APPEND, 0640));
+
+    if(!fh) {
+        return false;
+    }
+
+    ssize_t n = static_cast<ssize_t>(tabbed_entry.length());
+
+    if(::write(fh.native(), tabbed_entry.c_str(), n) != n) {
+        return false;
+    }
+
+    return true;
+}
+
+}
 
 namespace norns {
 
@@ -164,29 +223,8 @@ pid_t urd::daemonize() {
      * First instance of the daemon will lock the file so that other
      * instances understand that an instance is already running. 
      */
-    int pfd;
-    
-    if((pfd = open(m_settings->pidfile().c_str(), O_RDWR | O_CREAT, 0640)) == -1) {
-        LOGGER_ERRNO("Failed to create daemon lock file");
-        exit(EXIT_FAILURE);
-    } 
+    ::write_pidfile(m_settings->pidfile());
 
-    if(lockf(pfd, F_TLOCK, 0) < 0) {
-        LOGGER_ERRNO("Failed to acquire lock on pidfile");
-        LOGGER_ERROR("Another instance of this daemon may already be running");
-        exit(EXIT_FAILURE);
-    }
-
-    /* record pid in lockfile */
-    std::string pidstr(std::to_string(getpid()));
-
-    if(write(pfd, pidstr.c_str(), pidstr.length()) != 
-            static_cast<ssize_t>(pidstr.length())) {
-        LOGGER_ERRNO("Failed to write pidfile");
-        exit(EXIT_FAILURE);
-    }
-
-    close(pfd);
     close(dev_null);
 
     /* Manage signals */
@@ -1130,15 +1168,10 @@ void urd::init_event_handlers() {
     ::umask(old_mask);
 
     try {
-
-        const std::string bind_address = 
-            m_settings->bind_address() + ":" +
-            std::to_string(m_settings->remote_port());
-
         m_network_service = 
             std::make_shared<hermes::async_engine>(
                     hermes::transport::ofi_tcp,
-                    bind_address,
+                    m_settings->configured_address(),
                     true);
     }
     catch(const std::exception& e) {
@@ -1146,20 +1179,6 @@ void urd::init_event_handlers() {
         teardown();
         exit(EXIT_FAILURE);
     }
-
-#if 0
-    // setup socket for remote connections
-    try {
-        m_ipc_service->register_endpoint(m_settings->remote_port());
-    }
-    catch(const std::exception& e) {
-        LOGGER_ERROR("Failed to create socket for remote connections: {}",
-                e.what());
-        teardown();
-        exit(EXIT_FAILURE);
-    }
-#endif
-
 
     LOGGER_INFO(" * Installing message handlers...");
 
@@ -1466,7 +1485,8 @@ void urd::print_greeting() {
     LOGGER_INFO("{}", gsep);
 }
 
-void urd::print_configuration() {
+void 
+urd::print_configuration() {
     LOGGER_INFO("");
     LOGGER_INFO("[[ Configuration ]]");
     LOGGER_INFO("  - running as daemon?: {}", (m_settings->daemonize() ? "yes" : "no"));
@@ -1485,9 +1505,23 @@ void urd::print_configuration() {
     LOGGER_INFO("  - control socket: {}", m_settings->control_socket());
     LOGGER_INFO("  - global socket: {}", m_settings->global_socket());
     LOGGER_INFO("  - staging directory: {}", m_settings->staging_directory());
-    LOGGER_INFO("  - port for remote requests: {}", m_settings->remote_port());
+    LOGGER_INFO("  - bind address: {}", m_settings->configured_address());
     LOGGER_INFO("  - workers: {}", m_settings->workers_in_pool());
     LOGGER_INFO("");
+}
+
+void
+urd::store_runtime_configuration() {
+
+    const std::string addr(m_network_service->self_address());
+
+    m_settings->lookup_address(addr);
+
+    if(!::append_to_pidfile(m_settings->pidfile(), addr)) {
+        LOGGER_ERRNO("Failed to append entry to pidfile");
+        exit(EXIT_FAILURE);
+    }
+
 }
 
 void urd::print_farewell() {
@@ -1570,6 +1604,11 @@ int urd::run() {
         teardown();
         return EXIT_SUCCESS;
     }
+    else {
+        /* keep a pidfile even in foreground mode so that we can detect
+         * concurrent daemons with the same configuration */
+        ::write_pidfile(m_settings->pidfile());
+    }
 
     // print useful information
     print_greeting();
@@ -1587,12 +1626,16 @@ int urd::run() {
     // everything is set up
     load_transfer_plugins();
 
+    // store runtime values of several settings in m_settings
+    store_runtime_configuration();
+
     // start the listener for remote transfers
     // N.B. This call returns immediately
     m_network_service->run();
 
     LOGGER_INFO("");
     LOGGER_INFO("[[ Start up successful, awaiting requests... ]]");
+    LOGGER_INFO("[[   (public address: {}) ]]", m_settings->lookup_address());
 
     // N.B. This call blocks here, which means that everything after it
     // will only run when a shutdown command is received

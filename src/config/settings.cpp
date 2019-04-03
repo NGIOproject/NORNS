@@ -58,7 +58,7 @@ settings::settings(const std::string& progname,
                    uint32_t dry_run_duration, 
                    const bfs::path& global_socket, 
                    const bfs::path& control_socket, 
-                   const std::string& bind_address,
+                   const std::string& configured_address,
                    uint32_t remote_port,
                    const bfs::path& pidfile, 
                    uint32_t workers,
@@ -76,7 +76,8 @@ settings::settings(const std::string& progname,
     m_dry_run_duration(dry_run_duration),
     m_global_socket(global_socket),
     m_control_socket(control_socket),
-    m_bind_address(bind_address),
+    m_configured_address(configured_address),
+    m_lookup_address(),
     m_remote_port(remote_port),
     m_daemon_pidfile(pidfile),
     m_workers_in_pool(workers),
@@ -97,7 +98,8 @@ settings::load_defaults() {
     m_dry_run_duration = defaults::dry_run_duration;
     m_global_socket = defaults::global_socket;
     m_control_socket = defaults::control_socket;
-    m_bind_address = defaults::bind_address;
+    m_configured_address = defaults::bind_address;
+    m_lookup_address.clear();
     m_remote_port = defaults::remote_port;
     m_daemon_pidfile = defaults::pidfile;
     m_workers_in_pool = defaults::workers_in_pool;
@@ -134,7 +136,9 @@ settings::load_from_file(const bfs::path& filename) {
     m_dry_run_duration = defaults::dry_run_duration;
     m_global_socket = gsettings.get_as<bfs::path>(keywords::global_socket);
     m_control_socket = gsettings.get_as<bfs::path>(keywords::control_socket);
-    m_bind_address = gsettings.get_as<std::string>(keywords::bind_address);
+    m_configured_address = 
+        gsettings.get_as<std::string>(keywords::bind_address);
+    m_lookup_address.clear();
     m_remote_port = gsettings.get_as<uint32_t>(keywords::remote_port);
     m_daemon_pidfile = gsettings.get_as<bfs::path>(keywords::pidfile);
     m_workers_in_pool = gsettings.get_as<uint32_t>(keywords::workers);
@@ -159,24 +163,30 @@ settings::load_from_file(const bfs::path& filename) {
 
 std::string 
 settings::to_string() const {
-    std::string str = std::string("settings {\n") +
-           "  m_progname: "          + m_progname + ",\n" +
-           "  m_daemonize: "         + (m_daemonize ? "true" : "false") + ",\n" +
-           "  m_use_syslog: "        + (m_use_syslog ? "true" : "false") +  ",\n" +
-           "  m_use_console: "       + (m_use_console ? "true" : "false") +  ",\n" +
-           "  m_log_file: "          + m_log_file.string() + ",\n" +
-           "  m_log_file_max_size: " + std::to_string(m_log_file_max_size) + ",\n" +
-           "  m_dry_run: "           + (m_dry_run ? "true" : "false") +  ",\n" +
-           "  m_dry_run_duration: "  + std::to_string(m_dry_run_duration) +  ",\n" +
-           "  m_global_socket: "     + m_global_socket.string() + ",\n" +
-           "  m_control_socket: "    + m_control_socket.string() + ",\n" +
-           "  m_bind_address: "      + m_bind_address + ",\n" +
-           "  m_remote_port: "       + std::to_string(m_remote_port) + ",\n" +
-           "  m_pidfile: "           + m_daemon_pidfile.string() + ",\n" +
-           "  m_workers: "           + std::to_string(m_workers_in_pool) + ",\n" +
+    std::string str = 
+        std::string("settings {\n") +
+           "  m_progname: " + m_progname + ",\n" +
+           "  m_daemonize: " + (m_daemonize ? "true" : "false") + ",\n" +
+           "  m_use_syslog: " + (m_use_syslog ? "true" : "false") +  ",\n" +
+           "  m_use_console: " + (m_use_console ? "true" : "false") +  ",\n" +
+           "  m_log_file: " + m_log_file.string() + ",\n" +
+           "  m_log_file_max_size: " + 
+                std::to_string(m_log_file_max_size) + ",\n" +
+           "  m_dry_run: " + (m_dry_run ? "true" : "false") +  ",\n" +
+           "  m_dry_run_duration: " + 
+                std::to_string(m_dry_run_duration) +  ",\n" +
+           "  m_global_socket: " + m_global_socket.string() + ",\n" +
+           "  m_control_socket: " + m_control_socket.string() + ",\n" +
+           "  m_configured_address: " + m_configured_address + ",\n" +
+           "  m_lookup_address: " + 
+                (m_lookup_address.empty() ?  
+                 m_lookup_address : "{undetermined}") + ",\n" +
+           "  m_remote_port: " + std::to_string(m_remote_port) + ",\n" +
+           "  m_pidfile: " + m_daemon_pidfile.string() + ",\n" +
+           "  m_workers: " + std::to_string(m_workers_in_pool) + ",\n" +
            "  m_staging_directory: " + m_staging_directory.string() + ",\n" +
-           "  m_backlog_size: "      + std::to_string(m_backlog_size) + ",\n" +
-           "  m_config_file: "       + m_config_file.string() + ",\n" +
+           "  m_backlog_size: " + std::to_string(m_backlog_size) + ",\n" +
+           "  m_config_file: " + m_config_file.string() + ",\n" +
            "};";
     //TODO: add m_default_namespaces
     return str;
@@ -283,13 +293,23 @@ settings::control_socket(const bfs::path& control_socket) {
 }
 
 std::string
-settings::bind_address() const {
-    return m_bind_address;
+settings::configured_address() const {
+    return m_configured_address;
 }
 
 void
-settings::bind_address(const std::string& bind_address) {
-    m_bind_address = bind_address;
+settings::configured_address(const std::string& configured_address) {
+    m_configured_address = configured_address;
+}
+
+std::string
+settings::lookup_address() const {
+    return m_lookup_address;
+}
+
+void
+settings::lookup_address(const std::string& lookup_address) {
+    m_lookup_address = lookup_address;
 }
 
 in_port_t

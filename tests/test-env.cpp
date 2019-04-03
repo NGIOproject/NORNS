@@ -33,7 +33,12 @@
 #include <boost/regex.hpp>
 #include <iostream>
 
+#ifndef TEST_ENV_DISABLE_CATCH2
 #include "catch.hpp"
+#else
+#define REQUIRE(...)
+#endif
+
 #include "test-env.hpp"
 #include "norns.h"
 #include "nornsctl.h"
@@ -90,6 +95,17 @@ create_config_file(const bfs::path& basedir,
     outstr = boost::regex_replace(outstr, 
             boost::regex("(staging_directory:)\\s*?\".*?\"(,?)$"),
                          "\\1 \"" + stdir.string() + "\"\\2");
+    
+    const char* var;
+
+    if((var = ::getenv("TEST_FORCE_BIND_ADDRESS")) != NULL) {
+
+        const std::string bind_address(var);
+
+        outstr = boost::regex_replace(outstr, 
+                boost::regex("(bind_address:)\\s*?\".*?\"(,?)$"),
+                            "\\1 \"" + bind_address + "\"\\2");
+    }
 
     for(const auto& r : reps) {
         outstr = boost::regex_replace(outstr, boost::regex(r.first), r.second);
@@ -114,7 +130,7 @@ patch_libraries(const bfs::path& config_file) {
 #endif
 }
 
-test_env::test_env(bool requires_remote_peer) :
+test_env::test_env() :
     m_test_succeeded(false),
     m_uid(generate_testid()),
     m_base_dir(bfs::absolute(bfs::current_path() / m_uid)) {
@@ -129,11 +145,21 @@ test_env::test_env(bool requires_remote_peer) :
 
 #ifndef USE_REAL_DAEMON
     const std::string alias(".local");
-    const auto local_config = ::create_config_file(m_base_dir, alias);
-    ::patch_libraries(local_config);
-    m_ltd.configure(local_config, alias);
+    const auto config_file = ::create_config_file(m_base_dir, alias);
+    ::patch_libraries(config_file);
+    m_ltd.configure(config_file, alias);
+
+
+    const bfs::path pidfile = m_base_dir / ("config" + alias);
+
+
     m_ltd.run();
 
+
+
+
+
+#if 0
     // if the test requires a remote peer, we need to spawn another daemon
     if(requires_remote_peer) {
         const std::string alias(".remote");
@@ -150,6 +176,7 @@ test_env::test_env(bool requires_remote_peer) :
         // restore the libraries for the client
         ::patch_libraries(local_config);
     }
+#endif
 #endif
 
 }
@@ -204,6 +231,25 @@ void test_env::cleanup() {
     }
 
 }
+
+std::string
+test_env::daemon_lookup_address() const {
+
+    bfs::ifstream pidfile(m_ltd.m_config.pidfile());
+
+    std::string line;
+
+    const boost::regex expr("^.*?\\+.*?:\\/\\/.+$");
+
+    while(std::getline(pidfile, line)) {
+        if(boost::regex_match(line, expr)) {
+            return line; // only return the first address found
+        }
+    }
+
+    return "";
+}
+
 
 test_env::~test_env() {
 

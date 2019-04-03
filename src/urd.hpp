@@ -103,6 +103,10 @@ private:
     void load_transfer_plugins();
     void load_default_namespaces();
     void check_configuration();
+
+    void
+    store_runtime_configuration();
+
     void print_greeting();
     void print_configuration();
     void print_farewell();

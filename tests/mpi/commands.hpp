@@ -28,10 +28,23 @@
 #ifndef COMMANDS_HPP
 #define COMMANDS_HPP
 
+#include <array>
+
 enum class server_command : int {
-    accept = 0,
-    restart,
-    shutdown
+    accepting_commands = 0,
+    start_section,
+    end_section,
+    shutdown,
+    MAX
+};
+
+constexpr const static 
+std::array<const char*, static_cast<int>(server_command::MAX)> 
+server_command_names = {
+    "ACCEPTING_COMMANDS",
+    "START_SECTION",
+    "END_SECTION",
+    "SHUTDOWN"
 };
 
 #endif // COMMANDS_HPP

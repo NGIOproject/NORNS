@@ -28,12 +28,16 @@
 #ifndef MPI_HELPERS_HPP
 #define MPI_HELPERS_HPP
 
+#include <string>
+#include <vector>
 #include <mpi.h>
 #include "commands.hpp"
 
-// #define MPI_TEST_DEBUG
+#define MPI_TEST_DEBUG
 
 namespace mpi {
+
+extern std::vector< std::pair<std::string, int> > test_hosts;
 
 void
 initialize(int* argc, char** argv[]);
@@ -42,13 +46,20 @@ void
 finalize();
 
 int
+get_size();
+
+int
 get_rank();
 
+
 server_command
-broadcast_command(server_command cmd = server_command::accept);
+broadcast_command(server_command cmd = server_command::accepting_commands);
 
 void
 barrier();
+
+void
+read_hosts(const std::string& filename);
 
 } // namespace mpi
 

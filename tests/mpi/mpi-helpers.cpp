@@ -26,6 +26,8 @@
  *************************************************************************/
 
 #include <stdexcept>
+#include <boost/regex.hpp>
+#include <boost/filesystem/fstream.hpp>
 #include <stdlib.h>
 #include "mpi-helpers.hpp"
 
@@ -34,8 +36,11 @@
 #include <sstream>
 #endif // MPI_TEST_DEBUG
 
+namespace bfs = boost::filesystem;
 
 namespace mpi {
+
+std::vector< std::pair<std::string, int> > test_hosts;
 
 void
 initialize(int* argc, char** argv[]) {
@@ -49,6 +54,17 @@ finalize() {
     if(::MPI_Finalize() != MPI_SUCCESS) {
         throw std::runtime_error("Failed to finalize MPI");
     }
+}
+
+int
+get_size() {
+    int world_size;
+
+    if(::MPI_Comm_size(MPI_COMM_WORLD, &world_size) != MPI_SUCCESS) {
+        throw std::runtime_error("Failed to determine MPI_COMM_WORLD size");
+    }
+
+    return world_size;
 }
 
 
@@ -70,7 +86,9 @@ barrier() {
     std::cerr << "Entering MPI_Barrier()\n";
 #endif // MPI_TEST_DEBUG
 
-    ::MPI_Barrier(MPI_COMM_WORLD);
+    if(::MPI_Barrier(MPI_COMM_WORLD) != MPI_SUCCESS) {
+        throw std::runtime_error("MPI_Barrier()");
+    }
 
 #ifdef MPI_TEST_DEBUG
     std::cerr << "Exiting MPI_Barrier()\n";
@@ -85,18 +103,20 @@ broadcast_command(server_command cmd) {
 
 #ifdef MPI_TEST_DEBUG
     std::stringstream ss;
-    ss << __PRETTY_FUNCTION__ << "(" << c << ")" << "\n";
+    ss << __PRETTY_FUNCTION__ << "(" << server_command_names[c] << ")" << "\n";
     std::cerr << ss.str();
     std::cerr << "Entering MPI_Bcast()\n";
 #endif // MPI_TEST_DEBUG
 
-    ::MPI_Bcast(&c, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    if(::MPI_Bcast(&c, 1, MPI_INT, 0, MPI_COMM_WORLD) != MPI_SUCCESS) {
+        throw std::runtime_error("MPI_Bcast()");
+    }
 
 #ifdef MPI_TEST_DEBUG
 
     MPI_TEST_RUN_IF(MPI_RANK_NEQ(0)) {
         std::stringstream ss;
-        ss << "command was " << c << "\n";
+        ss << "command was " << server_command_names[c] << "\n";
         std::cerr << ss.str();
     }
 #endif
@@ -106,6 +126,34 @@ broadcast_command(server_command cmd) {
 #endif // MPI_TEST_DEBUG
 
     return static_cast<server_command>(c);
+}
+
+void
+read_hosts(const std::string& filename) {
+
+    bfs::ifstream ifs(filename);
+
+    std::stringstream ss;
+
+    std::string line;
+    while(std::getline(ifs, line)) {
+
+        // ignore comments
+        if(boost::regex_match(line, boost::regex("^\\s*?#\\s*?.*$"))) {
+            continue;
+        }
+
+        boost::match_results<std::string::const_iterator> captures;
+
+        // parse host
+        if(boost::regex_match(
+                    line, 
+                    captures,
+                    boost::regex("^\\s*?(\\S*?)\\s*?:\\s*?(\\d+)\\s*$"))) {
+            test_hosts.emplace_back(
+                    std::make_pair(captures[1], std::stoi(captures[2])));
+        }
+    }
 }
 
 } // namespace mpi

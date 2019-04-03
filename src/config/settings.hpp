@@ -114,7 +114,7 @@ struct settings {
              uint32_t dry_run_duration,
              const bfs::path& global_socket,
              const bfs::path& control_socket,
-             const std::string& bind_address,
+             const std::string& configured_address,
              uint32_t remote_port,
              const bfs::path& pidfile,
              uint32_t workers,
@@ -205,10 +205,16 @@ struct settings {
     control_socket(const bfs::path& control_socket);
     
     std::string
-    bind_address() const;
+    configured_address() const;
 
     void
-    bind_address(const std::string& bind_address);
+    configured_address(const std::string& configured_address);
+
+    std::string
+    lookup_address() const;
+
+    void
+    lookup_address(const std::string& lookup_address);
     
     in_port_t 
     remote_port() const;
@@ -262,7 +268,8 @@ struct settings {
     uint32_t    m_dry_run_duration;
     bfs::path   m_global_socket;
     bfs::path   m_control_socket;
-    std::string m_bind_address;
+    std::string m_configured_address;
+    std::string m_lookup_address;
     in_port_t   m_remote_port;
     bfs::path   m_daemon_pidfile;
     uint32_t    m_workers_in_pool;
