@@ -33,7 +33,7 @@ AM_CPPFLAGS = -I m4
 
 TESTS = mpi_tests
 
-check_PROGRAMS = mpi_tests
+check_PROGRAMS = mpi_tests mpi_server
 
 COMMON_SOURCES = \
 	$(END)
@@ -107,3 +107,55 @@ config-template.cpp: Makefile $(top_srcdir)/etc/norns.conf.in
 		$(edit) $(top_srcdir)/etc/norns.conf.in ; \
 		echo ";"; \
 	) > $@
+
+mpi_server_SOURCES = \
+	mpi-server.cpp \
+	mpi-helpers.hpp \
+	mpi-helpers.cpp \
+	commands.hpp \
+	../fake-daemon.cpp \
+	../fake-daemon.hpp \
+	../test-env.cpp \
+	../test-env.hpp \
+	config-template.cpp \
+	config-template.hpp \
+	$(COMMON_SOURCES) \
+	$(END)
+
+mpi_server_CPPFLAGS = \
+	@BOOST_CPPFLAGS@ \
+	-I$(top_srcdir)/tests \
+	-I$(top_srcdir)/include \
+	-I$(top_srcdir)/rpc \
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/externals/hermes/include \
+	-D__NORNS_DEBUG__ \
+	-DTEST_ENV_DISABLE_CATCH2 \
+	$(END)
+
+mpi_server_CXXFLAGS = \
+	-Wall -Wextra \
+	$(END)
+	
+mpi_server_LDFLAGS = \
+	@MPILIBS@ \
+	@BOOST_ASIO_LIB@ \
+	@BOOST_LDFLAGS@	\
+	@BOOST_FILESYSTEM_LIB@ \
+	@BOOST_PROGRAM_OPTIONS_LIB@	\
+	@BOOST_SYSTEM_LIB@ \
+	@BOOST_THREAD_LIB@ \
+	@BOOST_REGEX_LIB@ \
+	@PROTOBUF_LIBS@ \
+	-no-install \
+	-Wl,-rpath,$(top_builddir)/lib/.libs \
+	$(top_builddir)/src/liburd_aux.la \
+	$(top_builddir)/lib/libnorns_debug.la \
+	$(top_builddir)/lib/libnornsctl_debug.la \
+	$(END)
+
+EXTRA_mpi_server_DEPENDENCIES = \
+	$(top_builddir)/src/liburd_aux.la \
+	$(top_builddir)/lib/libnorns_debug.la \
+	$(top_builddir)/lib/libnornsctl_debug.la \
+	$(END)
