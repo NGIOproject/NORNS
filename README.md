@@ -1,4 +1,5 @@
 # Norns
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![pipeline status](https://storage.bsc.es/gitlab/hpc/norns/badges/master/pipeline.svg)](https://storage.bsc.es/gitlab/hpc/norns/commits/master)
 [![coverage report](https://storage.bsc.es/gitlab/hpc/norns/badges/master/coverage.svg)](https://storage.bsc.es/gitlab/hpc/norns/commits/master)
 
