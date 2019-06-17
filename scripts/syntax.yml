@@ -1,0 +1,331 @@
+#
+# Copyright Header - A utility to manipulate copyright headers on source code files
+# Copyright (C) 2012-2017 Erik Osterman <e@osterman.com>
+#
+# This file is part of Copyright Header.
+#
+# Copyright Header is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Copyright Header is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Copyright Header.  If not, see <http://www.gnu.org/licenses/>.
+#
+ruby:
+  ext: ['.rb', '.rake']
+  after: ['^#!', '^#.*encoding:', '^#.*frozen_string_literal:']
+  comment:
+    open:   '\n#\n'
+    close:  '#\n'
+    prefix: '# '
+    suffix: ''
+    padding: 0
+
+perl:
+  ext: ['.pl']
+  after: ['^#!', '^#.*encoding:']
+  comment:
+    open:   '#\n'
+    close:  '#\n'
+    prefix: '# '
+    suffix: ''
+    padding: 0
+
+# Support PEP 0263 comments:
+# coding=<encoding name>
+# -*- coding: <encoding name> -*-
+# vim: set fileencoding=<encoding name> :
+python:
+  ext: ['.py']
+  after: ['^#!', '^#.*coding:', '^#.*coding=', '^#.*fileencoding=']
+  comment:
+    open:   '\n'
+    close:  '\n'
+    prefix: '# '
+    suffix: ''
+    padding: 0
+
+html:
+  ext: ['.html', '.htm', '.xhtml']
+  comment:
+    open:   '<!--\n'
+    close:  '-->\n'
+    prefix: '    '
+    suffix: ''
+    padding: 0
+
+php:
+  ext: ['.php']
+  after: [ '^#!' ]
+  comment:
+    open:   '<?php \n/*\n'
+    close:  ' */ ?>\n'
+    prefix: ' * '
+    suffix: ''
+    padding: 0
+
+javacript:
+  ext: ['.js', '.jsx']
+  comment:
+    open:   '/*\n'
+    close:  ' */\n\n'
+    prefix: ' * '
+    suffix: ''
+    padding: 0
+
+qml:
+  ext: ['.qml']
+  comment:
+    open:   '/*\n'
+    close:  ' */\n\n'
+    prefix: ' * '
+    suffix: ''
+    padding: 0
+
+qmake_project:
+  ext: ['.pro']
+  comment:
+    open:   '#\n'
+    close:  '#\n'
+    prefix: '# '
+    suffix: ''
+    padding: 0
+
+css:
+  ext: ['.css']
+  comment:
+    open:   '/*\n'
+    close:  ' */\n\n'
+    prefix: ' * '
+    suffix: ''
+    padding: 0
+
+c:
+  ext: ['.c', '.h']
+  comment:
+    open:   '/************************************************************************* \n'
+    close:  ' *************************************************************************/\n\n'
+    prefix: ' * '
+    suffix: ' * \n'
+    padding: 6
+
+cpp:
+  ext: ['.cpp', '.hpp', '.cc', '.hh']
+  comment:
+    open:   '/************************************************************************* \n'
+    close:  ' *************************************************************************/\n\n'
+    prefix: ' * '
+    suffix: ' * \n'
+    padding: 6
+
+java:
+  ext: ['.java']
+  comment:
+    open:   '/*\n'
+    close:  ' */\n\n'
+    prefix: ' * '
+    suffix: ''
+    padding: 0
+    
+kotlin:
+  ext: ['.kt']
+  comment:
+    open:   '/*\n'
+    clone:  ' */\n\n'
+    prefix: ' * '
+    suffix: ''
+    padding: 0
+
+golang:
+  ext: ['.go']
+  comment:
+    open:   '/*\n'
+    close:  ' */\n\n'
+    prefix: ' * '
+    suffix: ''
+    padding: 0
+
+groovy:
+  ext: ['.groovy']
+  comment:
+    open:   '/*\n'
+    close:  ' */\n\n'
+    prefix: ' * '
+    suffix: ''
+    padding: 0
+
+haml:
+  ext: ['.haml', '.hamlc']
+  comment:
+    open:   '-#\n'
+    close:  '-#\n'
+    prefix: '-# '
+    suffix: ''
+    padding: 0
+
+coffee:
+  ext: ['.coffee']
+  comment:
+    open:   '###\n'
+    close:  '###\n'
+    prefix: ''
+    suffix: ''
+    padding: 0
+
+# M4 macro language, use #, not dnl
+m4:
+  ext:  ['.m4']
+  comment:
+    open:   '#\n'
+    close:  '#\n'
+    prefix: '# '
+    suffix: ''
+    padding: 0
+
+am:
+  ext:  ['.am']
+  comment:
+    open:   '##########################################################################\n'
+    close:  '##########################################################################\n\n'
+    prefix: '#  '
+    suffix: '#\n'
+    padding: 5
+
+ac:
+  ext:  ['.ac']
+  comment:
+    open:   '##########################################################################\n'
+    close:  '##########################################################################\n\n'
+    prefix: '#  '
+    suffix: '#\n'
+    padding: 5
+
+mk:
+  ext:  ['.mk']
+  comment:
+    open:   '##########################################################################\n'
+    close:  '##########################################################################\n\n'
+    prefix: '#  '
+    suffix: '#\n'
+    padding: 5
+
+# Most shells, really
+shell:
+  ext:  ['.sh']
+  after: ['^#!']
+  comment:
+    open:   '##########################################################################\n'
+    close:  '##########################################################################\n'
+    prefix: '#  '
+    suffix: '#\n'
+    padding: 5
+
+# Use "-- " to make sure e.g. MySQL understands it
+sql:
+  ext:  ['.sql']
+  comment:
+    open:   '-- \n'
+    close:  '-- \n'
+    prefix: '-- '
+    suffix: ''
+    padding: 0
+
+# XML is *not* the same as HTML, and the comments need to go after a
+# preprocessing directive, if present.
+# FIXME: only supports single line directives
+xml:
+  ext: ['.xml', '.xsd', '.mxml']
+  after: ['^<\?']
+  comment:
+    open:   '<!--\n'
+    close:  '-->\n'
+    prefix: '    '
+    suffix: ''
+    padding: 0
+
+yaml:
+  ext:  ['.yml', '.yaml']
+  comment:
+    open:   '#\n'
+    close:  '#\n'
+    prefix: '# '
+    suffix: ''
+    padding: 0
+
+action_script:
+  ext: ['.as']
+  comment:
+    open:   '//\n'
+    close:  '//\n\n'
+    prefix: '// '
+    suffix: ''
+    padding: 0
+
+sass:
+  ext: ['.sass', '.scss']
+  comment:
+    open:   '/*\n'
+    close:  ' */\n\n'
+    prefix: ' * '
+    suffix: ''
+    padding: 0
+
+verilog:
+  ext: ['.v', '.sv']
+  comment:
+    open:   '//\n'
+    close:  '//\n\n'
+    prefix: '// '
+    suffix: ''
+    padding: 0
+
+vhdl:
+  ext: ['.vhd']
+  comment:
+    open:   '--\n'
+    close:  '--\n\n'
+    prefix: '-- '
+    suffix: ''
+    padding: 0
+
+elm:
+  ext: ['.elm']
+  comment:
+    open: '{-\n'
+    close: '-}\n\n'
+    prefix: '  '
+    suffix: ''
+    padding: 0
+
+swift:
+  ext: ['.swift']
+  comment:
+    open:   '/*\n'
+    close:  ' */\n\n'
+    prefix: ' * '
+    suffix: ''
+    padding: 0
+
+rust:
+  ext: ['.rs']
+  comment:
+    open: '/*\n'
+    close: ' */\n\n'
+    prefix: ' * '
+    suffix: ''
+    padding: 0
+# Conf files i.e. apache config, splunk.conf files
+conf:
+  ext:  ['.conf']
+  comment:
+    open:   '#\n'
+    close:  '#\n'
+    prefix: '# '
+    suffix: ''
+    padding: 0
