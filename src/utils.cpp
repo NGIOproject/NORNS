@@ -242,7 +242,7 @@ path relative(path p, path base=boost::filesystem::current_path()) {
     }
 
     // Now navigate down the directory branch
-    ret.append(p_it, p.end());
+    ret.append(p_it, p.end(), path::codecvt());
 
     return ret;
 }
