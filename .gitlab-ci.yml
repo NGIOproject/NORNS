@@ -72,11 +72,11 @@ build:gcc:4.8:
         ./bootstrap.sh
         mkdir build && cd build
         ../configure --enable-tests 
-        make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
+        make -j$(nproc)
         cd tests
-        make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" core
-        make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" api
-        make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" api_interactive
+        make -j$(nproc) core
+        make -j$(nproc) api
+        make -j$(nproc) api_interactive
       )
 
 
