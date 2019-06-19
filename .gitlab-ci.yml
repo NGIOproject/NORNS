@@ -8,368 +8,387 @@ variables:
 
 stages:
     - build
-    - test
-    - deploy
+      #    - test
+      #    - deploy
 
 # Install dependencies for GCC builds
-before_script:
-    - apt-get update &&
-      apt-get install -y
-        libboost-system-dev
-        libboost-filesystem-dev
-        libboost-program-options-dev
-        libboost-thread-dev
-        libboost-regex-dev
-        libprotobuf-dev
-        protobuf-compiler
-        libprotobuf-c0-dev
-        protobuf-c-compiler
-        libyaml-cpp-dev
-        libyaml-dev
-        libarchive-dev
-        cmake
+# before_script:
+#    - apt-get update &&
+#      apt-get install -y
+#        libboost-system-dev
+#        libboost-filesystem-dev
+#        libboost-program-options-dev
+#        libboost-thread-dev
+#        libboost-regex-dev
+#        libprotobuf-dev
+#        protobuf-compiler
+#        libprotobuf-c0-dev
+#        protobuf-c-compiler
+#        libyaml-cpp-dev
+#        libyaml-dev
+#        libarchive-dev
+#        cmake
+#
+#    - pushd . &&
+#      git clone https://github.com/ofiwg/libfabric.git &&
+#      cd libfabric &&
+#      ./autogen.sh &&
+#      mkdir build &&
+#      cd build &&
+#      ../configure &&
+#      make -j $(nproc) &&
+#      make install &&
+#      popd
+#
+#    - pushd . &&
+#      git clone https://github.com/mercury-hpc/mercury.git &&
+#      cd mercury &&
+#      mkdir build &&
+#      cd build &&
+#      cmake
+#        -DCMAKE_BUILD_TYPE:STRING=Debug
+#        -DBUILD_TESTING:BOOL=OFF
+#        -DMERCURY_USE_SM_ROUTING:BOOL=OFF
+#        -DMERCURY_USE_SELF_FORWARD:BOOL=OFF
+#        -DMERCURY_USE_CHECKSUMS:BOOL=OFF
+#        -DMERCURY_USE_BOOST_PP:BOOL=ON
+#        -DMERCURY_USE_EAGER_BULK:BOOL=ON
+#        -DBUILD_SHARED_LIBS:BOOL=ON
+#        -DNA_USE_OFI:BOOL=ON
+#        .. &&
+#      make -j $(nproc) &&
+#      make install &&
+#      popd
 
-    - pushd . &&
-      git clone https://github.com/ofiwg/libfabric.git &&
-      cd libfabric &&
-      ./autogen.sh &&
-      mkdir build &&
-      cd build &&
-      ../configure &&
-      make -j $(nproc) &&
-      make install &&
-      popd
-
-    - pushd . &&
-      git clone https://github.com/mercury-hpc/mercury.git &&
-      cd mercury &&
-      mkdir build &&
-      cd build &&
-      cmake
-        -DCMAKE_BUILD_TYPE:STRING=Debug
-        -DBUILD_TESTING:BOOL=OFF
-        -DMERCURY_USE_SM_ROUTING:BOOL=OFF
-        -DMERCURY_USE_SELF_FORWARD:BOOL=OFF
-        -DMERCURY_USE_CHECKSUMS:BOOL=OFF
-        -DMERCURY_USE_BOOST_PP:BOOL=ON
-        -DMERCURY_USE_EAGER_BULK:BOOL=ON
-        -DBUILD_SHARED_LIBS:BOOL=ON
-        -DNA_USE_OFI:BOOL=ON
-        .. &&
-      make -j $(nproc) &&
-      make install &&
-      popd
-
-
-### GCC 5
-build:gcc:5:
-  image: gcc:5
+### GCC 4.8
+build:gcc:4.8:
+  image: bscstorage/norns-build-deps:gcc4.8-libfabric1.7.1-mercury1.0.1
   stage: build
-
   script:
-        - ./bootstrap.sh
-        - mkdir build && cd build
-        - ../configure 
-            --enable-tests 
-        - make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
-        - cd tests
-        - make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" core
-        - make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" api
+    - |
+      (
+        set -Eeuo pipefail
+        set -x
+        ./bootstrap.sh
+        mkdir build && cd build
+        ../configure --enable-tests 
+        make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
+        cd tests
+        make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" core
+        make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" api
+        make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" api_interactive
+      )
 
 
-### GCC 6
-build:gcc:6:
-  image: gcc:6
-  stage: build
-
-  script:
-        - ./bootstrap.sh
-        - mkdir build && cd build
-        - ../configure 
-            --enable-tests 
-        - make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
-        - cd tests
-        - make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" core
-        - make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" api
-
-
-### GCC 7
-build:gcc:7:
-  image: gcc:7
-  stage: build
-
-  script:
-        - ./bootstrap.sh
-        - mkdir build && cd build
-        - ../configure 
-            --enable-tests 
-        - make -j$(nproc)
-        - cd tests
-        - make -j$(nproc)
-        - make -j$(nproc)
-
-
-### GCC 8
-build:gcc:8:
-  image: gcc:8
-  stage: build
-
-  script:
-        - ./bootstrap.sh
-        - mkdir build && cd build
-        - ../configure 
-            --enable-tests 
-        - make -j$(nproc)
-        - cd tests
-        - make -j$(nproc)
-        - make -j$(nproc)
-
-
-################################################################################
-# test scripts
-################################################################################
-test:coverage:
-    image: ubuntu:latest
-    stage: test
-
-    # Install dependencies
-    before_script:
-        - apt-get update &&
-          apt-get upgrade -y &&
-          apt-get install -y
-            git
-            build-essential
-            autotools-dev
-            automake
-            autoconf
-            libtool
-            pkg-config
-            libboost-system-dev
-            libboost-filesystem-dev
-            libboost-program-options-dev
-            libboost-thread-dev
-            libboost-regex-dev
-            libprotobuf-dev
-            protobuf-compiler
-            libprotobuf-c-dev
-            protobuf-c-compiler
-            libyaml-cpp-dev
-            libyaml-dev
-            libarchive-dev
-            libcap2-bin
-            valgrind
-            cmake
-            lcov
-
-        - pushd . &&
-          git clone https://github.com/ofiwg/libfabric.git &&
-          cd libfabric &&
-          ./autogen.sh &&
-          mkdir build &&
-          cd build &&
-          ../configure &&
-          make -j $(nproc) &&
-          make install &&
-          popd &&
-          ldconfig
-
-        - pushd . &&
-          git clone https://github.com/mercury-hpc/mercury.git &&
-          cd mercury &&
-          mkdir build &&
-          cd build &&
-          cmake
-            -DCMAKE_BUILD_TYPE:STRING=Debug
-            -DBUILD_TESTING:BOOL=OFF
-            -DMERCURY_USE_SM_ROUTING:BOOL=OFF
-            -DMERCURY_USE_SELF_FORWARD:BOOL=OFF
-            -DMERCURY_USE_CHECKSUMS:BOOL=OFF
-            -DMERCURY_USE_BOOST_PP:BOOL=ON
-            -DMERCURY_USE_EAGER_BULK:BOOL=ON
-            -DBUILD_SHARED_LIBS:BOOL=ON
-            -DNA_USE_OFI:BOOL=ON
-            .. &&
-          make -j $(nproc) &&
-          make install &&
-          popd &&
-          ldconfig
-          
-    # Build and test
-    script:
-        - ./bootstrap.sh
-        - mkdir build && cd build
-        - ../configure 
-            --enable-tests 
-            CFLAGS="-O0 --coverage"
-            CXXFLAGS="-O0 --coverage"
-            LDFLAGS="--coverage"
-        - make -j$(nproc)
-        - cd tests
-        - make -j$(nproc) core
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./core -as
-        - make -j$(nproc) api
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::NORNS_TASK]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_error]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_iotask_init]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_resource_init]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_copy_buffer_to_file]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_copy_local_posix_files]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_pull_errors]"          
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_pull_links]"           
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_pull_to_posix_file]"   
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_pull_to_posix_subdir]" 
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_errors]"          
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_links]"           
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_memory_to_posix_file]"   
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_memory_to_posix_file_errors]"   
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_to_posix_file]"   
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_to_posix_subdir]" 
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_remove_local_posix_files]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_add_process]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_register_job]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_register_namespace]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_remove_process]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_send_command]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_status]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_unregister_job]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_unregister_namespace]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_update_job]"
-
-    after_script:
-        - (cd build && ../gencov.sh)
-        - genhtml -o build/html/coverage build/norns.info
-        - if [[ -e build/tests.log ]]; 
-          then
-              cat $(tail -1 build/tests.log)/config/urd.log;
-          fi
-
-    artifacts:
-      paths:
-        - build/html/coverage/
-
-test:optimized:
-    image: ubuntu:latest
-    stage: test
-
-    # Install dependencies
-    before_script:
-        - apt-get update &&
-          apt-get upgrade -y &&
-          apt-get install -y
-            git
-            build-essential
-            autotools-dev
-            automake
-            autoconf
-            libtool
-            pkg-config
-            libboost-system-dev
-            libboost-filesystem-dev
-            libboost-program-options-dev
-            libboost-thread-dev
-            libboost-regex-dev
-            libprotobuf-dev
-            protobuf-compiler
-            libprotobuf-c-dev
-            protobuf-c-compiler
-            libyaml-cpp-dev
-            libyaml-dev
-            libarchive-dev
-            libcap2-bin
-            valgrind
-            cmake
-
-        - pushd . &&
-          git clone https://github.com/ofiwg/libfabric.git &&
-          cd libfabric &&
-          ./autogen.sh &&
-          mkdir build &&
-          cd build &&
-          ../configure &&
-          make -j $(nproc) &&
-          make install &&
-          popd &&
-          ldconfig
-
-        - pushd . &&
-          git clone https://github.com/mercury-hpc/mercury.git &&
-          cd mercury &&
-          mkdir build &&
-          cd build &&
-          cmake
-            -DCMAKE_BUILD_TYPE:STRING=Debug
-            -DBUILD_TESTING:BOOL=OFF
-            -DMERCURY_USE_SM_ROUTING:BOOL=OFF
-            -DMERCURY_USE_SELF_FORWARD:BOOL=OFF
-            -DMERCURY_USE_CHECKSUMS:BOOL=OFF
-            -DMERCURY_USE_BOOST_PP:BOOL=ON
-            -DMERCURY_USE_EAGER_BULK:BOOL=ON
-            -DBUILD_SHARED_LIBS:BOOL=ON
-            -DNA_USE_OFI:BOOL=ON
-            .. &&
-          make -j $(nproc) &&
-          make install &&
-          popd &&
-          ldconfig
-          
-    # Build and test
-    script:
-        - ./bootstrap.sh
-        - mkdir build && cd build
-        - ../configure 
-            --enable-tests 
-        - make -j$(nproc)
-        - cd tests
-        - make -j$(nproc) core
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./core -as
-        - make -j$(nproc) api
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::NORNS_TASK]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_error]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_iotask_init]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_resource_init]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_copy_buffer_to_file]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_copy_local_posix_files]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_pull_errors]"          
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_pull_links]"           
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_pull_to_posix_file]"   
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_pull_to_posix_subdir]" 
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_errors]"          
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_links]"           
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_memory_to_posix_file]"   
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_memory_to_posix_file_errors]"   
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_to_posix_file]"   
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_to_posix_subdir]" 
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_remove_local_posix_files]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_add_process]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_register_job]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_register_namespace]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_remove_process]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_send_command]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_status]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_unregister_job]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_unregister_namespace]"
-        - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_update_job]"
-
-    after_script:
-        - if [[ -e build/tests.log ]]; 
-          then
-              cat $(tail -1 build/tests.log)/config/urd.log;
-          fi
-
-pages:
-  image: alpine:latest
-  stage: deploy
-  before_script:
-    - ''
-  dependencies: 
-    - test:coverage
-  script:
-    - mv build/html/coverage/ public/
-  artifacts:
-    paths:
-      - public
-    expire_in: 30 days
-  only:
-    - master 
+      ### ### GCC 5
+      ### build:gcc:5:
+      ###   image: gcc:5
+      ###   stage: build
+      ### 
+      ###   script:
+      ###         - ./bootstrap.sh
+      ###         - mkdir build && cd build
+      ###         - ../configure 
+      ###             --enable-tests 
+      ###         - make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
+      ###         - cd tests
+      ###         - make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" core
+      ###         - make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" api
+      ### 
+      ### 
+      ### ### GCC 6
+      ### build:gcc:6:
+      ###   image: gcc:6
+      ###   stage: build
+      ### 
+      ###   script:
+      ###         - ./bootstrap.sh
+      ###         - mkdir build && cd build
+      ###         - ../configure 
+      ###             --enable-tests 
+      ###         - make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
+      ###         - cd tests
+      ###         - make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" core
+      ###         - make -j$(nproc) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" api
+      ### 
+      ### 
+      ### ### GCC 7
+      ### build:gcc:7:
+      ###   image: gcc:7
+      ###   stage: build
+      ### 
+      ###   script:
+      ###         - ./bootstrap.sh
+      ###         - mkdir build && cd build
+      ###         - ../configure 
+      ###             --enable-tests 
+      ###         - make -j$(nproc)
+      ###         - cd tests
+      ###         - make -j$(nproc)
+      ###         - make -j$(nproc)
+      ### 
+      ### 
+      ### ### GCC 8
+      ### build:gcc:8:
+      ###   image: gcc:8
+      ###   stage: build
+      ### 
+      ###   script:
+      ###         - ./bootstrap.sh
+      ###         - mkdir build && cd build
+      ###         - ../configure 
+      ###             --enable-tests 
+      ###         - make -j$(nproc)
+      ###         - cd tests
+      ###         - make -j$(nproc)
+      ###         - make -j$(nproc)
+      ### 
+      ### 
+      ### ################################################################################
+      ### # test scripts
+      ### ################################################################################
+      ### test:coverage:
+      ###     image: ubuntu:latest
+      ###     stage: test
+      ### 
+      ###     # Install dependencies
+      ###     before_script:
+      ###         - apt-get update &&
+      ###           apt-get upgrade -y &&
+      ###           apt-get install -y
+      ###             git
+      ###             build-essential
+      ###             autotools-dev
+      ###             automake
+      ###             autoconf
+      ###             libtool
+      ###             pkg-config
+      ###             libboost-system-dev
+      ###             libboost-filesystem-dev
+      ###             libboost-program-options-dev
+      ###             libboost-thread-dev
+      ###             libboost-regex-dev
+      ###             libprotobuf-dev
+      ###             protobuf-compiler
+      ###             libprotobuf-c-dev
+      ###             protobuf-c-compiler
+      ###             libyaml-cpp-dev
+      ###             libyaml-dev
+      ###             libarchive-dev
+      ###             libcap2-bin
+      ###             valgrind
+      ###             cmake
+      ###             lcov
+      ### 
+      ###         - pushd . &&
+      ###           git clone https://github.com/ofiwg/libfabric.git &&
+      ###           cd libfabric &&
+      ###           ./autogen.sh &&
+      ###           mkdir build &&
+      ###           cd build &&
+      ###           ../configure &&
+      ###           make -j $(nproc) &&
+      ###           make install &&
+      ###           popd &&
+      ###           ldconfig
+      ### 
+      ###         - pushd . &&
+      ###           git clone https://github.com/mercury-hpc/mercury.git &&
+      ###           cd mercury &&
+      ###           mkdir build &&
+      ###           cd build &&
+      ###           cmake
+      ###             -DCMAKE_BUILD_TYPE:STRING=Debug
+      ###             -DBUILD_TESTING:BOOL=OFF
+      ###             -DMERCURY_USE_SM_ROUTING:BOOL=OFF
+      ###             -DMERCURY_USE_SELF_FORWARD:BOOL=OFF
+      ###             -DMERCURY_USE_CHECKSUMS:BOOL=OFF
+      ###             -DMERCURY_USE_BOOST_PP:BOOL=ON
+      ###             -DMERCURY_USE_EAGER_BULK:BOOL=ON
+      ###             -DBUILD_SHARED_LIBS:BOOL=ON
+      ###             -DNA_USE_OFI:BOOL=ON
+      ###             .. &&
+      ###           make -j $(nproc) &&
+      ###           make install &&
+      ###           popd &&
+      ###           ldconfig
+      ###           
+      ###     # Build and test
+      ###     script:
+      ###         - ./bootstrap.sh
+      ###         - mkdir build && cd build
+      ###         - ../configure 
+      ###             --enable-tests 
+      ###             CFLAGS="-O0 --coverage"
+      ###             CXXFLAGS="-O0 --coverage"
+      ###             LDFLAGS="--coverage"
+      ###         - make -j$(nproc)
+      ###         - cd tests
+      ###         - make -j$(nproc) core
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./core -as
+      ###         - make -j$(nproc) api
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::NORNS_TASK]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_error]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_iotask_init]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_resource_init]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_copy_buffer_to_file]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_copy_local_posix_files]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_pull_errors]"          
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_pull_links]"           
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_pull_to_posix_file]"   
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_pull_to_posix_subdir]" 
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_errors]"          
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_links]"           
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_memory_to_posix_file]"   
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_memory_to_posix_file_errors]"   
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_to_posix_file]"   
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_to_posix_subdir]" 
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_remove_local_posix_files]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_add_process]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_register_job]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_register_namespace]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_remove_process]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_send_command]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_status]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_unregister_job]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_unregister_namespace]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_update_job]"
+      ### 
+      ###     after_script:
+      ###         - (cd build && ../gencov.sh)
+      ###         - genhtml -o build/html/coverage build/norns.info
+      ###         - if [[ -e build/tests.log ]]; 
+      ###           then
+      ###               cat $(tail -1 build/tests.log)/config/urd.log;
+      ###           fi
+      ### 
+      ###     artifacts:
+      ###       paths:
+      ###         - build/html/coverage/
+      ### 
+      ### test:optimized:
+      ###     image: ubuntu:latest
+      ###     stage: test
+      ### 
+      ###     # Install dependencies
+      ###     before_script:
+      ###         - apt-get update &&
+      ###           apt-get upgrade -y &&
+      ###           apt-get install -y
+      ###             git
+      ###             build-essential
+      ###             autotools-dev
+      ###             automake
+      ###             autoconf
+      ###             libtool
+      ###             pkg-config
+      ###             libboost-system-dev
+      ###             libboost-filesystem-dev
+      ###             libboost-program-options-dev
+      ###             libboost-thread-dev
+      ###             libboost-regex-dev
+      ###             libprotobuf-dev
+      ###             protobuf-compiler
+      ###             libprotobuf-c-dev
+      ###             protobuf-c-compiler
+      ###             libyaml-cpp-dev
+      ###             libyaml-dev
+      ###             libarchive-dev
+      ###             libcap2-bin
+      ###             valgrind
+      ###             cmake
+      ### 
+      ###         - pushd . &&
+      ###           git clone https://github.com/ofiwg/libfabric.git &&
+      ###           cd libfabric &&
+      ###           ./autogen.sh &&
+      ###           mkdir build &&
+      ###           cd build &&
+      ###           ../configure &&
+      ###           make -j $(nproc) &&
+      ###           make install &&
+      ###           popd &&
+      ###           ldconfig
+      ### 
+      ###         - pushd . &&
+      ###           git clone https://github.com/mercury-hpc/mercury.git &&
+      ###           cd mercury &&
+      ###           mkdir build &&
+      ###           cd build &&
+      ###           cmake
+      ###             -DCMAKE_BUILD_TYPE:STRING=Debug
+      ###             -DBUILD_TESTING:BOOL=OFF
+      ###             -DMERCURY_USE_SM_ROUTING:BOOL=OFF
+      ###             -DMERCURY_USE_SELF_FORWARD:BOOL=OFF
+      ###             -DMERCURY_USE_CHECKSUMS:BOOL=OFF
+      ###             -DMERCURY_USE_BOOST_PP:BOOL=ON
+      ###             -DMERCURY_USE_EAGER_BULK:BOOL=ON
+      ###             -DBUILD_SHARED_LIBS:BOOL=ON
+      ###             -DNA_USE_OFI:BOOL=ON
+      ###             .. &&
+      ###           make -j $(nproc) &&
+      ###           make install &&
+      ###           popd &&
+      ###           ldconfig
+      ###           
+      ###     # Build and test
+      ###     script:
+      ###         - ./bootstrap.sh
+      ###         - mkdir build && cd build
+      ###         - ../configure 
+      ###             --enable-tests 
+      ###         - make -j$(nproc)
+      ###         - cd tests
+      ###         - make -j$(nproc) core
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./core -as
+      ###         - make -j$(nproc) api
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::NORNS_TASK]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_error]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_iotask_init]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_resource_init]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_copy_buffer_to_file]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_copy_local_posix_files]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_pull_errors]"          
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_pull_links]"           
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_pull_to_posix_file]"   
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_pull_to_posix_subdir]" 
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_errors]"          
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_links]"           
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_memory_to_posix_file]"   
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_memory_to_posix_file_errors]"   
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_to_posix_file]"   
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_to_posix_subdir]" 
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_remove_local_posix_files]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_add_process]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_register_job]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_register_namespace]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_remove_process]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_send_command]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_status]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_unregister_job]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_unregister_namespace]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_update_job]"
+      ### 
+      ###     after_script:
+      ###         - if [[ -e build/tests.log ]]; 
+      ###           then
+      ###               cat $(tail -1 build/tests.log)/config/urd.log;
+      ###           fi
+      ### 
+      ### pages:
+      ###   image: alpine:latest
+      ###   stage: deploy
+      ###   before_script:
+      ###     - ''
+      ###   dependencies: 
+      ###     - test:coverage
+      ###   script:
+      ###     - mv build/html/coverage/ public/
+      ###   artifacts:
+      ###     paths:
+      ###       - public
+      ###     expire_in: 30 days
+      ###   only:
+      ###     - master 
