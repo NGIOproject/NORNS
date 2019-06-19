@@ -79,6 +79,24 @@ build:gcc:4.8:
         make -j$(nproc) api_interactive
       )
 
+### GCC 4.9
+build:gcc:4.9:
+  image: bscstorage/norns-build-deps:gcc4.9-libfabric1.7.1-mercury1.0.1
+  stage: build
+  script:
+    - |
+      (
+        set -Eeuo pipefail
+        set -x
+        ./bootstrap.sh
+        mkdir build && cd build
+        ../configure --enable-tests 
+        make -j$(nproc)
+        cd tests
+        make -j$(nproc) core
+        make -j$(nproc) api
+        make -j$(nproc) api_interactive
+      )
 
       ### ### GCC 5
       ### build:gcc:5:
