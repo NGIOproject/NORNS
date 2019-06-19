@@ -51,7 +51,7 @@
 
 #ifndef HG_GEN_PROC_NAME
 #define HG_GEN_PROC_NAME(struct_type_name) \
-    hermes::detail::hg_proc_ ## struct_type_name
+    &hermes::detail::hg_proc_ ## struct_type_name
 #endif
 
 // forward declarations
