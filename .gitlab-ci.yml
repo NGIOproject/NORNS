@@ -60,7 +60,7 @@ stages:
 #      make install &&
 #      popd
 
-### GCC 4.8
+### GCC 4.8 with libfabric1.7.1, mercury 1.0.1
 build:gcc:4.8:
   image: bscstorage/norns-build-deps:gcc4.8-libfabric1.7.1-mercury1.0.1
   stage: build
@@ -78,8 +78,12 @@ build:gcc:4.8:
         make -j$(nproc) api
         make -j$(nproc) api_interactive
       )
+#  only:
+#    - tags
+#    - triggers
+#    - schedules
 
-### GCC 4.9
+### GCC 4.9 with libfabric1.7.1, mercury 1.0.1
 build:gcc:4.9:
   image: bscstorage/norns-build-deps:gcc4.9-libfabric1.7.1-mercury1.0.1
   stage: build
@@ -97,6 +101,114 @@ build:gcc:4.9:
         make -j$(nproc) api
         make -j$(nproc) api_interactive
       )
+#  only:
+#    - schedules
+
+### GCC 5.4 with libfabric1.7.1, mercury 1.0.1
+build:gcc:5.4:
+  image: bscstorage/norns-build-deps:gcc5.4-libfabric1.7.1-mercury1.0.1
+  stage: build
+  script:
+    - |
+      (
+        set -Eeuo pipefail
+        set -x
+        ./bootstrap.sh
+        mkdir build && cd build
+        ../configure --enable-tests 
+        make -j$(nproc)
+        cd tests
+        make -j$(nproc) core
+        make -j$(nproc) api
+        make -j$(nproc) api_interactive
+      )
+#  only:
+#    - schedules
+
+### GCC 6.5 with libfabric1.7.1, mercury 1.0.1
+build:gcc:6.5:
+  image: bscstorage/norns-build-deps:gcc6.5-libfabric1.7.1-mercury1.0.1
+  stage: build
+  script:
+    - |
+      (
+        set -Eeuo pipefail
+        set -x
+        ./bootstrap.sh
+        mkdir build && cd build
+        ../configure --enable-tests 
+        make -j$(nproc)
+        cd tests
+        make -j$(nproc) core
+        make -j$(nproc) api
+        make -j$(nproc) api_interactive
+      )
+#  only:
+#    - schedules
+
+### GCC 7.4 with libfabric1.7.1, mercury 1.0.1
+build:gcc:7.4:
+  image: bscstorage/norns-build-deps:gcc7.4-libfabric1.7.1-mercury1.0.1
+  stage: build
+  script:
+    - |
+      (
+        set -Eeuo pipefail
+        set -x
+        ./bootstrap.sh
+        mkdir build && cd build
+        ../configure --enable-tests 
+        make -j$(nproc)
+        cd tests
+        make -j$(nproc) core
+        make -j$(nproc) api
+        make -j$(nproc) api_interactive
+      )
+#  only:
+#    - schedules
+
+### GCC 8.1 with libfabric1.7.1, mercury 1.0.1
+build:gcc:8.1:
+  image: bscstorage/norns-build-deps:gcc8.1-libfabric1.7.1-mercury1.0.1
+  stage: build
+  script:
+    - |
+      (
+        set -Eeuo pipefail
+        set -x
+        ./bootstrap.sh
+        mkdir build && cd build
+        ../configure --enable-tests 
+        make -j$(nproc)
+        cd tests
+        make -j$(nproc) core
+        make -j$(nproc) api
+        make -j$(nproc) api_interactive
+      )
+#  only:
+#    - schedules
+
+### GCC 9.1 with libfabric1.7.1, mercury 1.0.1
+build:gcc:9.1:
+  image: bscstorage/norns-build-deps:gcc9.1-libfabric1.7.1-mercury1.0.1
+  stage: build
+  script:
+    - |
+      (
+        set -Eeuo pipefail
+        set -x
+        ./bootstrap.sh
+        mkdir build && cd build
+        ../configure --enable-tests 
+        make -j$(nproc)
+        cd tests
+        make -j$(nproc) core
+        make -j$(nproc) api
+        make -j$(nproc) api_interactive
+      )
+#  only:
+#    - schedules
+
 
       ### ### GCC 5
       ### build:gcc:5:
