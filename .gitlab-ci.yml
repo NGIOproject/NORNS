@@ -199,7 +199,7 @@ test:gcc_9.1:libfabric_1.7.1:mercury_1.0.1:
   dependencies:
     - build:gcc_9.1
   variables: 
-    NORNS_DEBUG_CONFIG_FILE_OVERRIDE:
+    - $NORNS_DEBUG_CONFIG_FILE_OVERRIDE == 1
   script:
     - |
       (
