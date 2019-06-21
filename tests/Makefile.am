@@ -100,7 +100,6 @@ api_LDFLAGS = \
 	@BOOST_PROGRAM_OPTIONS_LIB@	\
 	@BOOST_SYSTEM_LIB@ \
 	@BOOST_THREAD_LIB@ \
-	@BOOST_REGEX_LIB@ \
 	@PROTOBUF_LIBS@ \
 	-no-install \
 	-Wl,-rpath,$(top_builddir)/lib/.libs \
@@ -108,6 +107,10 @@ api_LDFLAGS = \
 	$(top_builddir)/lib/libnorns_debug.la \
 	$(top_builddir)/lib/libnornsctl_debug.la \
 	$(END)
+
+if !HAVE_WORKING_STD_REGEX
+api_LDFLAGS += @BOOST_REGEX_LIB@
+endif
 
 EXTRA_api_DEPENDENCIES = \
 	$(top_builddir)/src/liburd_aux.la \
@@ -178,12 +181,15 @@ core_LDFLAGS = \
 	@BOOST_PROGRAM_OPTIONS_LIB@	\
 	@BOOST_SYSTEM_LIB@ \
 	@BOOST_THREAD_LIB@ \
-	@BOOST_REGEX_LIB@ \
 	@PROTOBUF_LIBS@ \
 	$(top_builddir)/src/liburd_aux.la \
 	$(top_builddir)/lib/libnorns_debug.la \
 	$(top_builddir)/lib/libnornsctl_debug.la \
 	$(END)
+
+if !HAVE_WORKING_STD_REGEX
+core_LDFLAGS += @BOOST_REGEX_LIB@
+endif
 
 EXTRA_core_DEPENDENCIES = \
 	$(top_builddir)/src/liburd_aux.la \

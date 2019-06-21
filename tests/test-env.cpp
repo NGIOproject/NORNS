@@ -35,12 +35,19 @@
  * SOFTWARE.                                                             *
  *************************************************************************/
 
+
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/uuid_generators.hpp>
+
+#include <config.h>
+#ifdef HAVE_WORKING_STD_REGEX
+#include <regex>
+#else
 #include <boost/regex.hpp>
+#endif
 #include <iostream>
 
 #include "catch.hpp"
@@ -93,6 +100,22 @@ create_config_file(const bfs::path& basedir,
 
     const bfs::path config_file = cfgdir / name;
 
+#ifdef HAVE_WORKING_STD_REGEX
+
+    auto outstr = std::regex_replace(config_file::cftemplate,
+                                     std::regex("@localstatedir@"),
+                                     cfgdir.string());
+
+    outstr = std::regex_replace(outstr, 
+            std::regex("(staging_directory:)\\s*?\".*?\"(,?)$"),
+                         "\\1 \"" + stdir.string() + "\"\\2");
+
+    for(const auto& r : reps) {
+        outstr = std::regex_replace(outstr, std::regex(r.first), r.second);
+    }
+
+#else
+
     auto outstr = boost::regex_replace(config_file::cftemplate,
                                              boost::regex("@localstatedir@"),
                                              cfgdir.string());
@@ -104,6 +127,8 @@ create_config_file(const bfs::path& basedir,
     for(const auto& r : reps) {
         outstr = boost::regex_replace(outstr, boost::regex(r.first), r.second);
     }
+
+#endif
 
     bfs::ofstream outf(config_file);
     outf << outstr;

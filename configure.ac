@@ -125,9 +125,19 @@ AX_BOOST_ASIO
 AX_BOOST_PROGRAM_OPTIONS
 AX_BOOST_THREAD
 
-# only check for boost_regex if we are building tests
+# only check for std::regex/boost::regex if we are building tests
 AS_IF([test "x$is_enabled_build_tests" = "xyes"], 
-      [ AX_BOOST_REGEX 
+      [ 
+        # check whether the compiler has a functional std::regex
+        AX_GCC_WORKING_STD_REGEX
+        AS_IF([test "x$gcc_has_working_std_regex" = xno],
+              [
+                # fallback to boost::regex
+                AC_MSG_WARN([falling back to boost::regex because std::regex is not functional])
+                AX_BOOST_REGEX 
+              ], [])
+        AM_CONDITIONAL([HAVE_WORKING_STD_REGEX], 
+                       test x$GCC_HAS_WORKING_STD_REGEX = xyes)
         AC_CONFIG_FILES(tests/Makefile)
       ], [])
 
