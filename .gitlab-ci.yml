@@ -181,6 +181,7 @@ build:gcc_9.1:
         make -j$(nproc) api
         make -j$(nproc) api_interactive
       )
+    - du -h .
   artifacts:
     paths:
       - build
