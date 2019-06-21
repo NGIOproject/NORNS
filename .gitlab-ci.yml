@@ -184,7 +184,7 @@ build:gcc_9.1:
     - du -h .
   artifacts:
     paths:
-      - build
+      - "${CI_PROJECT_DIR}/build"
 # This one is always run       
 #  only:
 #    - tags
