@@ -11,57 +11,13 @@ stages:
       #    - test
       #    - deploy
 
-# Install dependencies for GCC builds
-# before_script:
-#    - apt-get update &&
-#      apt-get install -y
-#        libboost-system-dev
-#        libboost-filesystem-dev
-#        libboost-program-options-dev
-#        libboost-thread-dev
-#        libboost-regex-dev
-#        libprotobuf-dev
-#        protobuf-compiler
-#        libprotobuf-c0-dev
-#        protobuf-c-compiler
-#        libyaml-cpp-dev
-#        libyaml-dev
-#        libarchive-dev
-#        cmake
-#
-#    - pushd . &&
-#      git clone https://github.com/ofiwg/libfabric.git &&
-#      cd libfabric &&
-#      ./autogen.sh &&
-#      mkdir build &&
-#      cd build &&
-#      ../configure &&
-#      make -j $(nproc) &&
-#      make install &&
-#      popd
-#
-#    - pushd . &&
-#      git clone https://github.com/mercury-hpc/mercury.git &&
-#      cd mercury &&
-#      mkdir build &&
-#      cd build &&
-#      cmake
-#        -DCMAKE_BUILD_TYPE:STRING=Debug
-#        -DBUILD_TESTING:BOOL=OFF
-#        -DMERCURY_USE_SM_ROUTING:BOOL=OFF
-#        -DMERCURY_USE_SELF_FORWARD:BOOL=OFF
-#        -DMERCURY_USE_CHECKSUMS:BOOL=OFF
-#        -DMERCURY_USE_BOOST_PP:BOOL=ON
-#        -DMERCURY_USE_EAGER_BULK:BOOL=ON
-#        -DBUILD_SHARED_LIBS:BOOL=ON
-#        -DNA_USE_OFI:BOOL=ON
-#        .. &&
-#      make -j $(nproc) &&
-#      make install &&
-#      popd
+
+################################################################################
+# Build jobs
+################################################################################
 
 ### GCC 4.8 with libfabric1.7.1, mercury 1.0.1
-build:gcc:4.8:
+build:gcc_4.8:libfabric_1.7.1:mercury_1.0.1:
   image: bscstorage/norns-build-deps:gcc4.8-libfabric1.7.1-mercury1.0.1
   stage: build
   script:
@@ -78,10 +34,14 @@ build:gcc:4.8:
         make -j$(nproc) api
         make -j$(nproc) api_interactive
       )
-#  only:
-#    - tags
-#    - triggers
-#    - schedules
+  only:
+    - tags
+    - triggers
+    - schedules
+  artifacts:
+    paths:
+      - build
+
 
 ### GCC 4.9 with libfabric1.7.1, mercury 1.0.1
 build:gcc:4.9:
@@ -101,8 +61,11 @@ build:gcc:4.9:
         make -j$(nproc) api
         make -j$(nproc) api_interactive
       )
-#  only:
-#    - schedules
+  only:
+    - tags
+    - triggers
+    - schedules
+
 
 ### GCC 5.4 with libfabric1.7.1, mercury 1.0.1
 build:gcc:5.4:
@@ -122,8 +85,11 @@ build:gcc:5.4:
         make -j$(nproc) api
         make -j$(nproc) api_interactive
       )
-#  only:
-#    - schedules
+  only:
+    - tags
+    - triggers
+    - schedules
+
 
 ### GCC 6.5 with libfabric1.7.1, mercury 1.0.1
 build:gcc:6.5:
@@ -143,8 +109,11 @@ build:gcc:6.5:
         make -j$(nproc) api
         make -j$(nproc) api_interactive
       )
-#  only:
-#    - schedules
+  only:
+    - tags
+    - triggers
+    - schedules
+
 
 ### GCC 7.4 with libfabric1.7.1, mercury 1.0.1
 build:gcc:7.4:
@@ -164,8 +133,11 @@ build:gcc:7.4:
         make -j$(nproc) api
         make -j$(nproc) api_interactive
       )
-#  only:
-#    - schedules
+  only:
+    - tags
+    - triggers
+    - schedules
+
 
 ### GCC 8.1 with libfabric1.7.1, mercury 1.0.1
 build:gcc:8.1:
@@ -185,11 +157,14 @@ build:gcc:8.1:
         make -j$(nproc) api
         make -j$(nproc) api_interactive
       )
-#  only:
-#    - schedules
+  only:
+    - tags
+    - triggers
+    - schedules
+
 
 ### GCC 9.1 with libfabric1.7.1, mercury 1.0.1
-build:gcc:9.1:
+build:gcc_9.1:
   image: bscstorage/norns-build-deps:gcc9.1-libfabric1.7.1-mercury1.0.1
   stage: build
   script:
@@ -206,9 +181,33 @@ build:gcc:9.1:
         make -j$(nproc) api
         make -j$(nproc) api_interactive
       )
+# This one is always run       
 #  only:
+#    - tags
+#    - triggers
 #    - schedules
 
+
+################################################################################
+# Test jobs
+################################################################################
+
+### GCC 9.1 with libfabric1.7.1, mercury 1.0.1
+test:gcc_9.1:libfabric_1.7.1:mercury_1.0.1:
+  image: bscstorage/norns-build-deps:gcc9.1-libfabric1.7.1-mercury1.0.1
+  stage: test
+  dependencies:
+    - build:gcc_9.1
+  variables: 
+    NORNS_DEBUG_CONFIG_FILE_OVERRIDE:
+  script:
+    - |
+      (
+        set -Eeuo pipefail
+        set -x
+        cd build/tests
+        ./core -as
+      )
 
       ### ### GCC 5
       ### build:gcc:5:
