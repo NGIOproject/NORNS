@@ -213,7 +213,40 @@ test:gcc_9.1:libfabric_1.7.1:mercury_1.0.1:
         set -x
         cd build/tests
         ./core -as
+        ./api -as "[api::NORNS_TASK]"
+        ./api -as "[api::norns_error]"
+        ./api -as "[api::norns_iotask_init]"
+        ./api -as "[api::norns_resource_init]"
+        ./api -as "[api::norns_submit]"
+        ./api -as "[api::norns_submit_copy_buffer_to_file]"
+        ./api -as "[api::norns_submit_copy_local_posix_files]"
+        ./api -as "[api::norns_submit_pull_errors]"          
+        ./api -as "[api::norns_submit_pull_links]"           
+        ./api -as "[api::norns_submit_pull_to_posix_file]"   
+        ./api -as "[api::norns_submit_pull_to_posix_subdir]" 
+        ./api -as "[api::norns_submit_push_errors]"          
+        ./api -as "[api::norns_submit_push_links]"           
+        ./api -as "[api::norns_submit_push_memory_to_posix_file]"   
+        ./api -as "[api::norns_submit_push_memory_to_posix_file_errors]"   
+        ./api -as "[api::norns_submit_push_to_posix_file]"   
+        ./api -as "[api::norns_submit_push_to_posix_subdir]" 
+        ./api -as "[api::norns_submit_remove_local_posix_files]"
+        ./api -as "[api::nornsctl_add_process]"
+        ./api -as "[api::nornsctl_register_job]"
+        ./api -as "[api::nornsctl_register_namespace]"
+        ./api -as "[api::nornsctl_remove_process]"
+        ./api -as "[api::nornsctl_send_command]"
+        ./api -as "[api::nornsctl_status]"
+        ./api -as "[api::nornsctl_unregister_job]"
+        ./api -as "[api::nornsctl_unregister_namespace]"
+        ./api -as "[api::nornsctl_update_job]"
       )
+  artifacts:
+    paths:
+      - "${CI_PROJECT_DIR}/build/tests"
+    when: on_failure
+    expire_in: 1 week
+
 
       ### ### GCC 5
       ### build:gcc:5:
