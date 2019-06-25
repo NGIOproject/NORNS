@@ -1,15 +1,10 @@
-# This file is a template, and might need editing before it works on your project.
-# use the official gcc image, based on debian
-# can use verions as well, like gcc:5.2
-# see https://hub.docker.com/_/gcc/
-
 variables:
   GIT_SUBMODULE_STRATEGY: normal
 
 stages:
     - build
     - test
-      #    - deploy
+    - deploy
 
 
 ################################################################################
@@ -187,7 +182,7 @@ build:gcc_9.1:libfabric_1.7.1:mercury_1.0.1:
     paths:
       - "${CI_PROJECT_DIR}/build"
     expire_in: 1 day
-# This one is always run       
+# This one should always run       
 #  only:
 #    - tags
 #    - triggers
@@ -247,6 +242,137 @@ test:gcc_9.1:libfabric_1.7.1:mercury_1.0.1:
     when: on_failure
     expire_in: 1 week
 
+
+################################################################################
+# Coverage jobs
+################################################################################
+
+###
+build:coverage:
+  image: bscstorage/norns-build-deps:gcc9.1-libfabric1.7.1-mercury1.0.1
+  stage: build
+  variables: 
+    CFLAGS: "-O0 --coverage"
+    CXXFLAGS: "-O0 --coverage"
+    LDFLAGS: "--coverage"
+  script:
+    - |
+      (
+        set -Eeuo pipefail
+        set -x
+        ./bootstrap.sh
+        mkdir build && cd build
+        ../configure --enable-tests 
+        make -j$(nproc)
+        cd tests
+        make -j$(nproc) core
+        make -j$(nproc) api
+      )
+    - find "${CI_PROJECT_DIR}/build" \( -name "*.o" -or -name "*.lo" \) -delete
+    - du -h "${CI_PROJECT_DIR}/build"
+  artifacts:
+    paths:
+      - "${CI_PROJECT_DIR}/build"
+    expire_in: 1 day
+
+### 
+test:coverage:
+  image: bscstorage/norns-build-deps:gcc9.1-libfabric1.7.1-mercury1.0.1
+  stage: test
+  dependencies:
+    - build:coverage
+  variables: 
+    NORNS_DEBUG_CONFIG_FILE_OVERRIDE: 1
+  script:
+    - |
+      (
+        set -Eeuo pipefail
+        set -x
+        cd build/tests
+        ./core -as
+        ./api -as "[api::NORNS_TASK]"
+        ./api -as "[api::norns_error]"
+        ./api -as "[api::norns_iotask_init]"
+        ./api -as "[api::norns_resource_init]"
+        ./api -as "[api::norns_submit]"
+        ./api -as "[api::norns_submit_copy_buffer_to_file]"
+        ./api -as "[api::norns_submit_copy_local_posix_files]"
+        ./api -as "[api::norns_submit_pull_errors]"          
+        ./api -as "[api::norns_submit_pull_links]"           
+        ./api -as "[api::norns_submit_pull_to_posix_file]"   
+        ./api -as "[api::norns_submit_pull_to_posix_subdir]" 
+        ./api -as "[api::norns_submit_push_errors]"          
+        ./api -as "[api::norns_submit_push_links]"           
+        ./api -as "[api::norns_submit_push_memory_to_posix_file]"   
+        ./api -as "[api::norns_submit_push_memory_to_posix_file_errors]"   
+        ./api -as "[api::norns_submit_push_to_posix_file]"   
+        ./api -as "[api::norns_submit_push_to_posix_subdir]" 
+        ./api -as "[api::norns_submit_remove_local_posix_files]"
+        ./api -as "[api::nornsctl_add_process]"
+        ./api -as "[api::nornsctl_register_job]"
+        ./api -as "[api::nornsctl_register_namespace]"
+        ./api -as "[api::nornsctl_remove_process]"
+        ./api -as "[api::nornsctl_send_command]"
+        ./api -as "[api::nornsctl_status]"
+        ./api -as "[api::nornsctl_unregister_job]"
+        ./api -as "[api::nornsctl_unregister_namespace]"
+        ./api -as "[api::nornsctl_update_job]"
+      )
+  artifacts:
+    paths:
+      - "${CI_PROJECT_DIR}/build/tests"
+    when: on_failure
+    expire_in: 1 week
+
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./core -as
+      ###         - make -j$(nproc) api
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::NORNS_TASK]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_error]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_iotask_init]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_resource_init]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_copy_buffer_to_file]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_copy_local_posix_files]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_pull_errors]"          
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_pull_links]"           
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_pull_to_posix_file]"   
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_pull_to_posix_subdir]" 
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_errors]"          
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_links]"           
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_memory_to_posix_file]"   
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_memory_to_posix_file_errors]"   
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_to_posix_file]"   
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_push_to_posix_subdir]" 
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::norns_submit_remove_local_posix_files]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_add_process]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_register_job]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_register_namespace]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_remove_process]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_send_command]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_status]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_unregister_job]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_unregister_namespace]"
+      ###         - NORNS_DEBUG_CONFIG_FILE_OVERRIDE=1 ./api -as "[api::nornsctl_update_job]"
+
+  after_script:
+    - (cd build && ${CI_PROJECT_DIR}/gencov.sh)
+    - genhtml -o build/html/coverage build/norns.info
+
+pages:
+  image: alpine:latest
+  stage: deploy
+  before_script:
+    - ''
+  dependencies: 
+    - test:coverage
+  script:
+    - mv ${CI_PROJECT_DIR}/build/html/coverage/ ${CI_PROJECT_DIR}/public/
+  artifacts:
+    paths:
+      - ${CI_PROJECT_DIR}/public
+    expire_in: 30 days
+#  only:
+#    - master 
 
       ### ### GCC 5
       ### build:gcc:5:
