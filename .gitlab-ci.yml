@@ -181,9 +181,7 @@ build:gcc_9.1:libfabric_1.7.1:mercury_1.0.1:
         make -j$(nproc) api
         make -j$(nproc) api_interactive
       )
-    - find "${CI_PROJECT_DIR}/build" -name "*.o" -or -name "*.lo" | xargs du -ch
-    - du -h "${CI_PROJECT_DIR}/build"
-    - find "${CI_PROJECT_DIR}/build" -name "*.o" -or -name "*.lo" -exec rm -v {} \;
+    - find "${CI_PROJECT_DIR}/build" \( -name "*.o" -or -name "*.lo" \) -delete
     - du -h "${CI_PROJECT_DIR}/build"
   artifacts:
     paths:
