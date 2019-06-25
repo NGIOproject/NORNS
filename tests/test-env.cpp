@@ -43,11 +43,19 @@
 #include <boost/uuid/uuid_generators.hpp>
 
 #include <config.h>
+
 #ifdef HAVE_WORKING_STD_REGEX
+
 #include <regex>
-#else
+namespace RE = std;
+
+#else // !HAVE_WORKING_STD_REGEX
+
 #include <boost/regex.hpp>
-#endif
+namespace RE = boost;
+
+#endif // HAVE_WORKING_STD_REGEX
+
 #include <iostream>
 
 #include "catch.hpp"
@@ -100,35 +108,17 @@ create_config_file(const bfs::path& basedir,
 
     const bfs::path config_file = cfgdir / name;
 
-#ifdef HAVE_WORKING_STD_REGEX
+    auto outstr = RE::regex_replace(config_file::cftemplate,
+                                    std::regex("@localstatedir@"),
+                                    cfgdir.string());
 
-    auto outstr = std::regex_replace(config_file::cftemplate,
-                                     std::regex("@localstatedir@"),
-                                     cfgdir.string());
-
-    outstr = std::regex_replace(outstr, 
-            std::regex("(staging_directory:)\\s*?\".*?\"(,?)$"),
-                         "\\1 \"" + stdir.string() + "\"\\2");
+    outstr = RE::regex_replace(outstr, 
+                    std::regex(R"((staging_directory:)\s*?".*?"(,?)(?=\n|$))"),
+                    R"($1 ")" + stdir.string() + R"("$2)");
 
     for(const auto& r : reps) {
-        outstr = std::regex_replace(outstr, std::regex(r.first), r.second);
+        outstr = RE::regex_replace(outstr, std::regex(r.first), r.second);
     }
-
-#else
-
-    auto outstr = boost::regex_replace(config_file::cftemplate,
-                                             boost::regex("@localstatedir@"),
-                                             cfgdir.string());
-
-    outstr = boost::regex_replace(outstr, 
-            boost::regex("(staging_directory:)\\s*?\".*?\"(,?)$"),
-                         "\\1 \"" + stdir.string() + "\"\\2");
-
-    for(const auto& r : reps) {
-        outstr = boost::regex_replace(outstr, boost::regex(r.first), r.second);
-    }
-
-#endif
 
     bfs::ofstream outf(config_file);
     outf << outstr;
