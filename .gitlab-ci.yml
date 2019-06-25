@@ -318,14 +318,15 @@ test:coverage:
         ./api -as "[api::nornsctl_unregister_namespace]"
         ./api -as "[api::nornsctl_update_job]"
       )
-  artifacts:
-    paths:
-      - ${CI_PROJECT_DIR}/build/html/coverage/
-    expire_in: 1 week
-
   after_script:
     - (cd build && ${CI_PROJECT_DIR}/gencov.sh)
     - genhtml -o build/html/coverage build/norns.info
+
+  artifacts:
+    paths:
+      - build/html/coverage/
+    expire_in: 1 week
+
 
 pages:
   image: alpine:latest
@@ -335,10 +336,10 @@ pages:
   dependencies: 
     - test:coverage
   script:
-    - mv ${CI_PROJECT_DIR}/build/html/coverage/ ${CI_PROJECT_DIR}/public/
+    - mv build/html/coverage/ public/
   artifacts:
     paths:
-      - ${CI_PROJECT_DIR}/public
+      - public
     expire_in: 30 days
 #  only:
 #    - master 
