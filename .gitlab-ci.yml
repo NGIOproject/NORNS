@@ -188,8 +188,7 @@ build:gcc_9.1:libfabric_1.7.1:mercury_1.0.1:
   artifacts:
     paths:
       - "${CI_PROJECT_DIR}/build"
-    expire_in:
-      - 1 day
+    expire_in: 1 day
 # This one is always run       
 #  only:
 #    - tags
@@ -206,7 +205,7 @@ test:gcc_9.1:libfabric_1.7.1:mercury_1.0.1:
   image: bscstorage/norns-build-deps:gcc9.1-libfabric1.7.1-mercury1.0.1
   stage: test
   dependencies:
-    - build:gcc_9.1
+    - build:gcc_9.1:libfabric_1.7.1:mercury_1.0.1
   variables: 
     NORNS_DEBUG_CONFIG_FILE_OVERRIDE: 1
   script:
