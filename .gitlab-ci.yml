@@ -11,6 +11,10 @@ stages:
 # Build jobs
 ################################################################################
 
+################################################################################
+#########################     GCC      #########################################
+################################################################################
+
 ### GCC 4.8 with libfabric1.7.1, mercury 1.0.1
 build:gcc_4.8:libfabric_1.7.1:mercury_1.0.1:
   image: bscstorage/norns-build-deps:gcc4.8-libfabric1.7.1-mercury1.0.1
@@ -188,6 +192,63 @@ build:gcc_9.1:libfabric_1.7.1:mercury_1.0.1:
 #    - triggers
 #    - schedules
 
+
+################################################################################
+#########################  LLVM/Clang  #########################################
+################################################################################
+
+### Clang 3.6 with libfabric1.7.1, mercury 1.0.1
+build:clang_3.6:libfabric_1.7.1:mercury_1.0.1:
+  image: bscstorage/norns-build-deps:clang3.6-libfabric1.7.1-mercury1.0.1
+  stage: build
+  script:
+    - |
+      (
+        set -Eeuo pipefail
+        set -x
+        ./bootstrap.sh
+        mkdir build && cd build
+        ../configure --enable-tests 
+        make -j$(nproc)
+        cd tests
+        make -j$(nproc) core
+        make -j$(nproc) api
+        make -j$(nproc) api_interactive
+      )
+  only:
+    - tags
+    - triggers
+    - schedules
+  artifacts:
+    paths:
+      - build
+
+
+### Clang 3.7 with libfabric1.7.1, mercury 1.0.1
+build:clang_3.7:libfabric_1.7.1:mercury_1.0.1:
+  image: bscstorage/norns-build-deps:clang3.7-libfabric1.7.1-mercury1.0.1
+  stage: build
+  script:
+    - |
+      (
+        set -Eeuo pipefail
+        set -x
+        ./bootstrap.sh
+        mkdir build && cd build
+        ../configure --enable-tests 
+        make -j$(nproc)
+        cd tests
+        make -j$(nproc) core
+        make -j$(nproc) api
+        make -j$(nproc) api_interactive
+      )
+  only:
+    - tags
+    - triggers
+    - schedules
+  artifacts:
+    paths:
+      - build
 
 ################################################################################
 # Test jobs
