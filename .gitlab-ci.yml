@@ -215,10 +215,10 @@ build:clang_3.6:libfabric_1.7.1:mercury_1.0.1:
         make -j$(nproc) api
         make -j$(nproc) api_interactive
       )
-  only:
-    - tags
-    - triggers
-    - schedules
+#  only:
+#    - tags
+#    - triggers
+#    - schedules
   artifacts:
     paths:
       - build
@@ -242,10 +242,10 @@ build:clang_3.7:libfabric_1.7.1:mercury_1.0.1:
         make -j$(nproc) api
         make -j$(nproc) api_interactive
       )
-  only:
-    - tags
-    - triggers
-    - schedules
+#  only:
+#    - tags
+#    - triggers
+#    - schedules
   artifacts:
     paths:
       - build
