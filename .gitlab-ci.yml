@@ -266,6 +266,29 @@ build:clang_3.9:libfabric_1.7.1:mercury_1.0.1:
 #    - triggers
 #    - schedules
 
+### Clang 4.0 with libfabric1.7.1, mercury 1.0.1
+build:clang_4.0:libfabric_1.7.1:mercury_1.0.1:
+  image: bscstorage/norns-build-deps:clang4.0-libfabric1.7.1-mercury1.0.1
+  stage: build
+  script:
+    - |
+      (
+        set -Eeuo pipefail
+        set -x
+        ./bootstrap.sh
+        mkdir build && cd build
+        ../configure --enable-tests 
+        make -j$(nproc)
+        cd tests
+        make -j$(nproc) core
+        make -j$(nproc) api
+        make -j$(nproc) api_interactive
+      )
+#  only:
+#    - tags
+#    - triggers
+#    - schedules
+
 ################################################################################
 # Test jobs
 ################################################################################
