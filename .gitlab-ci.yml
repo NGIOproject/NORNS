@@ -325,7 +325,8 @@ test:coverage:
         set -x
         cd build 
         ${CI_PROJECT_DIR}/gencov.sh
-        genhtml -o build/html/coverage build/norns.info
+        [[ -e norns.info ]] || false
+        genhtml -o html/coverage norns.info
       )
 
   artifacts:
