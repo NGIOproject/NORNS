@@ -319,8 +319,14 @@ test:coverage:
         ./api -as "[api::nornsctl_update_job]"
       )
   after_script:
-    - (cd build && ${CI_PROJECT_DIR}/gencov.sh)
-    - genhtml -o build/html/coverage build/norns.info
+    - |
+      (
+        set -Eeuo pipefail
+        set -x
+        cd build 
+        ${CI_PROJECT_DIR}/gencov.sh
+        genhtml -o build/html/coverage build/norns.info
+      )
 
   artifacts:
     paths:
