@@ -109,15 +109,15 @@ create_config_file(const bfs::path& basedir,
     const bfs::path config_file = cfgdir / name;
 
     auto outstr = RE::regex_replace(config_file::cftemplate,
-                                    std::regex("@localstatedir@"),
+                                    RE::regex("@localstatedir@"),
                                     cfgdir.string());
 
     outstr = RE::regex_replace(outstr, 
-                    std::regex(R"((staging_directory:)\s*?".*?"(,?)(?=\n|$))"),
+                    RE::regex(R"((staging_directory:)\s*?".*?"(,?)(?=\n|$))"),
                     R"($1 ")" + stdir.string() + R"("$2)");
 
     for(const auto& r : reps) {
-        outstr = RE::regex_replace(outstr, std::regex(r.first), r.second);
+        outstr = RE::regex_replace(outstr, RE::regex(r.first), r.second);
     }
 
     bfs::ofstream outf(config_file);
