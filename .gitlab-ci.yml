@@ -466,7 +466,7 @@ test:gcc_9.1:libfabric_1.7.1:mercury_1.0.1:
 
 ###
 build:coverage:
-  image: bscstorage/norns-build-deps:gcc9.1-libfabric1.7.1-mercury1.0.1
+  image: bscstorage/norns-build-deps:gcc8.1-libfabric1.7.1-mercury1.0.1
   stage: build
   variables: 
     CFLAGS: "-O0 --coverage"
@@ -494,7 +494,7 @@ build:coverage:
 
 ### 
 test:coverage:
-  image: bscstorage/norns-build-deps:gcc9.1-libfabric1.7.1-mercury1.0.1
+  image: bscstorage/norns-build-deps:gcc8.1-libfabric1.7.1-mercury1.0.1
   stage: test
   dependencies:
     - build:coverage
