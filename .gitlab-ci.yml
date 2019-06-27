@@ -534,15 +534,8 @@ test:coverage:
         ./api -as "[api::nornsctl_unregister_job]"
         ./api -as "[api::nornsctl_unregister_namespace]"
         ./api -as "[api::nornsctl_update_job]"
-      )
-  after_script:
-    - |
-      (
-        set -Eeuo pipefail
-        set -x
-        cd build 
+        cd ${CI_PROJECT_DIR}/build 
         ${CI_PROJECT_DIR}/gencov.sh
-        [[ -e norns.info ]] || false
         genhtml -o html/coverage norns.info
       )
 
