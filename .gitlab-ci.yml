@@ -215,10 +215,10 @@ build:clang_3.6:libfabric_1.7.1:mercury_1.0.1:
         make -j$(nproc) api
         make -j$(nproc) api_interactive
       )
-#  only:
-#    - tags
-#    - triggers
-#    - schedules
+  only:
+    - tags
+    - triggers
+    - schedules
 
 ### Clang 3.8 with libfabric1.7.1, mercury 1.0.1
 build:clang_3.8:libfabric_1.7.1:mercury_1.0.1:
@@ -238,10 +238,10 @@ build:clang_3.8:libfabric_1.7.1:mercury_1.0.1:
         make -j$(nproc) api
         make -j$(nproc) api_interactive
       )
-#  only:
-#    - tags
-#    - triggers
-#    - schedules
+  only:
+    - tags
+    - triggers
+    - schedules
 
 ### Clang 3.9 with libfabric1.7.1, mercury 1.0.1
 build:clang_3.9:libfabric_1.7.1:mercury_1.0.1:
@@ -261,10 +261,10 @@ build:clang_3.9:libfabric_1.7.1:mercury_1.0.1:
         make -j$(nproc) api
         make -j$(nproc) api_interactive
       )
-#  only:
-#    - tags
-#    - triggers
-#    - schedules
+  only:
+    - tags
+    - triggers
+    - schedules
 
 ### Clang 4.0 with libfabric1.7.1, mercury 1.0.1
 build:clang_4.0:libfabric_1.7.1:mercury_1.0.1:
@@ -284,10 +284,10 @@ build:clang_4.0:libfabric_1.7.1:mercury_1.0.1:
         make -j$(nproc) api
         make -j$(nproc) api_interactive
       )
-#  only:
-#    - tags
-#    - triggers
-#    - schedules
+  only:
+    - tags
+    - triggers
+    - schedules
 
 ### Clang 5.0 with libfabric1.7.1, mercury 1.0.1
 build:clang_5.0:libfabric_1.7.1:mercury_1.0.1:
@@ -307,10 +307,10 @@ build:clang_5.0:libfabric_1.7.1:mercury_1.0.1:
         make -j$(nproc) api
         make -j$(nproc) api_interactive
       )
-#  only:
-#    - tags
-#    - triggers
-#    - schedules
+  only:
+    - tags
+    - triggers
+    - schedules
 
 ### Clang 6.0 with libfabric1.7.1, mercury 1.0.1
 build:clang_6.0:libfabric_1.7.1:mercury_1.0.1:
@@ -330,10 +330,10 @@ build:clang_6.0:libfabric_1.7.1:mercury_1.0.1:
         make -j$(nproc) api
         make -j$(nproc) api_interactive
       )
-#  only:
-#    - tags
-#    - triggers
-#    - schedules
+  only:
+    - tags
+    - triggers
+    - schedules
 
 ### Clang 7.1 with libfabric1.7.1, mercury 1.0.1
 build:clang_7.1:libfabric_1.7.1:mercury_1.0.1:
@@ -353,10 +353,10 @@ build:clang_7.1:libfabric_1.7.1:mercury_1.0.1:
         make -j$(nproc) api
         make -j$(nproc) api_interactive
       )
-#  only:
-#    - tags
-#    - triggers
-#    - schedules
+  only:
+    - tags
+    - triggers
+    - schedules
 
 ### Clang 8.0 with libfabric1.7.1, mercury 1.0.1
 build:clang_8.0:libfabric_1.7.1:mercury_1.0.1:
@@ -376,10 +376,10 @@ build:clang_8.0:libfabric_1.7.1:mercury_1.0.1:
         make -j$(nproc) api
         make -j$(nproc) api_interactive
       )
-#  only:
-#    - tags
-#    - triggers
-#    - schedules
+  only:
+    - tags
+    - triggers
+    - schedules
 
 ### Clang 9.0 with libfabric1.7.1, mercury 1.0.1
 build:clang_9.0:libfabric_1.7.1:mercury_1.0.1:
@@ -399,13 +399,11 @@ build:clang_9.0:libfabric_1.7.1:mercury_1.0.1:
         make -j$(nproc) api
         make -j$(nproc) api_interactive
       )
+# This one should always run       
 #  only:
 #    - tags
 #    - triggers
 #    - schedules
-
-
-
 
 
 ################################################################################
