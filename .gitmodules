@@ -1,3 +1,0 @@
-[submodule "src/externals/hermes"]
-	path = src/externals/hermes
-    url = ../hermes.git
