@@ -1,0 +1,120 @@
+dist: xenial
+sudo: true
+language: 
+  - cpp
+
+env:
+  global:
+    - CXXFLAGS="-ggdb3 -O0 --coverage" 
+    - CFLAGS="-ggdb3 -O0 --coverage" 
+    - LDFLAGS="--coverage"
+    - NORNS_DEBUG_CONFIG_FILE_OVERRIDE="1"
+
+matrix:
+  include:
+    - os : linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            # - g++-8
+            - libboost-system-dev 
+            - libboost-filesystem-dev
+            - libboost-program-options-dev
+            - libboost-thread-dev
+            - libboost-regex-dev
+            - libprotobuf-dev
+            - protobuf-compiler
+            - libprotobuf-c-dev
+            - protobuf-c-compiler
+            - libyaml-cpp-dev 
+            - libyaml-dev 
+            - libarchive-dev
+            - lcov
+
+branches:
+  only:
+    - master
+
+before_install:
+  - env |sort
+  - |
+    (
+      set -Eeuo pipefail
+      set -x
+      # if [[ "$CC" == "gcc" && `command -v gcc-8` ]]; then export CC=gcc-8; export CXX=g++-8; export AR=gcc-ar-8; export NM=gcc-nm-8; export RANLIB=gcc-ranlib-8; GCOV=`which gcov-8`; sudo ln -sf $GCOV /usr/bin/gcov; fi
+      $CC --version
+      gcov --version
+    )
+
+before_script:
+  - |
+    (
+      pushd .
+      git clone https://github.com/ofiwg/libfabric.git
+      cd libfabric
+      ./autogen.sh
+      mkdir build
+      cd build 
+      ../configure
+      make -j 2
+      sudo make install
+      popd
+      sudo ldconfig
+    )
+  - |
+    (
+      set -Eeuo pipefail
+      set -x
+      pushd .
+      git clone https://github.com/mercury-hpc/mercury.git 
+      cd mercury
+      mkdir build
+      cd build
+      cmake \
+        -DCMAKE_BUILD_TYPE:STRING=Release \
+        -DBUILD_TESTING:BOOL=OFF \
+        -DMERCURY_USE_SM_ROUTING:BOOL=OFF \
+        -DMERCURY_USE_SELF_FORWARD:BOOL=OFF \
+        -DMERCURY_USE_CHECKSUMS:BOOL=OFF \
+        -DMERCURY_USE_BOOST_PP:BOOL=ON \
+        -DMERCURY_USE_EAGER_BULK:BOOL=ON \
+        -DBUILD_SHARED_LIBS:BOOL=ON \
+        -DNA_USE_OFI:BOOL=ON \
+      ..
+      make -j2
+      sudo make install
+      popd
+      sudo ldconfig
+    )
+
+script:
+  - |
+    (
+      set -Eeuo pipefail
+      set -x
+      ./bootstrap.sh
+      mkdir build
+      cd build
+      ../configure --enable-tests #CC=/usr/bin/gcc-8 CXX=/usr/bin/g++-8
+      make -j2
+      cd tests
+      make -j2 core
+      make -j2 api
+      ./core
+      sudo setcap cap_sys_ptrace,cap_chown=+ep ./api
+      ./api
+    )
+
+after_success:
+  - |
+    (
+      pwd
+      ls -l
+      pushd .
+      cd build
+      ../gencov.sh
+      bash <(curl -s https://codecov.io/bash) -f norns.info || echo "Codecov did not collect coverage reports"
+      popd
+    )
