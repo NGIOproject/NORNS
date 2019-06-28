@@ -1,0 +1,6 @@
+language: bash
+dist: xenial
+sudo: false
+
+script:
+
