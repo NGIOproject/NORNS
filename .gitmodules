@@ -1,0 +1,3 @@
+[submodule "src/externals/hermes"]
+	path = src/externals/hermes
+	url = git@github.com:bsc-ssrg/hermes.git
