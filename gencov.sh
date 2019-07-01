@@ -39,7 +39,7 @@ GIT_ROOTDIR=`git rev-parse --show-toplevel`
 LCOV=`which lcov`
 
 ${LCOV} \
-    `find ${GIT_ROOTDIR} -name "*.gcda" 2>/dev/null | xargs -I{} dirname {} | uniq | xargs -I {} echo -n " --directory "{}` \
+    `find ${GIT_ROOTDIR} -not \( -path *mercury* -prune \) -not \( -path *libfabric* -prune \) -and -name "*.gcda" 2>/dev/null | xargs -I{} dirname {} | uniq | xargs -I {} echo -n " --directory "{}` \
     --capture \
     --output-file gcov.info
 
@@ -49,7 +49,7 @@ ${LCOV} \
         '/usr/local/include/*' \
         '*/externals/*' \
         '*/spdlog/*' \
-        '*/build/*' \
+        '$PWD/build/*' \
         '*/tests/*' \
     -o norns.info
 
